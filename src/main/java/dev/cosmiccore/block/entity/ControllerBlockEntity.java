@@ -112,6 +112,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Vier Kosmos-Laser rund um die Deckenmitte bilden ein Laser-Array, das Asteroiden abschiesst. */
     private boolean laserArray;
     private int laserTarget = -1;
+    /** Aufladezeit nach der Zielerfassung (Partikel buendeln sich, erst dann feuert der Strahl). */
+    private int laserCharge;
+    public static final int LASER_CHARGE_TICKS = 20;
     private double lastCosmic = 1.0;
     @Nullable
     private CorePattern.Report lastReport;
@@ -493,12 +496,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Erfasst Asteroiden mit dem Traktorstrahl und zieht sie heran. Die Energie fliesst direkt in den Puffer. */
+    /** Erfasst Asteroiden, laedt auf und schiesst sie mit dem Strahl ab. Die freigesetzte Energie fliesst in den Puffer. */
     private void tickLasers(ServerLevel level) {
         CorePattern p = pattern();
         if (p == null) return;
-        // Mitte des Traktorrings ueber dem Trichter (muss zu TractorFx.RING_HEIGHT passen)
-        Vec3 muzzle = Vec3.atCenterOf(center(level)).add(0, p.half() + 3.5, 0);
+        // Bahnmitte der Energiepartikel ueber dem Trichter (muss zu EnergyLaserFx.HEIGHT passen)
+        Vec3 muzzle = Vec3.atCenterOf(center(level)).add(0, p.half() + 2.2, 0);
         CosmicAsteroid target = laserTarget >= 0 && level.getEntity(laserTarget) instanceof CosmicAsteroid a && a.isAlive()
                 && a.position().distanceTo(muzzle) < LASER_RANGE ? a : null;
         if (target == null) {
@@ -518,13 +521,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
             if (target == null) return;
             laserTarget = target.getId();
+            laserCharge = 0;
             level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 1.5F, 1.6F);
             pushVisuals(level);
         }
         if (level.getGameTime() % 10 == 0) {
             level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_AMBIENT, SoundSource.BLOCKS, 1.0F, 1.8F);
         }
-        int gained = target.tractorTick(muzzle);
+        // erst aufladen, dann feuern
+        if (laserCharge < LASER_CHARGE_TICKS) {
+            laserCharge++;
+            if (laserCharge == LASER_CHARGE_TICKS) {
+                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.BLOCKS, 1.2F, 1.4F);
+            }
+            return;
+        }
+        int gained = target.harvestTick();
         if (gained > 0) {
             receiveCosmicEnergy(gained);
             laserTarget = -1;

@@ -1,0 +1,172 @@
+package dev.cosmiccore.client;
+
+import static dev.cosmiccore.client.RenderUtil.cube;
+import static dev.cosmiccore.client.RenderUtil.flatCircle;
+import static dev.cosmiccore.client.RenderUtil.hash;
+import static dev.cosmiccore.client.RenderUtil.lerp;
+import static dev.cosmiccore.client.RenderUtil.segment;
+
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
+/**
+ * Kosmos-Laser als Energiepartikel: Die vier Laser-Bloecke werden zu vier leuchtenden Partikeln, die um die
+ * Position des Sternentrichters kreisen.
+ * <ol>
+ *   <li><b>Ruhe:</b> die Partikel ziehen mit Lichtschweifen auf einer geneigten Bahn ihre Kreise.</li>
+ *   <li><b>Aufladen:</b> ein Asteroid wurde erfasst - die Partikel spiralen beschleunigend zu einem Brennpunkt,
+ *       Blitze schlagen hinein, der Brennpunkt gluehte immer heller.</li>
+ *   <li><b>Feuern:</b> ein gleissender Strahl mit Doppelhelix trifft den Asteroiden, am Einschlag blitzt es und
+ *       Schockwellen laufen; die freigesetzte Energie stroemt als Lichtpunkte den Strahl entlang zurueck und
+ *       von dort hinab in den Reaktor.</li>
+ * </ol>
+ * Ursprung ist die Kernmitte.
+ */
+public final class EnergyLaserFx {
+    private EnergyLaserFx() {}
+
+    /** Hoehe der Bahnmitte ueber der Kernmitte (zusaetzlich zur halben Baugroesse) - passt zur Server-Logik. */
+    public static final float HEIGHT = 2.2F;
+    private static final float ORBIT = 0.9F;
+    private static final float[] BEAM = {0.4F, 0.85F, 1.0F};
+    private static final float[] VIOLET = {0.7F, 0.45F, 1.0F};
+    private static final float[] GOLD = {1.0F, 0.8F, 0.35F};
+    private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
+
+    public static void render(Matrix4f m, VertexConsumer vc, int half, float t, Vec3 target, float targetSize, float charge,
+                              float harvest, float energy) {
+        float cy = half + HEIGHT;
+        Vector3f center = new Vector3f(0, cy, 0);
+        boolean locked = target != null;
+        float fire = locked ? Mth.clamp((charge - 0.95F) / 0.05F, 0.0F, 1.0F) : 0.0F;
+        Vector3f dir = locked ? new Vector3f((float) target.x, (float) target.y - cy, (float) target.z).normalize() : new Vector3f(0, 1, 0);
+        Vector3f focus = new Vector3f(dir).mul(0.35F * charge).add(center);
+
+        // Runen auf der Decke ueber den vier Laser-Bloecken
+        for (int k = 0; k < 4; k++) {
+            float ang = k * Mth.HALF_PI;
+            Matrix4f rm = new Matrix4f(m).translate(Mth.cos(ang), half + 0.53F, Mth.sin(ang)).rotateY(t * 0.02F);
+            flatCircle(vc, rm, 0.22F, 0.008F, 24, BEAM, energy * 0.5F);
+            flatCircle(vc, rm, 0.12F, 0.006F, 16, VIOLET, energy * 0.4F);
+        }
+
+        // Partikel: kreisen, beim Aufladen spiralen sie zum Brennpunkt
+        float spin = t * (0.05F + 0.35F * charge * charge);
+        float radius = Mth.lerp(charge, ORBIT, 0.14F);
+        for (int k = 0; k < 4; k++) {
+            float[] p = particle(k, spin, radius, cy, t, focus, charge);
+            float glowSize = 0.05F + 0.03F * charge;
+            cube(vc, m, p[0], p[1], p[2], glowSize, WHITE[0], WHITE[1], WHITE[2], energy);
+            RenderUtil.glowSphere(vc, new Matrix4f(m).translate(p[0], p[1], p[2]), 0.11F + 0.06F * charge, 6, 10,
+                    k % 2 == 0 ? BEAM : VIOLET, 0.22F * energy);
+            // Lichtschweif
+            float[] prev = p;
+            for (int i = 1; i <= 8; i++) {
+                float[] q = particle(k, spin - i * (0.12F + 0.1F * charge), radius, cy, t - i, focus, charge);
+                float a = energy * (1.0F - i / 9.0F) * 0.7F;
+                float[] c = k % 2 == 0 ? BEAM : VIOLET;
+                segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.018F * (1.0F - i / 10.0F), c[0], c[1], c[2], a, a * 0.8F);
+                prev = q;
+            }
+            // Aufladen: Blitze in den Brennpunkt
+            if (locked && charge > 0.3F && hash((int) (t * 1.3F) + k * 7) > 0.2F) {
+                lightning(m, vc, p, new float[]{focus.x, focus.y, focus.z}, (int) (t * 1.3F) + k * 11, energy * charge);
+            }
+        }
+
+        if (!locked) {
+            // Ruhe: zarter Bahnring
+            flatCircle(vc, new Matrix4f(m).translate(0, cy, 0).rotateZ(0.25F * Mth.sin(t * 0.01F)), ORBIT, 0.006F, 64, BEAM, energy * 0.25F);
+            return;
+        }
+
+        // Brennpunkt
+        float pulse = 0.6F + 0.4F * Mth.sin(t * 0.8F);
+        RenderUtil.glowSphere(vc, new Matrix4f(m).translate(focus.x, focus.y, focus.z), 0.1F + 0.2F * charge * pulse, 8, 12, WHITE, 0.4F * energy * charge);
+        RenderUtil.glowSphere(vc, new Matrix4f(m).translate(focus.x, focus.y, focus.z), 0.25F + 0.25F * charge, 8, 12, BEAM, 0.18F * energy * charge);
+
+        if (fire <= 0.0F) return;
+        Vector3f tp = new Vector3f((float) target.x, (float) target.y, (float) target.z);
+        float tr = Math.max(0.4F, targetSize * 0.5F);
+        float flick = 0.85F + 0.15F * Mth.sin(t * 2.3F);
+
+        // Strahl: gleissender Kern, Glut und Doppelhelix
+        segment(vc, m, focus.x, focus.y, focus.z, tp.x, tp.y, tp.z, 0.045F, 1.0F, 1.0F, 1.0F, energy * flick, energy * flick);
+        segment(vc, m, focus.x, focus.y, focus.z, tp.x, tp.y, tp.z, 0.14F, BEAM[0], BEAM[1], BEAM[2], 0.45F * energy * fire, 0.4F * energy * fire);
+        segment(vc, m, focus.x, focus.y, focus.z, tp.x, tp.y, tp.z, 0.3F, VIOLET[0], VIOLET[1], VIOLET[2], 0.12F * energy * fire, 0.1F * energy * fire);
+        Vector3f u = new Vector3f(dir).cross(Math.abs(dir.y) > 0.95F ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+        Vector3f w = new Vector3f(dir).cross(u).normalize();
+        float len = new Vector3f(tp).sub(focus).length();
+        int steps = Math.max(12, (int) (len * 3));
+        for (int strand = 0; strand < 2; strand++) {
+            Vector3f prev = null;
+            for (int i = 0; i <= steps; i++) {
+                float s = i / (float) steps;
+                float ang = s * len * 2.2F - t * 0.6F + strand * Mth.PI;
+                float hr = 0.12F * (1.0F - 0.4F * s);
+                Vector3f p = new Vector3f(focus).lerp(tp, s).add(new Vector3f(u).mul(Mth.cos(ang) * hr)).add(new Vector3f(w).mul(Mth.sin(ang) * hr));
+                if (prev != null) {
+                    float[] c = strand == 0 ? BEAM : VIOLET;
+                    segment(vc, m, prev.x, prev.y, prev.z, p.x, p.y, p.z, 0.012F, c[0], c[1], c[2], 0.8F * energy, 0.8F * energy);
+                }
+                prev = p;
+            }
+        }
+
+        // Einschlag: Blitz und Schockwellen am Asteroiden
+        RenderUtil.glowSphere(vc, new Matrix4f(m).translate(tp.x, tp.y, tp.z), tr * (1.1F + 0.2F * pulse), 8, 12, GOLD, (0.25F + 0.3F * harvest) * energy);
+        for (int k = 0; k < 3; k++) {
+            float ph = Mth.frac(t * 0.05F + k / 3.0F);
+            boolean steep = Math.abs(dir.y) > 0.95F;
+            Matrix4f sm = new Matrix4f(m).translate(tp.x, tp.y, tp.z)
+                    .rotateTowards(-dir.x, -dir.y, -dir.z, steep ? 1 : 0, steep ? 0 : 1, 0).rotateX(Mth.HALF_PI);
+            flatCircle(vc, sm, tr * (0.8F + 1.6F * ph), 0.03F, 32, GOLD, energy * (1.0F - ph) * 0.8F);
+        }
+
+        // Energie stroemt aus dem Asteroiden den Strahl entlang zurueck ...
+        int motes = 10;
+        for (int k = 0; k < motes; k++) {
+            float s = Mth.frac(t * 0.03F + k / (float) motes); // 0 = Asteroid, 1 = Brennpunkt
+            Vector3f p = new Vector3f(tp).lerp(focus, s * s);
+            float off = 0.18F * (1.0F - s);
+            p.add(new Vector3f(u).mul(hash(k * 13) * off)).add(new Vector3f(w).mul(hash(k * 29) * off));
+            float[] c = lerp(GOLD, BEAM, s);
+            cube(vc, m, p.x, p.y, p.z, 0.04F * (1.0F - 0.4F * s), c[0], c[1], c[2], energy * Mth.sin(s * Mth.PI));
+        }
+        // ... und vom Brennpunkt hinab in den Reaktor
+        for (int k = 0; k < 4; k++) {
+            float s = Mth.frac(t * 0.06F + k / 4.0F);
+            float y = Mth.lerp(s, focus.y, half + 0.5F);
+            cube(vc, m, focus.x * (1.0F - s), y, focus.z * (1.0F - s), 0.035F, GOLD[0], GOLD[1], GOLD[2], energy * (1.0F - s));
+        }
+        segment(vc, m, focus.x, focus.y, focus.z, 0, half + 0.5F, 0, 0.015F, GOLD[0], GOLD[1], GOLD[2], 0.5F * energy, 0.2F * energy);
+    }
+
+    /** Position eines Partikels: Kreisbahn um die Bahnmitte, beim Aufladen hin zum Brennpunkt gezogen. */
+    private static float[] particle(int k, float spin, float radius, float cy, float t, Vector3f focus, float charge) {
+        float ang = spin + k * Mth.HALF_PI;
+        float tilt = 0.35F;
+        float x = Mth.cos(ang) * radius;
+        float z = Mth.sin(ang) * radius;
+        float y = cy + Mth.sin(ang) * radius * tilt + 0.08F * Mth.sin(t * 0.05F + k);
+        return new float[]{Mth.lerp(charge, x, focus.x + x * 0.6F), Mth.lerp(charge, y, focus.y + (y - cy) * 0.6F),
+                Mth.lerp(charge, z, focus.z + z * 0.6F)};
+    }
+
+    private static void lightning(Matrix4f m, VertexConsumer vc, float[] a, float[] b, int seed, float alpha) {
+        float px = a[0], py = a[1], pz = a[2];
+        for (int i = 1; i <= 4; i++) {
+            float f = i / 4.0F;
+            float nx = Mth.lerp(f, a[0], b[0]) + (i < 4 ? hash(seed * 7 + i) * 0.07F : 0);
+            float ny = Mth.lerp(f, a[1], b[1]) + (i < 4 ? hash(seed * 11 + i) * 0.07F : 0);
+            float nz = Mth.lerp(f, a[2], b[2]) + (i < 4 ? hash(seed * 13 + i) * 0.07F : 0);
+            segment(vc, m, px, py, pz, nx, ny, nz, 0.008F, 1.0F, 1.0F, 1.0F, alpha, alpha);
+            px = nx;
+            py = ny;
+            pz = nz;
+        }
+    }
+}

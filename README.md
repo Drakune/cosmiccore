@@ -75,8 +75,9 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
   (`asteroids`, `asteroidChance` in der Config). Energie: 50k / 250k / 1M RF.
 - **Kosmos-Laser** (Block: Fokuskristall, Sternenstaub, Eisen, Leerengehäuse): 4 Stück auf die Decke setzen - je einer
   nördlich, östlich, südlich und westlich der Deckenmitte (der Sternentrichter darf in der Mitte sitzen).
-  Bei gebildeter Struktur werden sie zu einer Traktorstrahl-Anlage (Ring über dem Trichter), die Asteroiden
-  einfängt, heranzieht und als Energie direkt in den Puffer speist.
+  Bei gebildeter Struktur werden sie zu vier Energiepartikeln, die um die Trichter-Position kreisen. Erfassen sie
+  einen Asteroiden, bündeln sie sich (Aufladen), feuern einen Strahl, bis er zerbricht, und leiten die freigesetzte
+  Energie direkt in den Puffer.
 - **Phantom-Blöcke:** Hüllenblöcke außerhalb der sichtbaren Kugel haben bei gebildeter Struktur keine Kollision und
   sind nicht anwählbar. Ports bleiben sichtbar, damit Rohre/Kabel anderer Mods sauber andocken.
 ## Overdrive

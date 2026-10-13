@@ -77,7 +77,7 @@
   "gui.cosmiccore.funnel_on": "✦ Star funnel: active",
   "guide.cosmiccore.page.11": "§5§lStar Funnel§r\n\nPlace it right on the center of the ceiling.\n\nWith a clear sky it draws cosmic energy from space and §bdoubles§r the sky bonus.",
   "guide.cosmiccore.page.12": "§5§lAsteroids§r\n\nAt night asteroids drift across the sky - small, medium or large.\n\nLarge ones give 1M RF, small ones 50,000 RF.",
-  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become a tractor beam that catches asteroids and pulls them into the reactor as energy.",
+  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become orbiting energy particles that shoot asteroids and collect their energy.",
   "item.cosmiccore.overdrive_particle": "Cosmic Core Overdrive Particle",
   "gui.cosmiccore.with_lasers": "+ Lasers",
   "message.cosmiccore.not_running": "Ignite the generator first - level and overdrive can only be changed while running",

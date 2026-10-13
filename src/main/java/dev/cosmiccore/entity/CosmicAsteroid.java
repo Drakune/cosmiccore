@@ -29,7 +29,6 @@ public class CosmicAsteroid extends Entity {
 
     private static final EntityDataAccessor<Integer> DATA_SIZE = SynchedEntityData.defineId(CosmicAsteroid.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_HARVEST = SynchedEntityData.defineId(CosmicAsteroid.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> DATA_CAPTURED = SynchedEntityData.defineId(CosmicAsteroid.class, EntityDataSerializers.BOOLEAN);
 
     private int life;
     private int lastHit;
@@ -44,7 +43,6 @@ public class CosmicAsteroid extends Entity {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_SIZE, SMALL);
         builder.define(DATA_HARVEST, 0);
-        builder.define(DATA_CAPTURED, false);
     }
 
     public int getVariant() {
@@ -59,11 +57,6 @@ public class CosmicAsteroid extends Entity {
     /** Abbaufortschritt 0..1. */
     public float getHarvest() {
         return entityData.get(DATA_HARVEST) / 1000.0F;
-    }
-
-    /** Vom Traktorstrahl erfasst (wird zum Reaktor gezogen). */
-    public boolean isCaptured() {
-        return entityData.get(DATA_CAPTURED);
     }
 
     public float getSizeBlocks() {
@@ -102,11 +95,8 @@ public class CosmicAsteroid extends Entity {
             return;
         }
         life++;
-        if (isCaptured()) {
-            // ohne Strahl laesst der Traktor los
-            if (tickCount - lastHit > 10) entityData.set(DATA_CAPTURED, false);
-            return;
-        }
+        // unter Beschuss bleibt der Asteroid am Himmel, bis er zerbricht
+        if (tickCount - lastHit < 20) return;
         // ohne Laser regeneriert sich der Fortschritt langsam
         if (tickCount - lastHit > 40 && entityData.get(DATA_HARVEST) > 0) {
             entityData.set(DATA_HARVEST, Math.max(0, entityData.get(DATA_HARVEST) - 5));
@@ -121,6 +111,9 @@ public class CosmicAsteroid extends Entity {
     public int harvestTick() {
         if (isRemoved()) return 0;
         lastHit = tickCount;
+        // der Strahl bremst den Asteroiden ab
+        setDeltaMovement(getDeltaMovement().scale(0.94));
+        hasImpulse = true;
         int step = Math.max(1, 1000 / HARVEST_TICKS[getVariant()]);
         int progress = Math.min(1000, entityData.get(DATA_HARVEST) + step);
         entityData.set(DATA_HARVEST, progress);
@@ -136,37 +129,6 @@ public class CosmicAsteroid extends Entity {
         int energy = getEnergy();
         discard();
         return energy;
-    }
-
-    /**
-     * Ein Tick Traktorstrahl (Server): zieht den Asteroiden beschleunigend zum Ziel. Liefert die Energie, sobald er
-     * dort angekommen ist und aufgesogen wird, sonst 0.
-     */
-    public int tractorTick(Vec3 target) {
-        if (isRemoved()) return 0;
-        lastHit = tickCount;
-        if (!isCaptured()) entityData.set(DATA_CAPTURED, true);
-        Vec3 c = position().add(0, getBbHeight() / 2, 0);
-        Vec3 to = target.subtract(c);
-        double dist = to.length();
-        int progress = Math.min(1000, entityData.get(DATA_HARVEST) + 4);
-        entityData.set(DATA_HARVEST, progress);
-        if (dist < 1.5 + getSizeBlocks() * 0.3) {
-            if (level() instanceof ServerLevel sl) {
-                sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 120, 0.4, 0.4, 0.4, 0.6);
-                sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 30 + getVariant() * 30, 0.3, 0.3, 0.3, 0.12);
-                sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 2.0F, 0.6F);
-                sl.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 2.0F, 0.6F);
-            }
-            int energy = getEnergy();
-            discard();
-            return energy;
-        }
-        // sanft ansaugen: Geschwindigkeit waechst mit der Zeit im Strahl
-        double speed = Math.min(0.9, 0.12 + progress / 1000.0 * 0.8);
-        setDeltaMovement(to.normalize().scale(Math.min(speed, dist * 0.5)));
-        hasImpulse = true;
-        return 0;
     }
 
     @Override

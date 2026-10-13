@@ -31,6 +31,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private boolean funnel;       // Sternentrichter auf der Decke
     private boolean laserArray;   // vier Kosmos-Laser bilden das grosse Geschuetz
     private int laserTarget = -1; // Entity-ID des anvisierten Asteroiden
+    private long targetSince;     // nur clientseitig: seit wann das aktuelle Ziel erfasst ist
     private int overdrive;        // installierte Overdrive-Stufen (verwandeln das Loch)
     private int output;           // aktuelle RF/t (fuer die Konsole)
     private int energyPct;        // Pufferfuellstand 0..100 (fuer die Konsole)
@@ -141,6 +142,13 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         return laserTarget;
     }
 
+    /** Aufladefortschritt 0..1 seit der Zielerfassung (1 = Strahl feuert). */
+    public float getLaserCharge(float partialTick) {
+        if (level == null || laserTarget < 0) return 0.0F;
+        float c = (level.getGameTime() - targetSince + partialTick) / ControllerBlockEntity.LASER_CHARGE_TICKS;
+        return Math.max(0.0F, Math.min(1.0F, c));
+    }
+
     public boolean hasFunnel() {
         return funnel;
     }
@@ -247,7 +255,9 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         overdrive = tag.getInt("overdrive");
         output = tag.getInt("output");
         energyPct = tag.getInt("energyPct");
-        laserTarget = tag.contains("laserTarget") ? tag.getInt("laserTarget") : -1;
+        int target = tag.contains("laserTarget") ? tag.getInt("laserTarget") : -1;
+        if (target != laserTarget && level != null) targetSince = level.getGameTime(); // Aufladen beginnt
+        laserTarget = target;
         formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
     }
 

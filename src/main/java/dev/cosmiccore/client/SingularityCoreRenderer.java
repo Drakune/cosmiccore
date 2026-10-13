@@ -124,18 +124,16 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                 form, Math.max(0.4F, energy), heat, active, unstable, growth, od, be);
         ReactorShellRenderer.solid(pose, buffers, shell);
 
-        // Traktorstrahl-Anlage auf der Decke
+        // Kosmos-Laser: Energiepartikel ueber der Decke
         Vec3 laserTarget = null;
-        float targetSize = 1.0F;
-        org.joml.Vector3f ringNormal = null;
-        if (be.hasLaserArray() && form >= 1.0F) {
-            if (be.getLaserTarget() >= 0 && level.getEntity(be.getLaserTarget()) instanceof net.minecraft.world.entity.Entity target) {
-                laserTarget = target.getPosition(partialTick).add(0, target.getBbHeight() / 2, 0)
-                        .subtract(Vec3.atCenterOf(be.getBlockPos()));
-                targetSize = target.getBbWidth();
-            }
-            ringNormal = TractorFx.normal(half, t, laserTarget);
-            TractorFx.solid(pose, buffers, half, t, ringNormal);
+        float targetSize = 1.0F, harvest = 0.0F;
+        boolean lasers = be.hasLaserArray() && form >= 1.0F;
+        if (lasers && be.getLaserTarget() >= 0
+                && level.getEntity(be.getLaserTarget()) instanceof dev.cosmiccore.entity.CosmicAsteroid target) {
+            laserTarget = target.getPosition(partialTick).add(0, target.getBbHeight() / 2, 0)
+                    .subtract(Vec3.atCenterOf(be.getBlockPos()));
+            targetSize = target.getBbWidth();
+            harvest = target.getHarvest();
         }
 
         // Groessen
@@ -195,7 +193,10 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
         // 4) Licht der Kammer und des Geschuetzes
         ReactorShellRenderer.glow(pose.last().pose(), glow, shell);
-        if (ringNormal != null) TractorFx.glow(pose, glow, half, t, ringNormal, laserTarget, targetSize, Math.max(0.5F, energy));
+        if (lasers) {
+            EnergyLaserFx.render(pose.last().pose(), glow, half, t, laserTarget, targetSize,
+                    laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy));
+        }
         pose.popPose();
     }
 
