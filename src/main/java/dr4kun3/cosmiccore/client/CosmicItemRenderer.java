@@ -21,6 +21,9 @@ import org.joml.Matrix4f;
  * <ul>
  *   <li>Sternenstaub: kleine schwebende Sternenfeld-Kristalle, die umeinander kreisen, mit Funkeln.</li>
  *   <li>Overdrive-Partikel: gleissender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold und Violett.</li>
+ *   <li>Neutronenstern-Fragment: winziger Pulsar - rasend schnell drehend, mit Leuchtturm-Strahlen und Magnetfeldboegen.</li>
+ *   <li>Quasar-Essenz: Mini-Quasar - schwarzer Kern, gluehende Akkretionsscheibe und pulsierende Jets.</li>
+ *   <li>Module: schwebende Platine mit wandernden Lichtimpulsen und einem Hologramm-Symbol darueber.</li>
  * </ul>
  * Zeichenraum ist der Einheitswuerfel (0..1), die Display-Transformationen stehen im Item-Modell.
  */
@@ -28,6 +31,9 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float[] GOLD = {1.0F, 0.75F, 0.25F};
     private static final float[] VIOLET = {0.7F, 0.4F, 1.0F};
     private static final float[] CYAN = {0.45F, 0.9F, 1.0F};
+    private static final float[] PINK = {1.0F, 0.35F, 0.55F};
+    private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
+    private static final float[] ORANGE = {1.0F, 0.5F, 0.15F};
 
     public CosmicItemRenderer() {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
@@ -48,6 +54,16 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             renderParticle(pose, buffers, t);
         } else if (stack.is(ModItems.STAR_DUST.get())) {
             renderStarDust(pose, buffers, t);
+        } else if (stack.is(ModItems.NEUTRON_FRAGMENT.get())) {
+            renderPulsar(pose, buffers, t);
+        } else if (stack.is(ModItems.QUASAR_ESSENCE.get())) {
+            renderQuasar(pose, buffers, t);
+        } else if (stack.is(ModItems.EFFICIENCY_MODULE.get())) {
+            renderModule(pose, buffers, t, GOLD, 0);
+        } else if (stack.is(ModItems.STABILITY_MODULE.get())) {
+            renderModule(pose, buffers, t, CYAN, 1);
+        } else if (stack.is(ModItems.ANTI_ASTEROID_MODULE.get())) {
+            renderModule(pose, buffers, t, PINK, 2);
         }
         pose.popPose();
     }
@@ -104,5 +120,162 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             float a = i * 0.785F + t * 0.02F;
             cube(glow, m, Mth.cos(a) * 0.32F, -0.2F + (i % 4) * 0.12F, Mth.sin(a) * 0.32F, 0.012F + 0.02F * tw, 1.0F, 1.0F, 1.0F, tw);
         }
+    }
+
+    // ------------------------------------------------------------------ Neutronenstern (Pulsar)
+
+    private static void renderPulsar(PoseStack pose, MultiBufferSource buffers, float t) {
+        float spin = t * 0.9F; // Bogenmass pro Tick: sehr schnell
+        float flash = (float) Math.pow(Math.max(0.0F, Mth.cos(spin)), 12);
+        pose.pushPose();
+        pose.mulPose(Axis.ZP.rotationDegrees(18.0F));
+        RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), 0.1F, 8, 12, 0.82F, 0.92F, 1.0F);
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
+        Matrix4f core = pose.last().pose();
+        RenderUtil.glowSphere(glow, core, 0.13F, 8, 12, WHITE, 0.45F + 0.4F * flash);
+        RenderUtil.glowSphere(glow, core, 0.2F, 8, 12, CYAN, 0.18F + 0.25F * flash);
+        RenderUtil.glowSphere(glow, core, 0.3F, 8, 12, VIOLET, 0.05F + 0.1F * flash);
+        // Magnetachse um 30 Grad gegen die Drehachse geneigt - die Strahlen streichen wie ein Leuchtturm herum
+        pose.mulPose(Axis.YP.rotation(spin));
+        pose.mulPose(Axis.XP.rotationDegrees(30.0F));
+        Matrix4f m = pose.last().pose();
+        for (int dir = -1; dir <= 1; dir += 2) {
+            RenderUtil.segment(glow, m, 0, 0.09F * dir, 0, 0, 0.62F * dir, 0, 0.06F, CYAN[0], CYAN[1], CYAN[2], 0.7F, 0.0F);
+            RenderUtil.segment(glow, m, 0, 0.09F * dir, 0, 0, 0.5F * dir, 0, 0.015F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F);
+        }
+        // Magnetfeldboegen (Dipol: r = L * sin^2(theta))
+        for (int k = 0; k < 4; k++) {
+            float phi = k * Mth.HALF_PI;
+            float px = 0, py = 0, pz = 0;
+            boolean first = true;
+            for (int i = 0; i <= 16; i++) {
+                float th = 0.35F + (Mth.PI - 0.7F) * i / 16.0F;
+                float r = 0.3F * Mth.sin(th) * Mth.sin(th);
+                float x = r * Mth.sin(th) * Mth.cos(phi), y = r * Mth.cos(th), z = r * Mth.sin(th) * Mth.sin(phi);
+                if (!first) RenderUtil.segment(glow, m, px, py, pz, x, y, z, 0.006F, VIOLET[0], VIOLET[1], VIOLET[2], 0.45F, 0.45F);
+                px = x;
+                py = y;
+                pz = z;
+                first = false;
+            }
+        }
+        pose.popPose();
+        // Bruchstuecke kreisen um den Stern
+        Matrix4f wm = pose.last().pose();
+        for (int i = 0; i < 4; i++) {
+            float[] p = RenderUtil.orbitPoint(0.34F, t * 0.06F + i * 1.57F, 20.0F + i * 15.0F, i * 45.0F);
+            cube(glow, wm, p[0], p[1], p[2], 0.016F, 0.8F, 0.9F, 1.0F, 0.9F);
+        }
+    }
+
+    // ------------------------------------------------------------------ Quasar
+
+    private static void renderQuasar(PoseStack pose, MultiBufferSource buffers, float t) {
+        float beat = 0.5F + 0.5F * Mth.sin(t * 0.25F);
+        pose.pushPose();
+        pose.mulPose(Axis.XP.rotationDegrees(18.0F));
+        pose.mulPose(Axis.ZP.rotationDegrees(-10.0F));
+        RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), 0.075F, 8, 12, 0.0F, 0.0F, 0.0F);
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
+        Matrix4f m = pose.last().pose();
+        // Photonenring und Akkretionsscheibe: innen weissgluehend, aussen violett
+        RenderUtil.glowSphere(glow, m, 0.095F, 8, 12, WHITE, 0.25F);
+        float[][] cols = {WHITE, {1.0F, 0.9F, 0.6F}, GOLD, ORANGE, {0.9F, 0.35F, 0.6F}, VIOLET};
+        for (int i = 0; i < cols.length; i++) {
+            float r = 0.12F + i * 0.045F;
+            ring(pose, glow, r, 0.022F, t * (9.0F - i * 1.2F), 0.0F, 0.0F, t * 2.0F + i * 9.0F, cols[i], 0.95F - i * 0.1F);
+        }
+        // relativistische Jets mit Knoten, die nach aussen jagen
+        for (int dir = -1; dir <= 1; dir += 2) {
+            RenderUtil.segment(glow, m, 0, 0.06F * dir, 0, 0, 0.62F * dir, 0, 0.045F + 0.015F * beat, CYAN[0], CYAN[1], CYAN[2], 0.75F, 0.0F);
+            RenderUtil.segment(glow, m, 0, 0.06F * dir, 0, 0, 0.55F * dir, 0, 0.012F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F);
+            for (int k = 0; k < 3; k++) {
+                float s = Mth.frac(t * 0.05F + k / 3.0F);
+                cube(glow, m, 0, (0.08F + 0.5F * s) * dir, 0, 0.025F * (1.0F - s) + 0.008F, 1.0F, 1.0F, 1.0F, 1.0F - s);
+            }
+        }
+        RenderUtil.glowSphere(glow, m, 0.42F, 8, 12, VIOLET, 0.04F + 0.04F * beat);
+        pose.popPose();
+    }
+
+    // ------------------------------------------------------------------ Module
+
+    /** Schwebende Platine; symbol 0 = Effizienz (Zahnrad-Ring), 1 = Stabilitaet (Sechseck-Schild), 2 = Anti-Asteroid. */
+    private static void renderModule(PoseStack pose, MultiBufferSource buffers, float t, float[] accent, int symbol) {
+        float bob = 0.02F * Mth.sin(t * 0.08F);
+        float pulse = 0.5F + 0.5F * Mth.sin(t * 0.18F);
+        pose.pushPose();
+        pose.translate(0.0F, -0.12F + bob, 0.0F);
+        pose.mulPose(Axis.YP.rotationDegrees(t * 1.5F));
+        Matrix4f m = pose.last().pose();
+        // Platine (deckend): dunkle Platte mit hellerem Rand und Goldkontakten
+        VertexConsumer solid = buffers.getBuffer(RenderType.debugQuads());
+        box(solid, m, -0.3F, -0.03F, -0.3F, 0.3F, 0.03F, 0.3F, 0.12F, 0.09F, 0.2F);
+        box(solid, m, -0.3F, 0.03F, -0.3F, 0.3F, 0.036F, -0.27F, 0.3F, 0.24F, 0.45F);
+        box(solid, m, -0.3F, 0.03F, 0.27F, 0.3F, 0.036F, 0.3F, 0.3F, 0.24F, 0.45F);
+        for (int i = 0; i < 5; i++) {
+            float x = -0.22F + i * 0.11F;
+            box(solid, m, x - 0.025F, -0.02F, 0.3F, x + 0.025F, 0.02F, 0.36F, 0.86F, 0.7F, 0.3F);
+            box(solid, m, x - 0.025F, -0.02F, -0.36F, x + 0.025F, 0.02F, -0.3F, 0.86F, 0.7F, 0.3F);
+        }
+        box(solid, m, -0.09F, 0.03F, -0.09F, 0.09F, 0.07F, 0.09F, 0.05F, 0.04F, 0.08F);
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
+        // Leiterbahnen mit wandernden Lichtimpulsen
+        float y = 0.04F;
+        float[][] traces = {{-0.24F, -0.2F, -0.09F, -0.2F}, {0.24F, 0.2F, 0.09F, 0.2F}, {-0.24F, 0.12F, -0.09F, 0.05F},
+                {0.24F, -0.12F, 0.09F, -0.05F}, {0.0F, -0.24F, 0.0F, -0.09F}, {0.0F, 0.24F, 0.0F, 0.09F}};
+        for (int i = 0; i < traces.length; i++) {
+            float[] tr = traces[i];
+            RenderUtil.segment(glow, m, tr[0], y, tr[1], tr[2], y, tr[3], 0.006F, accent[0], accent[1], accent[2], 0.35F, 0.35F);
+            float s = Mth.frac(t * 0.04F + i * 0.37F);
+            cube(glow, m, Mth.lerp(s, tr[0], tr[2]), y + 0.004F, Mth.lerp(s, tr[1], tr[3]), 0.014F, 1.0F, 1.0F, 1.0F, Mth.sin(s * Mth.PI));
+        }
+        // leuchtender Kern
+        RenderUtil.glowSphere(glow, new Matrix4f(m).translate(0, 0.08F, 0), 0.07F + 0.02F * pulse, 8, 12, accent, 0.4F + 0.3F * pulse);
+        pose.popPose();
+
+        // Hologramm-Symbol schwebt ueber der Platine
+        pose.pushPose();
+        pose.translate(0.0F, 0.14F + bob * 1.5F, 0.0F);
+        pose.mulPose(Axis.YP.rotationDegrees(-t * 2.5F));
+        Matrix4f hm = pose.last().pose();
+        float a = 0.6F + 0.4F * pulse;
+        RenderUtil.segment(glow, new Matrix4f(m), 0, 0.08F, 0, 0, 0.26F + bob, 0, 0.04F, accent[0], accent[1], accent[2], 0.25F, 0.0F);
+        switch (symbol) {
+            case 0 -> { // Zahnrad: Ring mit Zaehnen
+                RenderUtil.flatCircle(glow, hm, 0.13F, 0.012F, 32, accent, a);
+                for (int k = 0; k < 8; k++) {
+                    float ang = k * Mth.TWO_PI / 8;
+                    RenderUtil.segment(glow, hm, Mth.cos(ang) * 0.13F, 0, Mth.sin(ang) * 0.13F, Mth.cos(ang) * 0.19F, 0,
+                            Mth.sin(ang) * 0.19F, 0.018F, accent[0], accent[1], accent[2], a, a);
+                }
+            }
+            case 1 -> { // Schild: Sechseck mit innerem Ring
+                for (int k = 0; k < 6; k++) {
+                    float a0 = k * Mth.TWO_PI / 6, a1 = (k + 1) * Mth.TWO_PI / 6;
+                    RenderUtil.segment(glow, hm, Mth.cos(a0) * 0.18F, 0, Mth.sin(a0) * 0.18F, Mth.cos(a1) * 0.18F, 0,
+                            Mth.sin(a1) * 0.18F, 0.01F, accent[0], accent[1], accent[2], a, a);
+                }
+                RenderUtil.flatCircle(glow, hm, 0.09F + 0.02F * pulse, 0.01F, 24, WHITE, a * 0.7F);
+            }
+            default -> { // Anti-Asteroid: Ring mit Schraegstrich, darin ein kleiner Brocken
+                RenderUtil.flatCircle(glow, hm, 0.17F, 0.014F, 32, accent, a);
+                RenderUtil.segment(glow, hm, -0.12F, 0, -0.12F, 0.12F, 0, 0.12F, 0.014F, accent[0], accent[1], accent[2], a, a);
+                cube(glow, hm, 0.06F, 0.0F, -0.06F, 0.03F, 0.75F, 0.65F, 0.6F, 0.8F);
+            }
+        }
+        pose.popPose();
+    }
+
+    /** Deckender Quader mit einfacher Flaechenschattierung. */
+    private static void box(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, float x1, float y1, float z1,
+                            float r, float g, float b) {
+        float[] sh = {0.55F, 1.0F, 0.8F, 0.8F, 0.7F, 0.7F};
+        RenderUtil.quad2(vc, m, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1, r * sh[0], g * sh[0], b * sh[0], 1.0F);
+        RenderUtil.quad2(vc, m, x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1, r * sh[1], g * sh[1], b * sh[1], 1.0F);
+        RenderUtil.quad2(vc, m, x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0, r * sh[2], g * sh[2], b * sh[2], 1.0F);
+        RenderUtil.quad2(vc, m, x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, r * sh[3], g * sh[3], b * sh[3], 1.0F);
+        RenderUtil.quad2(vc, m, x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0, r * sh[4], g * sh[4], b * sh[4], 1.0F);
+        RenderUtil.quad2(vc, m, x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0, r * sh[5], g * sh[5], b * sh[5], 1.0F);
     }
 }

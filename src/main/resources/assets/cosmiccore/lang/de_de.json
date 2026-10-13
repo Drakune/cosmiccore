@@ -138,7 +138,7 @@
   "guide.cosmiccore.cooling": "kühlt %s Instabilität",
   "guide.cosmiccore.stabilizer_note": "Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.",
   "guide.cosmiccore.modules": "§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.\n\n§dAnti-Asteroiden-Modul:§r hält Asteroiden vom Reaktor fern, per Schalter an/aus. Asteroiden erscheinen nur in der Nähe gebildeter Reaktoren.",
-  "guide.cosmiccore.loot": "§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente und Quasar-Essenz. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.",
+  "guide.cosmiccore.loot": "§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern. Quasar-Essenz ist eine echte Rarität: nur große (1 %) und sehr große Asteroiden (5 %) tragen sie.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.",
   "jei.cosmiccore.category.fuel": "Kern-Brennstoffe",
   "jei.cosmiccore.category.stabilizer": "Kern-Stabilisatoren",
   "jei.cosmiccore.category.loot": "Asteroiden-Beute",

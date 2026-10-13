@@ -35,14 +35,14 @@ public final class AsteroidLoot {
             new Table("large", List.of(
                     new Drop(ModItems.COMPRESSED_STAR_DUST, 1, 2, 1.0F),
                     new Drop(ModItems.NEUTRON_FRAGMENT, 1, 1, 0.35F),
-                    new Drop(ModItems.QUASAR_ESSENCE, 1, 1, 0.08F),
+                    new Drop(ModItems.QUASAR_ESSENCE, 1, 1, 0.01F),
                     new Drop(() -> Items.DIAMOND, 1, 2, 0.3F),
                     new Drop(() -> Items.NETHERITE_SCRAP, 1, 1, 0.1F),
                     new Drop(() -> Items.ECHO_SHARD, 1, 2, 0.2F))),
             new Table("huge", List.of(
                     new Drop(ModItems.COMPRESSED_STAR_DUST, 3, 6, 1.0F),
                     new Drop(ModItems.NEUTRON_FRAGMENT, 1, 3, 0.8F),
-                    new Drop(ModItems.QUASAR_ESSENCE, 1, 2, 0.35F),
+                    new Drop(ModItems.QUASAR_ESSENCE, 1, 1, 0.05F),
                     new Drop(() -> Items.DIAMOND, 2, 4, 0.6F),
                     new Drop(() -> Items.NETHERITE_SCRAP, 1, 2, 0.3F),
                     new Drop(() -> Items.ECHO_SHARD, 2, 4, 0.4F),

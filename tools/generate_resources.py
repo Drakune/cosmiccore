@@ -787,8 +787,7 @@ def models():
         'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
         'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
     wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
-    for it in ('compressed_star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module', 'stability_module',
-               'anti_asteroid_module'):
+    for it in ('compressed_star_dust',):
         wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/{it}'}})
     # animierte 3D-Items (gezeichnet von CosmicItemRenderer)
     floating = {
@@ -800,7 +799,8 @@ def models():
         'thirdperson_lefthand': {'rotation': [0, 0, 0], 'translation': [0, 2.5, 1], 'scale': [0.5, 0.5, 0.5]},
         'firstperson_righthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]},
         'firstperson_lefthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]}}
-    for it in ('overdrive_particle', 'star_dust'):
+    for it in ('overdrive_particle', 'star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module',
+               'stability_module', 'anti_asteroid_module'):
         wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
                                                   'textures': {'particle': f'{MOD}:item/{it}'}, 'display': floating})
     # 3D-Handbuch: Buchdeckel, Seitenblock, Ruecken und Sternen-Juwel
@@ -968,7 +968,7 @@ DE = {
     'guide.cosmiccore.cooling': 'kühlt %s Instabilität',
     'guide.cosmiccore.stabilizer_note': 'Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.',
     'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.\n\n§dAnti-Asteroiden-Modul:§r hält Asteroiden vom Reaktor fern, per Schalter an/aus. Asteroiden erscheinen nur in der Nähe gebildeter Reaktoren.',
-    'guide.cosmiccore.loot': '§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente und Quasar-Essenz. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.',
+    'guide.cosmiccore.loot': '§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern. Quasar-Essenz ist eine echte Rarität: nur große (1 %) und sehr große Asteroiden (5 %) tragen sie.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.',
     'jei.cosmiccore.category.fuel': 'Kern-Brennstoffe',
     'jei.cosmiccore.category.stabilizer': 'Kern-Stabilisatoren',
     'jei.cosmiccore.category.loot': 'Asteroiden-Beute',
@@ -1137,7 +1137,7 @@ EN = {
     'guide.cosmiccore.cooling': 'cools %s instability',
     'guide.cosmiccore.stabilizer_note': 'From 20 % the field holds instability and uses stabilizers for it.',
     'guide.cosmiccore.modules': '§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot in the controller.\n\n§dAnti-Asteroid Module:§r keeps asteroids away from the reactor, toggled by a switch. Asteroids only appear near formed reactors.',
-    'guide.cosmiccore.loot': '§5§lAsteroid Loot§r\n\nThe laser pulls asteroids down to the top of the star funnel, where they burst. Their fragments spiral down into the funnel: star dust, ores, diamonds - large ones even neutron star fragments and quasar essence. The rare huge asteroids (11 blocks!) carry plenty of it and, with luck, a nether star.\n\nThe loot goes into the controller loot slots and can be piped out of the item port.',
+    'guide.cosmiccore.loot': '§5§lAsteroid Loot§r\n\nThe laser pulls asteroids down to the top of the star funnel, where they burst. Their fragments spiral down into the funnel: star dust, ores, diamonds - large ones even neutron star fragments. The rare huge asteroids (11 blocks!) carry plenty of them and, with luck, a nether star. Quasar essence is a true rarity: only large (1 %) and huge asteroids (5 %) carry it.\n\nThe loot goes into the controller loot slots and can be piped out of the item port.',
     'jei.cosmiccore.category.fuel': 'Core Fuels',
     'jei.cosmiccore.category.stabilizer': 'Core Stabilizers',
     'jei.cosmiccore.category.loot': 'Asteroid Loot',
