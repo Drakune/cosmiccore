@@ -110,9 +110,18 @@ public final class AwakeningEffect {
             float grow = Mth.clamp(t / 25.0F, 0.0F, 1.0F);
             float top = oy + 30.0F + 420.0F * grow;
             float w = 0.6F + 4.0F * grow * (0.9F + 0.1F * Mth.sin(t * 0.5F));
-            segment(vc, m, ox, oy, oz, ox, top, oz, w * 0.35F, 1, 1, 1, env, env * 0.6F);
-            segment(vc, m, ox, oy, oz, ox, top, oz, w, CYAN[0], CYAN[1], CYAN[2], 0.5F * env, 0.2F * env);
-            segment(vc, m, ox, oy, oz, ox, top, oz, w * 2.4F, VIOLET[0], VIOLET[1], VIOLET[2], 0.2F * env, 0.05F * env);
+            // runder Strahl aus ineinanderliegenden Lichtroehren (von allen Seiten gleich)
+            float pulse = 0.85F + 0.15F * Mth.sin(t * 0.6F);
+            RenderUtil.tube(vc, m, ox, oy, oz, top, w * 0.3F, 16, WHITE, env * pulse, env * 0.7F);
+            RenderUtil.tube(vc, m, ox, oy, oz, top, w * 0.7F, 20, CYAN, 0.45F * env, 0.25F * env);
+            RenderUtil.tube(vc, m, ox, oy, oz, top, w * 1.4F, 24, VIOLET, 0.18F * env, 0.06F * env);
+            RenderUtil.tube(vc, m, ox, oy, oz, top, w * 2.6F, 24, VIOLET, 0.07F * env, 0.0F);
+            // Energieknoten, die die Saeule hinaufschiessen
+            for (int k = 0; k < 6; k++) {
+                float f = Mth.frac(t * 0.02F + k / 6.0F);
+                RenderUtil.glowSphere(vc, new Matrix4f(m).translate(ox, Mth.lerp(f, oy, top), oz), w * 0.8F, 8, 12, WHITE,
+                        0.35F * env * (1.0F - f));
+            }
             // Spiralfaeden um die Saeule
             for (int s = 0; s < 3; s++) {
                 float px = ox, py = oy, pz = oz;

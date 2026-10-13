@@ -211,6 +211,19 @@ public final class RenderUtil {
         starQuad(vc, m, b, c, g, f);
     }
 
+    /**
+     * Senkrechte Lichtroehre (runder Strahl) von y0 nach y1 - im Gegensatz zu {@link #segment} von allen Seiten
+     * gleich dick. Alpha verlaeuft von unten (a0) nach oben (a1).
+     */
+    public static void tube(VertexConsumer vc, Matrix4f m, float x, float y0, float z, float y1, float r, int sides,
+                            float[] col, float a0, float a1) {
+        for (int i = 0; i < sides; i++) {
+            float t0 = Mth.TWO_PI * i / sides, t1 = Mth.TWO_PI * (i + 1) / sides;
+            float x0 = x + Mth.cos(t0) * r, z0 = z + Mth.sin(t0) * r, x1 = x + Mth.cos(t1) * r, z1 = z + Mth.sin(t1) * r;
+            quadFade(vc, m, x0, y0, z0, x1, y0, z1, x1, y1, z1, x0, y1, z0, col[0], col[1], col[2], a0, a1);
+        }
+    }
+
     /** Flacher Leuchtkreis in der XZ-Ebene (y = 0), aus kurzen Segmenten. */
     public static void flatCircle(VertexConsumer vc, Matrix4f m, float radius, float w, int seg, float[] col, float a) {
         for (int i = 0; i < seg; i++) {

@@ -42,6 +42,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     /** Spielzeit, zu der ein abgeschossener Asteroid sein Energiepartikel abgegeben hat (Uebergabe-Animation). */
     private long deliverStart = Long.MIN_VALUE;
     public static final int DELIVER_TICKS = 80;
+    /** nur clientseitig: Zuenden des Kerns (Sterne rasen in die Mitte). */
+    private CorePhase lastClientPhase;
+    private long igniteStart = Long.MIN_VALUE;
+    public static final int IGNITE_TICKS = 110;
     /** nur clientseitig: letzte Position des Laserziels relativ zum Kern (Quelle der Bruchstuecke). */
     @org.jetbrains.annotations.Nullable
     public net.minecraft.world.phys.Vec3 lastLaserTarget;
@@ -84,6 +88,13 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
+    }
+
+    /** Fortschritt des Zuend-Effekts 0..1, oder -1 wenn keiner laeuft. */
+    public float getIgnitePhase(float partialTick) {
+        if (level == null || igniteStart == Long.MIN_VALUE) return -1.0F;
+        float ph = (level.getGameTime() - igniteStart + partialTick) / IGNITE_TICKS;
+        return ph < 0.0F || ph > 1.0F ? -1.0F : ph;
     }
 
     /** Vom Controller aufgerufen, wenn der Laser einen Asteroiden zerstoert hat. */
@@ -199,6 +210,13 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, SingularityCoreBlockEntity be) {
         CorePhase phase = state.getValue(ModProperties.PHASE);
+        // Zuenden erkannt (bereit -> aktiv): Sterne rasen in die Mitte (nicht beim blossen Laden des Chunks)
+        // (hoechstens einmal pro Minute - z. B. nicht bei jedem Wiederanlaufen nach vollem Puffer)
+        if (be.lastClientPhase == CorePhase.FORMED && phase == CorePhase.ACTIVE
+                && (be.igniteStart == Long.MIN_VALUE || level.getGameTime() - be.igniteStart > 1200)) {
+            be.igniteStart = level.getGameTime();
+        }
+        be.lastClientPhase = phase;
         if (phase == CorePhase.DORMANT) return;
         float form = be.getFormProgress(0.0F);
         if (form < 0.55F) {

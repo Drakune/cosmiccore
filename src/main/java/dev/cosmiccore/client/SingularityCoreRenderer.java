@@ -194,6 +194,9 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         FieldFx.render(pose.last().pose(), glow, reach + 0.5F, reach, t, e, heat, be.getShield(), unstable, od);
         pose.popPose(); // Zittern
 
+        // Zuenden: Sterne rasen aus dem Himmel in die Mitte (bei jedem Kern)
+        IgnitionFx.render(pose.last().pose(), glow, be.getStructureSize(), be.getIgnitePhase(partialTick), 1.0F);
+
         // Energieleitung vom Sternentrichter durch die Decke zum Fokuskristall
         if (be.hasFunnel() && form >= 1.0F) funnelLink(pose.last().pose(), glow, reach + 0.5F, half, t, Math.max(0.4F, energy), heat);
 
