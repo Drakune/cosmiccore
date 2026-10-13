@@ -12,6 +12,7 @@ import dr4kun3.cosmiccore.data.ModDataMaps;
 import dr4kun3.cosmiccore.entity.CosmicAsteroid;
 import dr4kun3.cosmiccore.menu.ControllerMenu;
 import dr4kun3.cosmiccore.multiblock.CorePattern;
+import dr4kun3.cosmiccore.multiblock.ReactorRegistry;
 import dr4kun3.cosmiccore.multiblock.ReactorSize;
 import java.text.NumberFormat;
 import net.minecraft.ChatFormatting;
@@ -67,7 +68,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Beute-Slots fuer Asteroiden-Beute (nur entnehmbar). */
     public static final int SLOT_LOOT_FIRST = 4;
     public static final int LOOT_SLOTS = 6;
-    public static final int INVENTORY_SIZE = SLOT_LOOT_FIRST + LOOT_SLOTS;
+    public static final int LOOT_END = SLOT_LOOT_FIRST + LOOT_SLOTS;
+    /** Anti-Asteroiden-Modul (hinten angehaengt, damit aeltere Speicherstaende ihre Beute-Slots behalten). */
+    public static final int SLOT_ANTI = LOOT_END;
+    public static final int INVENTORY_SIZE = SLOT_ANTI + 1;
     public static final int MAX_MODULES = 4;
 
     public static final float UNSTABLE_ON = 70f;
@@ -94,6 +98,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean preview;
     /** Bei der Groessenwahl angehakt: Sternentrichter gehoert zur Bauvorschau und zum Kreativ-Aufbau. */
     private boolean withFunnel;
+    /** Schalter fuer das Anti-Asteroiden-Modul (wirkt nur, wenn es eingesetzt ist). */
+    private boolean antiAsteroid = true;
     /** Bei der Groessenwahl angehakt: vier Kosmos-Laser gehoeren zur Bauvorschau und zum Kreativ-Aufbau. */
     private boolean withLasers;
     /** Installierte Overdrive-Partikel: je Stufe Leistung x2, Instabilitaet x3. */
@@ -146,6 +152,38 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     public boolean isFormed() {
         return formed;
+    }
+
+    /** Freie Sicht zum Himmel ueber dem Kern (bzw. dem Trichter). */
+    public boolean hasSkyLink() {
+        return skyLink;
+    }
+
+    public boolean hasAntiAsteroidModule() {
+        return inventory.getStackInSlot(SLOT_ANTI).is(ModItems.ANTI_ASTEROID_MODULE.get());
+    }
+
+    /** Eingesetzt und eingeschaltet: im Umkreis erscheinen keine Asteroiden. */
+    public boolean isAsteroidShieldActive() {
+        return antiAsteroid && hasAntiAsteroidModule();
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide) ReactorRegistry.add(level, worldPosition);
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && !level.isClientSide) ReactorRegistry.remove(level, worldPosition);
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        if (level != null && !level.isClientSide) ReactorRegistry.remove(level, worldPosition);
     }
 
     public long getEnergy() {
@@ -247,6 +285,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return true;
         }
         if (size == null) return false;
+        if (id == ControllerMenu.BTN_ANTI_ASTEROID) {
+            antiAsteroid = !antiAsteroid;
+            setChanged();
+            sl.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.3F, antiAsteroid ? 1.4F : 0.9F);
+            return true;
+        }
         // Leistungsstufe und Overdrive lassen sich erst einstellen, wenn der Generator gezuendet ist
         boolean running = formed && enabled && collapseCooldown <= 0;
         if (!running && (id == ControllerMenu.BTN_SCALE_DOWN || id == ControllerMenu.BTN_SCALE_UP
@@ -584,7 +628,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 .create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.EMPTY);
         for (ItemStack drop : table.getRandomItems(params)) {
             ItemStack rest = drop;
-            for (int i = SLOT_LOOT_FIRST; i < INVENTORY_SIZE && !rest.isEmpty(); i++) {
+            for (int i = SLOT_LOOT_FIRST; i < LOOT_END && !rest.isEmpty(); i++) {
                 rest = inventory.insertItem(i, rest, false);
             }
             if (!rest.isEmpty()) {
@@ -1057,6 +1101,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putBoolean("preview", preview);
         tag.putBoolean("withFunnel", withFunnel);
         tag.putBoolean("withLasers", withLasers);
+        tag.putBoolean("antiAsteroid", antiAsteroid);
         tag.putInt("overdrive", overdrive);
         tag.putBoolean("formed", formed);
         tag.putLong("energy", energy);
@@ -1084,6 +1129,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (size != null) scale = Math.min(scale, size.maxScale());
         enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
         preview = tag.getBoolean("preview");
+        antiAsteroid = !tag.contains("antiAsteroid") || tag.getBoolean("antiAsteroid");
         withFunnel = tag.getBoolean("withFunnel");
         withLasers = tag.getBoolean("withLasers");
         overdrive = Math.max(0, tag.getInt("overdrive"));
@@ -1159,12 +1205,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case SLOT_STAB -> ModDataMaps.stabilizer(stack) != null;
                 case SLOT_EFFICIENCY -> stack.is(ModItems.EFFICIENCY_MODULE.get());
                 case SLOT_STABILITY -> stack.is(ModItems.STABILITY_MODULE.get());
+                case SLOT_ANTI -> stack.is(ModItems.ANTI_ASTEROID_MODULE.get());
                 default -> true; // Beute wird nur intern eingefuegt; GUI und Rohre sperren das Einfuegen
             };
         }
 
         @Override
         public int getSlotLimit(int slot) {
+            if (slot == SLOT_ANTI) return 1;
             return slot == SLOT_EFFICIENCY || slot == SLOT_STABILITY ? MAX_MODULES : super.getSlotLimit(slot);
         }
 
@@ -1208,7 +1256,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (laserArray ? ControllerMenu.F_LASER : 0)
                         | (formed && enabled && collapseCooldown <= 0 ? ControllerMenu.F_RUNNING : 0)
                         | (energy >= getCapacity() ? ControllerMenu.F_FULL : 0)
-                        | (burnTime > 0 || !inventory.getStackInSlot(SLOT_FUEL).isEmpty() ? ControllerMenu.F_HAS_FUEL : 0);
+                        | (burnTime > 0 || !inventory.getStackInSlot(SLOT_FUEL).isEmpty() ? ControllerMenu.F_HAS_FUEL : 0)
+                        | (hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_INSTALLED : 0)
+                        | (antiAsteroid ? ControllerMenu.F_ANTI_ON : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));
@@ -1243,12 +1293,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            return slot < SLOT_LOOT_FIRST ? inventory.insertItem(slot, stack, simulate) : stack;
+            return slot < SLOT_LOOT_FIRST || slot == SLOT_ANTI ? inventory.insertItem(slot, stack, simulate) : stack;
         }
 
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot >= SLOT_LOOT_FIRST ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
+            return slot >= SLOT_LOOT_FIRST && slot < LOOT_END ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
         }
 
         @Override
@@ -1258,7 +1308,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return slot < SLOT_LOOT_FIRST && inventory.isItemValid(slot, stack);
+            return (slot < SLOT_LOOT_FIRST || slot == SLOT_ANTI) && inventory.isItemValid(slot, stack);
         }
     }
 

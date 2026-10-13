@@ -69,6 +69,9 @@ public final class CosmicCoreClient {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.efficiency_module").withStyle(ChatFormatting.GOLD));
         } else if (stack.is(ModItems.STABILITY_MODULE.get())) {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.AQUA));
+        } else if (stack.is(ModItems.ANTI_ASTEROID_MODULE.get())) {
+            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module",
+                    dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get()).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
                 CoreStabilizer stab = ModDataMaps.stabilizer(stack);
         if (stab != null) {

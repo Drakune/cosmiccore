@@ -127,6 +127,31 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         }, title, message));
     }
 
+    // Schalter unter dem Anti-Asteroiden-Slot
+    private static final int ANTI_SW_X = ControllerMenu.MOD_X + 36, ANTI_SW_Y = ControllerMenu.MOD_Y + 19, ANTI_SW_W = 16, ANTI_SW_H = 7;
+
+    private void drawAntiSwitch(GuiGraphics g, int sx, int sy) {
+        boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
+        int track = !installed ? 0xFF3A3448 : on ? 0xFF2FB872 : 0xFF6A2E3A;
+        g.fill(sx - 1, sy - 1, sx + ANTI_SW_W + 1, sy + ANTI_SW_H + 1, 0xFF120A20);
+        g.fill(sx, sy, sx + ANTI_SW_W, sy + ANTI_SW_H, track);
+        int kx = on ? sx + ANTI_SW_W - 7 : sx;
+        g.fill(kx, sy, kx + 7, sy + ANTI_SW_H, installed ? 0xFFF0ECF8 : 0xFF8A8498);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (menu.sizeChosen() && button == 0 && in((int) mouseX - leftPos, (int) mouseY - topPos, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
+            press(ControllerMenu.BTN_ANTI_ASTEROID);
+            if (minecraft != null) {
+                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
     private void press(int id) {
         if (minecraft != null && minecraft.gameMode != null) {
             minecraft.gameMode.handleInventoryButtonClick(menu.containerId, id);
@@ -191,10 +216,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         // Modul-Slots (Gold) und Beute-Slots (Violett) hervorgehoben, Rest = Spielerinventar
         for (Slot s : menu.slots) {
             if (s.index < 2 || !s.isActive()) continue;
-            int border = s.index < ControllerBlockEntity.SLOT_LOOT_FIRST ? 0xFFB08A30
+            int border = s.index < ControllerBlockEntity.SLOT_LOOT_FIRST || s.index == ControllerBlockEntity.SLOT_ANTI ? 0xFFB08A30
                     : s.index < ControllerBlockEntity.INVENTORY_SIZE ? 0xFF7A4AC0 : 0xFF2E2050;
             drawSlotBox(g, x + s.x, y + s.y, border);
         }
+        if (menu.sizeChosen()) drawAntiSwitch(g, x + ANTI_SW_X, y + ANTI_SW_Y);
 
         // Balken
         float energy = menu.capacity() <= 0 ? 0 : menu.energy() / (float) menu.capacity();
@@ -435,6 +461,16 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         } else if (in(mx, my, ControllerMenu.MOD_X + 18, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_STABILITY).hasItem()) {
             tip.add(Component.translatable("item.cosmiccore.stability_module"));
             tip.add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.GRAY));
+        } else if (in(mx, my, ControllerMenu.MOD_X + 36, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_ANTI).hasItem()) {
+            tip.add(Component.translatable("item.cosmiccore.anti_asteroid_module"));
+            tip.add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module", dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get())
+                    .withStyle(ChatFormatting.GRAY));
+        } else if (in(mx, my, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
+            boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
+            tip.add(Component.translatable("gui.cosmiccore.anti.title"));
+            tip.add(Component.translatable(on ? "gui.cosmiccore.anti.on" : "gui.cosmiccore.anti.off")
+                    .withStyle(on ? ChatFormatting.GREEN : ChatFormatting.RED));
+            if (!installed) tip.add(Component.translatable("gui.cosmiccore.anti.missing").withStyle(ChatFormatting.GRAY));
         } else if (in(mx, my, BAR_ENERGY_X, BAR_Y, BAR_W, BAR_H)) {
             tip.add(Component.translatable("gui.cosmiccore.tip.energy"));
             tip.add(Component.literal(fmt(menu.energy()) + " / " + fmt(menu.capacity()) + " RF").withStyle(ChatFormatting.GRAY));

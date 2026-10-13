@@ -116,6 +116,7 @@ public final class ViewerEntries {
                 new Info(new ItemStack(ModItems.COSMIC_LASER.get()), "laser"),
                 new Info(new ItemStack(ModItems.EFFICIENCY_MODULE.get()), "efficiency_module"),
                 new Info(new ItemStack(ModItems.STABILITY_MODULE.get()), "stability_module"),
+                new Info(new ItemStack(ModItems.ANTI_ASTEROID_MODULE.get()), "anti_asteroid_module"),
                 new Info(new ItemStack(ModItems.OVERDRIVE_PARTICLE.get()), "overdrive_particle"),
                 new Info(new ItemStack(ModItems.ENERGY_PORT.get()), "energy_port"),
                 new Info(new ItemStack(ModItems.ITEM_PORT.get()), "item_port"));

@@ -41,6 +41,9 @@ public final class ModItems {
             new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<Item> STABILITY_MODULE = ITEMS.registerItem("stability_module", Item::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
+    /** Haelt Asteroiden im Umkreis des Reaktors fern (im Controller per Schalter an/aus). */
+    public static final DeferredItem<Item> ANTI_ASTEROID_MODULE = ITEMS.registerItem("anti_asteroid_module", Item::new,
+            new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
 
     public static final DeferredItem<OverdriveParticleItem> OVERDRIVE_PARTICLE = ITEMS.registerItem("overdrive_particle",
             OverdriveParticleItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.EPIC));

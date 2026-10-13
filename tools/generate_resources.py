@@ -582,6 +582,9 @@ def draw_module(f, nf, accent, symbol):
 EFF_SYMBOL = [(6, 5), (7, 5), (8, 5), (9, 5), (6, 6), (6, 7), (7, 7), (8, 7), (6, 8), (6, 9), (6, 10), (7, 10), (8, 10), (9, 10)]
 STAB_SYMBOL = [(7, 4), (8, 4), (6, 5), (9, 5), (5, 6), (10, 6), (5, 7), (10, 7), (5, 8), (10, 8), (6, 9), (9, 9), (7, 10), (8, 10),
                (7, 7), (8, 7)]
+# durchgestrichener Asteroid (Ring mit Schraegstrich)
+ANTI_SYMBOL = [(7, 4), (8, 4), (5, 5), (6, 5), (9, 5), (10, 5), (4, 6), (11, 6), (4, 7), (11, 7), (4, 8), (11, 8), (4, 9), (11, 9),
+               (5, 10), (6, 10), (9, 10), (10, 10), (7, 11), (8, 11), (10, 6), (9, 7), (8, 8), (7, 8), (6, 9)]
 
 
 def draw_guide_book():
@@ -642,6 +645,7 @@ def textures():
     save_strip('guide_book', [draw_guide_book()], 1, folder='item')
     save_strip('efficiency_module', [draw_module(f, 8, (255, 190, 60), EFF_SYMBOL) for f in range(8)], 3, folder='item')
     save_strip('stability_module', [draw_module(f, 8, (90, 220, 255), STAB_SYMBOL) for f in range(8)], 3, folder='item')
+    save_strip('anti_asteroid_module', [draw_module(f, 8, (255, 90, 140), ANTI_SYMBOL) for f in range(8)], 3, folder='item')
     save_strip('compressed_star_dust', [draw_compressed_star_dust(f, 8) for f in range(8)], 3, folder='item')
     save_strip('neutron_fragment', [draw_neutron_fragment(f, 8) for f in range(8)], 3, folder='item')
     save_strip('quasar_essence', [draw_quasar_essence(f, 8) for f in range(8)], 2, folder='item')
@@ -783,7 +787,8 @@ def models():
         'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
         'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
     wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
-    for it in ('compressed_star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module', 'stability_module'):
+    for it in ('compressed_star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module', 'stability_module',
+               'anti_asteroid_module'):
         wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/{it}'}})
     # animierte 3D-Items (gezeichnet von CosmicItemRenderer)
     floating = {
@@ -962,7 +967,7 @@ DE = {
     'guide.cosmiccore.stabilizers': 'Stabilisatoren',
     'guide.cosmiccore.cooling': 'kühlt %s Instabilität',
     'guide.cosmiccore.stabilizer_note': 'Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.',
-    'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.',
+    'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.\n\n§dAnti-Asteroiden-Modul:§r hält Asteroiden vom Reaktor fern, per Schalter an/aus. Asteroiden erscheinen nur in der Nähe gebildeter Reaktoren.',
     'guide.cosmiccore.loot': '§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente und Quasar-Essenz. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.',
     'jei.cosmiccore.category.fuel': 'Kern-Brennstoffe',
     'jei.cosmiccore.category.stabilizer': 'Kern-Stabilisatoren',
@@ -984,6 +989,13 @@ DE = {
     'jei.cosmiccore.info.overdrive_particle': 'Wird für jede Overdrive-Stufe verbraucht: doppelte Leistung, dreifache Instabilität.',
     'jei.cosmiccore.info.energy_port': 'Gibt die erzeugte Energie (RF/FE) an angrenzende Kabel ab.',
     'jei.cosmiccore.info.item_port': 'Nimmt Brennstoff, Stabilisatoren und Module per Rohr auf und gibt Asteroiden-Beute aus.',
+    'item.cosmiccore.anti_asteroid_module': 'Anti-Asteroiden-Modul',
+    'tooltip.cosmiccore.anti_asteroid_module': 'Verhindert Asteroiden im Umkreis von %s Blöcken (Schalter im Controller)',
+    'gui.cosmiccore.anti.title': 'Asteroiden-Abwehr',
+    'gui.cosmiccore.anti.on': 'Eingeschaltet – keine Asteroiden in der Nähe',
+    'gui.cosmiccore.anti.off': 'Ausgeschaltet – Asteroiden erscheinen',
+    'gui.cosmiccore.anti.missing': 'Wirkt erst mit eingesetztem Anti-Asteroiden-Modul',
+    'jei.cosmiccore.info.anti_asteroid_module': 'Im Controller einsetzen und mit dem Schalter darunter aktivieren: Im Umkreis des Reaktors erscheinen keine Asteroiden mehr. Ausgeschaltet bleibt das Modul eingesetzt.',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1124,7 +1136,7 @@ EN = {
     'guide.cosmiccore.stabilizers': 'Stabilizers',
     'guide.cosmiccore.cooling': 'cools %s instability',
     'guide.cosmiccore.stabilizer_note': 'From 20 % the field holds instability and uses stabilizers for it.',
-    'guide.cosmiccore.modules': '§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot in the controller.',
+    'guide.cosmiccore.modules': '§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot in the controller.\n\n§dAnti-Asteroid Module:§r keeps asteroids away from the reactor, toggled by a switch. Asteroids only appear near formed reactors.',
     'guide.cosmiccore.loot': '§5§lAsteroid Loot§r\n\nThe laser pulls asteroids down to the top of the star funnel, where they burst. Their fragments spiral down into the funnel: star dust, ores, diamonds - large ones even neutron star fragments and quasar essence. The rare huge asteroids (11 blocks!) carry plenty of it and, with luck, a nether star.\n\nThe loot goes into the controller loot slots and can be piped out of the item port.',
     'jei.cosmiccore.category.fuel': 'Core Fuels',
     'jei.cosmiccore.category.stabilizer': 'Core Stabilizers',
@@ -1146,6 +1158,13 @@ EN = {
     'jei.cosmiccore.info.overdrive_particle': 'Consumed for each overdrive stage: double power, triple instability.',
     'jei.cosmiccore.info.energy_port': 'Outputs the generated energy (RF/FE) to adjacent cables.',
     'jei.cosmiccore.info.item_port': 'Accepts fuel, stabilizers and modules via pipes and outputs asteroid loot.',
+    'item.cosmiccore.anti_asteroid_module': 'Anti-Asteroid Module',
+    'tooltip.cosmiccore.anti_asteroid_module': 'Prevents asteroids within %s blocks (switch in the controller)',
+    'gui.cosmiccore.anti.title': 'Asteroid Defense',
+    'gui.cosmiccore.anti.on': 'On – no asteroids nearby',
+    'gui.cosmiccore.anti.off': 'Off – asteroids appear',
+    'gui.cosmiccore.anti.missing': 'Only works with an Anti-Asteroid Module inserted',
+    'jei.cosmiccore.info.anti_asteroid_module': 'Insert it into the controller and turn it on with the switch below: no more asteroids appear around the reactor. Switched off, the module stays installed.',
 }
 
 

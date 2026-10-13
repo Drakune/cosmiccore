@@ -53,6 +53,9 @@ public class ModRecipeProvider extends RecipeProvider {
         shaped(ModItems.STABILITY_MODULE, 1, ModItems.STAR_DUST, "ODO", "SVS", "ODO")
                 .define('O', Items.CRYING_OBSIDIAN).define('D', Items.DIAMOND).define('S', ModItems.STAR_DUST)
                 .define('V', ModItems.VOID_CASING).save(out);
+        shaped(ModItems.ANTI_ASTEROID_MODULE, 1, ModItems.STAR_DUST, "PRP", "SVS", "PEP")
+                .define('P', Items.PHANTOM_MEMBRANE).define('R', Items.REDSTONE).define('S', ModItems.STAR_DUST)
+                .define('V', ModItems.VOID_CASING).define('E', Items.ENDER_EYE).save(out);
         shaped(ModItems.COMPRESSED_STAR_DUST, 1, ModItems.STAR_DUST, "SSS", "SSS", "SSS")
                 .define('S', ModItems.STAR_DUST).save(out);
 

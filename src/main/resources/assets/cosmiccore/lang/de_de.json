@@ -137,7 +137,7 @@
   "guide.cosmiccore.stabilizers": "Stabilisatoren",
   "guide.cosmiccore.cooling": "kühlt %s Instabilität",
   "guide.cosmiccore.stabilizer_note": "Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.",
-  "guide.cosmiccore.modules": "§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.",
+  "guide.cosmiccore.modules": "§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.\n\n§dAnti-Asteroiden-Modul:§r hält Asteroiden vom Reaktor fern, per Schalter an/aus. Asteroiden erscheinen nur in der Nähe gebildeter Reaktoren.",
   "guide.cosmiccore.loot": "§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente und Quasar-Essenz. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.",
   "jei.cosmiccore.category.fuel": "Kern-Brennstoffe",
   "jei.cosmiccore.category.stabilizer": "Kern-Stabilisatoren",
@@ -158,5 +158,12 @@
   "jei.cosmiccore.info.stability_module": "Im Controller eingesetzt: je Modul -12 % Instabilität, das Feld hält 3 % tiefer (max. 4).",
   "jei.cosmiccore.info.overdrive_particle": "Wird für jede Overdrive-Stufe verbraucht: doppelte Leistung, dreifache Instabilität.",
   "jei.cosmiccore.info.energy_port": "Gibt die erzeugte Energie (RF/FE) an angrenzende Kabel ab.",
-  "jei.cosmiccore.info.item_port": "Nimmt Brennstoff, Stabilisatoren und Module per Rohr auf und gibt Asteroiden-Beute aus."
+  "jei.cosmiccore.info.item_port": "Nimmt Brennstoff, Stabilisatoren und Module per Rohr auf und gibt Asteroiden-Beute aus.",
+  "item.cosmiccore.anti_asteroid_module": "Anti-Asteroiden-Modul",
+  "tooltip.cosmiccore.anti_asteroid_module": "Verhindert Asteroiden im Umkreis von %s Blöcken (Schalter im Controller)",
+  "gui.cosmiccore.anti.title": "Asteroiden-Abwehr",
+  "gui.cosmiccore.anti.on": "Eingeschaltet – keine Asteroiden in der Nähe",
+  "gui.cosmiccore.anti.off": "Ausgeschaltet – Asteroiden erscheinen",
+  "gui.cosmiccore.anti.missing": "Wirkt erst mit eingesetztem Anti-Asteroiden-Modul",
+  "jei.cosmiccore.info.anti_asteroid_module": "Im Controller einsetzen und mit dem Schalter darunter aktivieren: Im Umkreis des Reaktors erscheinen keine Asteroiden mehr. Ausgeschaltet bleibt das Modul eingesetzt."
 }

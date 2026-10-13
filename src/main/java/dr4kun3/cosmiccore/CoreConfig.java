@@ -51,11 +51,17 @@ public final class CoreConfig {
             .comment("Ticks, die der Kern nach einem Kollaps ausfaellt")
             .defineInRange("collapseCooldownTicks", 600, 0, 72_000);
     public static final ModConfigSpec.BooleanValue ASTEROIDS = B
-            .comment("Kosmische Asteroiden ziehen nachts (und im End) ueber Spieler hinweg und koennen mit dem Kosmos-Laser abgebaut werden")
+            .comment("Kosmische Asteroiden ziehen nachts (und im End) ueber gebildete Reaktoren hinweg und koennen mit dem Kosmos-Laser abgebaut werden")
             .define("asteroids", true);
     public static final ModConfigSpec.DoubleValue ASTEROID_CHANCE = B
-            .comment("Chance pro Spieler alle 5 Sekunden, dass ein Asteroid erscheint (max. 3 gleichzeitig in der Naehe)")
+            .comment("Chance pro Reaktor (mit Spieler in der Naehe) alle 5 Sekunden, dass ein Asteroid erscheint (max. 3 gleichzeitig)")
             .defineInRange("asteroidChance", 0.12, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue ANTI_ASTEROID_RADIUS = B
+            .comment("Radius in Bloecken, in dem ein aktives Anti-Asteroiden-Modul das Erscheinen von Asteroiden verhindert")
+            .defineInRange("antiAsteroidRadius", 160, 16, 1024);
+    public static final ModConfigSpec.IntValue REACTOR_ASTEROID_RADIUS = B
+            .comment("Asteroiden erscheinen nur, wenn ein Spieler hoechstens so weit von einem gebildeten Reaktor entfernt ist")
+            .defineInRange("reactorAsteroidRadius", 128, 16, 1024);
     public static final ModConfigSpec.IntValue VALIDATION_INTERVAL = B
             .comment("Alle wie viele Ticks die Struktur neu geprueft wird")
             .defineInRange("validationIntervalTicks", 20, 1, 200);

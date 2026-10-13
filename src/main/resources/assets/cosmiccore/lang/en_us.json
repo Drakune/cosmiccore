@@ -137,7 +137,7 @@
   "guide.cosmiccore.stabilizers": "Stabilizers",
   "guide.cosmiccore.cooling": "cools %s instability",
   "guide.cosmiccore.stabilizer_note": "From 20 % the field holds instability and uses stabilizers for it.",
-  "guide.cosmiccore.modules": "§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot in the controller.",
+  "guide.cosmiccore.modules": "§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot in the controller.\n\n§dAnti-Asteroid Module:§r keeps asteroids away from the reactor, toggled by a switch. Asteroids only appear near formed reactors.",
   "guide.cosmiccore.loot": "§5§lAsteroid Loot§r\n\nThe laser pulls asteroids down to the top of the star funnel, where they burst. Their fragments spiral down into the funnel: star dust, ores, diamonds - large ones even neutron star fragments and quasar essence. The rare huge asteroids (11 blocks!) carry plenty of it and, with luck, a nether star.\n\nThe loot goes into the controller loot slots and can be piped out of the item port.",
   "jei.cosmiccore.category.fuel": "Core Fuels",
   "jei.cosmiccore.category.stabilizer": "Core Stabilizers",
@@ -158,5 +158,12 @@
   "jei.cosmiccore.info.stability_module": "Inserted in the controller: -12 % instability per module, the field holds 3 % lower (max 4).",
   "jei.cosmiccore.info.overdrive_particle": "Consumed for each overdrive stage: double power, triple instability.",
   "jei.cosmiccore.info.energy_port": "Outputs the generated energy (RF/FE) to adjacent cables.",
-  "jei.cosmiccore.info.item_port": "Accepts fuel, stabilizers and modules via pipes and outputs asteroid loot."
+  "jei.cosmiccore.info.item_port": "Accepts fuel, stabilizers and modules via pipes and outputs asteroid loot.",
+  "item.cosmiccore.anti_asteroid_module": "Anti-Asteroid Module",
+  "tooltip.cosmiccore.anti_asteroid_module": "Prevents asteroids within %s blocks (switch in the controller)",
+  "gui.cosmiccore.anti.title": "Asteroid Defense",
+  "gui.cosmiccore.anti.on": "On – no asteroids nearby",
+  "gui.cosmiccore.anti.off": "Off – asteroids appear",
+  "gui.cosmiccore.anti.missing": "Only works with an Anti-Asteroid Module inserted",
+  "jei.cosmiccore.info.anti_asteroid_module": "Insert it into the controller and turn it on with the switch below: no more asteroids appear around the reactor. Switched off, the module stays installed."
 }

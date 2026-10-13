@@ -4,7 +4,11 @@ import dr4kun3.cosmiccore.CoreConfig;
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
+import dr4kun3.cosmiccore.multiblock.ReactorRegistry;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -14,7 +18,10 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-/** Laesst nachts (Overworld, freier Himmel) und im End jederzeit Asteroiden ueber Spieler hinwegziehen. */
+/**
+ * Laesst nachts (Overworld) und im End jederzeit Asteroiden ueber gebildete Reaktoren hinwegziehen - aber nur, wenn
+ * ein Spieler in der Naehe ist und kein aktives Anti-Asteroiden-Modul im Umkreis steht.
+ */
 @EventBusSubscriber(modid = CosmicCore.MODID)
 public final class AsteroidSpawner {
     private static final int MAX_NEARBY = 3;
@@ -27,25 +34,48 @@ public final class AsteroidSpawner {
         boolean night = level.dimension() == Level.OVERWORLD && !level.isDay();
         if (!end && !night) return;
 
+        List<ControllerBlockEntity> reactors = new ArrayList<>();
+        List<BlockPos> shields = new ArrayList<>();
+        for (BlockPos pos : ReactorRegistry.controllers(level)) {
+            if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof ControllerBlockEntity c)) continue;
+            if (c.isAsteroidShieldActive()) shields.add(pos);
+            if (c.isFormed()) reactors.add(c);
+        }
+        if (reactors.isEmpty()) return;
+
         RandomSource r = level.random;
-        for (ServerPlayer player : level.players()) {
-            if (player.isSpectator()) continue;
-            if (!end && !level.canSeeSky(player.blockPosition().above())) continue;
+        double playerRange = CoreConfig.REACTOR_ASTEROID_RADIUS.get();
+        double shieldRange = CoreConfig.ANTI_ASTEROID_RADIUS.get();
+        for (ControllerBlockEntity c : reactors) {
+            BlockPos pos = c.getBlockPos();
+            Vec3 center = Vec3.atCenterOf(pos);
+            if (shielded(pos, shields, shieldRange)) continue;
+            Player player = level.getNearestPlayer(center.x, center.y, center.z, playerRange, p -> !p.isSpectator());
+            if (player == null) continue;
+            if (!end && !c.hasSkyLink()) continue;
             if (r.nextDouble() > CoreConfig.ASTEROID_CHANCE.get()) continue;
-            AABB area = player.getBoundingBox().inflate(160, 128, 160);
+            AABB area = new AABB(center, center).inflate(160, 128, 160);
             if (level.getEntitiesOfClass(CosmicAsteroid.class, area).size() >= MAX_NEARBY) continue;
-            spawnNear(level, player, r);
+            spawnOver(level, center, shields, shieldRange, r);
         }
     }
 
-    private static void spawnNear(ServerLevel level, ServerPlayer player, RandomSource r) {
+    private static boolean shielded(BlockPos pos, List<BlockPos> shields, double range) {
+        for (BlockPos s : shields) {
+            if (s.distSqr(pos) <= range * range) return true;
+        }
+        return false;
+    }
+
+    /** Flugbahn quer ueber den Reaktor hinweg (leicht versetzt), Start ausserhalb geschuetzter Bereiche. */
+    private static void spawnOver(ServerLevel level, Vec3 reactor, List<BlockPos> shields, double shieldRange, RandomSource r) {
         double ang = r.nextDouble() * Math.PI * 2;
         double dist = 70 + r.nextDouble() * 40;
-        double y = Mth.clamp(player.getY() + 35 + r.nextDouble() * 35, level.getMinBuildHeight() + 20, level.getMaxBuildHeight() - 10);
-        Vec3 start = new Vec3(player.getX() + Math.cos(ang) * dist, y, player.getZ() + Math.sin(ang) * dist);
-        // Flugbahn quer ueber den Spieler hinweg (leicht versetzt)
-        Vec3 target = new Vec3(player.getX() + (r.nextDouble() - 0.5) * 50, y + (r.nextDouble() - 0.5) * 10,
-                player.getZ() + (r.nextDouble() - 0.5) * 50);
+        double y = Mth.clamp(reactor.y + 40 + r.nextDouble() * 35, level.getMinBuildHeight() + 20, level.getMaxBuildHeight() - 10);
+        Vec3 start = new Vec3(reactor.x + Math.cos(ang) * dist, y, reactor.z + Math.sin(ang) * dist);
+        if (shielded(BlockPos.containing(start), shields, shieldRange)) return;
+        Vec3 target = new Vec3(reactor.x + (r.nextDouble() - 0.5) * 40, y + (r.nextDouble() - 0.5) * 10,
+                reactor.z + (r.nextDouble() - 0.5) * 40);
         CosmicAsteroid.Kind kind = pick(r);
         Vec3 vel = target.subtract(start).normalize().scale(kind.speed);
 
