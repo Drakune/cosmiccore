@@ -5,6 +5,7 @@ import dev.cosmiccore.block.entity.ModBlockEntities;
 import dev.cosmiccore.data.CoreFuel;
 import dev.cosmiccore.data.CoreStabilizer;
 import dev.cosmiccore.data.ModDataMaps;
+import dev.cosmiccore.menu.ModMenus;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -12,6 +13,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 /** Wird nur auf dem Client geladen (dedizierte Server fassen diese Klasse nie an). */
@@ -20,6 +22,13 @@ public final class CosmicCoreClient {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntities.CORE.get(), SingularityCoreRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.RESONATOR.get(), ResonatorRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.CONTROLLER.get(), ControllerRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenus.CONTROLLER.get(), ControllerScreen::new);
     }
 
     @SubscribeEvent

@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import dev.cosmiccore.block.ModBlocks;
 import dev.cosmiccore.block.entity.ModBlockEntities;
 import dev.cosmiccore.data.ModDataMaps;
+import dev.cosmiccore.menu.ModMenus;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -24,6 +25,7 @@ public class CosmicCore {
         ModItems.ITEMS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModCreativeTabs.TABS.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
 
         modEventBus.addListener(CosmicCore::registerCapabilities);
         modEventBus.addListener(CosmicCore::registerDataMaps);

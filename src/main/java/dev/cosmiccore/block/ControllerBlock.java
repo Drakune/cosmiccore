@@ -6,9 +6,11 @@ import dev.cosmiccore.data.ModDataMaps;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -58,6 +60,15 @@ public class ControllerBlock extends Block implements EntityBlock {
         return (lvl, pos, st, be) -> ControllerBlockEntity.serverTick(lvl, pos, st, (ControllerBlockEntity) be);
     }
 
+    /** Direkt nach dem Platzieren oeffnet sich die (einmalige) Wahl der Baugroesse. */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (placer instanceof ServerPlayer sp && level.getBlockEntity(pos) instanceof ControllerBlockEntity be && be.getSize() == null) {
+            sp.openMenu(be, pos);
+        }
+    }
+
     /** Rechtsklick mit Brennstoff oder Stabilisator fuettert den Kern. */
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
@@ -65,6 +76,10 @@ public class ControllerBlock extends Block implements EntityBlock {
         boolean feedable = ModDataMaps.fuel(stack) != null || ModDataMaps.stabilizer(stack) != null;
         if (!feedable) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
+            if (be.getSize() == null) {
+                player.openMenu(be, pos);
+                return ItemInteractionResult.SUCCESS;
+            }
             ItemStack remainder = be.insertFromPlayer(stack.copy());
             int moved = stack.getCount() - remainder.getCount();
             if (moved > 0 && !player.getAbilities().instabuild) {
@@ -74,11 +89,15 @@ public class ControllerBlock extends Block implements EntityBlock {
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /** Rechtsklick ohne passendes Item: Status anzeigen. */
+    /** Rechtsklick oeffnet die GUI, Schleichen + Rechtsklick zeigt den Status/ersten Baufehler im Chat. */
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
-            be.sendStatus((ServerLevel) level, player);
+            if (player.isShiftKeyDown()) {
+                be.sendStatus((ServerLevel) level, player);
+            } else {
+                player.openMenu(be, pos);
+            }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

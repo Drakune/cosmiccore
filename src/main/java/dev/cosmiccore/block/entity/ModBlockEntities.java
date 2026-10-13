@@ -27,5 +27,11 @@ public final class ModBlockEntities {
             BLOCK_ENTITIES.register("item_port",
                     () -> BlockEntityType.Builder.of(ItemPortBlockEntity::new, ModBlocks.ITEM_PORT.get()).build(null));
 
+    /** Gemeinsamer Typ fuer Resonanzspule und Fokuskristall (nur fuer die Animation). */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ResonatorBlockEntity>> RESONATOR =
+            BLOCK_ENTITIES.register("resonator",
+                    () -> BlockEntityType.Builder.of(ResonatorBlockEntity::new,
+                            ModBlocks.RESONANCE_COIL.get(), ModBlocks.FOCUS_CRYSTAL.get()).build(null));
+
     private ModBlockEntities() {}
 }

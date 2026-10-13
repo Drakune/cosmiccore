@@ -9,106 +9,104 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Das 7x7x7-Muster des Kerngenerators. LAYERS[y][z].charAt(x), y=0 ist der Boden.
+ * Das Muster des Kerngenerators fuer eine Kantenlaenge (5, 7 oder 9). Beispiel 7x7x7, y=0 ist der Boden:
  * <pre>
+ * y=0 Boden   y=1 / y=5   y=2 / y=4   y=3 Aequator   y=6 Decke
+ * HHHCHHH     F.....F     F.....F     F.....F        HHHHHHH
+ * HHHHHHH     .aaaaa.     .aaaaa.     .aaRaa.        HGGGGGH
+ * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGHHHGH
+ * CHHHHHC     .aaXaa.     .aaaaa.     .RaKaR.        HGHHHGH
+ * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGHHHGH
+ * HHHHHHH     .aaaaa.     .aaaaa.     .aaRaa.        HGGGGGH
+ * HHHCHHH     F.....F     F.....F     F.....F        HHHHHHH
+ *
  *  H = Huelle (Leerengehaeuse, Energie-Port oder Item-Port)
  *  C = wie H, aber hier darf (genau) der Controller sitzen - Mitte jeder Bodenkante
  *  F = Runenrahmen (Eckpfeiler)     G = Fokusglas (Deckenring)
- *  R = Resonanzspule (Aequator)     X = Fokuskristall (Pol oben/unten)
+ *  R = Resonanzspule (Aequator)     X = Fokuskristall (Pole)
  *  K = Singularitaetskern (Mitte)   a = Luft (Kammer muss frei sein)   . = egal (offene Seiten)
  * </pre>
- * Das Muster ist 4-fach drehsymmetrisch; deshalb muss nur der Mittelpunkt aus der Controller-Ausrichtung
+ * 5x5x5: die Kammer ist zu eng, Spulen sitzen deshalb in den offenen Seiten und die Kristalle in Boden/Decke.
+ * 9x9x9: zusaetzlich vier diagonale Spulen in den Kammerecken des Aequators.
+ * Alle Muster sind 4-fach drehsymmetrisch; deshalb muss nur der Mittelpunkt aus der Controller-Ausrichtung
  * berechnet werden, nicht das Muster gedreht.
  */
 public final class CorePattern {
-    public static final int SIZE = 7;
-    public static final int HALF = 3;
-
     public enum Cell { ANY, AIR, HULL, SLOT, FRAME, GLASS, COIL, CRYSTAL, CORE }
 
-    private static final String[][] LAYERS = {
-            { // y = 0  Boden
-                    "HHHCHHH",
-                    "HHHHHHH",
-                    "HHHHHHH",
-                    "CHHHHHC",
-                    "HHHHHHH",
-                    "HHHHHHH",
-                    "HHHCHHH"},
-            { // y = 1
-                    "F.....F",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaXaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    "F.....F"},
-            { // y = 2
-                    "F.....F",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    "F.....F"},
-            { // y = 3  Aequator mit dem Kern in der Mitte
-                    "F.....F",
-                    ".aaRaa.",
-                    ".aaaaa.",
-                    ".RaKaR.",
-                    ".aaaaa.",
-                    ".aaRaa.",
-                    "F.....F"},
-            { // y = 4
-                    "F.....F",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    "F.....F"},
-            { // y = 5
-                    "F.....F",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    ".aaXaa.",
-                    ".aaaaa.",
-                    ".aaaaa.",
-                    "F.....F"},
-            { // y = 6  Decke
-                    "HHHHHHH",
-                    "HGGGGGH",
-                    "HGHHHGH",
-                    "HGHHHGH",
-                    "HGHHHGH",
-                    "HGGGGGH",
-                    "HHHHHHH"}
-    };
+    private final int size;
+    private final int half;
+    /** Abstand Kern -> Spulen/Kristalle auf den Achsen. */
+    private final int focus;
+    private final Cell[][][] cells; // [x][y][z]
+    private final int blockCount;
 
-    private static final Cell[][][] CELLS = new Cell[SIZE][SIZE][SIZE]; // [x][y][z]
-
-    static {
-        for (int y = 0; y < SIZE; y++) {
-            for (int z = 0; z < SIZE; z++) {
-                for (int x = 0; x < SIZE; x++) {
-                    CELLS[x][y][z] = parse(LAYERS[y][z].charAt(x));
+    CorePattern(int size) {
+        this.size = size;
+        this.half = size / 2;
+        this.focus = size <= 5 ? half : half - 1;
+        this.cells = new Cell[size][size][size];
+        int count = 0;
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                for (int z = 0; z < size; z++) {
+                    Cell c = compute(x - half, y - half, z - half);
+                    cells[x][y][z] = c;
+                    if (isBlockCell(c)) count++;
                 }
             }
         }
+        this.blockCount = count;
     }
 
-    private static Cell parse(char c) {
-        return switch (c) {
-            case 'H' -> Cell.HULL;
-            case 'C' -> Cell.SLOT;
-            case 'F' -> Cell.FRAME;
-            case 'G' -> Cell.GLASS;
-            case 'R' -> Cell.COIL;
-            case 'X' -> Cell.CRYSTAL;
-            case 'K' -> Cell.CORE;
-            case 'a' -> Cell.AIR;
-            default -> Cell.ANY;
-        };
+    private Cell compute(int dx, int dy, int dz) {
+        int ax = Math.abs(dx), ay = Math.abs(dy), az = Math.abs(dz);
+        boolean axisXZ = (dx == 0 && az == focus) || (dz == 0 && ax == focus);
+
+        if (ay == half) {
+            // Boden und Decke
+            if (dx == 0 && dz == 0 && focus == half) return Cell.CRYSTAL;
+            if (dy < 0) {
+                return (dx == 0 && az == half) || (dz == 0 && ax == half) ? Cell.SLOT : Cell.HULL;
+            }
+            return Math.max(ax, az) == half - 1 ? Cell.GLASS : Cell.HULL;
+        }
+        if (ax == half || az == half) {
+            // offene Seiten
+            if (ax == half && az == half) return Cell.FRAME;
+            if (dy == 0 && axisXZ) return Cell.COIL;
+            return Cell.ANY;
+        }
+        // Kammer
+        if (dx == 0 && dy == 0 && dz == 0) return Cell.CORE;
+        if (dy == 0 && axisXZ) return Cell.COIL;
+        if (dy == 0 && size >= 9 && ax == half - 1 && az == half - 1) return Cell.COIL;
+        if (dx == 0 && dz == 0 && ay == focus) return Cell.CRYSTAL;
+        return Cell.AIR;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public int half() {
+        return half;
+    }
+
+    /** Abstand vom Kern zu den Achsen-Spulen und Kristallen (in Bloecken). */
+    public int focus() {
+        return focus;
+    }
+
+    /** Anzahl der Strukturbloecke (ohne Luft und "egal"). */
+    public int blockCount() {
+        return blockCount;
+    }
+
+    public int count(Cell cell) {
+        int n = 0;
+        for (Cell[][] a : cells) for (Cell[] b : a) for (Cell c : b) if (c == cell) n++;
+        return n;
     }
 
     @FunctionalInterface
@@ -117,15 +115,15 @@ public final class CorePattern {
     }
 
     /** Mittelpunkt (Position des Kerns). Der Controller sitzt mittig an der Bodenkante und schaut nach aussen. */
-    public static BlockPos center(BlockPos controller, Direction facing) {
-        return controller.relative(facing.getOpposite(), HALF).above(HALF);
+    public BlockPos center(BlockPos controller, Direction facing) {
+        return controller.relative(facing.getOpposite(), half).above(half);
     }
 
-    public static void forEach(BlockPos center, Visitor visitor) {
-        for (int x = 0; x < SIZE; x++) {
-            for (int y = 0; y < SIZE; y++) {
-                for (int z = 0; z < SIZE; z++) {
-                    visitor.visit(center.offset(x - HALF, y - HALF, z - HALF), CELLS[x][y][z]);
+    public void forEach(BlockPos center, Visitor visitor) {
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                for (int z = 0; z < size; z++) {
+                    visitor.visit(center.offset(x - half, y - half, z - half), cells[x][y][z]);
                 }
             }
         }
@@ -138,7 +136,7 @@ public final class CorePattern {
 
     public record Report(boolean valid, boolean unloaded, int mismatches, @Nullable BlockPos firstError, @Nullable Component expected) {}
 
-    public static Report validate(Level level, BlockPos controllerPos, Direction facing) {
+    public Report validate(Level level, BlockPos controllerPos, Direction facing) {
         final int[] mismatches = {0};
         final BlockPos[] first = {null};
         final Component[] expected = {null};
@@ -167,7 +165,7 @@ public final class CorePattern {
         return s.is(ModBlocks.VOID_CASING.get()) || s.is(ModBlocks.ENERGY_PORT.get()) || s.is(ModBlocks.ITEM_PORT.get());
     }
 
-    private static boolean matches(Cell cell, BlockState s, boolean isControllerPos) {
+    public static boolean matches(Cell cell, BlockState s, boolean isControllerPos) {
         return switch (cell) {
             case ANY -> true;
             case AIR -> s.isAir();
@@ -181,7 +179,21 @@ public final class CorePattern {
         };
     }
 
-    private static Component describe(Cell cell) {
+    /** Block, der fuer die Vorschau bzw. den Kreativ-Aufbau an diese Stelle gehoert (null = Luft/egal). */
+    @Nullable
+    public static BlockState blockFor(Cell cell) {
+        return switch (cell) {
+            case ANY, AIR -> null;
+            case HULL, SLOT -> ModBlocks.VOID_CASING.get().defaultBlockState();
+            case FRAME -> ModBlocks.RUNE_FRAME.get().defaultBlockState();
+            case GLASS -> ModBlocks.FOCUS_GLASS.get().defaultBlockState();
+            case COIL -> ModBlocks.RESONANCE_COIL.get().defaultBlockState();
+            case CRYSTAL -> ModBlocks.FOCUS_CRYSTAL.get().defaultBlockState();
+            case CORE -> ModBlocks.SINGULARITY_CORE.get().defaultBlockState();
+        };
+    }
+
+    public static Component describe(Cell cell) {
         return switch (cell) {
             case ANY -> Component.empty();
             case AIR -> Component.translatable("message.cosmiccore.expected_air");
@@ -194,6 +206,4 @@ public final class CorePattern {
             case CORE -> ModBlocks.SINGULARITY_CORE.get().getName();
         };
     }
-
-    private CorePattern() {}
 }
