@@ -80,6 +80,7 @@
   "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become a tractor beam that catches asteroids and pulls them into the reactor as energy.",
   "item.cosmiccore.overdrive_particle": "Cosmic Core Overdrive Particle",
   "gui.cosmiccore.with_lasers": "+ Lasers",
+  "message.cosmiccore.not_running": "Ignite the generator first - level and overdrive can only be changed while running",
   "gui.cosmiccore.overdrive": "Overdrive",
   "gui.cosmiccore.overdrive_up": "Overdrive +",
   "gui.cosmiccore.overdrive_down": "Remove",

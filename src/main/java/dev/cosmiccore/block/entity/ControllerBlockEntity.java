@@ -225,6 +225,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return true;
         }
         if (size == null) return false;
+        // Leistungsstufe und Overdrive lassen sich erst einstellen, wenn der Generator laeuft
+        boolean running = formed && enabled && (phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE);
+        if (!running && (id == ControllerMenu.BTN_SCALE_DOWN || id == ControllerMenu.BTN_SCALE_UP
+                || id == ControllerMenu.BTN_OVERDRIVE_UP || id == ControllerMenu.BTN_OVERDRIVE_DOWN)) {
+            player.displayClientMessage(Component.translatable("message.cosmiccore.not_running").withStyle(ChatFormatting.YELLOW), true);
+            return false;
+        }
         switch (id) {
             case ControllerMenu.BTN_SCALE_DOWN -> scale = Math.max(1, scale - 1);
             case ControllerMenu.BTN_SCALE_UP -> scale = Math.min(size.maxScale(), scale + 1);
@@ -534,7 +541,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             ItemStack stab = inventory.getStackInSlot(SLOT_STAB);
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
             be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic, shield, funnel,
-                    laserArray, laserTarget, overdrive);
+                    laserArray, laserTarget, overdrive, lastOutput,
+                    (int) Math.round(100.0 * energy / Math.max(1, getCapacity())));
         }
     }
 
@@ -988,7 +996,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (skyLink ? ControllerMenu.F_SKY : 0)
                         | (lastOutput > 0 ? ControllerMenu.F_BURNING : 0)
                         | (funnel ? ControllerMenu.F_FUNNEL : 0)
-                        | (laserArray ? ControllerMenu.F_LASER : 0);
+                        | (laserArray ? ControllerMenu.F_LASER : 0)
+                        | (formed && enabled && (phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE) ? ControllerMenu.F_RUNNING : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));

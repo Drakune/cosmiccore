@@ -98,7 +98,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         final float form = be.getFormProgress(partialTick);
         final float energy = (unstable ? 1.0F : active ? 0.9F : 0.35F)
                 * (unstable ? 0.75F + 0.25F * (0.5F + 0.5F * hash((int) (t * 0.8F))) : 1.0F);
-        final float coreFade = Mth.clamp((form - 0.35F) / 0.65F, 0.0F, 1.0F);
+        // das Loch waechst, waehrend die Bloecke eingesaugt werden
+        final float coreFade = Mth.clamp(0.15F + form / 0.6F, 0.0F, 1.0F);
         final float spin = (unstable ? 1.8F : active ? 1.0F : 0.25F) * (1.0F + 0.6F * growth);
         // Herzschlag bei Instabilitaet: doppelter Puls
         float beatPhase = Mth.frac(t * (0.02F + heat * 0.03F));
@@ -120,7 +121,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
         // 1) Kammer (Sternenfeld-Platten)
         ReactorShellRenderer.Params shell = new ReactorShellRenderer.Params(level, be.getBlockPos(), be.getStructureSize(), t,
-                form, Math.max(0.4F, energy), heat, active, unstable, growth, od);
+                form, Math.max(0.4F, energy), heat, active, unstable, growth, od, be);
         ReactorShellRenderer.solid(pose, buffers, shell);
 
         // Traktorstrahl-Anlage auf der Decke

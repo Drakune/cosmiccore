@@ -80,6 +80,7 @@
   "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie werden zu einem Traktorstrahl, der Asteroiden einfängt und als Energie in den Reaktor zieht.",
   "item.cosmiccore.overdrive_particle": "Overdrive-Partikel",
   "gui.cosmiccore.with_lasers": "+ Laser",
+  "message.cosmiccore.not_running": "Erst den Generator zünden - Stufe und Overdrive sind nur im Betrieb einstellbar",
   "gui.cosmiccore.overdrive": "Overdrive",
   "gui.cosmiccore.overdrive_up": "Overdrive +",
   "gui.cosmiccore.overdrive_down": "Entfernen",

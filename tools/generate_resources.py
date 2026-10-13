@@ -445,6 +445,52 @@ def draw_overdrive_particle(f, nf):
     return img
 
 
+def draw_book_cover():
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = lerp((70, 34, 130), (24, 12, 52), (x + y) / 30) + (255,)
+    for i in range(16):  # Goldrand
+        for (x, y) in ((i, 0), (i, 15), (0, i), (15, i)):
+            put(px, x, y, (200, 165, 80))
+    for (x, y) in [(2, 2), (13, 2), (2, 13), (13, 13)]:
+        put(px, x, y, (240, 210, 120))
+    star = [(7, 3), (8, 3), (7, 4), (8, 4), (3, 7), (4, 7), (11, 7), (12, 7), (3, 8), (4, 8), (11, 8), (12, 8),
+            (7, 11), (8, 11), (7, 12), (8, 12), (6, 6), (9, 6), (6, 9), (9, 9)]
+    for (x, y) in star:
+        put(px, x, y, (150, 230, 255))
+    for x in range(5, 11):
+        for y in range(5, 11):
+            if math.hypot(x - 7.5, y - 7.5) < 2.4:
+                put(px, x, y, (230, 245, 255))
+    return img
+
+
+def draw_book_pages():
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            c = (232, 224, 205) if y % 2 == 0 else (205, 196, 176)
+            px[x, y] = c + (255,)
+    return img
+
+
+def draw_book_spine():
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = (40, 18, 80, 255)
+    for x in range(16):
+        for y in (3, 12):
+            put(px, x, y, (200, 165, 80))
+    for x in range(16):
+        put(px, x, 7, (120, 220, 255)); put(px, x, 8, (160, 120, 255))
+    return img
+
+
 def draw_guide_book():
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     px = img.load()
@@ -501,6 +547,9 @@ def textures():
     save_strip('singularity_core_dormant', [draw_core_dormant()], 1)
     save_strip('star_dust', [draw_star_dust(f, 8) for f in range(8)], 3, folder='item')
     save_strip('guide_book', [draw_guide_book()], 1, folder='item')
+    save_strip('book_cover', [draw_book_cover()], 1, folder='item')
+    save_strip('book_pages', [draw_book_pages()], 1, folder='item')
+    save_strip('book_spine', [draw_book_spine()], 1, folder='item')
     save_strip('cosmic_laser_side', [draw_laser_side()], 1)
     save_strip('port_socket', [draw_port_socket()], 1)
     save_strip('overdrive_particle', [draw_overdrive_particle(f, 8) for f in range(8)], 3, folder='item')
@@ -632,12 +681,41 @@ def models():
         'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
         'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
     wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
-    wjson(f'{ASSETS}/models/item/overdrive_particle.json',
-          {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/overdrive_particle'}})
-    wjson(f'{ASSETS}/models/item/guide_book.json',
-          {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/guide_book'}})
-    wjson(f'{ASSETS}/models/item/star_dust.json',
-          {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/star_dust'}})
+    # animierte 3D-Items (gezeichnet von CosmicItemRenderer)
+    floating = {
+        'gui': {'rotation': [20, 30, 0], 'translation': [0, 0, 0], 'scale': [1.0, 1.0, 1.0]},
+        'ground': {'rotation': [0, 0, 0], 'translation': [0, 3, 0], 'scale': [0.5, 0.5, 0.5]},
+        'fixed': {'rotation': [0, 0, 0], 'translation': [0, 0, 0], 'scale': [0.9, 0.9, 0.9]},
+        'head': {'rotation': [0, 0, 0], 'translation': [0, 10, 0], 'scale': [0.8, 0.8, 0.8]},
+        'thirdperson_righthand': {'rotation': [0, 0, 0], 'translation': [0, 2.5, 1], 'scale': [0.5, 0.5, 0.5]},
+        'thirdperson_lefthand': {'rotation': [0, 0, 0], 'translation': [0, 2.5, 1], 'scale': [0.5, 0.5, 0.5]},
+        'firstperson_righthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]},
+        'firstperson_lefthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]}}
+    for it in ('overdrive_particle', 'star_dust'):
+        wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
+                                                  'textures': {'particle': f'{MOD}:item/{it}'}, 'display': floating})
+    # 3D-Handbuch: Buchdeckel, Seitenblock, Ruecken und Sternen-Juwel
+    cover, pages, spine = f'{MOD}:item/book_cover', f'{MOD}:item/book_pages', f'{MOD}:item/book_spine'
+    def el(a, b, faces):
+        return {'from': a, 'to': b, 'faces': faces}
+    allf = lambda tex: {d: {'texture': tex} for d in ('down', 'up', 'north', 'south', 'west', 'east')}
+    wjson(f'{ASSETS}/models/item/guide_book.json', {
+        'textures': {'particle': cover, 'cover': cover, 'pages': pages, 'spine': spine},
+        'elements': [
+            el([2, 0, 1], [14, 1, 15], {**allf('#spine'), 'down': {'texture': '#cover'}, 'up': {'texture': '#pages'}}),
+            el([2.5, 1, 1.5], [13.5, 4, 14.5], allf('#pages')),
+            el([2, 4, 1], [14, 5, 15], {**allf('#spine'), 'up': {'texture': '#cover'}, 'down': {'texture': '#pages'}}),
+            el([1, 0, 1], [2, 5, 15], allf('#spine')),
+            el([7, 5, 7], [9, 5.6, 9], allf('#spine'))],
+        'display': {
+            'gui': {'rotation': [35, 210, 0], 'translation': [0, 1, 0], 'scale': [0.85, 0.85, 0.85]},
+            'ground': {'rotation': [0, 0, 0], 'translation': [0, 2, 0], 'scale': [0.5, 0.5, 0.5]},
+            'fixed': {'rotation': [90, 0, 0], 'translation': [0, 0, -3], 'scale': [0.8, 0.8, 0.8]},
+            'thirdperson_righthand': {'rotation': [60, 0, 0], 'translation': [0, 3, 1], 'scale': [0.55, 0.55, 0.55]},
+            'thirdperson_lefthand': {'rotation': [60, 0, 0], 'translation': [0, 3, 1], 'scale': [0.55, 0.55, 0.55]},
+            'firstperson_righthand': {'rotation': [20, -20, 10], 'translation': [1.1, 3.5, 1], 'scale': [0.6, 0.6, 0.6]},
+            'firstperson_lefthand': {'rotation': [20, 20, -10], 'translation': [1.1, 3.5, 1], 'scale': [0.6, 0.6, 0.6]}}})
+
 
 
 # ----------------------------------------------------------------- Sprache
@@ -723,6 +801,7 @@ DE = {
     'guide.cosmiccore.page.13': '§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie werden zu einem Traktorstrahl, der Asteroiden einfängt und als Energie in den Reaktor zieht.',
     'item.cosmiccore.overdrive_particle': 'Overdrive-Partikel',
     'gui.cosmiccore.with_lasers': '+ Laser',
+    'message.cosmiccore.not_running': 'Erst den Generator zünden - Stufe und Overdrive sind nur im Betrieb einstellbar',
     'gui.cosmiccore.overdrive': 'Overdrive',
     'gui.cosmiccore.overdrive_up': 'Overdrive +',
     'gui.cosmiccore.overdrive_down': 'Entfernen',
@@ -817,6 +896,7 @@ EN = {
     'guide.cosmiccore.page.13': '§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become a tractor beam that catches asteroids and pulls them into the reactor as energy.',
     'item.cosmiccore.overdrive_particle': 'Cosmic Core Overdrive Particle',
     'gui.cosmiccore.with_lasers': '+ Lasers',
+    'message.cosmiccore.not_running': 'Ignite the generator first - level and overdrive can only be changed while running',
     'gui.cosmiccore.overdrive': 'Overdrive',
     'gui.cosmiccore.overdrive_up': 'Overdrive +',
     'gui.cosmiccore.overdrive_down': 'Remove',

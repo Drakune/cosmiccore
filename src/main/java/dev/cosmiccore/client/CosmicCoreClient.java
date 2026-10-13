@@ -1,6 +1,10 @@
 package dev.cosmiccore.client;
 
 import dev.cosmiccore.CosmicCore;
+import dev.cosmiccore.ModItems;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.block.entity.ModBlockEntities;
 import dev.cosmiccore.data.CoreFuel;
@@ -28,6 +32,20 @@ public final class CosmicCoreClient {
         event.registerBlockEntityRenderer(ModBlockEntities.CONTROLLER.get(), ControllerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.STAR_FUNNEL.get(), StarFunnelRenderer::new);
         event.registerEntityRenderer(ModEntities.ASTEROID.get(), CosmicAsteroidRenderer::new);
+    }
+
+    private static CosmicItemRenderer itemRenderer;
+
+    /** Animierte 3D-Items (Sternenstaub, Overdrive-Partikel). */
+    @SubscribeEvent
+    public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (itemRenderer == null) itemRenderer = new CosmicItemRenderer();
+                return itemRenderer;
+            }
+        }, ModItems.STAR_DUST.get(), ModItems.OVERDRIVE_PARTICLE.get());
     }
 
     @SubscribeEvent

@@ -1,6 +1,291 @@
 {
-  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "cosmiccore:item/guide_book"
+    "particle": "cosmiccore:item/book_cover",
+    "cover": "cosmiccore:item/book_cover",
+    "pages": "cosmiccore:item/book_pages",
+    "spine": "cosmiccore:item/book_spine"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        1
+      ],
+      "to": [
+        14,
+        1,
+        15
+      ],
+      "faces": {
+        "down": {
+          "texture": "#cover"
+        },
+        "up": {
+          "texture": "#pages"
+        },
+        "north": {
+          "texture": "#spine"
+        },
+        "south": {
+          "texture": "#spine"
+        },
+        "west": {
+          "texture": "#spine"
+        },
+        "east": {
+          "texture": "#spine"
+        }
+      }
+    },
+    {
+      "from": [
+        2.5,
+        1,
+        1.5
+      ],
+      "to": [
+        13.5,
+        4,
+        14.5
+      ],
+      "faces": {
+        "down": {
+          "texture": "#pages"
+        },
+        "up": {
+          "texture": "#pages"
+        },
+        "north": {
+          "texture": "#pages"
+        },
+        "south": {
+          "texture": "#pages"
+        },
+        "west": {
+          "texture": "#pages"
+        },
+        "east": {
+          "texture": "#pages"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        4,
+        1
+      ],
+      "to": [
+        14,
+        5,
+        15
+      ],
+      "faces": {
+        "down": {
+          "texture": "#pages"
+        },
+        "up": {
+          "texture": "#cover"
+        },
+        "north": {
+          "texture": "#spine"
+        },
+        "south": {
+          "texture": "#spine"
+        },
+        "west": {
+          "texture": "#spine"
+        },
+        "east": {
+          "texture": "#spine"
+        }
+      }
+    },
+    {
+      "from": [
+        1,
+        0,
+        1
+      ],
+      "to": [
+        2,
+        5,
+        15
+      ],
+      "faces": {
+        "down": {
+          "texture": "#spine"
+        },
+        "up": {
+          "texture": "#spine"
+        },
+        "north": {
+          "texture": "#spine"
+        },
+        "south": {
+          "texture": "#spine"
+        },
+        "west": {
+          "texture": "#spine"
+        },
+        "east": {
+          "texture": "#spine"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        5,
+        7
+      ],
+      "to": [
+        9,
+        5.6,
+        9
+      ],
+      "faces": {
+        "down": {
+          "texture": "#spine"
+        },
+        "up": {
+          "texture": "#spine"
+        },
+        "north": {
+          "texture": "#spine"
+        },
+        "south": {
+          "texture": "#spine"
+        },
+        "west": {
+          "texture": "#spine"
+        },
+        "east": {
+          "texture": "#spine"
+        }
+      }
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        35,
+        210,
+        0
+      ],
+      "translation": [
+        0,
+        1,
+        0
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        90,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        -3
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        60,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        1
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        60,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        1
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        20,
+        -20,
+        10
+      ],
+      "translation": [
+        1.1,
+        3.5,
+        1
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        20,
+        20,
+        -10
+      ],
+      "translation": [
+        1.1,
+        3.5,
+        1
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ]
+    }
   }
 }

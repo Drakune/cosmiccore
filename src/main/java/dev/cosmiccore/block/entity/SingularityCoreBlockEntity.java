@@ -32,6 +32,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private boolean laserArray;   // vier Kosmos-Laser bilden das grosse Geschuetz
     private int laserTarget = -1; // Entity-ID des anvisierten Asteroiden
     private int overdrive;        // installierte Overdrive-Stufen (verwandeln das Loch)
+    private int output;           // aktuelle RF/t (fuer die Konsole)
+    private int energyPct;        // Pufferfuellstand 0..100 (fuer die Konsole)
 
     /** Spielzeit, zu der die Struktur gebildet wurde (vom Controller gesetzt, startet die Verwandlungs-Animation). */
     private long formStart = Long.MIN_VALUE;
@@ -43,16 +45,20 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     // ------------------------------------------------------------------ vom Controller gesetzt
 
     public void setVisuals(int structureSize, int scale, int maxScale, float instability, boolean skyLink, double cosmic,
-                           int shield, boolean funnel, boolean laserArray, int laserTarget, int overdrive) {
+                           int shield, boolean funnel, boolean laserArray, int laserTarget, int overdrive,
+                           int output, int energyPct) {
         int inst = Math.round(instability);
         int cos = (int) Math.round(cosmic * 100.0);
         shield = Math.max(0, Math.min(100, shield));
         if (structureSize == this.structureSize && scale == this.scale && maxScale == this.maxScale
                 && inst == this.instability && skyLink == this.skyLink && cos == this.cosmic
                 && shield / 5 == this.shield / 5 && funnel == this.funnel
-                && laserArray == this.laserArray && laserTarget == this.laserTarget && overdrive == this.overdrive) {
+                && laserArray == this.laserArray && laserTarget == this.laserTarget && overdrive == this.overdrive
+                && energyPct == this.energyPct && Math.abs(output - this.output) <= Math.max(10, this.output / 50)) {
             return;
         }
+        this.output = output;
+        this.energyPct = energyPct;
         this.overdrive = overdrive;
         this.laserArray = laserArray;
         this.laserTarget = laserTarget;
@@ -111,6 +117,18 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         return shield / 100.0F;
     }
 
+    public int getOutput() {
+        return output;
+    }
+
+    public int getEnergyPct() {
+        return energyPct;
+    }
+
+    public int getScaleMax() {
+        return maxScale;
+    }
+
     public int getOverdrive() {
         return overdrive;
     }
@@ -140,22 +158,25 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         return Math.min(1.0F, Math.max(0.0F, p));
     }
 
-    public static final int FORM_TICKS = 60;
+    public static final int FORM_TICKS = 110;
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, SingularityCoreBlockEntity be) {
         CorePhase phase = state.getValue(ModProperties.PHASE);
         if (phase == CorePhase.DORMANT) return;
         float form = be.getFormProgress(0.0F);
-        if (form < 1.0F) {
-            // Funken entlang der Scan-Ebene
-            int half = be.structureSize / 2;
-            double y = pos.getY() + 0.5 - half - 0.5 + form * (be.structureSize + 1);
+        if (form < 0.55F) {
+            // Sog: Teilchen stroemen aus der ganzen Struktur in den Kern
             RandomSource rr = level.random;
-            for (int i = 0; i < 6; i++) {
-                double a = rr.nextDouble() * Math.PI * 2;
-                double d = half + 0.5;
-                level.addParticle(ParticleTypes.END_ROD, pos.getX() + 0.5 + Math.cos(a) * d, y, pos.getZ() + 0.5 + Math.sin(a) * d,
-                        0.0, 0.02, 0.0);
+            int half = be.structureSize / 2;
+            for (int i = 0; i < 8; i++) {
+                double dx = (rr.nextDouble() - 0.5) * 2 * half, dy = (rr.nextDouble() - 0.5) * 2 * half, dz = (rr.nextDouble() - 0.5) * 2 * half;
+                level.addParticle(ParticleTypes.PORTAL, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, dx, dy, dz);
+            }
+        } else if (form < 0.6F) {
+            RandomSource rr = level.random;
+            for (int i = 0; i < 12; i++) {
+                level.addParticle(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        (rr.nextDouble() - 0.5) * 0.6, (rr.nextDouble() - 0.5) * 0.6, (rr.nextDouble() - 0.5) * 0.6);
             }
         }
         RandomSource r = level.random;
@@ -224,6 +245,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         funnel = tag.getBoolean("funnel");
         laserArray = tag.getBoolean("laserArray");
         overdrive = tag.getInt("overdrive");
+        output = tag.getInt("output");
+        energyPct = tag.getInt("energyPct");
         laserTarget = tag.contains("laserTarget") ? tag.getInt("laserTarget") : -1;
         formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
     }
@@ -239,6 +262,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         tag.putBoolean("funnel", funnel);
         tag.putBoolean("laserArray", laserArray);
         tag.putInt("overdrive", overdrive);
+        tag.putInt("output", output);
+        tag.putInt("energyPct", energyPct);
         tag.putInt("laserTarget", laserTarget);
         tag.putLong("formStart", formStart);
     }

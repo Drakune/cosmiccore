@@ -141,6 +141,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     private void updateWidgets() {
         boolean chosen = menu.sizeChosen();
+        // Leistungsstufe und Overdrive erst bei laufendem Generator
+        boolean running = menu.flag(ControllerMenu.F_RUNNING);
         for (Button b : sizeButtons) b.visible = !chosen;
         confirm.visible = !chosen;
         funnelBox.visible = !chosen;
@@ -148,14 +150,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         ReactorSize current = ReactorSize.bySize(menu.size());
         int maxOd = current == null ? 0 : current.maxOverdrive();
         overdriveUp.visible = overdriveDown.visible = chosen;
-        // Overdrive nur am gebildeten (animierten) Reaktor
-        overdriveUp.active = menu.flag(ControllerMenu.F_FORMED) && menu.overdrive() < maxOd;
-        overdriveDown.active = menu.overdrive() > 0;
+        overdriveUp.active = running && menu.overdrive() < maxOd;
+        overdriveDown.active = running && menu.overdrive() > 0;
         ReactorSize sel = ReactorSize.values()[selected];
         confirm.setMessage(Component.translatable("gui.cosmiccore.confirm", sel.size(), sel.size(), sel.size()));
         scaleDown.visible = scaleUp.visible = toggle.visible = preview.visible = chosen;
-        scaleDown.active = menu.scale() > 1;
-        scaleUp.active = menu.scale() < menu.maxScale();
+        scaleDown.active = running && menu.scale() > 1;
+        scaleUp.active = running && menu.scale() < menu.maxScale();
         boolean formed = menu.flag(ControllerMenu.F_FORMED);
         toggle.setMessage(Component.translatable(menu.flag(ControllerMenu.F_ENABLED) ? "gui.cosmiccore.stop" : "gui.cosmiccore.start"));
         preview.setMessage(Component.translatable(menu.flag(ControllerMenu.F_PREVIEW) ? "gui.cosmiccore.preview_on" : "gui.cosmiccore.preview_off"));

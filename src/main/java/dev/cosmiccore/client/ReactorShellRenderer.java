@@ -16,7 +16,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import dev.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -70,7 +72,7 @@ public final class ReactorShellRenderer {
             if (rs == null) return out;
             rs.pattern().forEach(BlockPos.ZERO, (pos, cell) -> {
                 if (cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT || cell == CorePattern.Cell.FRAME
-                        || cell == CorePattern.Cell.GLASS) {
+                        || cell == CorePattern.Cell.GLASS || cell == CorePattern.Cell.COIL || cell == CorePattern.Cell.CRYSTAL) {
                     out.add(new ShellCell(pos.getX(), pos.getY(), pos.getZ(), cell));
                 }
             });
@@ -79,14 +81,14 @@ public final class ReactorShellRenderer {
     }
 
     public record Params(Level level, BlockPos corePos, int size, float t, float form, float energy, float heat,
-                         boolean active, boolean unstable, float growth, int overdrive) {
+                         boolean active, boolean unstable, float growth, int overdrive, SingularityCoreBlockEntity core) {
         float radius() {
             return size / 2 + 0.5F;
         }
 
-        float sweepY() {
-            float r = radius();
-            return -r - 1.5F + form * (2 * r + 3.0F);
+        /** Entstehen der Kammer aus dem Kern (0..1), beginnt nach dem Einsaugen. */
+        float emerge() {
+            return Mth.clamp((form - 0.5F) / 0.5F, 0.0F, 1.0F);
         }
 
         boolean done() {
@@ -109,7 +111,45 @@ public final class ReactorShellRenderer {
         return new float[]{u * 0.4F, -0.04F + v * 0.42F, 0.075F - v * 0.18F};
     }
 
-    /** Holografische Anzeige der Konsole: Rahmen, drei Balken, Zeigerinstrument und Scanlinie. */
+    /** Live-Daten als Text auf dem Bildschirm (links), beidseitig lesbar. */
+    private static void consoleText(Matrix4f cm, MultiBufferSource buffers, Params p) {
+        Font font = Minecraft.getInstance().font;
+        SingularityCoreBlockEntity core = p.core();
+        ReactorSize size = ReactorSize.bySize(p.size());
+        int maxOd = size == null ? 0 : size.maxOverdrive();
+        StringBuilder od = new StringBuilder();
+        for (int i = 0; i < maxOd; i++) od.append(i < core.getOverdrive() ? '■' : '□');
+        int inst = Math.round(core.getInstability());
+        int instColor = inst < 40 ? 0x80FF90 : inst < 70 ? 0xFFE060 : 0xFF5060;
+        String[] lines = {
+                p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "KERN BEREIT",
+                "OUT " + compact(core.getOutput()) + " RF/t",
+                "PUF " + core.getEnergyPct() + "%",
+                "INST " + inst + "%",
+                "STUFE " + core.getScale() + "/" + core.getScaleMax(),
+                maxOd > 0 ? "OD " + od : ""};
+        int[] colors = {p.unstable() ? 0xFF5060 : 0xB0E8FF, 0x7AE8FF, 0xC8B8F0, instColor, 0xE0A8FF, 0xFFB040};
+        float tilt = (float) Math.atan2(0.18, 0.42);
+        float s = 0.0062F;
+        for (int side = 0; side < 2; side++) {
+            Matrix4f tm = new Matrix4f(cm);
+            if (side == 1) tm.rotateY(Mth.PI); // Rueckseite (gespiegelt lesbar von innen)
+            tm.translate(-0.37F, 0.36F, -0.098F + (side == 0 ? 0.006F : -0.006F)).rotateX(-tilt).scale(s, -s, s);
+            for (int i = 0; i < lines.length; i++) {
+                if (lines[i].isEmpty()) continue;
+                font.drawInBatch(lines[i], 0, i * 10.5F, 0xFF000000 | colors[i], false, tm, buffers,
+                        Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+            }
+        }
+    }
+
+    private static String compact(long n) {
+        if (n >= 1_000_000L) return String.format("%.1fM", n / 1e6);
+        if (n >= 10_000L) return String.format("%.1fk", n / 1e3);
+        return Long.toString(n);
+    }
+
+    /** Holografische Anzeige der Konsole: Rahmen, Pufferbalken, Zeigerinstrument und Scanlinie. */
     private static void console(Matrix4f m, VertexConsumer vc, ShellCell c, Params p, float[] col) {
         Matrix4f cm = consoleFrame(m, c);
         float e = p.energy();
@@ -124,17 +164,12 @@ public final class ReactorShellRenderer {
         // Kopfzeile
         float[] h0 = screen(-0.9F, 0.88F), h1 = screen(0.9F, 0.88F);
         segment(vc, cm, h0[0], h0[1], h0[2], h1[0], h1[1], h1[2], 0.008F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
-        // drei Balken: Instabilitaet, Leistungsstufe, Ausgabe (pulsierend)
-        float[] values = {Math.max(0.05F, p.heat()), 0.2F + 0.8F * p.growth(),
-                p.active() ? 0.55F + 0.35F * Mth.sin(p.t() * 0.2F) : 0.1F};
-        float[][] cols = {warn, violet, cyan};
-        for (int i = 0; i < 3; i++) {
-            float u = -0.8F + i * 0.28F;
-            float[] b0 = screen(u, 0.1F), b1 = screen(u, 0.1F + 0.68F * values[i]);
-            segment(vc, cm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], 0.035F, cols[i][0], cols[i][1], cols[i][2], e, e);
-        }
+        // Pufferbalken am unteren Rand (echter Fuellstand)
+        float fill = p.core().getEnergyPct() / 100.0F;
+        float[] e0 = screen(-0.92F, 0.06F), e1 = screen(-0.92F + 1.84F * fill, 0.06F);
+        if (fill > 0.0F) segment(vc, cm, e0[0], e0[1], e0[2], e1[0], e1[1], e1[2], 0.02F, cyan[0], cyan[1], cyan[2], e, e);
         // Zeigerinstrument (Instabilitaet)
-        float cu = 0.5F, cv = 0.42F, rad = 0.3F;
+        float cu = 0.62F, cv = 0.45F, rad = 0.26F;
         float[] prev = null;
         for (int i = 0; i <= 16; i++) {
             float ang = Mth.PI * (1.0F - i / 16.0F);
@@ -160,11 +195,36 @@ public final class ReactorShellRenderer {
         return new float[]{r * c * Mth.cos(lon), r * Mth.sin(lat), r * c * Mth.sin(lon)};
     }
 
-    /** Einrast-Fortschritt eines Plattenrings waehrend der Verwandlung (0 = weit draussen, 1 = sitzt). */
+    /** Wachstum eines Plattenrings aus dem Kern heraus (0 = im Kern, 1 = sitzt). Aequatornahe Ringe zuerst. */
     private static float assemble(Params p, float bandY) {
         if (p.done()) return 1.0F;
-        float k = Mth.clamp((p.sweepY() - bandY) / 1.6F, 0.0F, 1.0F);
+        float delay = Math.abs(bandY) / p.radius() * 0.35F;
+        float k = Mth.clamp((p.emerge() - delay) / 0.6F, 0.0F, 1.0F);
         return 1.0F - (1.0F - k) * (1.0F - k) * (1.0F - k); // ease-out
+    }
+
+    // ------------------------------------------------------------------ Einsaugen der Bloecke (nur Animation)
+
+    /** Einsaug-Fortschritt eines Blocks (0 = an seinem Platz, 1 = im Kern verschwunden). Aussen zuerst. */
+    private static float suck(Params p, ShellCell c) {
+        float dist = Mth.sqrt(c.dx() * c.dx() + c.dy() * c.dy() + c.dz() * c.dz()) / (p.radius() * 1.8F);
+        float delay = (1.0F - Mth.clamp(dist, 0.0F, 1.0F)) * 0.25F + 0.1F * (0.5F + 0.5F * hash(c.dx() * 73 + c.dy() * 19 + c.dz() * 7));
+        return Mth.clamp((p.form() / 0.55F - delay) / 0.6F, 0.0F, 1.0F);
+    }
+
+    /** Position auf der Spiralbahn in den Kern. */
+    private static float[] suckPos(ShellCell c, float k) {
+        float e = k * k;
+        float shrink = (float) Math.pow(1.0F - e, 1.2);
+        float ang = e * 2.6F;
+        float x = c.dx() * shrink, z = c.dz() * shrink;
+        return new float[]{x * Mth.cos(ang) - z * Mth.sin(ang), c.dy() * shrink, x * Mth.sin(ang) + z * Mth.cos(ang)};
+    }
+
+    private static boolean flies(Params p, ShellCell c) {
+        // Ports bleiben als echte Anschlussbloecke stehen
+        BlockState s = p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz()));
+        return !s.is(ModBlocks.ENERGY_PORT.get()) && !s.is(ModBlocks.ITEM_PORT.get());
     }
 
     /** Radius und Verdrehung eines Plattenrings inkl. Einflug-Animation und Instabilitaets-Zittern. */
@@ -191,7 +251,8 @@ public final class ReactorShellRenderer {
             float step = Mth.TWO_PI / plates;
             for (int k = 0; k < plates; k++) {
                 float jitter = p.heat() > 0.6F ? (p.heat() - 0.6F) * 0.35F * Math.max(0, hash((int) (p.t() * 0.7F) + k * 31 + b * 7)) : 0.0F;
-                float rr = r + (1.0F - in) * 3.0F + jitter;
+                float rr = r * in + jitter;
+                if (rr < THICK + 0.05F) continue;
                 float o0 = rot + k * step, o1 = o0 + step * PLATE_FILL;
                 plate(portal, m, rr, lat0, lat1, o0, o1);
             }
@@ -201,7 +262,7 @@ public final class ReactorShellRenderer {
         float irisIn = assemble(p, r * Mth.sin(IRIS_LAT));
         if (irisIn > 0.001F) {
             float open = p.active() ? 0.75F + 0.1F * Mth.sin(p.t() * 0.05F) : 0.15F;
-            float rimR = r * Mth.cos(IRIS_LAT), y = r * Mth.sin(IRIS_LAT) + (1.0F - irisIn) * 3.0F;
+            float rimR = r * irisIn * Mth.cos(IRIS_LAT), y = r * irisIn * Mth.sin(IRIS_LAT);
             int blades = 8;
             float rot = p.t() * 0.01F * p.spin();
             for (int k = 0; k < blades; k++) {
@@ -226,18 +287,26 @@ public final class ReactorShellRenderer {
                 RenderUtil.starStrut(gw, cm, 0, -0.5F, 0, 0, -0.45F, 0, 0.22F);
                 starQuad(gw, cm, new float[]{-0.44F, -0.08F, 0.06F}, new float[]{0.44F, -0.08F, 0.06F},
                         new float[]{0.44F, 0.42F, -0.12F}, new float[]{-0.44F, 0.42F, -0.12F});
+                consoleText(cm, buffers, p);
             }
         }
 
-        // waehrend der Verwandlung: Bloecke oberhalb der Scan-Scheibe zeigen noch ihr altes Aussehen
+        // Verwandlung: Kopien aller Strukturbloecke werden spiralfoermig in den Kern gesaugt (die echten Bloecke bleiben)
         if (!p.done()) {
             var dispatcher = Minecraft.getInstance().getBlockRenderer();
             for (ShellCell c : cells(p.size())) {
-                if (c.dy() + 0.5F < p.sweepY()) continue;
+                float k = suck(p, c);
+                if (k >= 1.0F || !flies(p, c)) continue;
                 BlockState s = p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz()));
-                if (s.is(ModBlocks.CONTROLLER.get())) continue;
+                if (s.isAir()) continue;
+                float[] q = suckPos(c, k);
+                float scale = (float) Math.pow(1.0F - k, 0.7);
                 pose.pushPose();
-                pose.translate(c.dx() - 0.5F, c.dy() - 0.5F, c.dz() - 0.5F);
+                pose.translate(q[0], q[1], q[2]);
+                pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(k * k * 540.0F));
+                pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(k * 200.0F * (c.dx() % 2 == 0 ? 1 : -1)));
+                pose.scale(scale, scale, scale);
+                pose.translate(-0.5F, -0.5F, -0.5F);
                 dispatcher.renderSingleBlock(s.getBlock().defaultBlockState(), pose, buffers, LightTexture.FULL_BRIGHT,
                         OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
                 pose.popPose();
@@ -293,8 +362,9 @@ public final class ReactorShellRenderer {
             float rot = bandRotation(p, b) + (1.0F - in) * 2.5F * band[3];
             int plates = (int) band[2];
             float step = Mth.TWO_PI / plates;
-            float rr = r + (1.0F - in) * 3.0F;
-            float snap = in < 1.0F ? 1.0F + 2.0F * (1.0F - in) : 1.0F; // beim Einrasten gleissen die Fugen auf
+            float rr = r * in;
+            if (rr < THICK + 0.05F) continue;
+            float snap = in < 1.0F ? 1.0F + 2.0F * (1.0F - in) : 1.0F; // beim Entstehen gleissen die Fugen auf
             for (int k = 0; k < plates; k++) {
                 float o0 = rot + k * step, o1 = o0 + step * PLATE_FILL, oGap = o0 + step;
                 float flick = p.unstable() ? 0.5F + 0.5F * (0.5F + 0.5F * hash((int) (p.t() * 0.6F) + k * 13 + b * 101)) : 1.0F;
@@ -349,7 +419,7 @@ public final class ReactorShellRenderer {
             if (p.heat() > 0.55F) arcs(m, vc, p, r);
             glyphs(m, vc, p, r);
         } else {
-            scanDisc(m, vc, p);
+            formationGlow(m, vc, p, seam);
         }
     }
 
@@ -425,23 +495,21 @@ public final class ReactorShellRenderer {
         }
     }
 
-    /** Die Scan-Scheibe der Verwandlung: Kugelquerschnitt mit konzentrischen Ringen. */
-    private static void scanDisc(Matrix4f m, VertexConsumer vc, Params p) {
-        float r = p.radius();
-        float y = Mth.clamp(p.sweepY(), -r, r);
-        float cr = Mth.sqrt(Math.max(0.0F, r * r - y * y));
-        float fade = Mth.sin(p.form() * Mth.PI);
-        float[] white = {0.9F, 0.95F, 1.0F};
-        float[] violet = {0.6F, 0.4F, 1.0F};
-        Matrix4f mm = new Matrix4f(m).translate(0, y, 0);
-        flatCircle(vc, mm, Math.max(0.05F, cr), 0.06F, 64, white, fade);
-        for (int i = 1; i <= 4; i++) {
-            float rr = cr * (1.0F - i * 0.22F);
-            if (rr > 0.05F) flatCircle(vc, mm, rr, 0.015F, 48, violet, fade * 0.6F);
+    /** Lichtspuren der eingesaugten Bloecke und der Blitz, aus dem die Kammer entsteht. */
+    private static void formationGlow(Matrix4f m, VertexConsumer vc, Params p, float[] seam) {
+        for (ShellCell c : cells(p.size())) {
+            float k = suck(p, c);
+            if (k <= 0.0F || k >= 1.0F || !flies(p, c)) continue;
+            float[] q = suckPos(c, k), q2 = suckPos(c, Math.max(0.0F, k - 0.12F));
+            float a = Mth.sin(k * Mth.PI);
+            segment(vc, m, q2[0], q2[1], q2[2], q[0], q[1], q[2], 0.06F * (1.0F - k * 0.5F), seam[0], seam[1], seam[2], 0.0F, a);
         }
-        for (int k = 0; k < 12; k++) {
-            float ang = Mth.TWO_PI * k / 12 + p.t() * 0.05F;
-            RenderUtil.flatLine(vc, mm, 0, 0, Mth.cos(ang) * cr, Mth.sin(ang) * cr, 0.01F, violet, fade * 0.5F);
+        // Blitz: kurz nach dem Einsaugen bricht die Kammer aus dem Kern hervor
+        float flash = Mth.clamp(1.0F - Math.abs(p.form() - 0.52F) / 0.14F, 0.0F, 1.0F);
+        if (flash > 0.0F) {
+            float r = p.radius() * (0.2F + 1.1F * Mth.clamp((p.form() - 0.42F) / 0.3F, 0.0F, 1.0F));
+            RenderUtil.glowSphere(vc, m, r, 12, 18, new float[]{1.0F, 0.95F, 1.0F}, 0.55F * flash);
+            RenderUtil.glowSphere(vc, m, r * 0.6F, 10, 14, seam, 0.8F * flash);
         }
     }
 }
