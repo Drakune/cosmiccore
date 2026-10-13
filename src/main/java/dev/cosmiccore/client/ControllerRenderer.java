@@ -93,6 +93,24 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             pose.popPose();
         });
 
+        // optionaler Sternentrichter auf der Deckenmitte
+        if (be.isWithFunnel()) {
+            BlockPos top = center.above(pattern.half() + 1);
+            BlockState there = level.getBlockState(top);
+            if (!there.is(ModBlocks.STAR_FUNNEL.get())) {
+                if (!there.isAir() && !there.canBeReplaced()) {
+                    wrong.add(top);
+                } else {
+                    BlockState funnel = ModBlocks.STAR_FUNNEL.get().defaultBlockState();
+                    pose.pushPose();
+                    pose.translate(top.getX() - origin.getX(), top.getY() - origin.getY(), top.getZ() - origin.getZ());
+                    dispatcher.getModelRenderer().renderModel(pose.last(), ghost, funnel, dispatcher.getBlockModel(funnel),
+                            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                    pose.popPose();
+                }
+            }
+        }
+
         // 2) falsche Bloecke rot markieren
         if (!wrong.isEmpty()) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());

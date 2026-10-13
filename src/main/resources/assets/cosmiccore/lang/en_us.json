@@ -32,6 +32,7 @@
   "gui.cosmiccore.size_button": "%sx%sx%s",
   "gui.cosmiccore.size_info": "%s – %s RF/t",
   "gui.cosmiccore.confirm": "Build as %sx%sx%s",
+  "gui.cosmiccore.with_funnel": "+ Funnel",
   "gui.cosmiccore.output_label": "Output",
   "gui.cosmiccore.max_level": "Max level",
   "gui.cosmiccore.blocks_label": "Required blocks",

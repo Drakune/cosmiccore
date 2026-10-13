@@ -28,6 +28,7 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -48,11 +49,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // Groessenwahl: Reiter links, 3D-Vorschau rechts, Blockliste und Bestaetigung unten
     private static final int TAB_X = 8, TAB_Y = 22, TAB_W = 58, TAB_H = 20, TAB_STEP = 26;
     private static final int VIEW_X = 72, VIEW_Y = 18, VIEW_W = 154, VIEW_H = 150;
-    private static final int ICON_Y = 176;
+    private static final int ICON_Y = 182;
 
     private final List<Button> sizeButtons = new ArrayList<>();
     private Button scaleDown, scaleUp, toggle, preview, build, confirm;
     private int selected = 1; // 7x7x7 vorausgewaehlt
+    private boolean withFunnel = true;
+    private Checkbox funnelBox;
     private float dragYaw, dragPitch;
 
     public ControllerScreen(ControllerMenu menu, Inventory inv, Component title) {
@@ -77,8 +80,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                     btn -> selected = index).bounds(leftPos + TAB_X, topPos + TAB_Y + i * TAB_STEP, TAB_W, TAB_H).build();
             sizeButtons.add(addRenderableWidget(b));
         }
-        confirm = addRenderableWidget(Button.builder(Component.empty(), b -> press(ControllerMenu.BTN_SIZE_FIRST + selected))
-                .bounds(leftPos + 42, topPos + H - 26, W - 84, 18).build());
+        confirm = addRenderableWidget(Button.builder(Component.empty(),
+                        b -> press(ControllerMenu.BTN_SIZE_FIRST + selected + (withFunnel ? ReactorSize.values().length : 0)))
+                .bounds(leftPos + 42, topPos + H - 24, W - 84, 18).build());
+        funnelBox = addRenderableWidget(Checkbox.builder(Component.translatable("gui.cosmiccore.with_funnel"), font)
+                .pos(leftPos + TAB_X, topPos + TAB_Y + 3 * TAB_STEP + 52)
+                .selected(withFunnel)
+                .onValueChange((box, value) -> withFunnel = value)
+                .build());
         scaleDown = addRenderableWidget(Button.builder(Component.literal("-"), b -> press(ControllerMenu.BTN_SCALE_DOWN))
                 .bounds(leftPos + 8, topPos + ROW_Y, 16, 16).build());
         scaleUp = addRenderableWidget(Button.builder(Component.literal("+"), b -> press(ControllerMenu.BTN_SCALE_UP))
@@ -108,6 +117,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         boolean chosen = menu.sizeChosen();
         for (Button b : sizeButtons) b.visible = !chosen;
         confirm.visible = !chosen;
+        funnelBox.visible = !chosen;
         ReactorSize sel = ReactorSize.values()[selected];
         confirm.setMessage(Component.translatable("gui.cosmiccore.confirm", sel.size(), sel.size(), sel.size()));
         scaleDown.visible = scaleUp.visible = toggle.visible = preview.visible = chosen;
@@ -255,7 +265,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         renderStructure(g, ReactorSize.values()[selected], x + VIEW_X + VIEW_W / 2, y + VIEW_Y + VIEW_H / 2 + 6, t);
 
         // benoetigte Bloecke
-        List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected]);
+        List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel);
         for (int i = 0; i < icons.size(); i++) {
             int ix = x + iconX(i, icons.size()), iy = y + ICON_Y;
             drawSlotBox(g, ix, iy, 0xFF2E2050);
@@ -270,7 +280,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /** Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen). */
-    private static List<ItemStack> requiredBlocks(ReactorSize size) {
+    private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel) {
         CorePattern p = size.pattern();
         List<ItemStack> out = new ArrayList<>();
         out.add(new ItemStack(ModItems.CONTROLLER.get(), 1));
@@ -280,6 +290,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         out.add(new ItemStack(ModItems.RESONANCE_COIL.get(), p.count(CorePattern.Cell.COIL)));
         out.add(new ItemStack(ModItems.FOCUS_CRYSTAL.get(), p.count(CorePattern.Cell.CRYSTAL)));
         out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE)));
+        if (funnel) out.add(new ItemStack(ModItems.STAR_FUNNEL.get(), 1));
         return out;
     }
 
@@ -313,6 +324,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                     ModelData.EMPTY, null);
             ps.popPose();
         });
+        if (withFunnel) {
+            ps.pushPose();
+            ps.translate(-0.5F, half + 0.5F, -0.5F);
+            dispatcher.renderSingleBlock(ModBlocks.STAR_FUNNEL.get().defaultBlockState(), ps, buffers, LightTexture.FULL_BRIGHT,
+                    OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+            ps.popPose();
+        }
         g.flush();
         ps.popPose();
         g.disableScissor();
@@ -365,7 +383,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         super.render(g, mouseX, mouseY, partialTick);
         renderTooltip(g, mouseX, mouseY);
         if (!menu.sizeChosen()) {
-            List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected]);
+            List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel);
             for (int i = 0; i < icons.size(); i++) {
                 int ix = leftPos + iconX(i, icons.size()), iy = topPos + ICON_Y;
                 if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {

@@ -12,8 +12,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(CosmicCore.MODID);
 
+    // Alle Huellenbloecke sind noOcclusion: bei gebildeter Struktur ist ihr Modell ausgeblendet (die runde Kammer
+    // wird gerendert). Wuerden sie Nachbarflaechen verdecken, saehe man durch die Welt.
     public static final DeferredBlock<StructureBlock> VOID_CASING = BLOCKS.registerBlock("void_casing",
-            StructureBlock::new, metal(MapColor.COLOR_BLACK, SoundType.NETHERITE_BLOCK, 2, 5, 5));
+            StructureBlock::new, metal(MapColor.COLOR_BLACK, SoundType.NETHERITE_BLOCK, 2, 5, 5).noOcclusion());
 
     public static final DeferredBlock<StructureBlock> RUNE_FRAME = BLOCKS.registerBlock("rune_frame",
             StructureBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
@@ -46,10 +48,10 @@ public final class ModBlocks {
             ControllerBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 6, 10, 10));
 
     public static final DeferredBlock<EnergyPortBlock> ENERGY_PORT = BLOCKS.registerBlock("energy_port",
-            EnergyPortBlock::new, metal(MapColor.COLOR_CYAN, SoundType.NETHERITE_BLOCK, 4, 8, 8));
+            EnergyPortBlock::new, metal(MapColor.COLOR_CYAN, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
 
     public static final DeferredBlock<ItemPortBlock> ITEM_PORT = BLOCKS.registerBlock("item_port",
-            ItemPortBlock::new, metal(MapColor.COLOR_MAGENTA, SoundType.NETHERITE_BLOCK, 4, 8, 8));
+            ItemPortBlock::new, metal(MapColor.COLOR_MAGENTA, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
 
     public static final DeferredBlock<StarFunnelBlock> STAR_FUNNEL = BLOCKS.registerBlock("star_funnel",
             StarFunnelBlock::new, BlockBehaviour.Properties.of()

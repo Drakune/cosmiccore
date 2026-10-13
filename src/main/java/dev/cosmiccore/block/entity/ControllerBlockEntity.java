@@ -80,6 +80,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private int scale = 1;
     private boolean enabled = true;
     private boolean preview;
+    /** Bei der Groessenwahl angehakt: Sternentrichter gehoert zur Bauvorschau und zum Kreativ-Aufbau. */
+    private boolean withFunnel;
 
     private boolean formed;
     private int energy;
@@ -126,6 +128,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     public boolean isPreview() {
         return preview;
+    }
+
+    public boolean isWithFunnel() {
+        return withFunnel;
     }
 
     public int getCapacity() {
@@ -191,9 +197,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Knopfdruck aus der GUI (serverseitig, ueber den Vanilla-Mechanismus clickMenuButton). */
     public boolean handleButton(Player player, int id) {
         if (!(level instanceof ServerLevel sl)) return false;
-        if (id >= ControllerMenu.BTN_SIZE_FIRST && id < ControllerMenu.BTN_SIZE_FIRST + ReactorSize.values().length) {
+        int sizes = ReactorSize.values().length;
+        if (id >= ControllerMenu.BTN_SIZE_FIRST && id < ControllerMenu.BTN_SIZE_FIRST + 2 * sizes) {
             if (size != null) return false; // nur einmalig waehlbar
-            size = ReactorSize.values()[id - ControllerMenu.BTN_SIZE_FIRST];
+            int index = id - ControllerMenu.BTN_SIZE_FIRST;
+            size = ReactorSize.values()[index % sizes];
+            withFunnel = index >= sizes;
             scale = 1;
             preview = true; // direkt zeigen, wo was hin muss
             checkTimer = 0;
@@ -613,6 +622,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
             level.setBlock(pos, target, Block.UPDATE_ALL);
         });
+        if (withFunnel) {
+            BlockPos top = center.above(p.half() + 1);
+            BlockState there = level.getBlockState(top);
+            if (there.isAir() || there.canBeReplaced()) {
+                level.setBlock(top, ModBlocks.STAR_FUNNEL.get().defaultBlockState(), Block.UPDATE_ALL);
+            }
+        }
         Vec3 c = Vec3.atCenterOf(center);
         level.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 60, p.half(), p.half(), p.half(), 0.02);
         level.playSound(null, c.x, c.y, c.z, SoundEvents.ILLUSIONER_CAST_SPELL, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -711,6 +727,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putInt("scale", scale);
         tag.putBoolean("enabled", enabled);
         tag.putBoolean("preview", preview);
+        tag.putBoolean("withFunnel", withFunnel);
         tag.putBoolean("formed", formed);
         tag.putInt("energy", energy);
         tag.putInt("burnTime", burnTime);
@@ -734,6 +751,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (size != null) scale = Math.min(scale, size.maxScale());
         enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
         preview = tag.getBoolean("preview");
+        withFunnel = tag.getBoolean("withFunnel");
         formed = tag.getBoolean("formed");
         energy = tag.getInt("energy");
         burnTime = tag.getInt("burnTime");
@@ -756,6 +774,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         CompoundTag tag = new CompoundTag();
         tag.putInt("size", size == null ? 0 : size.size());
         tag.putBoolean("preview", preview);
+        tag.putBoolean("withFunnel", withFunnel);
         tag.putBoolean("formed", formed);
         return tag;
     }
@@ -764,6 +783,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
         size = ReactorSize.bySize(tag.getInt("size"));
         preview = tag.getBoolean("preview");
+        withFunnel = tag.getBoolean("withFunnel");
         formed = tag.getBoolean("formed");
     }
 

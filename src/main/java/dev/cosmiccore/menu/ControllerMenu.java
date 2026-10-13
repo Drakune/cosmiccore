@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ControllerMenu extends AbstractContainerMenu {
     // Knopf-IDs
-    public static final int BTN_SIZE_FIRST = 0; // 0, 1, 2 = 5x5x5, 7x7x7, 9x9x9
+    public static final int BTN_SIZE_FIRST = 0; // 0..2 = 5x5x5, 7x7x7, 9x9x9; 3..5 = dasselbe mit Sternentrichter
     public static final int BTN_SCALE_DOWN = 10;
     public static final int BTN_SCALE_UP = 11;
     public static final int BTN_TOGGLE = 12;
