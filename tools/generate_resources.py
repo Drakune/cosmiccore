@@ -346,36 +346,51 @@ def draw_star_dust(f, nf):
     return img
 
 
-def draw_funnel_side():
-    img = plate(21, base=(20, 13, 36), noise=4)
+def draw_funnel_side(f=0, nf=1):
+    """Seite des Sternentrichters: Energiekanaele, in denen Licht nach oben pulst, und ein gluehender Rand."""
+    img = plate(21, base=(18, 12, 34), noise=4)
     px = img.load()
-    for x in range(16):  # Ringe an den Stufen
+    for x in range(16):  # Stufenkanten passend zum Modell
         for y in (3, 4, 8, 9):
             put(px, x, y, (58, 44, 98) if y in (3, 8) else (10, 6, 18))
-    for k, x in enumerate(range(2, 14, 3)):
-        for y in range(10, 15):
-            put(px, x, y, lerp((70, 140, 255), (160, 100, 255), y / 15))
-    for x in range(1, 15):
-        put(px, x, 1, lerp((90, 200, 255), (180, 120, 255), x / 15))
+    for k, x in enumerate((2, 6, 9, 13)):
+        path = [(x, y) for y in range(14, 0, -1) if y not in (3, 4, 8, 9)]
+        glow_path(px, path, 'active', f, nf, 21 + k)
+    ph = f / nf
+    for x in range(1, 15):  # oberer Rand: Lichtwelle laeuft rundum
+        i = 0.5 + 0.5 * math.sin(2 * math.pi * (ph - x / 15.0))
+        put(px, x, 1, lerp((60, 120, 220), (200, 240, 255), i))
     return img
 
 
-def draw_funnel_top():
+def draw_funnel_top(f=0, nf=1):
+    """Oberseite des Sternentrichters: drehender Spiralwirbel um eine dunkle Oeffnung mit pulsierendem Ring."""
     img = Image.new('RGBA', (16, 16))
     px = img.load()
+    ph = f / nf
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x - 7.5, y - 7.5
+            d = math.hypot(dx, dy)
+            ang = math.atan2(dy, dx)
+            if d < 2.2:
+                px[x, y] = (3, 1, 8, 255)
+            elif d < 7.6:
+                arm = 0.5 + 0.5 * math.sin(3 * ang + d * 1.1 - 2 * math.pi * ph)
+                arm = arm ** 3
+                base = lerp((22, 12, 44), (12, 6, 26), (d - 2.2) / 5.4)
+                col = lerp((90, 200, 255), (170, 110, 255), (d - 2.2) / 5.4)
+                px[x, y] = lerp(base, col, arm * (1.0 - (d - 2.2) / 7.0)) + (255,)
+            else:
+                px[x, y] = (60, 46, 100, 255)
+    ring = 0.5 + 0.5 * math.sin(2 * math.pi * ph * 2)
     for y in range(16):
         for x in range(16):
             d = math.hypot(x - 7.5, y - 7.5)
-            if d < 3.0:
-                px[x, y] = (4, 2, 10, 255)
-            elif d < 4.2:
-                px[x, y] = lerp((120, 220, 255), (170, 110, 255), (d - 3.0) / 1.2) + (255,)
-            elif d < 7.6:
-                px[x, y] = lerp((40, 24, 80), (16, 10, 30), (d - 4.2) / 3.4) + (255,)
-            else:
-                px[x, y] = (60, 46, 100, 255)
+            if 2.2 <= d < 3.0:
+                put(px, x, y, lerp((120, 200, 255), (240, 250, 255), ring))
     for (x, y) in [(3, 3), (12, 3), (3, 12), (12, 12)]:
-        put(px, x, y, (200, 230, 255))
+        put(px, x, y, lerp((120, 160, 255), (230, 240, 255), ring))
     return img
 
 
@@ -554,8 +569,8 @@ def textures():
     save_strip('port_socket', [draw_port_socket()], 1)
     save_strip('overdrive_particle', [draw_overdrive_particle(f, 8) for f in range(8)], 3, folder='item')
     save_strip('cosmic_laser_top', [draw_laser_top()], 1)
-    save_strip('star_funnel_side', [draw_funnel_side()], 1)
-    save_strip('star_funnel_top', [draw_funnel_top()], 1)
+    save_strip('star_funnel_side', [draw_funnel_side(f, 16) for f in range(16)], 2)
+    save_strip('star_funnel_top', [draw_funnel_top(f, 16) for f in range(16)], 2)
     return sheets
 
 

@@ -40,7 +40,7 @@ import org.joml.Matrix4f;
 public final class AwakeningEffect {
     private AwakeningEffect() {}
 
-    private static final int DURATION = 320;
+    private static final int DURATION = 220;
     private static final float[] VIOLET = {0.7F, 0.4F, 1.0F};
     private static final float[] CYAN = {0.35F, 0.95F, 1.0F};
     private static final float[] GOLD = {1.0F, 0.8F, 0.35F};
@@ -72,8 +72,7 @@ public final class AwakeningEffect {
             }
             case 30 -> sound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6F, 0.8F);
             case 60 -> sound(SoundEvents.ENDER_DRAGON_GROWL, 0.5F, 0.5F);
-            case 140 -> sound(SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5F, 1.0F);
-            case 220 -> sound(SoundEvents.BEACON_AMBIENT, 0.5F, 1.0F);
+            case 120 -> sound(SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5F, 1.0F);
             default -> {}
         }
         if (++age > DURATION) age = -1;
@@ -87,7 +86,7 @@ public final class AwakeningEffect {
         float t = age + event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float ph = t / DURATION;
         // Huellkurve: schnell an, lange halten, sanft aus
-        float env = Mth.clamp(t / 15.0F, 0.0F, 1.0F) * Mth.clamp((DURATION - t) / 80.0F, 0.0F, 1.0F);
+        float env = Mth.clamp(t / 12.0F, 0.0F, 1.0F) * Mth.clamp((DURATION - t) / 60.0F, 0.0F, 1.0F);
         Vec3 cam = event.getCamera().getPosition();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack pose = event.getPoseStack();
@@ -182,8 +181,8 @@ public final class AwakeningEffect {
                 float x = ox + Mth.cos(ang) * r, z = oz + Mth.sin(ang) * r;
                 float y = top + 20.0F * hash(k * 13) * (1.0F - s);
                 float tx = ox + Mth.cos(ang) * (r + 4.0F), tz = oz + Mth.sin(ang) * (r + 4.0F);
-                segment(vc, m, tx, y + 1.5F, tz, x, y, z, 0.12F, WHITE[0], WHITE[1], WHITE[2], 0.0F, env * Mth.sin(s * Mth.PI));
-                cube(vc, m, x, y, z, 0.25F, GOLD[0], GOLD[1], GOLD[2], env * Mth.sin(s * Mth.PI));
+                segment(vc, m, tx, y + 1.5F, tz, x, y, z, 0.06F, WHITE[0], WHITE[1], WHITE[2], 0.0F, env * Mth.sin(s * Mth.PI));
+                cube(vc, m, x, y, z, 0.15F, GOLD[0], GOLD[1], GOLD[2], env * Mth.sin(s * Mth.PI));
             }
         }
 

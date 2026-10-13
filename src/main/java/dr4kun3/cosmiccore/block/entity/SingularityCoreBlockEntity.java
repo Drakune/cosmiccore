@@ -45,7 +45,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     /** nur clientseitig: Zuenden des Kerns (Sterne rasen in die Mitte). */
     private CorePhase lastClientPhase;
     private long igniteStart = Long.MIN_VALUE;
-    public static final int IGNITE_TICKS = 110;
+    public static final int IGNITE_TICKS = 70;
     /** nur clientseitig: letzte Position des Laserziels relativ zum Kern (Quelle der Bruchstuecke). */
     @org.jetbrains.annotations.Nullable
     public net.minecraft.world.phys.Vec3 lastLaserTarget;

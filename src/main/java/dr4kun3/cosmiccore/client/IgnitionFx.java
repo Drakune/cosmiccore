@@ -39,8 +39,8 @@ public final class IgnitionFx {
             Vector3f q = starPos(lon, lat, r0, Math.max(0.0F, s - 0.08F));
             float[] c = lerp(k % 2 == 0 ? CYAN : VIOLET, GOLD, s * s);
             float a = energy * Mth.sin(s * Mth.PI * 0.5F + Mth.HALF_PI * 0.2F);
-            segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.025F + 0.02F * (1.0F - s), c[0], c[1], c[2], 0.0F, a);
-            cube(vc, m, p.x, p.y, p.z, 0.035F + 0.04F * (1.0F - s), WHITE[0], WHITE[1], WHITE[2], a);
+            segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.012F + 0.012F * (1.0F - s), c[0], c[1], c[2], 0.0F, a);
+            cube(vc, m, p.x, p.y, p.z, 0.02F + 0.025F * (1.0F - s), WHITE[0], WHITE[1], WHITE[2], a);
         }
         // Lichtblitz und Ringwelle, wenn die Sterne im Kern ankommen
         float hit = Mth.clamp((ph - 0.55F) / 0.45F, 0.0F, 1.0F);
@@ -48,6 +48,30 @@ public final class IgnitionFx {
             float pulse = Mth.sin(hit * Mth.PI);
             RenderUtil.glowSphere(vc, m, 0.3F + 0.5F * pulse, 10, 14, WHITE, 0.3F * energy * pulse);
             flatCircle(vc, m, 0.4F + size * 0.25F * hit, 0.025F, 64, GOLD, energy * (1.0F - hit) * env);
+        }
+    }
+
+    /**
+     * Dauerhafter Zustrom, solange der Kern aktiv ist: einige feine Sterne fliegen fortlaufend aus dem All in einem
+     * Wirbel in die Mitte (eine dezente Fortsetzung des Zuend-Effekts).
+     */
+    public static void ambient(Matrix4f m, VertexConsumer vc, int size, float t, float energy) {
+        int stars = 6 + size;
+        float spread = 5.0F + size * 1.2F;
+        for (int k = 0; k < stars; k++) {
+            float period = 70.0F + 30.0F * (0.5F + 0.5F * hash(k * 53));
+            float cyc = (t + k * 37.0F) / period;
+            int n = (int) cyc;
+            float s = cyc - n;
+            // jeder Durchlauf kommt aus einer anderen Himmelsrichtung
+            float lon = hash(k * 13 + n * 101) * Mth.PI, lat = (0.15F + 0.75F * (0.5F + 0.5F * hash(k * 29 + n * 7))) * Mth.HALF_PI;
+            float r0 = spread * (0.7F + 0.3F * (0.5F + 0.5F * hash(k * 7 + n)));
+            Vector3f p = starPos(lon, lat, r0, s);
+            Vector3f q = starPos(lon, lat, r0, Math.max(0.0F, s - 0.07F));
+            float[] c = lerp(k % 2 == 0 ? CYAN : VIOLET, GOLD, s * s);
+            float a = energy * 0.75F * Mth.sin(s * Mth.PI);
+            segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.01F, c[0], c[1], c[2], 0.0F, a);
+            cube(vc, m, p.x, p.y, p.z, 0.018F + 0.015F * (1.0F - s), WHITE[0], WHITE[1], WHITE[2], a);
         }
     }
 
