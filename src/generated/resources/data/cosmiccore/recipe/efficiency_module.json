@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "S": {
+      "item": "cosmiccore:star_dust"
+    },
+    "V": {
+      "item": "cosmiccore:void_casing"
+    }
+  },
+  "pattern": [
+    "GRG",
+    "SVS",
+    "GRG"
+  ],
+  "result": {
+    "count": 1,
+    "id": "cosmiccore:efficiency_module"
+  }
+}

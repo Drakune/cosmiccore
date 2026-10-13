@@ -1,0 +1,15 @@
+{
+  "values": [
+    "cosmiccore:void_casing",
+    "cosmiccore:rune_frame",
+    "cosmiccore:resonance_coil",
+    "cosmiccore:focus_crystal",
+    "cosmiccore:focus_glass",
+    "cosmiccore:singularity_core",
+    "cosmiccore:controller",
+    "cosmiccore:energy_port",
+    "cosmiccore:item_port",
+    "cosmiccore:star_funnel",
+    "cosmiccore:cosmic_laser"
+  ]
+}

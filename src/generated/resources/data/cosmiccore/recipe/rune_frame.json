@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "C": {
+      "item": "cosmiccore:void_casing"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "pattern": [
+    "CAC",
+    "ARA",
+    "CAC"
+  ],
+  "result": {
+    "count": 2,
+    "id": "cosmiccore:rune_frame"
+  }
+}

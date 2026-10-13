@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Erzeugt alle Texturen (inkl. Animationen), Modelle, Blockstates, Sprachdateien, Rezepte,
-Loot-Tables, Tags und Data-Maps fuer Cosmic Core. Braucht nur Pillow:  pip install pillow
+Erzeugt alle Texturen (inkl. Animationen), Modelle, Blockstates, Sprachdateien und das Mod-Logo fuer Cosmic Core.
+Rezepte, Loot-Tables, Tags, Data Maps und sounds.json kommen aus der NeoForge-Datengenerierung (./gradlew runData). Braucht nur Pillow:  pip install pillow
 Aufruf (im Projektordner):  python3 tools/generate_resources.py
 Alles hier ist absichtlich in einer Datei, damit du Farben/Texte/Zahlen leicht anpassen kannst.
 """
@@ -16,8 +16,6 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, '..', 'src', 'main', 'resources')
 ASSETS = os.path.join(RES, 'assets', 'cosmiccore')
-DATA = os.path.join(RES, 'data', 'cosmiccore')
-MCDATA = os.path.join(RES, 'data', 'minecraft')
 MOD = 'cosmiccore'
 
 PHASES = ['dormant', 'formed', 'active', 'unstable']
@@ -962,6 +960,26 @@ DE = {
     'guide.cosmiccore.stabilizer_note': 'Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.',
     'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.',
     'guide.cosmiccore.loot': '§5§lAsteroiden-Beute§r\n\nZerstörte Asteroiden lassen Beute zurück: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente und selten Quasar-Essenz.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.',
+    'jei.cosmiccore.category.fuel': 'Kern-Brennstoffe',
+    'jei.cosmiccore.category.stabilizer': 'Kern-Stabilisatoren',
+    'jei.cosmiccore.category.loot': 'Asteroiden-Beute',
+    'jei.cosmiccore.fuel.power': '%s RF/t',
+    'jei.cosmiccore.fuel.time': 'Brenndauer %s s',
+    'jei.cosmiccore.fuel.heat': 'Hitze ×%s',
+    'jei.cosmiccore.stabilizer.points': 'Kühlt %s Instabilität',
+    'jei.cosmiccore.stabilizer.time': 'Wirkt %s s',
+    'jei.cosmiccore.loot.small': 'Kleiner Asteroid',
+    'jei.cosmiccore.loot.medium': 'Mittlerer Asteroid',
+    'jei.cosmiccore.loot.large': 'Großer Asteroid',
+    'jei.cosmiccore.info.controller': 'Herz des Kerngenerators. Beim Platzieren wählst du die Baugröße (5x5x5 bis 11x11x11) und optional Sternentrichter und Laser. Rechtsklick öffnet die Steuerung; im Kreativmodus baut "Bauen" die Struktur automatisch. Alles weitere steht im Kosmischen Handbuch.',
+    'jei.cosmiccore.info.core': 'Die Singularität in der Mitte der Struktur. Wächst mit der Leistungsstufe, kollabiert bei 100 % Instabilität.',
+    'jei.cosmiccore.info.funnel': 'Optional über der Struktur: fängt kosmische Energie aus dem Himmel ein und bündelt sie in den Kern (Himmelsbonus).',
+    'jei.cosmiccore.info.laser': 'Vier Laser um den Sternentrichter bilden ein Laser-Array, das nachts Asteroiden abschießt. Die Beute landet im Controller.',
+    'jei.cosmiccore.info.efficiency_module': 'Im Controller eingesetzt: je Modul -15 % Brennstoffverbrauch (max. 4).',
+    'jei.cosmiccore.info.stability_module': 'Im Controller eingesetzt: je Modul -12 % Instabilität, das Feld hält 3 % tiefer (max. 4).',
+    'jei.cosmiccore.info.overdrive_particle': 'Wird für jede Overdrive-Stufe verbraucht: doppelte Leistung, dreifache Instabilität.',
+    'jei.cosmiccore.info.energy_port': 'Gibt die erzeugte Energie (RF/FE) an angrenzende Kabel ab.',
+    'jei.cosmiccore.info.item_port': 'Nimmt Brennstoff, Stabilisatoren und Module per Rohr auf und gibt Asteroiden-Beute aus.',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1099,10 +1117,6 @@ SUBTITLES_EN = {'core_hum': 'Core hums', 'core_ignite': 'Core ignites', 'core_fo
                 'orb_formed': 'Energy orb formed', 'core_absorb': 'Core absorbs energy', 'awakening': 'The ultimate core awakens'}
 
 
-def sounds():
-    wjson(f'{ASSETS}/sounds.json', {n: {'sounds': [f'{MOD}:{n}'], 'subtitle': f'subtitles.{MOD}.{n}'} for n in SOUND_NAMES})
-
-
 def lang():
     for n in SOUND_NAMES:
         DE[f'subtitles.{MOD}.{n}'] = SUBTITLES_DE[n]
@@ -1112,134 +1126,64 @@ def lang():
 
 
 # ----------------------------------------------------------------- Daten
-BLOCKS = ['void_casing', 'rune_frame', 'focus_glass', 'resonance_coil', 'focus_crystal',
-          'singularity_core', 'controller', 'energy_port', 'item_port', 'star_funnel', 'cosmic_laser']
 
 
-def item(i):
-    return {'item': i}
-
-
-def shaped(name, pattern, key, result, count):
-    wjson(f'{DATA}/recipe/{name}.json', {
-        'type': 'minecraft:crafting_shaped', 'category': 'misc', 'pattern': pattern,
-        'key': {k: item(v) for k, v in key.items()}, 'result': {'id': result, 'count': count}})
-
-
-def shapeless(name, ingredients, result, count):
-    wjson(f'{DATA}/recipe/{name}.json', {
-        'type': 'minecraft:crafting_shapeless', 'category': 'misc',
-        'ingredients': [item(i) for i in ingredients], 'result': {'id': result, 'count': count}})
-
-
-def loot_entry(item, lo, hi, chance=None):
-    e = {'type': 'minecraft:item', 'name': item, 'functions': [
-        {'function': 'minecraft:set_count', 'count': {'type': 'minecraft:uniform', 'min': lo, 'max': hi}}]}
-    return e
-
-
-def pool(entries, chance=None, rolls=1):
-    p = {'rolls': rolls, 'entries': entries}
-    if chance is not None:
-        p['conditions'] = [{'condition': 'minecraft:random_chance', 'chance': chance}]
-    return p
-
-
-def asteroid_loot():
-    """Beute der Asteroiden (per Datapack ueberschreibbar): data/cosmiccore/loot_table/asteroid/<groesse>.json"""
-    tables = {
-        'small': [pool([loot_entry(f'{MOD}:star_dust', 1, 3)]),
-                  pool([loot_entry('minecraft:raw_iron', 1, 2)], 0.4),
-                  pool([loot_entry('minecraft:amethyst_shard', 1, 3)], 0.3)],
-        'medium': [pool([loot_entry(f'{MOD}:star_dust', 2, 5)]),
-                   pool([loot_entry(f'{MOD}:compressed_star_dust', 1, 1)], 0.25),
-                   pool([loot_entry('minecraft:raw_gold', 1, 3)], 0.4),
-                   pool([loot_entry('minecraft:raw_iron', 1, 3)], 0.5),
-                   pool([loot_entry('minecraft:diamond', 1, 1)], 0.1)],
-        'large': [pool([loot_entry(f'{MOD}:compressed_star_dust', 1, 2)]),
-                  pool([loot_entry(f'{MOD}:neutron_fragment', 1, 1)], 0.35),
-                  pool([loot_entry(f'{MOD}:quasar_essence', 1, 1)], 0.08),
-                  pool([loot_entry('minecraft:diamond', 1, 2)], 0.3),
-                  pool([loot_entry('minecraft:netherite_scrap', 1, 1)], 0.1),
-                  pool([loot_entry('minecraft:echo_shard', 1, 2)], 0.2)],
-    }
-    for name, pools in tables.items():
-        wjson(f'{DATA}/loot_table/asteroid/{name}.json', {'type': 'minecraft:empty', 'pools': pools,
-                                                         'random_sequence': f'{MOD}:asteroid/{name}'})
-
-
-def data():
-    for b in BLOCKS:
-        wjson(f'{DATA}/loot_table/blocks/{b}.json', {
-            'type': 'minecraft:block',
-            'pools': [{'rolls': 1.0, 'bonus_rolls': 0.0,
-                       'entries': [{'type': 'minecraft:item', 'name': f'{MOD}:{b}'}],
-                       'conditions': [{'condition': 'minecraft:survives_explosion'}]}],
-            'random_sequence': f'{MOD}:blocks/{b}'})
-    values = [f'{MOD}:{b}' for b in BLOCKS]
-    wjson(f'{MCDATA}/tags/block/mineable/pickaxe.json', {'replace': False, 'values': values})
-    wjson(f'{MCDATA}/tags/block/needs_iron_tool.json', {'replace': False, 'values': values})
-
-    shaped('void_casing', ['OIO', 'IAI', 'OIO'],
-           {'O': 'minecraft:obsidian', 'I': 'minecraft:iron_ingot', 'A': 'minecraft:amethyst_shard'}, f'{MOD}:void_casing', 4)
-    shaped('rune_frame', ['CAC', 'ARA', 'CAC'],
-           {'C': f'{MOD}:void_casing', 'A': 'minecraft:amethyst_shard', 'R': 'minecraft:redstone'}, f'{MOD}:rune_frame', 2)
-    shaped('focus_glass', ['GGG', 'GAG', 'GGG'],
-           {'G': 'minecraft:glass', 'A': 'minecraft:amethyst_shard'}, f'{MOD}:focus_glass', 4)
-    shaped('resonance_coil', ['CCC', 'RVR', 'CCC'],
-           {'C': 'minecraft:copper_ingot', 'R': 'minecraft:redstone', 'V': f'{MOD}:void_casing'}, f'{MOD}:resonance_coil', 1)
-    shaped('focus_crystal', ['ADA', 'DED', 'ADA'],
-           {'A': 'minecraft:amethyst_shard', 'D': 'minecraft:diamond', 'E': 'minecraft:ender_eye'}, f'{MOD}:focus_crystal', 1)
-    shaped('singularity_core', ['OEO', 'ENE', 'OEO'],
-           {'O': 'minecraft:crying_obsidian', 'E': 'minecraft:ender_eye', 'N': 'minecraft:nether_star'}, f'{MOD}:singularity_core', 1)
-    shaped('controller', ['CDC', 'ENE', 'CDC'],
-           {'C': f'{MOD}:void_casing', 'D': 'minecraft:diamond', 'E': 'minecraft:ender_eye', 'N': 'minecraft:nether_star'},
-           f'{MOD}:controller', 1)
-    shapeless('energy_port', [f'{MOD}:void_casing', 'minecraft:redstone', 'minecraft:redstone', 'minecraft:copper_ingot'],
-              f'{MOD}:energy_port', 1)
-    shaped('star_funnel', ['G G', 'GSG', ' V '],
-           {'G': f'{MOD}:focus_glass', 'S': f'{MOD}:star_dust', 'V': f'{MOD}:void_casing'}, f'{MOD}:star_funnel', 1)
-    shaped('cosmic_laser', [' C ', 'ISI', 'IVI'],
-           {'C': f'{MOD}:focus_crystal', 'S': f'{MOD}:star_dust', 'I': 'minecraft:iron_ingot', 'V': f'{MOD}:void_casing'},
-           f'{MOD}:cosmic_laser', 1)
-    shaped('overdrive_particle', [' E ', 'ENE', ' E '],
-           {'E': 'minecraft:end_crystal', 'N': 'minecraft:nether_star'}, f'{MOD}:overdrive_particle', 1)
-    shaped('efficiency_module', ['GRG', 'SVS', 'GRG'],
-           {'G': 'minecraft:gold_ingot', 'R': 'minecraft:redstone', 'S': f'{MOD}:star_dust', 'V': f'{MOD}:void_casing'},
-           f'{MOD}:efficiency_module', 1)
-    shaped('stability_module', ['ODO', 'SVS', 'ODO'],
-           {'O': 'minecraft:crying_obsidian', 'D': 'minecraft:diamond', 'S': f'{MOD}:star_dust', 'V': f'{MOD}:void_casing'},
-           f'{MOD}:stability_module', 1)
-    asteroid_loot()
-    shaped('compressed_star_dust', ['SSS', 'SSS', 'SSS'], {'S': f'{MOD}:star_dust'}, f'{MOD}:compressed_star_dust', 1)
-    shapeless('guide_book', ['minecraft:book', f'{MOD}:star_dust'], f'{MOD}:guide_book', 1)
-    shapeless('item_port', [f'{MOD}:void_casing', 'minecraft:hopper'], f'{MOD}:item_port', 1)
-    shapeless('star_dust', ['minecraft:amethyst_shard', 'minecraft:amethyst_shard', 'minecraft:ender_pearl',
-                            'minecraft:glowstone_dust'], f'{MOD}:star_dust', 2)
-
-    # Data Maps: hier tunst du die Balance - auch per Datapack ueberschreibbar
-    wjson(f'{DATA}/data_maps/item/core_fuel.json', {'values': {
-        f'{MOD}:star_dust': {'burn_time': 2400, 'power': 1200},
-        f'{MOD}:compressed_star_dust': {'burn_time': 24000, 'power': 2600},
-        f'{MOD}:neutron_fragment': {'burn_time': 6000, 'power': 8000, 'heat': 1.4},
-        f'{MOD}:quasar_essence': {'burn_time': 3000, 'power': 20000, 'heat': 2.0},
-        'minecraft:ender_pearl': {'burn_time': 1200, 'power': 400},
-        'minecraft:ender_eye': {'burn_time': 1800, 'power': 700},
-        'minecraft:echo_shard': {'burn_time': 3600, 'power': 900},
-        'minecraft:sculk_catalyst': {'burn_time': 2400, 'power': 600},
-        'minecraft:nether_star': {'burn_time': 12000, 'power': 3000}}})
-    wjson(f'{DATA}/data_maps/item/core_stabilizer.json', {'values': {
-        'minecraft:obsidian': {'duration': 1200, 'strength': 0.02},
-        'minecraft:crying_obsidian': {'duration': 2400, 'strength': 0.035},
-        'minecraft:netherite_scrap': {'duration': 3600, 'strength': 0.06}}})
+# ----------------------------------------------------------------- Mod-Logo
+def draw_logo(size=256):
+    """Mod-Icon: Schwarzes Loch mit leuchtender Akkretionsscheibe vor einem Sternfeld (logoFile in neoforge.mods.toml)."""
+    rnd = random.Random(42)
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    px = img.load()
+    c = size / 2
+    stars = [(rnd.random() * size, rnd.random() * size, rnd.random()) for _ in range(140)]
+    for y in range(size):
+        for x in range(size):
+            dx, dy = x + 0.5 - c, y + 0.5 - c
+            r = math.hypot(dx, dy) / c
+            if r > 1.0:
+                continue
+            # Hintergrund: tiefer Nebel
+            neb = 0.5 + 0.5 * math.sin(dx * 0.045 + math.cos(dy * 0.03) * 2.0)
+            col = [12 + 30 * neb * (1 - r), 6 + 10 * neb * (1 - r), 28 + 50 * neb * (1 - r)]
+            # Akkretionsscheibe (geneigte Ellipse)
+            ey = dy / 0.32
+            er = math.hypot(dx, ey) / c
+            ang = math.atan2(ey, dx)
+            if 0.34 < er < 0.92:
+                band = math.sin((er - 0.34) / 0.58 * math.pi)
+                swirl = 0.6 + 0.4 * math.sin(ang * 3 + er * 14)
+                k = band * swirl * (1.25 if dy > 0 else 0.9)
+                hot = max(0.0, 1 - (er - 0.34) / 0.3)
+                col[0] += 255 * k * (0.75 + 0.25 * hot)
+                col[1] += 255 * k * (0.32 + 0.55 * hot)
+                col[2] += 255 * k * (0.95 - 0.2 * hot)
+            # Gravitationslinse: Lichtring
+            ring = math.exp(-((r - 0.33) / 0.035) ** 2)
+            col = [col[0] + 255 * ring * 0.9, col[1] + 200 * ring, col[2] + 255 * ring]
+            # Ereignishorizont (vor der hinteren Scheibenhaelfte)
+            if r < 0.3 and not (dy > 0 and 0.34 < er):
+                col = [0, 0, 0]
+            # Rand: goldener Reif
+            edge = math.exp(-((r - 0.97) / 0.02) ** 2)
+            col = [col[0] + 230 * edge, col[1] + 170 * edge, col[2] + 70 * edge]
+            alpha = 255 if r < 0.995 else int(255 * (1 - (r - 0.995) / 0.005))
+            px[x, y] = (clamp(col[0]), clamp(col[1]), clamp(col[2]), alpha)
+    for sx, sy, b in stars:
+        dx, dy = sx - c, sy - c
+        r = math.hypot(dx, dy) / c
+        if 0.4 < r < 0.93 and abs(dy) > c * 0.32 * 0.95:
+            x, y = int(sx), int(sy)
+            v = int(150 + 105 * b)
+            cur = px[x, y]
+            px[x, y] = (max(cur[0], v), max(cur[1], v), max(cur[2], 255), cur[3])
+    img.save(os.path.join(RES, 'logo.png'))
 
 
 if __name__ == '__main__':
     sheets = textures()
     models()
     lang()
-    sounds()
-    data()
+    draw_logo()
     if '--preview' in sys.argv:
         preview(sheets)
     print('Resources generated.')

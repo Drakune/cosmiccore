@@ -1,16 +1,16 @@
 # Cosmic Core - Kerngenerator (NeoForge 1.21.1)
 
-Multiblock-Reaktor (5x5x5, 7x7x7 oder 9x9x9) mit animierter Singularität, der aus kosmischem Brennstoff RF erzeugt.
+Multiblock-Reaktor (5x5x5, 7x7x7, 9x9x9 oder ultimativ 11x11x11) mit animierter Singularität, der aus kosmischem Brennstoff RF erzeugt.
 Leistungsstufe hoch = mehr Strom, aber mehr Verbrauch und mehr Risiko.
 
-## Bauen (wichtig: Das Projekt ist hier NICHT kompiliert worden)
+## Bauen
 
 1. JDK 21 installieren.
 2. Im Projektordner: `./gradlew build` (Windows: `gradlew.bat build`)
 3. Die fertige Jar liegt danach unter `build/libs/cosmiccore-1.0.0.jar`.
    Testen mit `./gradlew runClient`. Auf einen Server gehört die Jar in `mods/` (Client und Server brauchen sie).
 
-Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich schnell beheben.
+Rezept-Viewer im Dev-Client testen: `./gradlew runClient -Pviewer=jei` (oder `-Pviewer=emi`).
 
 ## Controller & GUI
 
@@ -119,14 +119,28 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
 
 Stabilisatoren halten dank `stabilizerMultiplier` (Standard x3) dreimal so lange wie ihre Data-Map-Werte.
 
+## Brennstoffe, Module, Beute
+
+- Brennstoff-Stufen: Sternenstaub → Verdichteter Sternenstaub → Neutronenstern-Fragment → Quasar-Essenz.
+  Heißere Brennstoffe (`heat` > 1) liefern viel mehr RF/t, treiben aber die Instabilität stärker.
+- Module im Controller (je bis zu 4): Effizienz-Modul (-15 % Verbrauch je Stück),
+  Stabilitäts-Modul (-12 % Instabilität je Stück, Feld hält 3 % tiefer).
+- Asteroiden-Beute landet in 6 Beute-Slots des Controllers; der Item-Port gibt sie an Rohre ab.
+- JEI, EMI und REI zeigen Brennstoffe, Stabilisatoren, Asteroiden-Beute und Info-Seiten (optional, kein Pflicht-Mod).
+- Grafikqualität: `config/cosmiccore-client.toml` (`quality` LOW/MEDIUM/HIGH, `detailDistance`).
+
 ## Balancing ohne Neukompilieren
 
 - `config/cosmiccore-common.toml` (Puffer pro Stufe, Port-Rate, globaler `outputMultiplier`, Instabilitätsrate, Kollaps ...)
 - Data Maps (auch per Datapack überschreibbar):
   `data/cosmiccore/data_maps/item/core_fuel.json` und `core_stabilizer.json`. Fuel-Tooltips zeigen die Werte im Spiel an.
+- Asteroiden-Beute: `data/cosmiccore/loot_table/asteroid/small|medium|large.json`.
 
-## Texturen/Modelle anpassen
+## Ressourcen erzeugen
 
-`python3 tools/generate_resources.py` (braucht Pillow) erzeugt alle Texturen, Animationen, Modelle, Rezepte, Loot-Tables und
-Sprachdateien neu. Die Singularität (Kugel, Ringe, Sterne, Blitze) wird prozedural in
-`client/SingularityCoreRenderer.java` gezeichnet.
+- `./gradlew runData` – NeoForge-Datengenerierung nach `src/generated/resources`: Rezepte, Loot-Tables (Blöcke und
+  Asteroiden, Quelle `entity/AsteroidLoot.java`), Block-Tags, Data Maps (`datagen/ModDataMapProvider.java`) und `sounds.json`.
+- `python3 tools/generate_resources.py` (braucht Pillow) – Texturen, Animationen, Modelle, Blockstates, Sprachdateien, Mod-Logo.
+- `python3 tools/generate_sounds.py` (numpy + ffmpeg) – synthetisiert die eigenen Sounds als OGG.
+
+Die Singularität und alle Effekte werden prozedural in `client/` gezeichnet (z. B. `SingularityCoreRenderer.java`).

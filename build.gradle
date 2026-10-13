@@ -27,7 +27,9 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+    maven { name = 'BlameJared (JEI)'; url = 'https://maven.blamejared.com/' }
+    maven { name = 'TerraformersMC (EMI)'; url = 'https://maven.terraformersmc.com/' }
+    maven { name = 'Shedaniel (REI)'; url = 'https://maven.shedaniel.me/' }
 }
 
 base {
@@ -116,6 +118,15 @@ configurations {
 }
 
 dependencies {
+    // Rezept-Viewer: nur die APIs zum Kompilieren, die Plugins laden sich, wenn der jeweilige Mod installiert ist
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge:${rei_version}"
+    // Zum Testen im Dev-Client einen Viewer aktivieren (nur einen gleichzeitig):
+    if (project.findProperty('viewer') == 'jei') localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    if (project.findProperty('viewer') == 'emi') localRuntime "dev.emi:emi-neoforge:${emi_version}"
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
