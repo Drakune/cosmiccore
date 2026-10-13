@@ -1,6 +1,7 @@
 package dev.cosmiccore.block.entity;
 
 import dev.cosmiccore.CoreConfig;
+import dev.cosmiccore.ModItems;
 import dev.cosmiccore.block.ControllerBlock;
 import dev.cosmiccore.block.CorePhase;
 import dev.cosmiccore.block.ModBlocks;
@@ -83,6 +84,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean preview;
     /** Bei der Groessenwahl angehakt: Sternentrichter gehoert zur Bauvorschau und zum Kreativ-Aufbau. */
     private boolean withFunnel;
+    /** Bei der Groessenwahl angehakt: vier Kosmos-Laser gehoeren zur Bauvorschau und zum Kreativ-Aufbau. */
+    private boolean withLasers;
+    /** Installierte Overdrive-Partikel: je Stufe Leistung x2, Instabilitaet x3. */
+    private int overdrive;
 
     private boolean formed;
     private int energy;
@@ -136,6 +141,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     public boolean isWithFunnel() {
         return withFunnel;
+    }
+
+    public boolean isWithLasers() {
+        return withLasers;
     }
 
     public int getCapacity() {
@@ -202,11 +211,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public boolean handleButton(Player player, int id) {
         if (!(level instanceof ServerLevel sl)) return false;
         int sizes = ReactorSize.values().length;
-        if (id >= ControllerMenu.BTN_SIZE_FIRST && id < ControllerMenu.BTN_SIZE_FIRST + 2 * sizes) {
+        if (id >= ControllerMenu.BTN_SIZE_FIRST && id < ControllerMenu.BTN_SIZE_FIRST + 4 * sizes) {
             if (size != null) return false; // nur einmalig waehlbar
             int index = id - ControllerMenu.BTN_SIZE_FIRST;
             size = ReactorSize.values()[index % sizes];
-            withFunnel = index >= sizes;
+            withFunnel = (index / sizes) % 2 == 1;
+            withLasers = index / (2 * sizes) == 1;
             scale = 1;
             preview = true; // direkt zeigen, wo was hin muss
             checkTimer = 0;
@@ -220,6 +230,25 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             case ControllerMenu.BTN_SCALE_UP -> scale = Math.min(size.maxScale(), scale + 1);
             case ControllerMenu.BTN_TOGGLE -> enabled = !enabled;
             case ControllerMenu.BTN_PREVIEW -> preview = !preview;
+            case ControllerMenu.BTN_OVERDRIVE_UP -> {
+                if (overdrive >= size.maxOverdrive()) return false;
+                if (!player.getAbilities().instabuild && !consumeParticle(player)) {
+                    player.displayClientMessage(Component.translatable("message.cosmiccore.overdrive.missing")
+                            .withStyle(ChatFormatting.RED), true);
+                    return false;
+                }
+                overdrive++;
+                Vec3 c = Vec3.atCenterOf(center(sl));
+                sl.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 1.5F, 0.6F + 0.2F * overdrive);
+                sl.playSound(null, c.x, c.y, c.z, SoundEvents.WITHER_SPAWN, SoundSource.BLOCKS, 0.6F, 1.6F);
+                sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 200, 1.0, 1.0, 1.0, 0.8);
+            }
+            case ControllerMenu.BTN_OVERDRIVE_DOWN -> {
+                if (overdrive <= 0) return false;
+                overdrive--; // das Partikel ist verbraucht und kommt nicht zurueck
+                Vec3 c = Vec3.atCenterOf(center(sl));
+                sl.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 1.5F, 0.5F);
+            }
             case ControllerMenu.BTN_BUILD -> {
                 if (!player.getAbilities().instabuild) return false;
                 buildStructure(sl);
@@ -232,6 +261,19 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         changedAndSync();
         pushVisuals(sl);
         return true;
+    }
+
+    /** Nimmt ein Overdrive-Partikel aus dem Inventar des Spielers. */
+    private static boolean consumeParticle(Player player) {
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack st = inv.getItem(i);
+            if (st.is(ModItems.OVERDRIVE_PARTICLE.get())) {
+                st.shrink(1);
+                return true;
+            }
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ Tick
@@ -256,12 +298,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private double outputScale() {
-        return Math.pow(scale, CoreConfig.SCALE_OUTPUT_EXPONENT.get());
+        return Math.pow(scale, CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * Math.pow(2.0, overdrive);
     }
 
     private double instabilityScale() {
         double sizeFactor = size == null ? 1.0 : size.instabilityFactor();
-        return Math.pow(scale, CoreConfig.SCALE_INSTABILITY_EXPONENT.get()) * sizeFactor;
+        return Math.pow(scale, CoreConfig.SCALE_INSTABILITY_EXPONENT.get()) * sizeFactor * Math.pow(3.0, overdrive);
     }
 
     private void simulate(ServerLevel level) {
@@ -490,7 +532,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             ItemStack stab = inventory.getStackInSlot(SLOT_STAB);
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
             be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic, shield, funnel,
-                    laserArray, laserTarget);
+                    laserArray, laserTarget, overdrive);
         }
     }
 
@@ -704,6 +746,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
             level.setBlock(pos, target, Block.UPDATE_ALL);
         });
+        if (withLasers) {
+            for (Direction d : Direction.Plane.HORIZONTAL) {
+                BlockPos lp = center.above(p.half() + 1).relative(d);
+                BlockState there = level.getBlockState(lp);
+                if (there.isAir() || there.canBeReplaced()) {
+                    level.setBlock(lp, ModBlocks.COSMIC_LASER.get().defaultBlockState(), Block.UPDATE_ALL);
+                }
+            }
+        }
         if (withFunnel) {
             BlockPos top = center.above(p.half() + 1);
             BlockState there = level.getBlockState(top);
@@ -814,6 +865,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putBoolean("enabled", enabled);
         tag.putBoolean("preview", preview);
         tag.putBoolean("withFunnel", withFunnel);
+        tag.putBoolean("withLasers", withLasers);
+        tag.putInt("overdrive", overdrive);
         tag.putBoolean("formed", formed);
         tag.putInt("energy", energy);
         tag.putInt("burnTime", burnTime);
@@ -838,6 +891,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
         preview = tag.getBoolean("preview");
         withFunnel = tag.getBoolean("withFunnel");
+        withLasers = tag.getBoolean("withLasers");
+        overdrive = Math.max(0, tag.getInt("overdrive"));
+        if (size != null) overdrive = Math.min(overdrive, size.maxOverdrive());
         formed = tag.getBoolean("formed");
         energy = tag.getInt("energy");
         burnTime = tag.getInt("burnTime");
@@ -861,6 +917,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putInt("size", size == null ? 0 : size.size());
         tag.putBoolean("preview", preview);
         tag.putBoolean("withFunnel", withFunnel);
+        tag.putBoolean("withLasers", withLasers);
         tag.putBoolean("formed", formed);
         return tag;
     }
@@ -870,6 +927,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         size = ReactorSize.bySize(tag.getInt("size"));
         preview = tag.getBoolean("preview");
         withFunnel = tag.getBoolean("withFunnel");
+        withLasers = tag.getBoolean("withLasers");
         formed = tag.getBoolean("formed");
     }
 
@@ -932,6 +990,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));
                 case ControllerMenu.D_COLLAPSE -> collapseCooldown / 20;
+                case ControllerMenu.D_OVERDRIVE -> overdrive;
                 case ControllerMenu.D_ERRORS -> lastReport == null || formed ? 0 : Math.min(32767, lastReport.mismatches());
                 default -> 0;
             };

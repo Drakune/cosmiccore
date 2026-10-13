@@ -23,24 +23,27 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ControllerMenu extends AbstractContainerMenu {
     // Knopf-IDs
-    public static final int BTN_SIZE_FIRST = 0; // 0..2 = 5x5x5, 7x7x7, 9x9x9; 3..5 = dasselbe mit Sternentrichter
+    /** Groessenwahl: Index = Groesse (0..2) + 3 * Trichter + 6 * Laser, also 0..11. */
+    public static final int BTN_SIZE_FIRST = 0;
     public static final int BTN_SCALE_DOWN = 10;
     public static final int BTN_SCALE_UP = 11;
     public static final int BTN_TOGGLE = 12;
     public static final int BTN_PREVIEW = 13;
     public static final int BTN_BUILD = 14;
+    public static final int BTN_OVERDRIVE_UP = 15;
+    public static final int BTN_OVERDRIVE_DOWN = 16;
 
     // Datenfelder
     public static final int D_ENERGY_LO = 0, D_ENERGY_HI = 1, D_CAPACITY_LO = 2, D_CAPACITY_HI = 3, D_OUTPUT_LO = 4, D_OUTPUT_HI = 5,
             D_INSTABILITY = 6, D_RESONANCE = 7, D_SCALE = 8, D_MAX_SCALE = 9, D_SIZE = 10, D_FLAGS = 11, D_COSMIC = 12,
-            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16;
-    public static final int DATA_COUNT = 17;
+            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17;
+    public static final int DATA_COUNT = 18;
 
     public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16, F_FUNNEL = 32, F_LASER = 64;
 
     // Layout (auch vom Screen benutzt)
     public static final int FUEL_X = 15, FUEL_Y = 26, STAB_X = 15, STAB_Y = 66;
-    public static final int INV_X = 36, INV_Y = 144;
+    public static final int INV_X = 36, INV_Y = 160;
 
     private final BlockPos pos;
     private final ContainerLevelAccess access;
@@ -148,6 +151,10 @@ public class ControllerMenu extends AbstractContainerMenu {
 
     public int errors() {
         return data.get(D_ERRORS);
+    }
+
+    public int overdrive() {
+        return data.get(D_OVERDRIVE);
     }
 
     // ------------------------------------------------------------------ Logik

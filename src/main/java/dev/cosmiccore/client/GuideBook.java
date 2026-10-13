@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 
 /** Zeigt das Handbuch im Vanilla-Buchbildschirm. Die Seiten stehen in den Sprachdateien (guide.cosmiccore.page.N). */
 public final class GuideBook {
-    public static final int PAGES = 13;
+    public static final int PAGES = 14;
 
     public static void open() {
         List<Component> pages = new ArrayList<>();

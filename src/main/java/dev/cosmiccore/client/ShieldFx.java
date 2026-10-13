@@ -32,6 +32,7 @@ public final class ShieldFx {
     private static final float[] BLUE = {0.35F, 0.75F, 1.0F};
     private static final float[] VIOLET = {0.6F, 0.4F, 1.0F};
     private static final float[] CRITICAL = {1.0F, 0.12F, 0.12F};
+    private static final float[][] OVERDRIVE = {{0.4F, 0.85F, 1.0F}, {1.0F, 0.75F, 0.2F}, {0.95F, 0.5F, 1.0F}};
 
     private static List<Vector3f[]> edges;
     private static List<Vector3f[]> faces;
@@ -70,13 +71,16 @@ public final class ShieldFx {
     }
 
     public static void render(PoseStack pose, VertexConsumer vc, int size, float reach, float t, float energy, float heat,
-                              float shield, boolean unstable, float camYaw, float camPitch) {
+                              float shield, boolean unstable, float camYaw, float camPitch, int overdrive) {
         if (energy <= 0.01F) return;
         build();
         float rs = reach - 0.05F;
         float strength = 0.25F + 0.75F * shield;
         float danger = Mth.clamp((heat - 0.4F) / 0.6F, 0.0F, 1.0F);
-        float[] col = lerp(lerp(BLUE, VIOLET, 0.5F + 0.5F * Mth.sin(t * 0.03F)), CRITICAL, danger);
+        float[] col = lerp(BLUE, VIOLET, 0.5F + 0.5F * Mth.sin(t * 0.03F));
+        if (overdrive > 0) col = lerp(col, OVERDRIVE[Math.min(3, overdrive) - 1], 0.75F); // Overdrive faerbt das Schild
+        col = lerp(col, CRITICAL, danger);
+        strength = Math.min(1.0F, strength * (1.0F + 0.15F * overdrive));
         int window = (int) (t * 0.25F);
 
         pose.pushPose();

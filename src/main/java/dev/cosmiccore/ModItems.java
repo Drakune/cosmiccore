@@ -2,6 +2,8 @@ package dev.cosmiccore;
 
 import dev.cosmiccore.block.ModBlocks;
 import dev.cosmiccore.item.GuideBookItem;
+import dev.cosmiccore.item.OverdriveParticleItem;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -27,6 +29,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> STAR_FUNNEL = ITEMS.registerSimpleBlockItem("star_funnel", ModBlocks.STAR_FUNNEL);
 
     public static final DeferredItem<BlockItem> COSMIC_LASER = ITEMS.registerSimpleBlockItem("cosmic_laser", ModBlocks.COSMIC_LASER);
+
+    public static final DeferredItem<OverdriveParticleItem> OVERDRIVE_PARTICLE = ITEMS.registerItem("overdrive_particle",
+            OverdriveParticleItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.EPIC));
 
     private ModItems() {}
 }

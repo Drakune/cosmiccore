@@ -77,5 +77,18 @@
   "gui.cosmiccore.funnel_on": "✦ Star funnel: active",
   "guide.cosmiccore.page.11": "§5§lStar Funnel§r\n\nPlace it right on the center of the ceiling.\n\nWith a clear sky it draws cosmic energy from space and §bdoubles§r the sky bonus.",
   "guide.cosmiccore.page.12": "§5§lAsteroids§r\n\nAt night asteroids drift across the sky - small, medium or large.\n\nLarge ones give 1M RF, small ones 50,000 RF.",
-  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey merge into a turret that shoots asteroids on its own."
+  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey merge into a turret that shoots asteroids on its own.",
+  "item.cosmiccore.overdrive_particle": "Cosmic Core Overdrive Particle",
+  "gui.cosmiccore.with_lasers": "+ Lasers",
+  "gui.cosmiccore.overdrive": "Overdrive",
+  "gui.cosmiccore.overdrive_up": "Overdrive +",
+  "gui.cosmiccore.overdrive_down": "Remove",
+  "gui.cosmiccore.overdrive.confirm_up": "⚠ Activate overdrive?",
+  "gui.cosmiccore.overdrive.confirm_down": "Remove an overdrive level?",
+  "gui.cosmiccore.overdrive.warning_up": "Per level: RF generation x2, instability x3! One Overdrive Particle from your inventory is consumed and NOT returned when deactivated.",
+  "gui.cosmiccore.overdrive.warning_down": "The level is deactivated. The Overdrive Particle is lost.",
+  "message.cosmiccore.overdrive.missing": "You need an Overdrive Particle in your inventory",
+  "tooltip.cosmiccore.overdrive.effect": "Install in the controller: RF x2, instability x3",
+  "tooltip.cosmiccore.overdrive.limit": "Max 1 / 2 / 3 levels (5x5x5 / 7x7x7 / 9x9x9)",
+  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nRemoved particles are lost."
 }

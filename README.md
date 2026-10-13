@@ -73,6 +73,14 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
   Energie direkt in den Puffer speist.
 - **Phantom-Blöcke:** Hüllenblöcke außerhalb der sichtbaren Kugel haben bei gebildeter Struktur keine Kollision und
   sind nicht anwählbar. Ports bleiben sichtbar, damit Rohre/Kabel anderer Mods sauber andocken.
+## Overdrive
+
+- **Overdrive-Partikel** (4 Endkristalle um einen Netherstern): in der GUI mit „Overdrive +“ installieren (Warnung vorab).
+  Pro Stufe: RF x2, Instabilität x3. Maximal 1 / 2 / 3 Stufen bei 5x5x5 / 7x7x7 / 9x9x9.
+- „Entfernen“ deaktiviert eine Stufe - das Partikel ist dabei verloren.
+- Jede Stufe verwandelt das Loch: Überladung (blau, zweite Scheibe, Blitze), Supernova (Gold/Magenta, Ringgalaxie,
+  Sternstrahlen), Quasar (Weiß/Violett, riesige Jets, Spiralarme und Gravitationswellen weit über die Struktur hinaus).
+
 ## Spielmechanik
 
 - **Zündung:** Brennstoff (Rechtsklick auf Controller oder per Trichter/Rohr in den Item-Port) startet den Kern.

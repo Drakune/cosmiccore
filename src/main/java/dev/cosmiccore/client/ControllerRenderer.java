@@ -111,6 +111,25 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             }
         }
 
+        // optionale Kosmos-Laser rund um die Deckenmitte
+        if (be.isWithLasers()) {
+            BlockState laser = ModBlocks.COSMIC_LASER.get().defaultBlockState();
+            for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                BlockPos lp = center.above(pattern.half() + 1).relative(d);
+                BlockState there = level.getBlockState(lp);
+                if (there.is(ModBlocks.COSMIC_LASER.get())) continue;
+                if (!there.isAir() && !there.canBeReplaced()) {
+                    wrong.add(lp);
+                    continue;
+                }
+                pose.pushPose();
+                pose.translate(lp.getX() - origin.getX(), lp.getY() - origin.getY(), lp.getZ() - origin.getZ());
+                dispatcher.getModelRenderer().renderModel(pose.last(), ghost, laser, dispatcher.getBlockModel(laser),
+                        1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                pose.popPose();
+            }
+        }
+
         // 2) falsche Bloecke rot markieren
         if (!wrong.isEmpty()) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());

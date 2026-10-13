@@ -29,6 +29,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -40,11 +41,12 @@ import net.minecraft.world.inventory.Slot;
  * Zwei Modi: Groessenwahl (einmalig nach dem Platzieren) und Betrieb.
  */
 public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
-    private static final int W = 234, H = 226;
+    private static final int W = 234, H = 242;
     private static final int BAR_Y = 18, BAR_H = 60, BAR_W = 10;
     private static final int BAR_ENERGY_X = 42, BAR_INST_X = 58, BAR_RES_X = 74;
     private static final int INFO_X = 92;
     private static final int ROW_Y = 104;
+    private static final int OD_Y = ROW_Y + 20;
 
     // Groessenwahl: Reiter links, 3D-Vorschau rechts, Blockliste und Bestaetigung unten
     private static final int TAB_X = 8, TAB_Y = 22, TAB_W = 58, TAB_H = 20, TAB_STEP = 26;
@@ -55,7 +57,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private Button scaleDown, scaleUp, toggle, preview, build, confirm;
     private int selected = 1; // 7x7x7 vorausgewaehlt
     private boolean withFunnel = true;
-    private Checkbox funnelBox;
+    private boolean withLasers = true;
+    private Checkbox funnelBox, laserBox;
+    private Button overdriveUp, overdriveDown;
     private float dragYaw, dragPitch;
 
     public ControllerScreen(ControllerMenu menu, Inventory inv, Component title) {
@@ -80,14 +84,24 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                     btn -> selected = index).bounds(leftPos + TAB_X, topPos + TAB_Y + i * TAB_STEP, TAB_W, TAB_H).build();
             sizeButtons.add(addRenderableWidget(b));
         }
+        int sizeCount = sizes.length;
         confirm = addRenderableWidget(Button.builder(Component.empty(),
-                        b -> press(ControllerMenu.BTN_SIZE_FIRST + selected + (withFunnel ? ReactorSize.values().length : 0)))
-                .bounds(leftPos + 42, topPos + H - 24, W - 84, 18).build());
+                        b -> press(ControllerMenu.BTN_SIZE_FIRST + selected + (withFunnel ? sizeCount : 0) + (withLasers ? 2 * sizeCount : 0)))
+                .bounds(leftPos + 42, topPos + H - 22, W - 84, 18).build());
         funnelBox = addRenderableWidget(Checkbox.builder(Component.translatable("gui.cosmiccore.with_funnel"), font)
-                .pos(leftPos + TAB_X, topPos + TAB_Y + 3 * TAB_STEP + 52)
+                .pos(leftPos + 30, topPos + ICON_Y + 20)
                 .selected(withFunnel)
                 .onValueChange((box, value) -> withFunnel = value)
                 .build());
+        laserBox = addRenderableWidget(Checkbox.builder(Component.translatable("gui.cosmiccore.with_lasers"), font)
+                .pos(leftPos + 128, topPos + ICON_Y + 20)
+                .selected(withLasers)
+                .onValueChange((box, value) -> withLasers = value)
+                .build());
+        overdriveUp = addRenderableWidget(Button.builder(Component.translatable("gui.cosmiccore.overdrive_up"), b -> confirmOverdrive(true))
+                .bounds(leftPos + INFO_X, topPos + OD_Y, 76, 16).build());
+        overdriveDown = addRenderableWidget(Button.builder(Component.translatable("gui.cosmiccore.overdrive_down"), b -> confirmOverdrive(false))
+                .bounds(leftPos + INFO_X + 78, topPos + OD_Y, 58, 16).build());
         scaleDown = addRenderableWidget(Button.builder(Component.literal("-"), b -> press(ControllerMenu.BTN_SCALE_DOWN))
                 .bounds(leftPos + 8, topPos + ROW_Y, 16, 16).build());
         scaleUp = addRenderableWidget(Button.builder(Component.literal("+"), b -> press(ControllerMenu.BTN_SCALE_UP))
@@ -99,6 +113,18 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         build = addRenderableWidget(Button.builder(Component.translatable("gui.cosmiccore.build"), b -> press(ControllerMenu.BTN_BUILD))
                 .bounds(leftPos + INFO_X + 94, topPos + ROW_Y, 42, 16).build());
         updateWidgets();
+    }
+
+    /** Warnung vor dem Aktivieren bzw. Entfernen einer Overdrive-Stufe. */
+    private void confirmOverdrive(boolean up) {
+        if (minecraft == null) return;
+        Component title = Component.translatable(up ? "gui.cosmiccore.overdrive.confirm_up" : "gui.cosmiccore.overdrive.confirm_down")
+                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+        Component message = Component.translatable(up ? "gui.cosmiccore.overdrive.warning_up" : "gui.cosmiccore.overdrive.warning_down");
+        minecraft.setScreen(new ConfirmScreen(ok -> {
+            minecraft.setScreen(this);
+            if (ok) press(up ? ControllerMenu.BTN_OVERDRIVE_UP : ControllerMenu.BTN_OVERDRIVE_DOWN);
+        }, title, message));
     }
 
     private void press(int id) {
@@ -118,6 +144,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         for (Button b : sizeButtons) b.visible = !chosen;
         confirm.visible = !chosen;
         funnelBox.visible = !chosen;
+        laserBox.visible = !chosen;
+        ReactorSize current = ReactorSize.bySize(menu.size());
+        int maxOd = current == null ? 0 : current.maxOverdrive();
+        overdriveUp.visible = overdriveDown.visible = chosen;
+        overdriveUp.active = menu.overdrive() < maxOd;
+        overdriveDown.active = menu.overdrive() > 0;
         ReactorSize sel = ReactorSize.values()[selected];
         confirm.setMessage(Component.translatable("gui.cosmiccore.confirm", sel.size(), sel.size(), sel.size()));
         scaleDown.visible = scaleUp.visible = toggle.visible = preview.visible = chosen;
@@ -169,6 +201,16 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawCenteredString(font, "E", x + BAR_ENERGY_X + BAR_W / 2, y + BAR_Y + BAR_H + 3, 0xFF9AE8FF);
         g.drawCenteredString(font, "I", x + BAR_INST_X + BAR_W / 2, y + BAR_Y + BAR_H + 3, 0xFFFF9AA8);
         g.drawCenteredString(font, "R", x + BAR_RES_X + BAR_W / 2, y + BAR_Y + BAR_H + 3, 0xFFE0A8FF);
+
+        // Overdrive-Stufen als Kaestchen
+        ReactorSize current = ReactorSize.bySize(menu.size());
+        int maxOd = current == null ? 0 : current.maxOverdrive();
+        for (int i = 0; i < maxOd; i++) {
+            int bx = x + 60 + i * 10, by = y + OD_Y + 4;
+            boolean on = i < menu.overdrive();
+            g.fill(bx, by, bx + 8, by + 8, on ? 0xFFFFB040 : 0xFF3A2468);
+            g.fill(bx + 1, by + 1, bx + 7, by + 7, on ? (((int) (t / 3) + i) % 2 == 0 ? 0xFFFFE080 : 0xFFFF8020) : 0xFF0E0820);
+        }
 
         // Stufenanzeige zwischen - und +
         g.fill(x + 25, y + ROW_Y, x + 67, y + ROW_Y + 16, 0xFF2A1A4A);
@@ -253,6 +295,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         }
 
         g.drawString(font, Component.translatable("gui.cosmiccore.scale"), 8, ROW_Y - 12, 0xFFB8A8D8, false);
+        g.drawString(font, Component.translatable("gui.cosmiccore.overdrive"), 8, OD_Y + 4, menu.overdrive() > 0 ? 0xFFFFB040 : 0xFFB8A8D8, false);
     }
 
     // ------------------------------------------------------------------ Groessenwahl
@@ -269,7 +312,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         renderStructure(g, ReactorSize.values()[selected], x + VIEW_X + VIEW_W / 2, y + VIEW_Y + VIEW_H / 2 + 6, t);
 
         // benoetigte Bloecke
-        List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel);
+        List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers);
         for (int i = 0; i < icons.size(); i++) {
             int ix = x + iconX(i, icons.size()), iy = y + ICON_Y;
             drawSlotBox(g, ix, iy, 0xFF2E2050);
@@ -284,7 +327,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /** Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen). */
-    private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel) {
+    private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         CorePattern p = size.pattern();
         List<ItemStack> out = new ArrayList<>();
         out.add(new ItemStack(ModItems.CONTROLLER.get(), 1));
@@ -295,6 +338,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         out.add(new ItemStack(ModItems.FOCUS_CRYSTAL.get(), p.count(CorePattern.Cell.CRYSTAL)));
         out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE)));
         if (funnel) out.add(new ItemStack(ModItems.STAR_FUNNEL.get(), 1));
+        if (lasers) out.add(new ItemStack(ModItems.COSMIC_LASER.get(), 4));
         return out;
     }
 
@@ -328,6 +372,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                     ModelData.EMPTY, null);
             ps.popPose();
         });
+        if (withLasers) {
+            BlockState laser = ModBlocks.COSMIC_LASER.get().defaultBlockState();
+            for (Direction d : Direction.Plane.HORIZONTAL) {
+                ps.pushPose();
+                ps.translate(d.getStepX() - 0.5F, half + 0.5F, d.getStepZ() - 0.5F);
+                dispatcher.renderSingleBlock(laser, ps, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                ps.popPose();
+            }
+        }
         if (withFunnel) {
             ps.pushPose();
             ps.translate(-0.5F, half + 0.5F, -0.5F);
@@ -387,7 +440,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         super.render(g, mouseX, mouseY, partialTick);
         renderTooltip(g, mouseX, mouseY);
         if (!menu.sizeChosen()) {
-            List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel);
+            List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers);
             for (int i = 0; i < icons.size(); i++) {
                 int ix = leftPos + iconX(i, icons.size()), iy = topPos + ICON_Y;
                 if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {

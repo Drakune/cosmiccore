@@ -407,6 +407,44 @@ def draw_laser_top():
     return img
 
 
+def draw_port_socket():
+    img = plate(41, base=(18, 14, 30), noise=3)
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if 5.2 < d < 6.6:
+                put(px, x, y, (70, 58, 110))
+            elif 4.2 < d <= 5.2:
+                put(px, x, y, (110, 210, 255))
+            elif d <= 4.2:
+                put(px, x, y, (6, 4, 12))
+    for (x, y) in [(7, 5), (5, 9), (10, 9)]:  # Kontaktstifte
+        put(px, x, y, (200, 200, 220)); put(px, x + 1, y, (150, 150, 170))
+    return img
+
+
+def draw_overdrive_particle(f, nf):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if d < 3.2:
+                put(px, x, y, lerp((255, 250, 230), (255, 190, 80), d / 3.2))
+            elif d < 5.0:
+                a = 0.5 + 0.5 * math.sin(2 * math.pi * ph + math.atan2(y - 7.5, x - 7.5) * 3)
+                if a > 0.35:
+                    put(px, x, y, lerp((255, 120, 40), (200, 60, 255), (d - 3.2) / 1.8))
+    for k in range(4):  # Strahlen
+        ang = 2 * math.pi * (ph + k / 4)
+        for r in range(5, 8):
+            x, y = int(round(7.5 + math.cos(ang) * r)), int(round(7.5 + math.sin(ang) * r))
+            put(px, x, y, (255, 230, 160))
+    return img
+
+
 def draw_guide_book():
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     px = img.load()
@@ -464,6 +502,8 @@ def textures():
     save_strip('star_dust', [draw_star_dust(f, 8) for f in range(8)], 3, folder='item')
     save_strip('guide_book', [draw_guide_book()], 1, folder='item')
     save_strip('cosmic_laser_side', [draw_laser_side()], 1)
+    save_strip('port_socket', [draw_port_socket()], 1)
+    save_strip('overdrive_particle', [draw_overdrive_particle(f, 8) for f in range(8)], 3, folder='item')
     save_strip('cosmic_laser_top', [draw_laser_top()], 1)
     save_strip('star_funnel_side', [draw_funnel_side()], 1)
     save_strip('star_funnel_top', [draw_funnel_top()], 1)
@@ -505,6 +545,22 @@ def models():
             variants = {f'phase={p}': {'model': f'{MOD}:block/{b}_{p}'} for p in PHASES}
         wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
         wjson(f'{ASSETS}/models/item/{b}.json', {'parent': f'{MOD}:block/{b}_formed'})
+
+    # Ports: bei gebildeter Struktur eine Anschlussdose mit Steckbuchsen auf allen Seiten
+    def plug(core_tex):
+        socket = f'{MOD}:block/port_socket'
+        def el(a, b, tex):
+            return {'from': a, 'to': b, 'faces': {d: {'texture': tex} for d in ('down', 'up', 'north', 'south', 'west', 'east')}}
+        return {'parent': 'minecraft:block/block', 'textures': {'particle': core_tex, 'core': core_tex, 'socket': socket},
+                'elements': [el([2, 2, 2], [14, 14, 14], '#core'),
+                             el([0, 4, 4], [2, 12, 12], '#socket'), el([14, 4, 4], [16, 12, 12], '#socket'),
+                             el([4, 0, 4], [12, 2, 12], '#socket'), el([4, 14, 4], [12, 16, 12], '#socket'),
+                             el([4, 4, 0], [12, 12, 2], '#socket'), el([4, 4, 14], [12, 12, 16], '#socket')]}
+    for b in ('energy_port', 'item_port'):
+        for p in PHASES[1:]:
+            wjson(f'{ASSETS}/models/block/{b}_plug_{p}.json', plug(f'{MOD}:block/{b}_{p}'))
+        wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': {
+            f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "plug_" + p}'} for p in PHASES}})
 
     # Glas (transluzent)
     for p in PHASES:
@@ -576,6 +632,8 @@ def models():
         'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
         'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
     wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
+    wjson(f'{ASSETS}/models/item/overdrive_particle.json',
+          {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/overdrive_particle'}})
     wjson(f'{ASSETS}/models/item/guide_book.json',
           {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/guide_book'}})
     wjson(f'{ASSETS}/models/item/star_dust.json',
@@ -663,6 +721,19 @@ DE = {
     'guide.cosmiccore.page.11': '§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.',
     'guide.cosmiccore.page.12': '§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nGroße bringen 1 Mio. RF, kleine 50.000 RF.',
     'guide.cosmiccore.page.13': '§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie verschmelzen zu einem Geschütz, das Asteroiden selbst abschießt.',
+    'item.cosmiccore.overdrive_particle': 'Overdrive-Partikel',
+    'gui.cosmiccore.with_lasers': '+ Laser',
+    'gui.cosmiccore.overdrive': 'Overdrive',
+    'gui.cosmiccore.overdrive_up': 'Overdrive +',
+    'gui.cosmiccore.overdrive_down': 'Entfernen',
+    'gui.cosmiccore.overdrive.confirm_up': '⚠ Overdrive aktivieren?',
+    'gui.cosmiccore.overdrive.confirm_down': 'Overdrive-Stufe entfernen?',
+    'gui.cosmiccore.overdrive.warning_up': 'Pro Stufe: RF-Erzeugung x2, Instabilität x3! Ein Overdrive-Partikel aus deinem Inventar wird verbraucht und beim Deaktivieren NICHT zurückgegeben.',
+    'gui.cosmiccore.overdrive.warning_down': 'Die Stufe wird deaktiviert. Das Overdrive-Partikel ist dabei verloren.',
+    'message.cosmiccore.overdrive.missing': 'Du brauchst ein Overdrive-Partikel im Inventar',
+    'tooltip.cosmiccore.overdrive.effect': 'Im Controller installieren: RF x2, Instabilität x3',
+    'tooltip.cosmiccore.overdrive.limit': 'Max. 1 / 2 / 3 Stufen (5x5x5 / 7x7x7 / 9x9x9)',
+    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 Stufen.\nEntfernte Partikel sind verloren.',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -744,6 +815,19 @@ EN = {
     'guide.cosmiccore.page.11': '§5§lStar Funnel§r\n\nPlace it right on the center of the ceiling.\n\nWith a clear sky it draws cosmic energy from space and §bdoubles§r the sky bonus.',
     'guide.cosmiccore.page.12': '§5§lAsteroids§r\n\nAt night asteroids drift across the sky - small, medium or large.\n\nLarge ones give 1M RF, small ones 50,000 RF.',
     'guide.cosmiccore.page.13': '§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey merge into a turret that shoots asteroids on its own.',
+    'item.cosmiccore.overdrive_particle': 'Cosmic Core Overdrive Particle',
+    'gui.cosmiccore.with_lasers': '+ Lasers',
+    'gui.cosmiccore.overdrive': 'Overdrive',
+    'gui.cosmiccore.overdrive_up': 'Overdrive +',
+    'gui.cosmiccore.overdrive_down': 'Remove',
+    'gui.cosmiccore.overdrive.confirm_up': '⚠ Activate overdrive?',
+    'gui.cosmiccore.overdrive.confirm_down': 'Remove an overdrive level?',
+    'gui.cosmiccore.overdrive.warning_up': 'Per level: RF generation x2, instability x3! One Overdrive Particle from your inventory is consumed and NOT returned when deactivated.',
+    'gui.cosmiccore.overdrive.warning_down': 'The level is deactivated. The Overdrive Particle is lost.',
+    'message.cosmiccore.overdrive.missing': 'You need an Overdrive Particle in your inventory',
+    'tooltip.cosmiccore.overdrive.effect': 'Install in the controller: RF x2, instability x3',
+    'tooltip.cosmiccore.overdrive.limit': 'Max 1 / 2 / 3 levels (5x5x5 / 7x7x7 / 9x9x9)',
+    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nRemoved particles are lost.',
 }
 
 
@@ -806,6 +890,8 @@ def data():
     shaped('cosmic_laser', [' C ', 'ISI', 'IVI'],
            {'C': f'{MOD}:focus_crystal', 'S': f'{MOD}:star_dust', 'I': 'minecraft:iron_ingot', 'V': f'{MOD}:void_casing'},
            f'{MOD}:cosmic_laser', 1)
+    shaped('overdrive_particle', [' E ', 'ENE', ' E '],
+           {'E': 'minecraft:end_crystal', 'N': 'minecraft:nether_star'}, f'{MOD}:overdrive_particle', 1)
     shapeless('guide_book', ['minecraft:book', f'{MOD}:star_dust'], f'{MOD}:guide_book', 1)
     shapeless('item_port', [f'{MOD}:void_casing', 'minecraft:hopper'], f'{MOD}:item_port', 1)
     shapeless('star_dust', ['minecraft:amethyst_shard', 'minecraft:amethyst_shard', 'minecraft:ender_pearl',

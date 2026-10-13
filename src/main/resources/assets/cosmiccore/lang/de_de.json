@@ -77,5 +77,18 @@
   "gui.cosmiccore.funnel_on": "✦ Sternentrichter: aktiv",
   "guide.cosmiccore.page.11": "§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.",
   "guide.cosmiccore.page.12": "§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nGroße bringen 1 Mio. RF, kleine 50.000 RF.",
-  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie verschmelzen zu einem Geschütz, das Asteroiden selbst abschießt."
+  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie verschmelzen zu einem Geschütz, das Asteroiden selbst abschießt.",
+  "item.cosmiccore.overdrive_particle": "Overdrive-Partikel",
+  "gui.cosmiccore.with_lasers": "+ Laser",
+  "gui.cosmiccore.overdrive": "Overdrive",
+  "gui.cosmiccore.overdrive_up": "Overdrive +",
+  "gui.cosmiccore.overdrive_down": "Entfernen",
+  "gui.cosmiccore.overdrive.confirm_up": "⚠ Overdrive aktivieren?",
+  "gui.cosmiccore.overdrive.confirm_down": "Overdrive-Stufe entfernen?",
+  "gui.cosmiccore.overdrive.warning_up": "Pro Stufe: RF-Erzeugung x2, Instabilität x3! Ein Overdrive-Partikel aus deinem Inventar wird verbraucht und beim Deaktivieren NICHT zurückgegeben.",
+  "gui.cosmiccore.overdrive.warning_down": "Die Stufe wird deaktiviert. Das Overdrive-Partikel ist dabei verloren.",
+  "message.cosmiccore.overdrive.missing": "Du brauchst ein Overdrive-Partikel im Inventar",
+  "tooltip.cosmiccore.overdrive.effect": "Im Controller installieren: RF x2, Instabilität x3",
+  "tooltip.cosmiccore.overdrive.limit": "Max. 1 / 2 / 3 Stufen (5x5x5 / 7x7x7 / 9x9x9)",
+  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 Stufen.\nEntfernte Partikel sind verloren."
 }

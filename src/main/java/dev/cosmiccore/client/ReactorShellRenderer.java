@@ -55,6 +55,7 @@ public final class ReactorShellRenderer {
     private static final float[] SEAM = {0.62F, 0.4F, 1.0F};
     private static final float[] SEAM_HOT = {1.0F, 0.72F, 0.4F};
     private static final float[] CRITICAL = {1.0F, 0.12F, 0.12F};
+    private static final float[][] OVERDRIVE_SEAM = {{0.45F, 0.85F, 1.0F}, {1.0F, 0.78F, 0.25F}, {1.0F, 0.9F, 1.0F}};
     private static final float[] ENERGY_GLYPH = {0.35F, 0.95F, 1.0F};
     private static final float[] ITEM_GLYPH = {1.0F, 0.6F, 0.2F};
 
@@ -78,7 +79,7 @@ public final class ReactorShellRenderer {
     }
 
     public record Params(Level level, BlockPos corePos, int size, float t, float form, float energy, float heat,
-                         boolean active, boolean unstable, float growth) {
+                         boolean active, boolean unstable, float growth, int overdrive) {
         float radius() {
             return size / 2 + 0.5F;
         }
@@ -94,6 +95,63 @@ public final class ReactorShellRenderer {
 
         float spin() {
             return (unstable ? 2.2F : active ? 1.0F : 0.25F) * (1.0F + 0.6F * growth);
+        }
+    }
+
+    /** Lokales Koordinatensystem der Konsole: Ursprung im Controller, +Z zeigt vom Kern weg nach aussen. */
+    private static Matrix4f consoleFrame(Matrix4f m, ShellCell c) {
+        float yaw = (float) Math.atan2(c.dx(), c.dz());
+        return new Matrix4f(m).translate(c.dx(), c.dy(), c.dz()).rotateY(yaw);
+    }
+
+    /** Punkt auf der (nach hinten geneigten) Bildschirmflaeche: u in [-1, 1] quer, v in [0, 1] hoch. */
+    private static float[] screen(float u, float v) {
+        return new float[]{u * 0.4F, -0.04F + v * 0.42F, 0.075F - v * 0.18F};
+    }
+
+    /** Holografische Anzeige der Konsole: Rahmen, drei Balken, Zeigerinstrument und Scanlinie. */
+    private static void console(Matrix4f m, VertexConsumer vc, ShellCell c, Params p, float[] col) {
+        Matrix4f cm = consoleFrame(m, c);
+        float e = p.energy();
+        float[] cyan = {0.35F, 0.9F, 1.0F}, violet = {0.75F, 0.5F, 1.0F};
+        float[] warn = lerp(new float[]{0.4F, 1.0F, 0.5F}, CRITICAL, p.heat());
+        // Rahmen
+        float[][] fr = {screen(-1, 0), screen(1, 0), screen(1, 1), screen(-1, 1)};
+        for (int i = 0; i < 4; i++) {
+            float[] a = fr[i], b = fr[(i + 1) % 4];
+            segment(vc, cm, a[0], a[1], a[2], b[0], b[1], b[2], 0.012F, col[0], col[1], col[2], e, e);
+        }
+        // Kopfzeile
+        float[] h0 = screen(-0.9F, 0.88F), h1 = screen(0.9F, 0.88F);
+        segment(vc, cm, h0[0], h0[1], h0[2], h1[0], h1[1], h1[2], 0.008F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
+        // drei Balken: Instabilitaet, Leistungsstufe, Ausgabe (pulsierend)
+        float[] values = {Math.max(0.05F, p.heat()), 0.2F + 0.8F * p.growth(),
+                p.active() ? 0.55F + 0.35F * Mth.sin(p.t() * 0.2F) : 0.1F};
+        float[][] cols = {warn, violet, cyan};
+        for (int i = 0; i < 3; i++) {
+            float u = -0.8F + i * 0.28F;
+            float[] b0 = screen(u, 0.1F), b1 = screen(u, 0.1F + 0.68F * values[i]);
+            segment(vc, cm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], 0.035F, cols[i][0], cols[i][1], cols[i][2], e, e);
+        }
+        // Zeigerinstrument (Instabilitaet)
+        float cu = 0.5F, cv = 0.42F, rad = 0.3F;
+        float[] prev = null;
+        for (int i = 0; i <= 16; i++) {
+            float ang = Mth.PI * (1.0F - i / 16.0F);
+            float[] q = screen(cu + Mth.cos(ang) * rad, cv + Mth.sin(ang) * rad * 1.1F);
+            if (prev != null) segment(vc, cm, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.008F, col[0], col[1], col[2], e, e);
+            prev = q;
+        }
+        float needle = Mth.PI * (1.0F - p.heat()) + (p.unstable() ? 0.08F * Mth.sin(p.t() * 2.0F) : 0.0F);
+        float[] n0 = screen(cu, cv), n1 = screen(cu + Mth.cos(needle) * rad * 0.9F, cv + Mth.sin(needle) * rad);
+        segment(vc, cm, n0[0], n0[1], n0[2], n1[0], n1[1], n1[2], 0.012F, warn[0], warn[1], warn[2], e, e);
+        // Scanlinie
+        float sv = Mth.frac(p.t() * 0.02F);
+        float[] s0 = screen(-1, sv), s1 = screen(1, sv);
+        segment(vc, cm, s0[0], s0[1], s0[2], s1[0], s1[1], s1[2], 0.006F, 1.0F, 1.0F, 1.0F, e * 0.5F, e * 0.5F);
+        // Projektorstrahlen vom Sockel zu den Bildschirmecken
+        for (float[] corner : fr) {
+            segment(vc, cm, 0, -0.1F, 0.0F, corner[0], corner[1], corner[2], 0.006F, col[0], col[1], col[2], e * 0.25F, e * 0.05F);
         }
     }
 
@@ -157,16 +215,17 @@ public final class ReactorShellRenderer {
             }
         }
 
-        // Controller wird zum schwebenden Interface-Knoten
+        // Controller wird zur holografischen Steuerkonsole: Sockel und Bildschirmplatte aus Sternenfeld
         if (p.done()) {
             for (ShellCell c : cells(p.size())) {
                 if (c.cell() != CorePattern.Cell.SLOT) continue;
                 if (!p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz())).is(ModBlocks.CONTROLLER.get())) continue;
-                pose.pushPose();
-                pose.translate(c.dx(), c.dy() + 0.05F * Mth.sin(p.t() * 0.08F), c.dz());
-                pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(p.t() * 1.2F));
-                RenderUtil.starOctahedron(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), 0.26F, 0.36F);
-                pose.popPose();
+                Matrix4f cm = consoleFrame(m, c);
+                VertexConsumer gw = buffers.getBuffer(RenderType.endPortal());
+                RenderUtil.starStrut(gw, cm, 0, -0.5F, 0, 0, -0.08F, -0.05F, 0.1F);
+                RenderUtil.starStrut(gw, cm, 0, -0.5F, 0, 0, -0.45F, 0, 0.22F);
+                starQuad(gw, cm, new float[]{-0.44F, -0.08F, 0.06F}, new float[]{0.44F, -0.08F, 0.06F},
+                        new float[]{0.44F, 0.42F, -0.12F}, new float[]{-0.44F, 0.42F, -0.12F});
             }
         }
 
@@ -219,7 +278,9 @@ public final class ReactorShellRenderer {
 
     public static void glow(Matrix4f m, VertexConsumer vc, Params p) {
         float r = p.radius();
-        float[] seam = lerp(lerp(SEAM, SEAM_HOT, p.active() ? 0.45F : 0.0F), CRITICAL, p.heat() * p.heat());
+        float[] seam = lerp(SEAM, SEAM_HOT, p.active() ? 0.45F : 0.0F);
+        if (p.overdrive() > 0) seam = lerp(seam, OVERDRIVE_SEAM[Math.min(3, p.overdrive()) - 1], 0.8F);
+        seam = lerp(seam, CRITICAL, p.heat() * p.heat());
         float base = p.energy();
         float pulse = 0.65F + 0.35F * Mth.sin(p.t() * 0.11F * p.spin());
 
@@ -332,10 +393,7 @@ public final class ReactorShellRenderer {
                     0.05F, 1.0F, 1.0F, 1.0F, p.energy() * Mth.sin(bs * Mth.PI));
             if (controller) {
                 circle(m, vc, cpos, east, north, 0.32F, new float[]{0.8F, 0.6F, 1.0F}, p.energy() * pulse);
-                // Kranz um den schwebenden Knoten
-                Matrix4f nm = new Matrix4f(m).translate(c.dx(), c.dy(), c.dz()).rotateY(p.t() * 0.03F);
-                flatCircle(vc, nm, 0.42F, 0.02F, 32, bridgeCol, p.energy() * pulse);
-                cube(vc, m, c.dx(), c.dy(), c.dz(), 0.08F + 0.03F * pulse, 1.0F, 1.0F, 1.0F, p.energy());
+                console(m, vc, c, p, bridgeCol);
             } else if (energy) {
                 float[] g = ENERGY_GLYPH;
                 gl(m, vc, cpos, east, north, 0.08F, 0.3F, -0.1F, 0.0F, g, p.energy());

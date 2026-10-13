@@ -46,6 +46,15 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     private static final float[] WARM = {1.0F, 0.55F, 0.2F};
     private static final float[] COOL = {0.62F, 0.28F, 0.95F};
     private static final float[] JET = {0.6F, 0.8F, 1.0F};
+
+    /** Farbwelten je Overdrive-Stufe: {heiss, warm, kuehl, Jet}. */
+    private static final float[][][] PALETTES = {
+            {{1.0F, 0.95F, 0.85F}, {1.0F, 0.55F, 0.2F}, {0.62F, 0.28F, 0.95F}, {0.6F, 0.8F, 1.0F}},
+            {{0.9F, 0.97F, 1.0F}, {0.3F, 0.65F, 1.0F}, {0.25F, 0.2F, 1.0F}, {0.5F, 0.9F, 1.0F}},      // Ueberladung
+            {{1.0F, 0.95F, 0.7F}, {1.0F, 0.72F, 0.15F}, {1.0F, 0.2F, 0.75F}, {1.0F, 0.85F, 0.4F}},    // Supernova
+            {{1.0F, 1.0F, 1.0F}, {0.88F, 0.35F, 1.0F}, {0.85F, 0.05F, 0.3F}, {0.95F, 0.6F, 1.0F}}};   // Quasar
+    // pro Frame gesetzt (Rendering laeuft nur im Render-Thread)
+    private static float[] pHot = HOT, pWarm = WARM, pCool = COOL, pJet = JET;
     private static final float[] CRITICAL = {1.0F, 0.1F, 0.1F};
 
     public SingularityCoreRenderer(BlockEntityRendererProvider.Context context) {}
@@ -77,6 +86,12 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         final boolean unstable = phase == CorePhase.UNSTABLE;
         final boolean active = phase == CorePhase.ACTIVE || unstable;
         final float growth = be.getGrowth();
+        final int od = Math.max(0, Math.min(3, be.getOverdrive()));
+        float[][] pal = PALETTES[od];
+        pHot = pal[0];
+        pWarm = pal[1];
+        pCool = pal[2];
+        pJet = pal[3];
         final float reach = be.getReach();
         final int half = be.getStructureSize() / 2;
         final float heat = active ? Mth.clamp(be.getInstability() / 100.0F, 0.0F, 1.0F) : 0.0F;
@@ -93,7 +108,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
         // 0) Jet in den Himmel
         if (active && be.hasSkyLink()) {
-            float[] jc = lerp(JET, CRITICAL, heat * heat);
+            float[] jc = lerp(pJet, CRITICAL, heat * heat);
             int color = FastColor.ARGB32.color(255, (int) (jc[0] * 255), (int) (jc[1] * 255), (int) (jc[2] * 255));
             float w = 0.12F + 0.1F * growth + 0.06F * Math.max(0.0F, be.getCosmic() - 1.0F);
             BeaconRenderer.renderBeaconBeam(pose, buffers, BeaconRenderer.BEAM_LOCATION, partialTick, 1.0F,
@@ -105,7 +120,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
         // 1) Kammer (Sternenfeld-Platten)
         ReactorShellRenderer.Params shell = new ReactorShellRenderer.Params(level, be.getBlockPos(), be.getStructureSize(), t,
-                form, Math.max(0.4F, energy), heat, active, unstable, growth);
+                form, Math.max(0.4F, energy), heat, active, unstable, growth, od);
         ReactorShellRenderer.solid(pose, buffers, shell);
 
         // Kosmos-Laser-Geschuetz auf der Decke
@@ -122,7 +137,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
         // Groessen
         float rh = (active ? Mth.lerp(growth, 0.28F, Math.max(0.34F, reach * 0.32F)) : 0.2F) * Math.max(0.05F, coreFade);
-        rh *= 1.0F + 0.03F * Mth.sin(t * 0.1F) + 0.12F * beat;
+        rh *= 1.0F + 0.03F * Mth.sin(t * 0.1F) + 0.12F * beat + 0.15F * od;
         float inner = rh * 1.5F;
         float outer = Math.max(inner + 0.25F, reach - 0.15F);
         outer = inner + (outer - inner) * (active ? 0.7F + 0.3F * growth : 0.5F);
@@ -154,16 +169,25 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         // drei Lagen fuer Volumen
         for (int layer = -1; layer <= 1; layer++) {
             Matrix4f lm = new Matrix4f(dm).translate(0, layer * 0.035F, 0);
-            accretionDisk(lm, glow, inner, outer, t, spin, e * (layer == 0 ? 1.0F : 0.45F), heat, camYaw, layer);
+            accretionDisk(lm, glow, inner, outer, t, spin * (1 + 0.4F * od), e * (layer == 0 ? 1.0F : 0.45F), heat, camYaw, layer, od);
         }
         haze(dm, glow, outer, e, heat);
         hotspots(dm, glow, inner, t, spin, e, heat);
         pose.popPose();
+        if (od >= 1) {
+            // Ueberladung: zweite, steil gekippte Scheibe im Gegenlauf
+            pose.pushPose();
+            pose.mulPose(Axis.ZP.rotationDegrees(62.0F));
+            pose.mulPose(Axis.YP.rotationDegrees(t * 0.3F));
+            accretionDisk(pose.last().pose(), glow, inner * 1.1F, outer * 0.85F, t, -spin * 1.3F, e * 0.6F, heat, camYaw, 0, od);
+            pose.popPose();
+        }
+        OverdriveFx.render(pose, glow, od, rh, inner, outer, reach, half, t, e, heat, camYaw, camPitch, pal);
 
         tendrils(pose.last().pose(), glow, reach, inner, t, e, heat, active);
         lensing(pose, glow, rh, inner, t, e, heat, camYaw, camPitch, beat);
-        if (active) jets(pose.last().pose(), glow, rh, reach, t, e, heat, growth);
-        ShieldFx.render(pose, glow, be.getStructureSize(), reach, t, e, heat, be.getShield(), unstable, camYaw, camPitch);
+        if (active) jets(pose.last().pose(), glow, rh, reach + (od >= 2 ? 2.5F : 0.0F) + (od >= 3 ? 22.0F : 0.0F), t, e, heat, growth + 0.5F * od);
+        ShieldFx.render(pose, glow, be.getStructureSize(), reach, t, e, heat, be.getShield(), unstable, camYaw, camPitch, od);
         pose.popPose(); // Zittern
 
         // 4) Licht der Kammer und des Geschuetzes
@@ -173,13 +197,13 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     }
 
     private static float[] diskColor(float f, float heat) {
-        float[] c = f < 0.3F ? lerp(HOT, WARM, f / 0.3F) : lerp(WARM, COOL, (f - 0.3F) / 0.7F);
+        float[] c = f < 0.3F ? lerp(pHot, pWarm, f / 0.3F) : lerp(pWarm, pCool, (f - 0.3F) / 0.7F);
         return lerp(c, CRITICAL, heat * heat * 0.8F);
     }
 
     /** Flache Scheibe in der XZ-Ebene aus Ringbaendern; innen schneller (differentielle Rotation). */
     private static void accretionDisk(Matrix4f m, VertexConsumer vc, float inner, float outer, float t, float spin,
-                                      float energy, float heat, float camYaw, int layer) {
+                                      float energy, float heat, float camYaw, int layer, int od) {
         final int bands = 20, seg = 80;
         float out = layer == 0 ? outer : inner + (outer - inner) * 0.75F; // aeussere Lagen enden frueher
         for (int b = 0; b < bands; b++) {
@@ -187,6 +211,11 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             float r0 = Mth.lerp(f0, inner, out), r1 = Mth.lerp(f1, inner, out);
             float[] col = diskColor(f0, heat);
             float base = energy * (float) Math.pow(1.0F - f0, 0.7) * Math.min(1.0F, 0.4F + b * 0.5F) * 1.15F;
+            if (od >= 2) {
+                // Supernova: die Scheibe zerfaellt in leuchtende Ringe mit Luecken
+                float ringWave = 0.5F + 0.5F * Mth.sin(f0 * Mth.PI * 7.0F - t * 0.02F);
+                base *= 0.15F + 1.1F * ringWave * ringWave;
+            }
             float omega = spin * 0.06F / (float) Math.pow(0.3F + f0, 1.5);
             float rot = t * omega + layer * 0.7F;
             float turb = 1.0F + heat * 2.5F;
@@ -205,7 +234,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
     /** Leuchtende Dunsthuelle am Rand der Scheibe. */
     private static void haze(Matrix4f m, VertexConsumer vc, float outer, float energy, float heat) {
-        float[] col = lerp(COOL, CRITICAL, heat * heat * 0.6F);
+        float[] col = lerp(pCool, CRITICAL, heat * heat * 0.6F);
         int seg = 48;
         for (int s = 0; s < seg; s++) {
             float a0 = Mth.TWO_PI * s / seg, a1 = Mth.TWO_PI * (s + 1) / seg;
@@ -263,8 +292,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.mulPose(Axis.XP.rotation(-camPitch));
         Matrix4f m = pose.last().pose();
         final int seg = 72;
-        float[] ringCol = lerp(HOT, CRITICAL, heat * heat * 0.6F);
-        float[] haloCol = lerp(lerp(WARM, COOL, 0.55F), CRITICAL, heat * heat * 0.5F);
+        float[] ringCol = lerp(pHot, CRITICAL, heat * heat * 0.6F);
+        float[] haloCol = lerp(lerp(pWarm, pCool, 0.55F), CRITICAL, heat * heat * 0.5F);
         float boost = 1.0F + beat * 1.5F;
         for (int s = 0; s < seg; s++) {
             float a0 = Mth.TWO_PI * s / seg, a1 = Mth.TWO_PI * (s + 1) / seg;
@@ -292,7 +321,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
     /** Relativistische Jets entlang der Pole. */
     private static void jets(Matrix4f m, VertexConsumer vc, float rh, float reach, float t, float energy, float heat, float growth) {
-        float[] col = lerp(JET, CRITICAL, heat * heat * 0.7F);
+        float[] col = lerp(pJet, CRITICAL, heat * heat * 0.7F);
         float w = 0.06F + 0.06F * growth;
         for (int side = -1; side <= 1; side += 2) {
             float y0 = side * rh * 1.05F, y1 = side * (reach + 0.6F);
