@@ -27,6 +27,7 @@ public class CosmicCore {
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModCreativeTabs.TABS.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
+        ModSounds.SOUNDS.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);
 
         modEventBus.addListener(CosmicCore::registerCapabilities);
@@ -34,6 +35,7 @@ public class CosmicCore {
         modEventBus.addListener(dr4kun3.cosmiccore.network.ModNetwork::register);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CoreConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
     }
 
     public static ResourceLocation id(String path) {

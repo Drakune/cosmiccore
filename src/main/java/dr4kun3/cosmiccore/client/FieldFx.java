@@ -27,7 +27,7 @@ public final class FieldFx {
     private static final float[] VIOLET = {0.6F, 0.4F, 1.0F};
     private static final float[] CRITICAL = {1.0F, 0.12F, 0.12F};
     private static final float[][] OVERDRIVE = {{0.4F, 0.85F, 1.0F}, {1.0F, 0.75F, 0.2F}, {0.95F, 0.6F, 1.0F}};
-    private static final int LINES = 12, STEPS = 28;
+    private static final int FULL_LINES = 12, FULL_STEPS = 28;
 
     /**
      * @param focus Abstand Kern -> Emitter/Kristall in Bloecken
@@ -36,6 +36,7 @@ public final class FieldFx {
     public static void render(Matrix4f m, VertexConsumer vc, float focus, float reach, float t, float energy, float heat,
                               float shield, boolean unstable, int overdrive) {
         if (energy <= 0.01F) return;
+        final int LINES = RenderQuality.scale(FULL_LINES, 6), STEPS = RenderQuality.scale(FULL_STEPS, 14);
         float strength = 0.3F + 0.7F * shield;
         float danger = Mth.clamp((heat - 0.4F) / 0.6F, 0.0F, 1.0F);
         float[] col = lerp(BLUE, VIOLET, 0.5F + 0.5F * Mth.sin(t * 0.03F));

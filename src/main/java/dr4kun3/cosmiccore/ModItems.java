@@ -13,6 +13,12 @@ public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(CosmicCore.MODID);
 
     public static final DeferredItem<Item> STAR_DUST = ITEMS.registerSimpleItem("star_dust");
+    // Brennstoff-Stufen
+    public static final DeferredItem<Item> COMPRESSED_STAR_DUST = ITEMS.registerSimpleItem("compressed_star_dust");
+    public static final DeferredItem<Item> NEUTRON_FRAGMENT = ITEMS.registerItem("neutron_fragment", Item::new,
+            new Item.Properties().rarity(Rarity.RARE));
+    public static final DeferredItem<Item> QUASAR_ESSENCE = ITEMS.registerItem("quasar_essence", Item::new,
+            new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<GuideBookItem> GUIDE_BOOK = ITEMS.registerItem("guide_book",
             GuideBookItem::new, new Item.Properties().stacksTo(1));
 
@@ -29,6 +35,12 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> STAR_FUNNEL = ITEMS.registerSimpleBlockItem("star_funnel", ModBlocks.STAR_FUNNEL);
 
     public static final DeferredItem<BlockItem> COSMIC_LASER = ITEMS.registerSimpleBlockItem("cosmic_laser", ModBlocks.COSMIC_LASER);
+
+    // Module fuer den Controller (bis zu 4 je Slot)
+    public static final DeferredItem<Item> EFFICIENCY_MODULE = ITEMS.registerItem("efficiency_module", Item::new,
+            new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<Item> STABILITY_MODULE = ITEMS.registerItem("stability_module", Item::new,
+            new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
 
     public static final DeferredItem<OverdriveParticleItem> OVERDRIVE_PARTICLE = ITEMS.registerItem("overdrive_particle",
             OverdriveParticleItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.EPIC));

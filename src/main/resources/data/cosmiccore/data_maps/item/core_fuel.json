@@ -4,6 +4,20 @@
       "burn_time": 2400,
       "power": 1200
     },
+    "cosmiccore:compressed_star_dust": {
+      "burn_time": 24000,
+      "power": 2600
+    },
+    "cosmiccore:neutron_fragment": {
+      "burn_time": 6000,
+      "power": 8000,
+      "heat": 1.4
+    },
+    "cosmiccore:quasar_essence": {
+      "burn_time": 3000,
+      "power": 20000,
+      "heat": 2.0
+    },
     "minecraft:ender_pearl": {
       "burn_time": 1200,
       "power": 400

@@ -37,7 +37,7 @@ public final class UltimateFx {
         pose.pushPose();
         pose.mulPose(Axis.XP.rotationDegrees(tilt));
         Matrix4f dm = pose.last().pose();
-        int arms = 3, stars = 46;
+        int arms = 3, stars = RenderQuality.scale(46, 16);
         float rot = t * 0.01F * spin;
         for (int a = 0; a < arms; a++) {
             float[] prev = null;

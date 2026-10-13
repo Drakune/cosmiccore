@@ -61,8 +61,9 @@ public final class ReactorShellRenderer {
     private static final Map<Integer, Lattice> LATTICE = new HashMap<>();
 
     private static Lattice lattice(int size) {
-        return LATTICE.computeIfAbsent(size, s -> {
-            int n = 40 + s * 15; // 5x5x5: 115, 7x7x7: 145, 9x9x9: 175
+        int n0 = RenderQuality.scale(40 + size * 15, 40); // HOCH: 5x5x5: 115, 7x7x7: 145, 9x9x9: 175
+        return LATTICE.computeIfAbsent(size * 1000 + n0, cacheKey -> {
+            int n = n0;
             Vector3f[] pts = new Vector3f[n];
             float golden = Mth.PI * (3.0F - Mth.sqrt(5.0F));
             for (int i = 0; i < n; i++) {

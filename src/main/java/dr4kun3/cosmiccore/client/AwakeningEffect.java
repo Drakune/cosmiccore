@@ -66,13 +66,8 @@ public final class AwakeningEffect {
             return;
         }
         switch (age) {
-            case 0 -> {
-                sound(SoundEvents.END_PORTAL_SPAWN, 0.5F, 1.0F);
-                sound(SoundEvents.BEACON_ACTIVATE, 0.5F, 1.0F);
-            }
+            case 0 -> sound(dr4kun3.cosmiccore.ModSounds.AWAKENING.get(), 1.0F, 1.0F);
             case 30 -> sound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6F, 0.8F);
-            case 60 -> sound(SoundEvents.ENDER_DRAGON_GROWL, 0.5F, 0.5F);
-            case 90 -> sound(SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5F, 1.0F);
             default -> {}
         }
         if (++age > DURATION) age = -1;

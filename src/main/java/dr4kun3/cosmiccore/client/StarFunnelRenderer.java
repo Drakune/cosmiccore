@@ -112,6 +112,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         CorePhase phase = below.getValue(ModProperties.PHASE);
         boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
         float t = (float) (level.getGameTime() % 144000L) + partialTick;
+        RenderQuality.begin(be.getBlockPos());
         // verbunden mit einem gebildeten Reaktor: das Blockmodell ist ausgeblendet, hier entsteht der animierte Trichter
         if (be.getBlockState().getValue(ModProperties.LINKED)) {
             body(pose, buffers, t, running ? 1.0F : 0.4F, phase == CorePhase.UNSTABLE);
@@ -129,7 +130,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         Matrix4f m = pose.last().pose();
 
         // Spiralarme: Sternenlicht stroemt von oben nach unten in den Trichter
-        int arms = 5, steps = 48;
+        int arms = 5, steps = RenderQuality.scale(48, 16);
         for (int k = 0; k < arms; k++) {
             float lx = 0, ly = 0, lz = 0;
             boolean first = true;
@@ -165,7 +166,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         }
 
         // Sternensplitter, die in den Trichter fallen
-        int motes = running ? 24 : 8;
+        int motes = RenderQuality.scale(running ? 24 : 8, 4);
         for (int i = 0; i < motes; i++) {
             float f = 1.0F - Mth.frac(t * 0.006F * speed + i * 0.618F);
             float h = f * HEIGHT;

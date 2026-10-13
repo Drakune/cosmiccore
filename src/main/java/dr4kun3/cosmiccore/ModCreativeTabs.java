@@ -27,8 +27,13 @@ public final class ModCreativeTabs {
                 out.accept(ModItems.ITEM_PORT.get());
                 out.accept(ModItems.STAR_FUNNEL.get());
                 out.accept(ModItems.STAR_DUST.get());
+                out.accept(ModItems.COMPRESSED_STAR_DUST.get());
+                out.accept(ModItems.NEUTRON_FRAGMENT.get());
+                out.accept(ModItems.QUASAR_ESSENCE.get());
                 out.accept(ModItems.COSMIC_LASER.get());
                 out.accept(ModItems.OVERDRIVE_PARTICLE.get());
+                out.accept(ModItems.EFFICIENCY_MODULE.get());
+                out.accept(ModItems.STABILITY_MODULE.get());
             }).build());
 
     private ModCreativeTabs() {}

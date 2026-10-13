@@ -43,7 +43,9 @@ public class ControllerMenu extends AbstractContainerMenu {
 
     // Layout (auch vom Screen benutzt)
     public static final int FUEL_X = 15, FUEL_Y = 26, STAB_X = 15, STAB_Y = 66;
-    public static final int INV_X = 36, INV_Y = 160;
+    public static final int INV_X = 36, INV_Y = 188;
+    /** Beute-Reihe (6 Slots) und Modul-Slots (Effizienz, Stabilitaet). */
+    public static final int LOOT_X = 36, LOOT_Y = 153, MOD_X = 170, MOD_Y = 153;
 
     private final BlockPos pos;
     private final ContainerLevelAccess access;
@@ -72,6 +74,11 @@ public class ControllerMenu extends AbstractContainerMenu {
 
         addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_FUEL, FUEL_X, FUEL_Y));
         addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_STAB, STAB_X, STAB_Y));
+        addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_EFFICIENCY, MOD_X, MOD_Y));
+        addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_STABILITY, MOD_X + 18, MOD_Y));
+        for (int i = 0; i < ControllerBlockEntity.LOOT_SLOTS; i++) {
+            addSlot(new LootSlot(machine, ControllerBlockEntity.SLOT_LOOT_FIRST + i, LOOT_X + i * 18, LOOT_Y));
+        }
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new PlayerSlot(playerInv, col + row * 9 + 9, INV_X + col * 18, INV_Y + row * 18));
@@ -181,12 +188,13 @@ public class ControllerMenu extends AbstractContainerMenu {
         if (!slot.hasItem()) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
         ItemStack copy = stack.copy();
-        final int machineEnd = 2, invEnd = slots.size();
+        // Slots 0-3: Brennstoff, Stabilisator, Module | 4-9: Beute | danach Spielerinventar
+        final int machineEnd = ControllerBlockEntity.INVENTORY_SIZE, invEnd = slots.size();
         if (index < machineEnd) {
             if (!moveItemStackTo(stack, machineEnd, invEnd, true)) return ItemStack.EMPTY;
         } else {
             // erst in den passenden Maschinenslot, sonst zwischen Inventar und Hotbar wechseln
-            if (!moveItemStackTo(stack, 0, machineEnd, false)) {
+            if (!moveItemStackTo(stack, 0, ControllerBlockEntity.SLOT_LOOT_FIRST, false)) {
                 int hotbarStart = invEnd - 9;
                 if (index < hotbarStart) {
                     if (!moveItemStackTo(stack, hotbarStart, invEnd, false)) return ItemStack.EMPTY;
@@ -203,6 +211,23 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /** Solange die Baugroesse nicht gewaehlt ist, zeigt der Screen nur die Auswahl - Slots sind dann aus. */
+    /** Beute kann nur entnommen werden. */
+    private final class LootSlot extends SlotItemHandler {
+        LootSlot(IItemHandler handler, int index, int x, int y) {
+            super(handler, index, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return false;
+        }
+
+        @Override
+        public boolean isActive() {
+            return sizeChosen();
+        }
+    }
+
     private final class MachineSlot extends SlotItemHandler {
         MachineSlot(IItemHandler handler, int index, int x, int y) {
             super(handler, index, x, y);

@@ -25,7 +25,7 @@ public final class IgnitionFx {
 
     public static void render(Matrix4f m, VertexConsumer vc, int size, float ph, float energy) {
         if (ph < 0.0F) return;
-        int stars = 24 + size * 2;
+        int stars = RenderQuality.scale(24 + size * 2, 10);
         float spread = 5.0F + size * 1.2F; // nah am Reaktor, damit man es gut erkennt
         float env = Mth.clamp((1.0F - ph) / 0.2F, 0.0F, 1.0F);
         for (int k = 0; k < stars; k++) {
@@ -58,7 +58,7 @@ public final class IgnitionFx {
      * @param mouthY Hoehe des Ziels relativ zur Kernmitte
      */
     public static void ambient(Matrix4f m, VertexConsumer vc, int size, float mouthY, float t, float energy) {
-        int stars = 8 + size;
+        int stars = RenderQuality.scale(8 + size, 3);
         for (int k = 0; k < stars; k++) {
             float period = 60.0F + 25.0F * (0.5F + 0.5F * hash(k * 53));
             float cyc = (t + k * 31.0F) / period;

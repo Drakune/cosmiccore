@@ -2,6 +2,7 @@ package dr4kun3.cosmiccore.block.entity;
 
 import dr4kun3.cosmiccore.CoreConfig;
 import dr4kun3.cosmiccore.ModItems;
+import dr4kun3.cosmiccore.ModSounds;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModBlocks;
@@ -61,6 +62,14 @@ import org.jetbrains.annotations.Nullable;
 public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public static final int SLOT_FUEL = 0;
     public static final int SLOT_STAB = 1;
+    /** Modul-Slots: Effizienz (weniger Brennstoff) und Stabilitaet (weniger Instabilitaet). */
+    public static final int SLOT_EFFICIENCY = 2;
+    public static final int SLOT_STABILITY = 3;
+    /** Beute-Slots fuer Asteroiden-Beute (nur entnehmbar). */
+    public static final int SLOT_LOOT_FIRST = 4;
+    public static final int LOOT_SLOTS = 6;
+    public static final int INVENTORY_SIZE = SLOT_LOOT_FIRST + LOOT_SLOTS;
+    public static final int MAX_MODULES = 4;
 
     public static final float UNSTABLE_ON = 70f;
     private static final float UNSTABLE_OFF = 55f;
@@ -97,6 +106,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private int burnTime;
     private int burnTotal;
     private int burnPower;
+    /** Hitzefaktor des aktuell brennenden Brennstoffs. */
+    private float burnHeat = 1.0f;
+    private float burnFrac;
     /** Verbleibende Kuehlpunkte im Eindaemmungsfeld (aus verbrauchten Stabilisatoren). */
     private float field;
     /** Kuehlpunkte des zuletzt verbrauchten Stabilisators (nur fuer die Anzeige). */
@@ -257,8 +269,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 }
                 overdrive++;
                 Vec3 c = Vec3.atCenterOf(center(sl));
-                sl.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 1.5F, 0.6F + 0.2F * overdrive);
-                sl.playSound(null, c.x, c.y, c.z, SoundEvents.WITHER_SPAWN, SoundSource.BLOCKS, 0.6F, 1.6F);
+                sl.playSound(null, c.x, c.y, c.z, ModSounds.CORE_IGNITE.get(), SoundSource.BLOCKS, 2.5F, 0.7F + 0.15F * overdrive);
+                sl.playSound(null, c.x, c.y, c.z, ModSounds.ORB_FORMED.get(), SoundSource.BLOCKS, 2.0F, 0.8F);
                 sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 200, 1.0, 1.0, 1.0, 0.8);
             }
             case ControllerMenu.BTN_OVERDRIVE_DOWN -> {
@@ -316,6 +328,26 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (level.getGameTime() % 10 == 0) pushVisuals(level);
     }
 
+    private int moduleCount(int slot, net.minecraft.world.item.Item module) {
+        ItemStack st = inventory.getStackInSlot(slot);
+        return st.is(module) ? Math.min(MAX_MODULES, st.getCount()) : 0;
+    }
+
+    /** Effizienz-Module: je -15 % Brennstoffverbrauch. */
+    private float fuelUseFactor() {
+        return 1.0f - 0.15f * moduleCount(SLOT_EFFICIENCY, ModItems.EFFICIENCY_MODULE.get());
+    }
+
+    /** Stabilitaets-Module: je -12 % Instabilitaet. */
+    private float stabilityFactor() {
+        return 1.0f - 0.12f * moduleCount(SLOT_STABILITY, ModItems.STABILITY_MODULE.get());
+    }
+
+    /** Haltewert des Eindaemmungsfelds - Stabilitaets-Module senken ihn um je 3 Prozentpunkte. */
+    private float fieldTarget() {
+        return FIELD_TARGET - 3f * moduleCount(SLOT_STABILITY, ModItems.STABILITY_MODULE.get());
+    }
+
     private double outputScale() {
         double sizeFactor = size == null ? 1.0 : size.outputFactor();
         return Math.pow(scale, CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * sizeFactor * Math.pow(2.0, overdrive);
@@ -346,9 +378,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                     burnTime = fuel.burnTime();
                     burnTotal = burnTime;
                     burnPower = fuel.power();
+                    burnHeat = fuel.heat();
                     if (resonance == 0) {
                         Vec3 c = Vec3.atCenterOf(center(level));
-                        level.playSound(null, c.x, c.y, c.z, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1.2F, 0.7F);
+                        level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_IGNITE.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
                     }
                     setChanged();
                 }
@@ -356,17 +389,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (burnTime > 0 && energy < capacity) {
                 burning = true;
                 // hoehere Stufe = schnellerer Verbrauch
-                burnTime = Math.max(0, burnTime - scale);
+                // Effizienz-Module senken den Verbrauch (Bruchteile werden angespart)
+                burnFrac += scale * fuelUseFactor();
+                int use = (int) burnFrac;
+                burnFrac -= use;
+                burnTime = Math.max(0, burnTime - use);
                 resonance = Math.min(resonance + 1, ramp);
                 double factor = 0.2 + 0.8 * resonance / (double) ramp;
                 double gen = burnPower * factor * outputScale() * lastCosmic * CoreConfig.OUTPUT_MULTIPLIER.get();
                 int out = (int) Math.min(Integer.MAX_VALUE, Math.round(gen));
                 energy = Math.min(capacity, energy + out);
                 lastOutput = out;
-                gain = (float) (CoreConfig.INSTABILITY_RATE.get() * (burnPower / 1000.0)
+                gain = (float) (CoreConfig.INSTABILITY_RATE.get() * (burnPower / 1000.0) * burnHeat
                         * instabilityScale() * cosmicInstability(level));
                 // ab der roten Zone steigt die Instabilitaet gebremst - es bleibt Zeit zu reagieren
                 if (instability > UNSTABLE_ON) gain *= 0.4f;
+                gain *= stabilityFactor();
                 instability += gain;
                 setChanged();
             } else if (burnTime <= 0) {
@@ -387,8 +425,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         // plus ein Zug zurueck auf den Zielwert. Fehlen die Punkte, wird automatisch der naechste Stabilisator
         // aus dem Slot verbraucht. Hoehere Stufen kosten also mehr Stabilisatoren - gefaehrlich wird es erst,
         // wenn der Vorrat ausgeht.
-        if (instability > FIELD_TARGET) {
-            float demand = gain + (instability - FIELD_TARGET) * FIELD_PULL;
+        float hold = fieldTarget();
+        if (instability > hold) {
+            float demand = gain + (instability - hold) * FIELD_PULL;
             while (field < demand && consumeStabilizer()) {
                 // weiter nachladen, bis der Bedarf gedeckt ist oder der Slot leer ist
             }
@@ -405,7 +444,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             meltdown++;
             if (meltdown == 1 || meltdown % 20 == 0) {
                 Vec3 c = Vec3.atCenterOf(center(level));
-                level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_HEARTBEAT, SoundSource.BLOCKS, 3.0F, 1.2F);
+                level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_ALARM.get(), SoundSource.BLOCKS, 3.0F, 1.25F);
                 for (Player pl : level.getEntitiesOfClass(Player.class, new AABB(c, c).inflate(32))) {
                     pl.displayClientMessage(Component.translatable("message.cosmiccore.meltdown",
                             (MELTDOWN_TICKS - meltdown) / 20 + 1).withStyle(ChatFormatting.RED, ChatFormatting.BOLD), true);
@@ -440,7 +479,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             long t = level.getGameTime();
             Vec3 c = Vec3.atCenterOf(center(level));
             if (t % 100 == 0) {
-                level.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_AMBIENT, SoundSource.BLOCKS, 0.6F, 0.6F);
+                level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_HUM.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             }
             if (t % 47 == 0) {
                 level.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1.0F,
@@ -450,7 +489,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (instability >= ALARM_AT) {
                 int period = instability >= 95f ? 8 : instability >= 90f ? 14 : 20;
                 if (t % period == 0) {
-                    level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_HEARTBEAT, SoundSource.BLOCKS, 2.0F, 0.8F);
+                    level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_ALARM.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
                 }
             }
         }
@@ -476,8 +515,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         BlockPos core = center(level);
         Vec3 c = Vec3.atCenterOf(core);
         int structure = size == null ? 7 : size.size();
-        level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.BLOCKS, 4.0F, 0.6F);
-        level.playSound(null, c.x, c.y, c.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 4.0F, 0.5F);
+        level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_COLLAPSE.get(), SoundSource.BLOCKS, 6.0F, 1.0F);
         level.sendParticles(ParticleTypes.SCULK_SOUL, c.x, c.y, c.z, 40 + structure * 10, structure * 0.25, structure * 0.25, structure * 0.25, 0.08);
         level.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 200, 0.5, 0.5, 0.5, 1.2);
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, c.x, c.y, c.z, 1, 0.0, 0.0, 0.0, 0.0);
@@ -531,6 +569,32 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * Asteroiden-Beute: wuerfelt die Loot-Tabelle cosmiccore:asteroid/small|medium|large (per Datapack anpassbar)
+     * und legt sie in die Beute-Slots. Was nicht passt, faellt am Controller heraus.
+     */
+    private void collectLoot(ServerLevel level, int variant) {
+        String name = switch (variant) {
+            case CosmicAsteroid.LARGE -> "large";
+            case CosmicAsteroid.MEDIUM -> "medium";
+            default -> "small";
+        };
+        var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE,
+                dr4kun3.cosmiccore.CosmicCore.id("asteroid/" + name));
+        var table = level.getServer().reloadableRegistries().getLootTable(key);
+        var params = new net.minecraft.world.level.storage.loot.LootParams.Builder(level)
+                .create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.EMPTY);
+        for (ItemStack drop : table.getRandomItems(params)) {
+            ItemStack rest = drop;
+            for (int i = SLOT_LOOT_FIRST; i < INVENTORY_SIZE && !rest.isEmpty(); i++) {
+                rest = inventory.insertItem(i, rest, false);
+            }
+            if (!rest.isEmpty()) {
+                Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ() + 0.5, rest);
+            }
+        }
+    }
+
     /** Schaltet das Modell des Sternentrichters um (verbunden = animierter Trichter wird gerendert). */
     private static void setFunnelLinked(ServerLevel level, BlockPos top, boolean linked) {
         if (!level.hasChunkAt(top)) return;
@@ -566,20 +630,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (target == null) return;
             laserTarget = target.getId();
             laserCharge = 0;
-            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 2.0F, 1.6F);
+            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.LASER_LOCK.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
             pushVisuals(level);
         }
         // erst aufladen, dann feuern
         if (laserCharge < LASER_CHARGE_TICKS) {
             laserCharge++;
             if (laserCharge == LASER_CHARGE_TICKS) {
-                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 2.0F, 1.8F);
+                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.LASER_CHARGE.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
             }
             return;
         }
+        int variant = target.getVariant();
         int gained = target.harvestTick();
         if (gained > 0) {
             receiveCosmicEnergy(gained);
+            collectLoot(level, variant);
             // grosses Energiepartikel sammelt sich ueber dem Trichter und wird an den Kern uebergeben
             if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime());
             deliverTicks = 0;
@@ -608,16 +674,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         for (int k = 0; k < 24; k += 2) {
             int arrival = Math.round((k / 24.0F * 0.35F + 0.65F) * collect);
             if (deliverTicks == arrival) {
-                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, 0.9F + k * 0.04F);
+                level.playSound(null, mid.x, mid.y, mid.z, ModSounds.COLLECT_PING.get(), SoundSource.BLOCKS, 3.0F, 0.85F + k * 0.03F);
             }
         }
         int formed = collect + 2; // Kugel formt sich (Schockwelle) - passt zu EnergyLaserFx
         if (deliverTicks == formed) {
-            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 3.0F, 1.4F);
-            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 3.0F, 0.8F);
+            level.playSound(null, mid.x, mid.y, mid.z, ModSounds.ORB_FORMED.get(), SoundSource.BLOCKS, 3.0F, 1.0F);
         } else if (deliverTicks >= SingularityCoreBlockEntity.DELIVER_TICKS) {
-            level.playSound(null, c.x, c.y, c.z, SoundEvents.CONDUIT_ACTIVATE, SoundSource.BLOCKS, 4.0F, 1.3F);
-            level.playSound(null, c.x, c.y, c.z, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 2.5F, 1.2F);
+            level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_ABSORB.get(), SoundSource.BLOCKS, 4.0F, 1.0F);
             level.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 30, 0.3, 0.3, 0.3, 0.15);
             deliverTicks = -1;
         }
@@ -768,8 +832,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         applyPhase(level);
         linkPorts(level, true);
         Vec3 c = Vec3.atCenterOf(center(level));
-        level.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.5F, 0.6F);
-        level.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 0.6F, 1.4F);
+        level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_FORM.get(), SoundSource.BLOCKS, 3.0F, 1.0F);
         pushVisuals(level);
         if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) {
             core.markFormed(level.getGameTime()); // startet die Verwandlungs-Animation auf den Clients
@@ -992,6 +1055,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putInt("burnTime", burnTime);
         tag.putInt("burnTotal", burnTotal);
         tag.putInt("burnPower", burnPower);
+        tag.putFloat("burnHeat", burnHeat);
         tag.putFloat("field", field);
         tag.putFloat("fieldMax", fieldMax);
         tag.putFloat("instability", instability);
@@ -1021,6 +1085,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         burnTime = tag.getInt("burnTime");
         burnTotal = tag.getInt("burnTotal");
         burnPower = tag.getInt("burnPower");
+        burnHeat = tag.contains("burnHeat") ? tag.getFloat("burnHeat") : 1.0f;
         field = tag.getFloat("field");
         fieldMax = tag.getFloat("fieldMax");
         instability = tag.getFloat("instability");
@@ -1067,18 +1132,40 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     // ------------------------------------------------------------------ innere Klassen
 
-    /** Fuel- und Stabilisator-Slot. Auch clientseitig im Menue benutzt (dort ohne Block-Entity). */
+    /**
+     * Brennstoff, Stabilisator, zwei Modul-Slots und die Beute-Slots. Auch clientseitig im Menue benutzt
+     * (dort ohne Block-Entity).
+     */
     public static class CoreInventory extends ItemStackHandler {
         private final Runnable onChange;
 
         public CoreInventory(Runnable onChange) {
-            super(2);
+            super(INVENTORY_SIZE);
             this.onChange = onChange;
         }
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return slot == SLOT_FUEL ? ModDataMaps.fuel(stack) != null : ModDataMaps.stabilizer(stack) != null;
+            return switch (slot) {
+                case SLOT_FUEL -> ModDataMaps.fuel(stack) != null;
+                case SLOT_STAB -> ModDataMaps.stabilizer(stack) != null;
+                case SLOT_EFFICIENCY -> stack.is(ModItems.EFFICIENCY_MODULE.get());
+                case SLOT_STABILITY -> stack.is(ModItems.STABILITY_MODULE.get());
+                default -> true; // Beute wird nur intern eingefuegt; GUI und Rohre sperren das Einfuegen
+            };
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return slot == SLOT_EFFICIENCY || slot == SLOT_STABILITY ? MAX_MODULES : super.getSlotLimit(slot);
+        }
+
+        /** Aeltere Speicherstaende hatten nur 2 Slots - die Groesse bleibt immer INVENTORY_SIZE. */
+        @Override
+        public void deserializeNBT(HolderLookup.Provider registries, CompoundTag nbt) {
+            CompoundTag copy = nbt.copy();
+            copy.putInt("Size", INVENTORY_SIZE);
+            super.deserializeNBT(registries, copy);
         }
 
         @Override
@@ -1134,7 +1221,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Fuer Trichter/Rohre: nur einfuegen, nie entnehmen. */
+    /** Fuer Trichter/Rohre: Brennstoff, Stabilisator und Module einfuegen, Asteroiden-Beute entnehmen. */
     private final class InsertOnlyView implements IItemHandler {
         @Override
         public int getSlots() {
@@ -1148,12 +1235,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            return inventory.insertItem(slot, stack, simulate);
+            return slot < SLOT_LOOT_FIRST ? inventory.insertItem(slot, stack, simulate) : stack;
         }
 
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return ItemStack.EMPTY;
+            return slot >= SLOT_LOOT_FIRST ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
         }
 
         @Override
@@ -1163,7 +1250,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return inventory.isItemValid(slot, stack);
+            return slot < SLOT_LOOT_FIRST && inventory.isItemValid(slot, stack);
         }
     }
 

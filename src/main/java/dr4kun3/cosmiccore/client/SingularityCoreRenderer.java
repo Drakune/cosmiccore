@@ -81,6 +81,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         if (level == null) return;
         CorePhase phase = be.getBlockState().getValue(ModProperties.PHASE);
         if (phase == CorePhase.DORMANT) return;
+        RenderQuality.begin(be.getBlockPos());
 
         final float t = (float) (level.getGameTime() % 144000L) + partialTick;
         final boolean unstable = phase == CorePhase.UNSTABLE;
@@ -170,7 +171,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.mulPose(Axis.ZP.rotationDegrees(tilt * 0.4F * Mth.sin(t * 0.013F)));
         Matrix4f dm = pose.last().pose();
         // drei Lagen fuer Volumen
-        for (int layer = -1; layer <= 1; layer++) {
+        int layers = RenderQuality.detail() < 0.5F ? 0 : 1; // bei wenig Detail nur die mittlere Lage
+        for (int layer = -layers; layer <= layers; layer++) {
             Matrix4f lm = new Matrix4f(dm).translate(0, layer * 0.035F, 0);
             accretionDisk(lm, glow, inner, outer, t, spin * (1 + 0.4F * od), e * (layer == 0 ? 1.0F : 0.45F), heat, camYaw, layer, od);
         }
@@ -223,7 +225,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     /** Flache Scheibe in der XZ-Ebene aus Ringbaendern; innen schneller (differentielle Rotation). */
     private static void accretionDisk(Matrix4f m, VertexConsumer vc, float inner, float outer, float t, float spin,
                                       float energy, float heat, float camYaw, int layer, int od) {
-        final int bands = 20, seg = 80;
+        final int bands = RenderQuality.scale(20, 8), seg = RenderQuality.scale(80, 32);
         float out = layer == 0 ? outer : inner + (outer - inner) * 0.75F; // aeussere Lagen enden frueher
         for (int b = 0; b < bands; b++) {
             float f0 = b / (float) bands, f1 = (b + 1) / (float) bands;
@@ -281,7 +283,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     private static void tendrils(Matrix4f m, VertexConsumer vc, float reach, float inner, float t, float energy,
                                  float heat, boolean active) {
         if (!active) return;
-        int count = 4 + Math.round(heat * 4);
+        int count = RenderQuality.scale(4 + Math.round(heat * 4), 2);
         for (int k = 0; k < count; k++) {
             float cyc = t / 60.0F + k * 0.37F;
             int cycle = (int) cyc;
@@ -310,7 +312,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.mulPose(Axis.YP.rotation(camYaw));
         pose.mulPose(Axis.XP.rotation(-camPitch));
         Matrix4f m = pose.last().pose();
-        final int seg = 72;
+        final int seg = RenderQuality.scale(72, 32);
         float[] ringCol = lerp(pHot, CRITICAL, heat * heat * 0.6F);
         float[] haloCol = lerp(lerp(pWarm, pCool, 0.55F), CRITICAL, heat * heat * 0.5F);
         float boost = 1.0F + beat * 1.5F;

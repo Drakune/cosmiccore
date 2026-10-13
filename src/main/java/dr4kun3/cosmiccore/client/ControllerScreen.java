@@ -41,7 +41,7 @@ import net.minecraft.world.inventory.Slot;
  * Zwei Modi: Groessenwahl (einmalig nach dem Platzieren) und Betrieb.
  */
 public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
-    private static final int W = 234, H = 242;
+    private static final int W = 234, H = 270;
     private static final int BAR_Y = 18, BAR_H = 60, BAR_W = 10;
     private static final int BAR_ENERGY_X = 42, BAR_INST_X = 58, BAR_RES_X = 74;
     private static final int INFO_X = 92;
@@ -188,8 +188,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         drawSlotBox(g, x + ControllerMenu.STAB_X, y + ControllerMenu.STAB_Y, 0xFF2A8AA8);
         drawHBar(g, x + ControllerMenu.FUEL_X - 1, y + ControllerMenu.FUEL_Y + 19, 18, menu.burnProgress(), 0xFFFFB040, 0xFFFF6A00);
         drawHBar(g, x + ControllerMenu.STAB_X - 1, y + ControllerMenu.STAB_Y + 19, 18, menu.stabProgress(), 0xFF60E0FF, 0xFF2080FF);
+        // Modul-Slots (Gold) und Beute-Slots (Violett) hervorgehoben, Rest = Spielerinventar
         for (Slot s : menu.slots) {
-            if (s.index >= 2 && s.isActive()) drawSlotBox(g, x + s.x, y + s.y, 0xFF2E2050);
+            if (s.index < 2 || !s.isActive()) continue;
+            int border = s.index < ControllerBlockEntity.SLOT_LOOT_FIRST ? 0xFFB08A30
+                    : s.index < ControllerBlockEntity.INVENTORY_SIZE ? 0xFF7A4AC0 : 0xFF2E2050;
+            drawSlotBox(g, x + s.x, y + s.y, border);
         }
 
         // Balken
@@ -302,6 +306,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
         g.drawString(font, Component.translatable("gui.cosmiccore.scale"), 8, ROW_Y - 12, 0xFFB8A8D8, false);
         g.drawString(font, Component.translatable("gui.cosmiccore.overdrive"), 8, OD_Y + 4, menu.overdrive() > 0 ? 0xFFFFB040 : 0xFFB8A8D8, false);
+        g.drawString(font, Component.translatable("gui.cosmiccore.loot"), ControllerMenu.LOOT_X, ControllerMenu.LOOT_Y - 10, 0xFFB8A8D8, false);
+        g.drawString(font, Component.translatable("gui.cosmiccore.modules"), ControllerMenu.MOD_X, ControllerMenu.MOD_Y - 10, 0xFFE0C080, false);
     }
 
     // ------------------------------------------------------------------ Groessenwahl
@@ -343,71 +349,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return W / 2 - (count * step - 10) / 2 + i * step;
     }
 
-    /** Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen). */
     private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
-        CorePattern p = size.pattern();
-        List<ItemStack> out = new ArrayList<>();
-        out.add(new ItemStack(ModItems.CONTROLLER.get(), 1));
-        out.add(new ItemStack(ModItems.VOID_CASING.get(), p.count(CorePattern.Cell.HULL) + p.count(CorePattern.Cell.SLOT) - 1));
-        out.add(new ItemStack(ModItems.RUNE_FRAME.get(), p.count(CorePattern.Cell.FRAME)));
-        out.add(new ItemStack(ModItems.FOCUS_GLASS.get(), p.count(CorePattern.Cell.GLASS)));
-        out.add(new ItemStack(ModItems.RESONANCE_COIL.get(), p.count(CorePattern.Cell.COIL)));
-        out.add(new ItemStack(ModItems.FOCUS_CRYSTAL.get(), p.count(CorePattern.Cell.CRYSTAL)));
-        out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE)));
-        if (funnel) out.add(new ItemStack(ModItems.STAR_FUNNEL.get(), 1));
-        if (lasers) out.add(new ItemStack(ModItems.COSMIC_LASER.get(), 4));
-        return out;
+        return StructurePreview.requiredBlocks(size, funnel, lasers);
     }
 
     /** Dreht die echte Struktur als 3D-Modell im Vorschaufenster (mit der Maus ziehbar). */
     private void renderStructure(GuiGraphics g, ReactorSize size, int cx, int cy, float t) {
-        if (minecraft == null) return;
-        CorePattern p = size.pattern();
-        int half = p.half();
-        float scale = 118.0F / (size.size() * 1.75F);
-        BlockRenderDispatcher dispatcher = minecraft.getBlockRenderer();
-        BlockPos controller = new BlockPos(0, -half, half);
-
-        g.enableScissor(leftPos + VIEW_X, topPos + VIEW_Y, leftPos + VIEW_X + VIEW_W, topPos + VIEW_Y + VIEW_H);
-        PoseStack ps = g.pose();
-        ps.pushPose();
-        ps.translate(cx, cy, 400);
-        ps.scale(scale, -scale, scale);
-        ps.mulPose(Axis.XP.rotationDegrees(22.0F + dragPitch));
-        ps.mulPose(Axis.YP.rotationDegrees(t * 0.8F + 30.0F + dragYaw));
-        Lighting.setupFor3DItems();
-        MultiBufferSource.BufferSource buffers = g.bufferSource();
-        p.forEach(BlockPos.ZERO, (pos, cell) -> {
-            BlockState state = CorePattern.blockFor(cell);
-            if (state == null) return;
-            if (pos.equals(controller)) {
-                state = ModBlocks.CONTROLLER.get().defaultBlockState().setValue(ControllerBlock.FACING, Direction.SOUTH);
-            }
-            ps.pushPose();
-            ps.translate(pos.getX() - 0.5F, pos.getY() - 0.5F, pos.getZ() - 0.5F);
-            dispatcher.renderSingleBlock(state, ps, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-                    ModelData.EMPTY, null);
-            ps.popPose();
-        });
-        if (withLasers) {
-            BlockState laser = ModBlocks.COSMIC_LASER.get().defaultBlockState();
-            for (Direction d : Direction.Plane.HORIZONTAL) {
-                ps.pushPose();
-                ps.translate(d.getStepX() - 0.5F, half + 0.5F, d.getStepZ() - 0.5F);
-                dispatcher.renderSingleBlock(laser, ps, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
-                ps.popPose();
-            }
-        }
-        if (withFunnel) {
-            ps.pushPose();
-            ps.translate(-0.5F, half + 0.5F, -0.5F);
-            dispatcher.renderSingleBlock(ModBlocks.STAR_FUNNEL.get().defaultBlockState(), ps, buffers, LightTexture.FULL_BRIGHT,
-                    OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
-            ps.popPose();
-        }
-        g.flush();
-        ps.popPose();
-        g.disableScissor();
+        StructurePreview.render(g, size, cx, cy,
+                new int[]{leftPos + VIEW_X, topPos + VIEW_Y, leftPos + VIEW_X + VIEW_W, topPos + VIEW_Y + VIEW_H},
+                118.0F, t * 0.8F + 30.0F + dragYaw, dragPitch, withFunnel, withLasers);
     }
 
     @Override
@@ -479,7 +429,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
         int mx = mouseX - leftPos, my = mouseY - topPos;
         List<Component> tip = new ArrayList<>();
-        if (in(mx, my, BAR_ENERGY_X, BAR_Y, BAR_W, BAR_H)) {
+        if (in(mx, my, ControllerMenu.MOD_X, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_EFFICIENCY).hasItem()) {
+            tip.add(Component.translatable("item.cosmiccore.efficiency_module"));
+            tip.add(Component.translatable("tooltip.cosmiccore.efficiency_module").withStyle(ChatFormatting.GRAY));
+        } else if (in(mx, my, ControllerMenu.MOD_X + 18, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_STABILITY).hasItem()) {
+            tip.add(Component.translatable("item.cosmiccore.stability_module"));
+            tip.add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.GRAY));
+        } else if (in(mx, my, BAR_ENERGY_X, BAR_Y, BAR_W, BAR_H)) {
             tip.add(Component.translatable("gui.cosmiccore.tip.energy"));
             tip.add(Component.literal(fmt(menu.energy()) + " / " + fmt(menu.capacity()) + " RF").withStyle(ChatFormatting.GRAY));
         } else if (in(mx, my, BAR_INST_X, BAR_Y, BAR_W, BAR_H)) {

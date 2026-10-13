@@ -506,6 +506,86 @@ def draw_book_spine():
     return img
 
 
+def draw_compressed_star_dust(f, nf):
+    """Verdichteter Sternenstaub: kompakter leuchtender Kristallblock mit Funkeln."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    for y in range(3, 14):
+        for x in range(3, 14):
+            if abs(x - 8) + abs(y - 8) <= 6:
+                t = (abs(x - 8) + abs(y - 8)) / 6
+                put(px, x, y, lerp((200, 170, 255), (60, 30, 140), t))
+    for (x, y) in [(8, 4), (5, 8), (11, 8), (8, 12), (8, 8)]:
+        a = 0.5 + 0.5 * math.sin(2 * math.pi * ph + x + y)
+        put(px, x, y, lerp((120, 200, 255), (255, 255, 255), a))
+    return img
+
+
+def draw_neutron_fragment(f, nf):
+    """Neutronenstern-Fragment: dichter heller Splitter mit pulsierendem Kern und blauen Strahlen."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    shard = [(7, 2), (8, 2), (6, 3), (7, 3), (8, 3), (9, 3), (6, 4), (7, 4), (8, 4), (9, 4), (5, 5), (6, 5), (7, 5), (8, 5),
+             (9, 5), (10, 5), (5, 6), (6, 6), (7, 6), (8, 6), (9, 6), (10, 6), (6, 7), (7, 7), (8, 7), (9, 7), (6, 8), (7, 8),
+             (8, 8), (9, 8), (7, 9), (8, 9), (7, 10), (8, 10), (7, 11), (8, 11), (8, 12)]
+    for (x, y) in shard:
+        put(px, x, y, lerp((180, 220, 255), (40, 70, 140), (x + y - 9) / 12))
+    pulse = 0.5 + 0.5 * math.sin(2 * math.pi * ph)
+    for (x, y) in [(7, 5), (8, 5), (7, 6), (8, 6)]:
+        put(px, x, y, lerp((200, 240, 255), (255, 255, 255), pulse))
+    for k in range(4):
+        ang = 2 * math.pi * (k / 4 + ph * 0.25)
+        for r in (6, 7):
+            put(px, int(round(7.5 + math.cos(ang) * r)), int(round(6.5 + math.sin(ang) * r)), (120, 200, 255))
+    return img
+
+
+def draw_quasar_essence(f, nf):
+    """Quasar-Essenz: gleissende Kugel mit zwei Jets und rotierender Scheibe."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x - 7.5, y - 7.5
+            d = math.hypot(dx, dy)
+            if d < 2.6:
+                put(px, x, y, lerp((255, 255, 255), (255, 200, 120), d / 2.6))
+            elif abs(dy) < 1.0 and d < 6.5:
+                a = 0.5 + 0.5 * math.sin(math.atan2(dy, dx) * 2 + d - 2 * math.pi * ph)
+                put(px, x, y, lerp((200, 80, 255), (255, 170, 80), a))
+    for y in range(0, 16):
+        if abs(y - 7.5) > 2.6:
+            a = 0.5 + 0.5 * math.sin(2 * math.pi * ph * 2 + y)
+            put(px, 7, y, lerp((120, 200, 255), (230, 245, 255), a)); put(px, 8, y, lerp((120, 200, 255), (230, 245, 255), a))
+    return img
+
+
+def draw_module(f, nf, accent, symbol):
+    """Controller-Modul: dunkle Platine mit Goldkontakten, leuchtendem Kern und Symbol."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(2, 14):
+        for x in range(2, 14):
+            put(px, x, y, (30, 22, 48))
+    for i in range(2, 14):
+        for (x, y) in ((i, 2), (i, 13), (2, i), (13, i)):
+            put(px, x, y, (70, 56, 110))
+    for x in range(4, 13, 2):  # Kontakte
+        put(px, x, 14, (220, 180, 80)); put(px, x, 1, (220, 180, 80))
+    pulse = 0.5 + 0.5 * math.sin(2 * math.pi * f / nf)
+    for (x, y) in symbol:
+        put(px, x, y, lerp(accent, (255, 255, 255), pulse * 0.6))
+    return img
+
+
+EFF_SYMBOL = [(6, 5), (7, 5), (8, 5), (9, 5), (6, 6), (6, 7), (7, 7), (8, 7), (6, 8), (6, 9), (6, 10), (7, 10), (8, 10), (9, 10)]
+STAB_SYMBOL = [(7, 4), (8, 4), (6, 5), (9, 5), (5, 6), (10, 6), (5, 7), (10, 7), (5, 8), (10, 8), (6, 9), (9, 9), (7, 10), (8, 10),
+               (7, 7), (8, 7)]
+
+
 def draw_guide_book():
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     px = img.load()
@@ -562,6 +642,11 @@ def textures():
     save_strip('singularity_core_dormant', [draw_core_dormant()], 1)
     save_strip('star_dust', [draw_star_dust(f, 8) for f in range(8)], 3, folder='item')
     save_strip('guide_book', [draw_guide_book()], 1, folder='item')
+    save_strip('efficiency_module', [draw_module(f, 8, (255, 190, 60), EFF_SYMBOL) for f in range(8)], 3, folder='item')
+    save_strip('stability_module', [draw_module(f, 8, (90, 220, 255), STAB_SYMBOL) for f in range(8)], 3, folder='item')
+    save_strip('compressed_star_dust', [draw_compressed_star_dust(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('neutron_fragment', [draw_neutron_fragment(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('quasar_essence', [draw_quasar_essence(f, 8) for f in range(8)], 2, folder='item')
     save_strip('book_cover', [draw_book_cover()], 1, folder='item')
     save_strip('book_pages', [draw_book_pages()], 1, folder='item')
     save_strip('book_spine', [draw_book_spine()], 1, folder='item')
@@ -700,6 +785,8 @@ def models():
         'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
         'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
     wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
+    for it in ('compressed_star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module', 'stability_module'):
+        wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/{it}'}})
     # animierte 3D-Items (gezeichnet von CosmicItemRenderer)
     floating = {
         'gui': {'rotation': [20, 30, 0], 'translation': [0, 0, 0], 'scale': [1.0, 1.0, 1.0]},
@@ -849,6 +936,32 @@ DE = {
     'console.cosmiccore.field': 'Eindämmungsfeld',
     'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
     'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er auch ohne Brennstoff Strom.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
+    'item.cosmiccore.compressed_star_dust': 'Verdichteter Sternenstaub',
+    'item.cosmiccore.neutron_fragment': 'Neutronenstern-Fragment',
+    'item.cosmiccore.quasar_essence': 'Quasar-Essenz',
+    'tooltip.cosmiccore.fuel_heat': 'Hitze x%s',
+    'item.cosmiccore.efficiency_module': 'Effizienz-Modul',
+    'item.cosmiccore.stability_module': 'Stabilitäts-Modul',
+    'tooltip.cosmiccore.efficiency_module': 'Je Modul -15 % Brennstoffverbrauch (max. 4)',
+    'tooltip.cosmiccore.stability_module': 'Je Modul -12 % Instabilität, Feld hält tiefer (max. 4)',
+    'gui.cosmiccore.loot': 'Asteroiden-Beute',
+    'gui.cosmiccore.modules': 'Module',
+    'guide.cosmiccore.contents': 'Inhalt',
+    'guide.cosmiccore.chapter.intro': 'Einleitung',
+    'guide.cosmiccore.chapter.building': 'Aufbau',
+    'guide.cosmiccore.chapter.structures': 'Strukturen',
+    'guide.cosmiccore.chapter.operation': 'Betrieb',
+    'guide.cosmiccore.chapter.fuels': 'Brennstoffe',
+    'guide.cosmiccore.chapter.cosmos': 'Der Kosmos',
+    'guide.cosmiccore.chapter.asteroids': 'Asteroiden & Laser',
+    'guide.cosmiccore.chapter.overdrive': 'Overdrive & Ultimativ',
+    'guide.cosmiccore.chapter.tips': 'Tipps',
+    'guide.cosmiccore.levels': 'Leistungsstufen 1-%s',
+    'guide.cosmiccore.stabilizers': 'Stabilisatoren',
+    'guide.cosmiccore.cooling': 'kühlt %s Instabilität',
+    'guide.cosmiccore.stabilizer_note': 'Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.',
+    'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.',
+    'guide.cosmiccore.loot': '§5§lAsteroiden-Beute§r\n\nZerstörte Asteroiden lassen Beute zurück: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente und selten Quasar-Essenz.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -961,10 +1074,39 @@ EN = {
     'console.cosmiccore.field': 'Containment field',
     'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
     'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.',
+    'item.cosmiccore.compressed_star_dust': 'Compressed Star Dust',
+    'item.cosmiccore.neutron_fragment': 'Neutron Star Fragment',
+    'item.cosmiccore.quasar_essence': 'Quasar Essence',
+    'tooltip.cosmiccore.fuel_heat': 'Heat x%s',
+    'item.cosmiccore.efficiency_module': 'Efficiency Module',
+    'item.cosmiccore.stability_module': 'Stability Module',
+    'tooltip.cosmiccore.efficiency_module': 'Each module -15 % fuel use (max 4)',
+    'tooltip.cosmiccore.stability_module': 'Each module -12 % instability, field holds lower (max 4)',
+    'gui.cosmiccore.loot': 'Asteroid loot',
+    'gui.cosmiccore.modules': 'Modules',
 }
 
 
+SOUND_NAMES = ['core_hum', 'core_ignite', 'core_form', 'core_alarm', 'core_collapse', 'laser_lock', 'laser_charge',
+               'asteroid_shatter', 'collect_ping', 'orb_formed', 'core_absorb', 'awakening']
+SUBTITLES_DE = {'core_hum': 'Kern brummt', 'core_ignite': 'Kern zündet', 'core_form': 'Reaktor formt sich',
+                'core_alarm': 'Kern-Alarm', 'core_collapse': 'Kern kollabiert', 'laser_lock': 'Laser erfasst Ziel',
+                'laser_charge': 'Laser lädt auf', 'asteroid_shatter': 'Asteroid zerbricht', 'collect_ping': 'Bruchstück gesammelt',
+                'orb_formed': 'Energiekugel geformt', 'core_absorb': 'Kern nimmt Energie auf', 'awakening': 'Der ultimative Kern erwacht'}
+SUBTITLES_EN = {'core_hum': 'Core hums', 'core_ignite': 'Core ignites', 'core_form': 'Reactor forms',
+                'core_alarm': 'Core alarm', 'core_collapse': 'Core collapses', 'laser_lock': 'Laser locks on',
+                'laser_charge': 'Laser charges', 'asteroid_shatter': 'Asteroid shatters', 'collect_ping': 'Fragment collected',
+                'orb_formed': 'Energy orb formed', 'core_absorb': 'Core absorbs energy', 'awakening': 'The ultimate core awakens'}
+
+
+def sounds():
+    wjson(f'{ASSETS}/sounds.json', {n: {'sounds': [f'{MOD}:{n}'], 'subtitle': f'subtitles.{MOD}.{n}'} for n in SOUND_NAMES})
+
+
 def lang():
+    for n in SOUND_NAMES:
+        DE[f'subtitles.{MOD}.{n}'] = SUBTITLES_DE[n]
+        EN[f'subtitles.{MOD}.{n}'] = SUBTITLES_EN[n]
     wjson(f'{ASSETS}/lang/de_de.json', DE)
     wjson(f'{ASSETS}/lang/en_us.json', EN)
 
@@ -988,6 +1130,42 @@ def shapeless(name, ingredients, result, count):
     wjson(f'{DATA}/recipe/{name}.json', {
         'type': 'minecraft:crafting_shapeless', 'category': 'misc',
         'ingredients': [item(i) for i in ingredients], 'result': {'id': result, 'count': count}})
+
+
+def loot_entry(item, lo, hi, chance=None):
+    e = {'type': 'minecraft:item', 'name': item, 'functions': [
+        {'function': 'minecraft:set_count', 'count': {'type': 'minecraft:uniform', 'min': lo, 'max': hi}}]}
+    return e
+
+
+def pool(entries, chance=None, rolls=1):
+    p = {'rolls': rolls, 'entries': entries}
+    if chance is not None:
+        p['conditions'] = [{'condition': 'minecraft:random_chance', 'chance': chance}]
+    return p
+
+
+def asteroid_loot():
+    """Beute der Asteroiden (per Datapack ueberschreibbar): data/cosmiccore/loot_table/asteroid/<groesse>.json"""
+    tables = {
+        'small': [pool([loot_entry(f'{MOD}:star_dust', 1, 3)]),
+                  pool([loot_entry('minecraft:raw_iron', 1, 2)], 0.4),
+                  pool([loot_entry('minecraft:amethyst_shard', 1, 3)], 0.3)],
+        'medium': [pool([loot_entry(f'{MOD}:star_dust', 2, 5)]),
+                   pool([loot_entry(f'{MOD}:compressed_star_dust', 1, 1)], 0.25),
+                   pool([loot_entry('minecraft:raw_gold', 1, 3)], 0.4),
+                   pool([loot_entry('minecraft:raw_iron', 1, 3)], 0.5),
+                   pool([loot_entry('minecraft:diamond', 1, 1)], 0.1)],
+        'large': [pool([loot_entry(f'{MOD}:compressed_star_dust', 1, 2)]),
+                  pool([loot_entry(f'{MOD}:neutron_fragment', 1, 1)], 0.35),
+                  pool([loot_entry(f'{MOD}:quasar_essence', 1, 1)], 0.08),
+                  pool([loot_entry('minecraft:diamond', 1, 2)], 0.3),
+                  pool([loot_entry('minecraft:netherite_scrap', 1, 1)], 0.1),
+                  pool([loot_entry('minecraft:echo_shard', 1, 2)], 0.2)],
+    }
+    for name, pools in tables.items():
+        wjson(f'{DATA}/loot_table/asteroid/{name}.json', {'type': 'minecraft:empty', 'pools': pools,
+                                                         'random_sequence': f'{MOD}:asteroid/{name}'})
 
 
 def data():
@@ -1026,6 +1204,14 @@ def data():
            f'{MOD}:cosmic_laser', 1)
     shaped('overdrive_particle', [' E ', 'ENE', ' E '],
            {'E': 'minecraft:end_crystal', 'N': 'minecraft:nether_star'}, f'{MOD}:overdrive_particle', 1)
+    shaped('efficiency_module', ['GRG', 'SVS', 'GRG'],
+           {'G': 'minecraft:gold_ingot', 'R': 'minecraft:redstone', 'S': f'{MOD}:star_dust', 'V': f'{MOD}:void_casing'},
+           f'{MOD}:efficiency_module', 1)
+    shaped('stability_module', ['ODO', 'SVS', 'ODO'],
+           {'O': 'minecraft:crying_obsidian', 'D': 'minecraft:diamond', 'S': f'{MOD}:star_dust', 'V': f'{MOD}:void_casing'},
+           f'{MOD}:stability_module', 1)
+    asteroid_loot()
+    shaped('compressed_star_dust', ['SSS', 'SSS', 'SSS'], {'S': f'{MOD}:star_dust'}, f'{MOD}:compressed_star_dust', 1)
     shapeless('guide_book', ['minecraft:book', f'{MOD}:star_dust'], f'{MOD}:guide_book', 1)
     shapeless('item_port', [f'{MOD}:void_casing', 'minecraft:hopper'], f'{MOD}:item_port', 1)
     shapeless('star_dust', ['minecraft:amethyst_shard', 'minecraft:amethyst_shard', 'minecraft:ender_pearl',
@@ -1034,6 +1220,9 @@ def data():
     # Data Maps: hier tunst du die Balance - auch per Datapack ueberschreibbar
     wjson(f'{DATA}/data_maps/item/core_fuel.json', {'values': {
         f'{MOD}:star_dust': {'burn_time': 2400, 'power': 1200},
+        f'{MOD}:compressed_star_dust': {'burn_time': 24000, 'power': 2600},
+        f'{MOD}:neutron_fragment': {'burn_time': 6000, 'power': 8000, 'heat': 1.4},
+        f'{MOD}:quasar_essence': {'burn_time': 3000, 'power': 20000, 'heat': 2.0},
         'minecraft:ender_pearl': {'burn_time': 1200, 'power': 400},
         'minecraft:ender_eye': {'burn_time': 1800, 'power': 700},
         'minecraft:echo_shard': {'burn_time': 3600, 'power': 900},
@@ -1049,6 +1238,7 @@ if __name__ == '__main__':
     sheets = textures()
     models()
     lang()
+    sounds()
     data()
     if '--preview' in sys.argv:
         preview(sheets)

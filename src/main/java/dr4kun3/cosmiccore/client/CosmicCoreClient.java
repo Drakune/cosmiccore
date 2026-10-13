@@ -60,8 +60,17 @@ public final class CosmicCoreClient {
         if (fuel != null) {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.fuel", fuel.power(), fuel.burnTime() / 20)
                     .withStyle(ChatFormatting.DARK_PURPLE));
+            if (fuel.heat() != 1.0F) {
+                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.fuel_heat", String.format("%.1f", fuel.heat()))
+                        .withStyle(fuel.heat() > 1.0F ? ChatFormatting.RED : ChatFormatting.AQUA));
+            }
         }
-        CoreStabilizer stab = ModDataMaps.stabilizer(stack);
+        if (stack.is(ModItems.EFFICIENCY_MODULE.get())) {
+            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.efficiency_module").withStyle(ChatFormatting.GOLD));
+        } else if (stack.is(ModItems.STABILITY_MODULE.get())) {
+            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.AQUA));
+        }
+                CoreStabilizer stab = ModDataMaps.stabilizer(stack);
         if (stab != null) {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stabilizer",
                     String.format("%.0f", ControllerBlockEntity.stabilizerPoints(stab))).withStyle(ChatFormatting.DARK_AQUA));

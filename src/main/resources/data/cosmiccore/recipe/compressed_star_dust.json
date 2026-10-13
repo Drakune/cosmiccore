@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SSS",
+    "SSS",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "item": "cosmiccore:star_dust"
+    }
+  },
+  "result": {
+    "id": "cosmiccore:compressed_star_dust",
+    "count": 1
+  }
+}

@@ -5,7 +5,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
 
-/** Nimmt Brennstoff/Stabilisatoren per Trichter oder Rohr an (nur einfuegen, nie entnehmen). */
+/**
+ * Anschluss fuer Trichter und Rohre: nimmt Brennstoff, Stabilisatoren und Module auf und gibt die Asteroiden-Beute ab
+ * (leitet alles an das Inventar des Controllers weiter).
+ */
 public class ItemPortBlockEntity extends PortBlockEntity {
     private final IItemHandler itemView = new View();
 
@@ -18,37 +21,44 @@ public class ItemPortBlockEntity extends PortBlockEntity {
     }
 
     private final class View implements IItemHandler {
+        private IItemHandler target() {
+            ControllerBlockEntity c = controller();
+            return c == null ? null : c.getItemView();
+        }
+
         @Override
         public int getSlots() {
-            return 2;
+            return ControllerBlockEntity.INVENTORY_SIZE;
         }
 
         @Override
         public ItemStack getStackInSlot(int slot) {
-            ControllerBlockEntity c = controller();
-            return c == null ? ItemStack.EMPTY : c.getInventory().getStackInSlot(slot);
+            IItemHandler t = target();
+            return t == null ? ItemStack.EMPTY : t.getStackInSlot(slot);
         }
 
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            ControllerBlockEntity c = controller();
-            return c == null ? stack : c.getInventory().insertItem(slot, stack, simulate);
+            IItemHandler t = target();
+            return t == null ? stack : t.insertItem(slot, stack, simulate);
         }
 
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return ItemStack.EMPTY;
+            IItemHandler t = target();
+            return t == null ? ItemStack.EMPTY : t.extractItem(slot, amount, simulate);
         }
 
         @Override
         public int getSlotLimit(int slot) {
-            return 64;
+            IItemHandler t = target();
+            return t == null ? 64 : t.getSlotLimit(slot);
         }
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            ControllerBlockEntity c = controller();
-            return c != null && c.getInventory().isItemValid(slot, stack);
+            IItemHandler t = target();
+            return t != null && t.isItemValid(slot, stack);
         }
     }
 }
