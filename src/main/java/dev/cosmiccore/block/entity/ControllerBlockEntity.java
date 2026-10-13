@@ -228,8 +228,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return true;
         }
         if (size == null) return false;
-        // Leistungsstufe und Overdrive lassen sich erst einstellen, wenn der Generator laeuft
-        boolean running = formed && enabled && (phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE);
+        // Leistungsstufe und Overdrive lassen sich erst einstellen, wenn der Generator gezuendet ist
+        boolean running = formed && enabled && collapseCooldown <= 0;
         if (!running && (id == ControllerMenu.BTN_SCALE_DOWN || id == ControllerMenu.BTN_SCALE_UP
                 || id == ControllerMenu.BTN_OVERDRIVE_UP || id == ControllerMenu.BTN_OVERDRIVE_DOWN)) {
             player.displayClientMessage(Component.translatable("message.cosmiccore.not_running").withStyle(ChatFormatting.YELLOW), true);
@@ -388,7 +388,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         // Phase bestimmen (mit Hysterese, damit die Bloecke nicht flackern)
-        boolean active = enabled && burnTime > 0 && collapseCooldown <= 0;
+        // voller Puffer: der Reaktor pausiert (kein Verbrauch) und wird auch so dargestellt
+        boolean active = enabled && burnTime > 0 && collapseCooldown <= 0 && energy < capacity;
         CorePhase target = CorePhase.FORMED;
         if (active) {
             boolean unstable = instability >= UNSTABLE_ON || (phase == CorePhase.UNSTABLE && instability >= UNSTABLE_OFF);
@@ -1009,7 +1010,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (lastOutput > 0 ? ControllerMenu.F_BURNING : 0)
                         | (funnel ? ControllerMenu.F_FUNNEL : 0)
                         | (laserArray ? ControllerMenu.F_LASER : 0)
-                        | (formed && enabled && (phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE) ? ControllerMenu.F_RUNNING : 0);
+                        | (formed && enabled && collapseCooldown <= 0 ? ControllerMenu.F_RUNNING : 0)
+                        | (energy >= getCapacity() ? ControllerMenu.F_FULL : 0)
+                        | (burnTime > 0 || !inventory.getStackInSlot(SLOT_FUEL).isEmpty() ? ControllerMenu.F_HAS_FUEL : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));

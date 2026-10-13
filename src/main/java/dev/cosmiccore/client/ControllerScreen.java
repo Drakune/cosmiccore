@@ -422,8 +422,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (!menu.flag(ControllerMenu.F_ENABLED)) {
             return Component.translatable("gui.cosmiccore.status.off").withStyle(ChatFormatting.GRAY);
         }
+        if (menu.flag(ControllerMenu.F_FULL)) {
+            // Puffer voll: der Reaktor pausiert, bis Energie abfliesst - Brennstoff bleibt erhalten
+            return Component.translatable("gui.cosmiccore.status.full").withStyle(ChatFormatting.GOLD);
+        }
         if (!menu.flag(ControllerMenu.F_BURNING)) {
-            return Component.translatable("gui.cosmiccore.status.idle").withStyle(ChatFormatting.YELLOW);
+            return Component.translatable(menu.flag(ControllerMenu.F_HAS_FUEL) ? "gui.cosmiccore.status.starting"
+                    : "gui.cosmiccore.status.idle").withStyle(ChatFormatting.YELLOW);
         }
         if (menu.instability() >= ControllerBlockEntity.UNSTABLE_ON) {
             return Component.translatable("gui.cosmiccore.status.unstable").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);

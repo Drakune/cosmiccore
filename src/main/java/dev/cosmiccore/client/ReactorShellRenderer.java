@@ -123,13 +123,13 @@ public final class ReactorShellRenderer {
         int inst = Math.round(core.getInstability());
         int instColor = inst < 40 ? 0x80FF90 : inst < 70 ? 0xFFE060 : 0xFF5060;
         String[] lines = {
-                p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "",
+                core.getEnergyPct() >= 100 ? "PUFFER VOLL" : p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "",
                 "OUT " + compact(core.getOutput()) + " RF/t",
                 "PUF " + core.getEnergyPct() + "%",
                 "INST " + inst + "%",
                 "STUFE " + core.getScale() + "/" + core.getScaleMax(),
                 maxOd > 0 ? "OD " + od : ""};
-        int[] colors = {p.unstable() ? 0xFF5060 : 0xB0E8FF, 0x7AE8FF, 0xC8B8F0, instColor, 0xE0A8FF, 0xFFB040};
+        int[] colors = {core.getEnergyPct() >= 100 ? 0xFFB040 : p.unstable() ? 0xFF5060 : 0xB0E8FF, 0x7AE8FF, 0xC8B8F0, instColor, 0xE0A8FF, 0xFFB040};
         float tilt = (float) Math.atan2(0.18, 0.42);
         float s = 0.0062F;
         for (int side = 0; side < 2; side++) {

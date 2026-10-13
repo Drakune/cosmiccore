@@ -53,6 +53,8 @@
   "gui.cosmiccore.status.collapsed": "Kollabiert! (%s s)",
   "gui.cosmiccore.status.off": "Abgeschaltet",
   "gui.cosmiccore.status.idle": "Bereit - kein Brennstoff",
+  "gui.cosmiccore.status.full": "Puffer voll - pausiert",
+  "gui.cosmiccore.status.starting": "Zündet...",
   "gui.cosmiccore.status.unstable": "INSTABIL!",
   "gui.cosmiccore.status.active": "Aktiv",
   "gui.cosmiccore.tip.energy": "Energiepuffer",
