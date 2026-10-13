@@ -7,6 +7,7 @@ import static dr4kun3.cosmiccore.client.RenderUtil.lerp;
 import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -37,9 +38,9 @@ public final class EnergyLaserFx {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
     public static void render(Matrix4f m, VertexConsumer vc, int half, float t, Vec3 target, float targetSize, float charge,
-                              float harvest, float energy, float deliver, Vec3 source) {
+                              float harvest, float energy, float deliver, Vec3 source, float mouthY) {
         float cy = half + HEIGHT;
-        if (deliver >= 0.0F) delivery(m, vc, cy, t, deliver, energy, source);
+        if (deliver >= 0.0F) delivery(m, vc, cy, mouthY, t, deliver, energy, source);
         Vector3f center = new Vector3f(0, cy, 0);
         boolean locked = target != null;
         float fire = locked ? Mth.clamp((charge - 0.95F) / 0.05F, 0.0F, 1.0F) : 0.0F;
@@ -188,88 +189,107 @@ public final class EnergyLaserFx {
     }
 
     /**
-     * Uebergabe nach einem Abschuss (Phasen von ph 0..1):
+     * Uebergabe nach einem Abschuss (Phasen von ph 0..1, Zeitplan aus SingularityCoreBlockEntity):
      * <ol>
-     *   <li>0 - 0.5: Explosionsblitz am Asteroiden, seine Bruchstuecke fliegen zum Laser - jedes landet mit kleinem
-     *       Lichtring; die Energiekugel waechst.</li>
-     *   <li>0.5 - 0.62: die Kugel formt sich - Schockwellen und Strahlenkranz.</li>
-     *   <li>0.62 - 1: sie sinkt mit Lichtschweif in den Kern und geht dort mit Blitz und Ringwellen auf.</li>
+     *   <li>Der Asteroid explodiert am Haltepunkt ueber dem Trichter - kompakter Blitz und Ringwelle.</li>
+     *   <li>Seine Bruchstuecke stieben auseinander und wandern in einer engen werdenden Spirale nach unten in die
+     *       Trichteroeffnung; jedes wird dort mit einem Lichtring eingesammelt, die Oeffnung glueht auf.</li>
+     *   <li>Ab SINK_START faellt die gesammelte Energie als Lichtpuls in den Kern und geht dort mit Ringwellen auf.</li>
      * </ol>
      */
-    private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float t, float ph, float energy, Vec3 source) {
-        Vector3f mid = new Vector3f(0, cy, 0);
+    private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float mouthY, float t, float ph, float energy, Vec3 source) {
         Vector3f src = source != null ? new Vector3f((float) source.x, (float) source.y, (float) source.z)
-                : new Vector3f(0, cy + 6.0F, 0);
-        if (ph < 0.5F) {
-            float g = ph / 0.5F;
-            // Explosionsblitz am Asteroiden
-            if (g < 0.35F) {
-                float e = g / 0.35F;
-                Matrix4f sm = new Matrix4f(m).translate(src.x, src.y, src.z);
-                RenderUtil.glowSphere(vc, sm, 0.5F + 3.0F * e, 10, 14, GOLD, 0.5F * energy * (1.0F - e));
-                RenderUtil.glowSphere(vc, sm, 0.3F + 1.2F * e, 8, 12, WHITE, 0.8F * energy * (1.0F - e));
-                flatCircle(vc, sm, 1.0F + 5.0F * e, 0.12F, 64, GOLD, energy * (1.0F - e));
+                : new Vector3f(0, cy + 1.6F, 0);
+        Matrix4f sm = new Matrix4f(m).translate(src.x, src.y, src.z);
+        Matrix4f mouth = new Matrix4f(m).translate(0, mouthY, 0);
+        // Explosion am Haltepunkt
+        if (ph < 0.16F) {
+            float e = ph / 0.16F;
+            float fade = 1.0F - e;
+            RenderUtil.glowSphere(vc, sm, 0.3F + 1.3F * e, 10, 14, GOLD, 0.5F * energy * fade);
+            RenderUtil.glowSphere(vc, sm, 0.15F + 0.6F * e, 8, 12, WHITE, 0.85F * energy * fade);
+            flatCircle(vc, sm, 0.4F + 2.4F * e, 0.06F, 64, GOLD, energy * fade);
+            flatCircle(vc, new Matrix4f(sm).rotateX(Mth.HALF_PI), 0.3F + 1.6F * e, 0.04F, 48, WHITE, 0.7F * energy * fade);
+            for (int k = 0; k < 10; k++) {
+                Vector3f d = new Vector3f(hash(k * 7 + 1), hash(k * 11 + 2), hash(k * 13 + 3)).normalize().mul(0.4F + 1.6F * e);
+                segment(vc, sm, d.x * 0.5F, d.y * 0.5F, d.z * 0.5F, d.x, d.y, d.z, 0.015F, WHITE[0], WHITE[1], WHITE[2], 0.0F, energy * fade);
             }
-            // wachsende Energiekugel
-            Matrix4f om = new Matrix4f(m).translate(mid.x, mid.y, mid.z);
-            RenderUtil.glowSphere(vc, om, 0.06F + 0.3F * g, 10, 14, GOLD, 0.45F * energy);
-            RenderUtil.glowSphere(vc, om, 0.04F + 0.15F * g, 8, 12, WHITE, 0.7F * energy);
-            // Bruchstuecke
-            int fragments = 24;
-            for (int k = 0; k < fragments; k++) {
-                float delay = k / (float) fragments * 0.35F;
-                float raw = (g - delay) / 0.65F;
-                if (raw <= 0.0F) continue;
-                if (raw < 1.0F) {
-                    Vector3f scatter = new Vector3f(hash(k * 7), hash(k * 13), hash(k * 19)).mul(2.0F);
-                    Vector3f p = fragmentPos(src, mid, scatter, raw);
-                    Vector3f q = fragmentPos(src, mid, scatter, Math.max(0.0F, raw - 0.06F));
-                    float[] c = lerp(GOLD, BEAM, hash(k * 3) * 0.5F + 0.5F);
-                    shard(vc, m, p, 0.05F + 0.05F * (1.0F - raw), t * 0.4F + k, c, energy);
-                    segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.03F, c[0], c[1], c[2], 0.0F, 0.7F * energy);
-                } else if (raw < 1.3F) {
-                    // Ankunft: kleiner Lichtring um die Kugel
-                    float a = (raw - 1.0F) / 0.3F;
-                    Matrix4f rm = new Matrix4f(om).rotateX(hash(k * 5) * Mth.PI).rotateZ(hash(k * 11) * Mth.PI);
-                    flatCircle(vc, rm, 0.2F + 0.5F * a, 0.015F, 32, WHITE, energy * (1.0F - a));
+        }
+        // Bruchstuecke spiralen nach unten in die Trichteroeffnung
+        float collecting = 0.0F;
+        for (int k = 0; k < SingularityCoreBlockEntity.FRAGMENTS; k++) {
+            float f = (ph - SingularityCoreBlockEntity.fragmentDelay(k)) / SingularityCoreBlockEntity.FRAGMENT_TRAVEL;
+            if (f <= -0.15F || f >= 1.3F) continue;
+            float[] c = lerp(GOLD, k % 3 == 0 ? VIOLET : BEAM, hash(k * 3) * 0.5F + 0.5F);
+            if (f < 0.0F) {
+                // noch im Funkenball: kleiner Lichtpunkt am Explosionsort
+                Vector3f p = spiralPos(k, src, mouthY, 0.0F);
+                cube(vc, m, p.x, p.y, p.z, 0.03F, c[0], c[1], c[2], energy * 0.6F);
+            } else if (f < 1.0F) {
+                Vector3f p = spiralPos(k, src, mouthY, f);
+                Vector3f prev = p;
+                for (int i = 1; i <= 4; i++) {
+                    Vector3f q = spiralPos(k, src, mouthY, Math.max(0.0F, f - i * 0.03F));
+                    float a = energy * (1.0F - i / 5.0F) * 0.7F;
+                    segment(vc, m, q.x, q.y, q.z, prev.x, prev.y, prev.z, 0.02F * (1.0F - i / 6.0F), c[0], c[1], c[2], a * 0.6F, a);
+                    prev = q;
                 }
+                shard(vc, m, p, 0.045F + 0.035F * (1.0F - f), t * 0.4F + k, c, energy);
+                collecting = Math.max(collecting, f);
+            } else {
+                // eingesammelt: Lichtring in der Oeffnung
+                float a = (f - 1.0F) / 0.3F;
+                flatCircle(vc, mouth, 0.12F + 0.45F * a, 0.02F, 32, c, energy * (1.0F - a));
+                collecting = 1.0F;
             }
-            return;
         }
-        if (ph < 0.62F) {
-            // Kugel formt sich: Schockwellen und Strahlenkranz
-            float f = (ph - 0.5F) / 0.12F;
-            Matrix4f om = new Matrix4f(m).translate(mid.x, mid.y, mid.z);
-            RenderUtil.glowSphere(vc, om, 0.36F + 0.08F * Mth.sin(f * Mth.PI), 10, 14, GOLD, 0.5F * energy);
-            RenderUtil.glowSphere(vc, om, 0.19F, 8, 12, WHITE, 0.85F * energy);
-            flatCircle(vc, om, 0.4F + 2.2F * f, 0.05F, 64, GOLD, energy * (1.0F - f));
-            flatCircle(vc, new Matrix4f(om).rotateX(Mth.HALF_PI), 0.4F + 1.6F * f, 0.04F, 64, WHITE, energy * (1.0F - f));
-            for (int k = 0; k < 8; k++) {
-                float ang = k * Mth.TWO_PI / 8;
-                float len = 0.5F + 1.2F * Mth.sin(f * Mth.PI);
-                segment(vc, om, 0, 0, 0, Mth.cos(ang) * len, Mth.sin(ang * 2) * 0.3F * len, Mth.sin(ang) * len, 0.02F,
-                        WHITE[0], WHITE[1], WHITE[2], energy, 0.0F);
-            }
-            return;
+        // die Oeffnung glueht, solange gesammelt wird
+        float sink = SingularityCoreBlockEntity.SINK_START;
+        float gather = Mth.clamp((ph - 0.3F) / (sink - 0.3F), 0.0F, 1.0F);
+        if (collecting > 0.0F && ph < sink) {
+            RenderUtil.glowSphere(vc, mouth, 0.12F + 0.22F * gather, 8, 12, GOLD, 0.4F * energy);
+            RenderUtil.glowSphere(vc, mouth, 0.06F + 0.1F * gather, 6, 10, WHITE, 0.7F * energy);
         }
-        float d = (ph - 0.62F) / 0.38F;
+        if (ph < sink) return;
+        // gesammelte Energie faellt in den Kern
+        float d = (ph - sink) / (1.0F - sink);
         float fall = d * d;
-        float y = Mth.lerp(fall, cy, 0.0F);
-        float r = 0.4F * (1.0F - 0.55F * d);
+        float y = Mth.lerp(fall, mouthY, 0.0F);
+        float r = 0.34F * (1.0F - 0.5F * d);
         Matrix4f om = new Matrix4f(m).translate(0, y, 0);
         RenderUtil.glowSphere(vc, om, r, 10, 14, GOLD, 0.45F * energy);
         RenderUtil.glowSphere(vc, om, r * 0.5F, 8, 12, WHITE, 0.8F * energy);
-        // Lichtschweif nach oben
-        float tail = Mth.lerp(Math.max(0.0F, d - 0.15F) * Math.max(0.0F, d - 0.15F), cy, 0.0F);
-        segment(vc, m, 0, tail, 0, 0, y, 0, r * 0.5F, GOLD[0], GOLD[1], GOLD[2], 0.0F, 0.6F * energy);
-        if (d > 0.85F) {
+        segment(vc, m, 0, mouthY, 0, 0, y, 0, r * 0.45F, GOLD[0], GOLD[1], GOLD[2], 0.0F, 0.6F * energy);
+        if (d > 0.8F) {
             // Aufnahme im Kern
-            float f = (d - 0.85F) / 0.15F;
+            float f = (d - 0.8F) / 0.2F;
             RenderUtil.glowSphere(vc, m, 0.3F + 1.2F * f, 10, 14, WHITE, 0.6F * energy * (1.0F - f));
             flatCircle(vc, m, 0.5F + 2.2F * f, 0.04F, 64, GOLD, energy * (1.0F - f));
             flatCircle(vc, new Matrix4f(m).rotateX(Mth.HALF_PI), 0.4F + 1.8F * f, 0.03F, 64, WHITE, energy * (1.0F - f));
             flatCircle(vc, new Matrix4f(m).rotateZ(Mth.HALF_PI), 0.4F + 1.8F * f, 0.03F, 64, BEAM, energy * (1.0F - f));
         }
+    }
+
+    /**
+     * Bahn eines Bruchstuecks: erst kurz auseinanderstieben, dann in 2,5 Windungen mit schrumpfendem Radius
+     * hinab zur Trichteroeffnung.
+     */
+    private static Vector3f spiralPos(int k, Vector3f src, float mouthY, float f) {
+        float ang0 = k * 2.39996F; // goldener Winkel: gleichmaessig verteilt
+        float burstR = 0.9F + 0.5F * (hash(k * 5) * 0.5F + 0.5F);
+        float burstH = hash(k * 9) * 0.5F;
+        if (f < 0.15F) {
+            float b = f / 0.15F;
+            b = 1.0F - (1.0F - b) * (1.0F - b);
+            return new Vector3f(src.x + Mth.cos(ang0) * burstR * b, src.y + burstH * b, src.z + Mth.sin(ang0) * burstR * b);
+        }
+        float g = (f - 0.15F) / 0.85F;
+        float ang = ang0 + g * 2.5F * Mth.TWO_PI;
+        float rad = Mth.lerp((float) Math.pow(g, 0.8), burstR, 0.08F);
+        float e = g * g * (3.0F - 2.0F * g);
+        float y = Mth.lerp(e, src.y + burstH, mouthY);
+        float cx = src.x * (1.0F - e), cz = src.z * (1.0F - e);
+        return new Vector3f(cx + Mth.cos(ang) * rad, y, cz + Mth.sin(ang) * rad);
     }
 
     /** Rotierender Kristallsplitter: heller Kern mit leuchtender Doppelpyramide. */
@@ -278,15 +298,6 @@ public final class EnergyLaserFx {
         cube(vc, sm, 0, 0, 0, s * 0.35F, 1.0F, 1.0F, 1.0F, a);
         RenderUtil.octahedron(vc, sm, s * 0.7F, s * 1.6F, 0.008F, c, a);
         RenderUtil.glowSphere(vc, sm, s * 1.1F, 6, 8, c, 0.18F * a);
-    }
-
-    /** Flugbahn eines Bruchstuecks: vom (aufgesprengten) Asteroiden in einem Bogen zum Laser. */
-    private static Vector3f fragmentPos(Vector3f src, Vector3f mid, Vector3f scatter, float f) {
-        float e = f * f * (3.0F - 2.0F * f);
-        Vector3f p = new Vector3f(src).add(new Vector3f(scatter).mul(Mth.sin(Math.min(1.0F, f * 2.0F) * Mth.HALF_PI)));
-        p.lerp(mid, e);
-        p.y += Mth.sin(f * Mth.PI) * 1.5F;
-        return p;
     }
 
     /** Position eines Partikels: Kreisbahn um die Bahnmitte, beim Aufladen hin zum Brennpunkt gezogen. */

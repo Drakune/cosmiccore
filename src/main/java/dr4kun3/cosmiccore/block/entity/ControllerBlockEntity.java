@@ -555,6 +555,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     // ------------------------------------------------------------------ Laser-Array
 
     private static final double LASER_RANGE = 200.0;
+    /** Haltepunkt, an dem der Traktorstrahl den Asteroiden zerbricht: so weit ueber der Bahnmitte der Laser. */
+    public static final double HOLD_ABOVE = 1.6;
 
     /** Schaltet die Modelle der vier Laser um (im Verbund ausgeblendet, das grosse Geschuetz wird gerendert). */
     /** @param top Position ueber der Deckenmitte (dort sitzt ggf. der Sternentrichter, die Laser drumherum). */
@@ -642,7 +644,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
         int variant = target.getVariant();
-        int gained = target.harvestTick();
+        int gained = target.harvestTick(muzzle.add(0, HOLD_ABOVE, 0));
         if (gained > 0) {
             receiveCosmicEnergy(gained);
             collectLoot(level, variant);
@@ -668,21 +670,19 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
         Vec3 c = Vec3.atCenterOf(center(level));
-        Vec3 mid = c.add(0, p.half() + 2.2, 0);
-        int collect = SingularityCoreBlockEntity.DELIVER_TICKS / 2;
-        // Ankunft der Bruchstuecke (muss zu EnergyLaserFx.delivery passen)
+        Vec3 mid = c.add(0, p.half() + (funnel ? 1.35 : 0.6), 0); // Trichteroeffnung
+        int total = SingularityCoreBlockEntity.DELIVER_TICKS;
+        // Ankunft der Bruchstuecke in der Trichteroeffnung (muss zu EnergyLaserFx.arrival passen)
         for (int k = 0; k < 24; k += 2) {
-            int arrival = Math.round((k / 24.0F * 0.35F + 0.65F) * collect);
-            if (deliverTicks == arrival) {
-                // Lautstaerke > 1 erhoeht nur die Reichweite - lauter wird es durch mehrere uebereinanderliegende Klaenge
+            if (deliverTicks == Math.round(SingularityCoreBlockEntity.fragmentArrival(k) * total)) {
+                // Lautstaerke > 1 erhoeht nur die Reichweite - lauter wird es durch uebereinanderliegende Klaenge
                 float pitch = 0.9F + k * 0.04F;
                 level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, pitch);
                 level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, pitch * 1.5F);
-                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.BLOCKS, 3.0F, 0.7F + k * 0.05F);
-                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 2.0F, 0.8F + k * 0.04F);
+                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.BLOCKS, 0.6F, 0.7F + k * 0.05F);
             }
         }
-        int formed = collect + 2; // Kugel formt sich (Schockwelle) - passt zu EnergyLaserFx
+        int formed = Math.round(SingularityCoreBlockEntity.SINK_START * total); // Energie faellt in den Kern
         if (deliverTicks == formed) {
             level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 3.0F, 1.4F);
             level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 3.0F, 0.8F);

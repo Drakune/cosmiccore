@@ -133,7 +133,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                 && level.getEntity(be.getLaserTarget()) instanceof dr4kun3.cosmiccore.entity.CosmicAsteroid target) {
             laserTarget = target.getPosition(partialTick).add(0, target.getBbHeight() / 2, 0)
                     .subtract(Vec3.atCenterOf(be.getBlockPos()));
-            targetSize = target.getBbWidth();
+            targetSize = target.getBbWidth() * target.getPullScale();
             harvest = target.getHarvest();
             be.lastLaserTarget = laserTarget;
         }
@@ -212,7 +212,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         if (lasers) {
             EnergyLaserFx.render(pose.last().pose(), glow, half, t, laserTarget, targetSize,
                     laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy),
-                    be.getDeliverPhase(partialTick), be.lastLaserTarget);
+                    be.getDeliverPhase(partialTick), be.lastLaserTarget, be.hasFunnel() ? half + 1.35F : half + 0.6F);
         }
         pose.popPose();
     }

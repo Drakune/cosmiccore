@@ -49,7 +49,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
     @Override
     public void render(CosmicAsteroid a, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         float t = a.tickCount + partialTick;
-        float r = a.getSizeBlocks() * 0.5F;
+        float r = a.getSizeBlocks() * 0.5F * a.getPullScale();
         float harvest = a.getHarvest();
         int variant = a.getVariant();
         int seed = a.getId() * 7919;

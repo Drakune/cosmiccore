@@ -42,6 +42,20 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     /** Spielzeit, zu der ein abgeschossener Asteroid sein Energiepartikel abgegeben hat (Uebergabe-Animation). */
     private long deliverStart = Long.MIN_VALUE;
     public static final int DELIVER_TICKS = 80;
+    /** Zeitplan der Uebergabe (Anteile von DELIVER_TICKS), gemeinsam fuer Animation und Klaenge. */
+    public static final int FRAGMENTS = 24;
+    public static final float FRAGMENT_TRAVEL = 0.32F;
+    public static final float SINK_START = 0.8F;
+
+    /** Startzeit des Bruchstuecks k (es fliegt FRAGMENT_TRAVEL lang). */
+    public static float fragmentDelay(int k) {
+        return 0.05F + k / (float) FRAGMENTS * 0.4F;
+    }
+
+    /** Zeitpunkt, an dem Bruchstueck k in der Trichteroeffnung ankommt. */
+    public static float fragmentArrival(int k) {
+        return fragmentDelay(k) + FRAGMENT_TRAVEL;
+    }
     /** nur clientseitig: Zuenden des Kerns (Sterne rasen in die Mitte). */
     private CorePhase lastClientPhase;
     private long igniteStart = Long.MIN_VALUE;

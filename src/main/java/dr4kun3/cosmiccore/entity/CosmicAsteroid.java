@@ -24,14 +24,15 @@ public class CosmicAsteroid extends Entity {
     public static final int SMALL = 0, MEDIUM = 1, LARGE = 2;
     private static final float[] SIZE = {1.4F, 2.6F, 4.2F};
     private static final int[] ENERGY = {50_000, 250_000, 1_000_000};
-    private static final int[] HARVEST_TICKS = {40, 90, 180};
+    private static final int[] HARVEST_TICKS = {70, 110, 160};
     public static final int MAX_LIFE = 1200;
 
     private static final EntityDataAccessor<Integer> DATA_SIZE = SynchedEntityData.defineId(CosmicAsteroid.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_HARVEST = SynchedEntityData.defineId(CosmicAsteroid.class, EntityDataSerializers.INT);
 
     private int life;
-    private int lastHit;
+    private int lastHit = -100;
+    private Vec3 pullStart; // Server: Position beim Erfassen durch den Traktorstrahl
 
     public CosmicAsteroid(EntityType<? extends CosmicAsteroid> type, Level level) {
         super(type, level);
@@ -59,6 +60,12 @@ public class CosmicAsteroid extends Entity {
         return entityData.get(DATA_HARVEST) / 1000.0F;
     }
 
+    /** Sichtbare Groesse 1..0.35: der Traktorstrahl presst den Asteroiden beim Heranziehen zusammen. */
+    public float getPullScale() {
+        float h = getHarvest();
+        return 1.0F - 0.65F * h * h * (3.0F - 2.0F * h);
+    }
+
     public float getSizeBlocks() {
         return SIZE[getVariant()];
     }
@@ -83,7 +90,8 @@ public class CosmicAsteroid extends Entity {
     public void tick() {
         super.tick();
         Vec3 v = getDeltaMovement();
-        setPos(getX() + v.x, getY() + v.y, getZ() + v.z);
+        // waehrend der Traktorstrahl zieht, setzt der Server die Position selbst
+        if (level().isClientSide || tickCount - lastHit > 1) setPos(getX() + v.x, getY() + v.y, getZ() + v.z);
         if (level().isClientSide) {
             // Staubschweif
             if (random.nextInt(2) == 0) {
@@ -95,10 +103,15 @@ public class CosmicAsteroid extends Entity {
             return;
         }
         life++;
+        // vom Traktorstrahl erfasst: schwebt still, falls der Strahl kurz abreisst
+        if (pullStart != null && tickCount - lastHit > 1 && getDeltaMovement().lengthSqr() > 0) {
+            setDeltaMovement(Vec3.ZERO);
+            hasImpulse = true;
+        }
         // unter Beschuss bleibt der Asteroid am Himmel, bis er zerbricht
         if (tickCount - lastHit < 20) return;
         // ohne Laser regeneriert sich der Fortschritt langsam
-        if (tickCount - lastHit > 40 && entityData.get(DATA_HARVEST) > 0) {
+        if (pullStart == null && tickCount - lastHit > 40 && entityData.get(DATA_HARVEST) > 0) {
             entityData.set(DATA_HARVEST, Math.max(0, entityData.get(DATA_HARVEST) - 5));
         }
         boolean day = level().dimension() == Level.OVERWORLD && level().isDay();
@@ -106,26 +119,31 @@ public class CosmicAsteroid extends Entity {
     }
 
     /**
-     * Ein Tick Laserbeschuss (Server). Liefert die gewonnene Energie, sobald der Asteroid zerbricht, sonst 0.
+     * Ein Tick Traktorstrahl (Server): zieht den Asteroiden zum Haltepunkt ueber dem Trichter (Mitte = hold).
+     * Liefert die gewonnene Energie, sobald er dort ankommt und zerbricht, sonst 0.
      */
-    public int harvestTick() {
+    public int harvestTick(Vec3 hold) {
         if (isRemoved()) return 0;
         lastHit = tickCount;
-        // der Strahl bremst den Asteroiden ab
-        setDeltaMovement(getDeltaMovement().scale(0.94));
-        hasImpulse = true;
+        if (pullStart == null) pullStart = position();
         int step = Math.max(1, 1000 / HARVEST_TICKS[getVariant()]);
         int progress = Math.min(1000, entityData.get(DATA_HARVEST) + step);
         entityData.set(DATA_HARVEST, progress);
+        float f = progress / 1000.0F;
+        float e = f * f * (3.0F - 2.0F * f);
+        Vec3 dest = hold.subtract(0, getBbHeight() / 2, 0);
+        Vec3 next = pullStart.add(dest.subtract(pullStart).scale(e));
+        setDeltaMovement(next.subtract(position()));
+        hasImpulse = true;
+        setPos(next.x, next.y, next.z);
         if (progress < 1000) return 0;
         if (level() instanceof ServerLevel sl) {
-            float s = getSizeBlocks();
             Vec3 c = position().add(0, getBbHeight() / 2, 0);
-            sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 40 + getVariant() * 40, s * 0.4, s * 0.4, s * 0.4, 0.15);
-            sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 80, s * 0.3, s * 0.3, s * 0.3, 0.3);
-            // laut genug, um auch auf Hoehe des Asteroiden (bis ~128 Bloecke) gehoert zu werden
-            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 8.0F, 0.6F);
-            sl.playSound(null, c.x, c.y, c.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 6.0F, 1.4F);
+            sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 20 + getVariant() * 10, 0.3, 0.3, 0.3, 0.08);
+            sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 30, 0.25, 0.25, 0.25, 0.15);
+            // Explosion direkt ueber dem Trichter
+            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 2.0F, 0.6F);
+            sl.playSound(null, c.x, c.y, c.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 0.7F, 1.5F);
         }
         int energy = getEnergy();
         discard();
