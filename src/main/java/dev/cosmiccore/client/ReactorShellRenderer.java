@@ -4,7 +4,6 @@ import static dev.cosmiccore.client.RenderUtil.cube;
 import static dev.cosmiccore.client.RenderUtil.flatCircle;
 import static dev.cosmiccore.client.RenderUtil.hash;
 import static dev.cosmiccore.client.RenderUtil.lerp;
-import static dev.cosmiccore.client.RenderUtil.quadFade;
 import static dev.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -32,27 +31,20 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Die kosmische Kammer: Ist die Struktur gebildet, sind die Modelle von Gehaeuse, Ports, Rahmen und Glas
- * ausgeblendet. An ihre Stelle tritt eine kinetische Kugelpanzerung um das schwarze Loch:
+ * Die kosmische Kammer: Ist die Struktur gebildet, sind die Modelle von Gehaeuse, Rahmen und Glas ausgeblendet.
+ * Statt einer festen Huelle haelt ein Netz aus leuchtenden Partikeln das Feld um das schwarze Loch zusammen:
  * <ul>
- *   <li>Sechs Ringe aus gewoelbten Sternenfeld-Platten (drei unten, drei oben), abwechselnd gegenlaeufig rotierend.</li>
- *   <li>Lichtfugen zwischen den Platten - das Licht des Kerns dringt nach aussen, die Innenseiten gluehen.</li>
- *   <li>Eine Iris-Blende im oberen Pol, die sich im Betrieb oeffnet; Rippen tragen Lichtpulse durch den offenen Guertel.</li>
- *   <li>Beim Bilden fliegen die Plattenringe von aussen heran und rasten nacheinander ein.</li>
- *   <li>Instabilitaet: Platten zittern nach aussen, rotes Licht schiesst durch die Fugen, Blitze springen ueber die Huelle.</li>
+ *   <li>Die Partikel liegen gleichmaessig auf einer Kugel und sind ueber leuchtende Fesseln mit ihren Nachbarn
+ *       verbunden - das Netz dreht sich langsam, Kompressionswellen laufen von Pol zu Pol.</li>
+ *   <li>Immer wieder draengt ein Partikel nach aussen und wird von einer Fessel zurueckgezogen; feine Zugspuren
+ *       zeigen, wie das Feld nach innen zieht.</li>
+ *   <li>Fehlt Stabilisator oder steigt die Instabilitaet, reissen Fesseln, Partikel brechen weiter aus, das Netz glueht rot.</li>
+ *   <li>Beim Bilden dehnt sich das Netz aus dem Kern aus (nachdem die Bloecke eingesaugt wurden).</li>
  * </ul>
- * Ursprung ist die Kernmitte. Der Controller bleibt als normaler Block sichtbar.
+ * Ursprung ist die Kernmitte. Ports bleiben als echte Bloecke stehen, der Controller wird zur Steuerkonsole.
  */
 public final class ReactorShellRenderer {
     private ReactorShellRenderer() {}
-
-    /** Plattenringe: {Breite unten, Breite oben, Plattenanzahl, Drehsinn}. Grad. */
-    private static final float[][] BANDS = {
-            {-78, -56, 10, 1}, {-52, -30, 16, -1},
-            {30, 52, 16, -1}, {56, 74, 10, 1}};
-    private static final float PLATE_FILL = 0.9F;    // Rest = Fuge
-    private static final float THICK = 0.07F;
-    private static final float IRIS_LAT = 78.0F * Mth.DEG_TO_RAD;
 
     private static final float[] SEAM = {0.62F, 0.4F, 1.0F};
     private static final float[] SEAM_HOT = {1.0F, 0.72F, 0.4F};
@@ -62,6 +54,48 @@ public final class ReactorShellRenderer {
     private static final float[] ITEM_GLYPH = {1.0F, 0.6F, 0.2F};
 
     private record ShellCell(int dx, int dy, int dz, CorePattern.Cell cell) {}
+
+    /** Haltenetz: Partikel (Einheitsvektoren auf der Kugel) und ihre Fesseln (Paare naechster Nachbarn). */
+    private record Lattice(Vector3f[] points, int[][] links) {}
+
+    private static final Map<Integer, Lattice> LATTICE = new HashMap<>();
+
+    private static Lattice lattice(int size) {
+        return LATTICE.computeIfAbsent(size, s -> {
+            int n = 40 + s * 15; // 5x5x5: 115, 7x7x7: 145, 9x9x9: 175
+            Vector3f[] pts = new Vector3f[n];
+            float golden = Mth.PI * (3.0F - Mth.sqrt(5.0F));
+            for (int i = 0; i < n; i++) {
+                float y = 1.0F - 2.0F * (i + 0.5F) / n;
+                float r = Mth.sqrt(1.0F - y * y);
+                pts[i] = new Vector3f(Mth.cos(golden * i) * r, y, Mth.sin(golden * i) * r);
+            }
+            List<int[]> links = new ArrayList<>();
+            java.util.Set<Long> seen = new java.util.HashSet<>();
+            for (int i = 0; i < n; i++) {
+                // drei naechste Nachbarn
+                int[] best = {-1, -1, -1};
+                float[] bd = {9, 9, 9};
+                for (int j = 0; j < n; j++) {
+                    if (j == i) continue;
+                    float d = pts[i].distanceSquared(pts[j]);
+                    for (int k = 0; k < 3; k++) {
+                        if (d < bd[k]) {
+                            for (int q = 2; q > k; q--) { bd[q] = bd[q - 1]; best[q] = best[q - 1]; }
+                            bd[k] = d;
+                            best[k] = j;
+                            break;
+                        }
+                    }
+                }
+                for (int j : best) {
+                    long key = Math.min(i, j) * 100000L + Math.max(i, j);
+                    if (j >= 0 && seen.add(key)) links.add(new int[]{i, j});
+                }
+            }
+            return new Lattice(pts, links.toArray(new int[0][]));
+        });
+    }
 
     private static final Map<Integer, List<ShellCell>> CACHE = new HashMap<>();
 
@@ -196,14 +230,6 @@ public final class ReactorShellRenderer {
         return new float[]{r * c * Mth.cos(lon), r * Mth.sin(lat), r * c * Mth.sin(lon)};
     }
 
-    /** Wachstum eines Plattenrings aus dem Kern heraus (0 = im Kern, 1 = sitzt). Aequatornahe Ringe zuerst. */
-    private static float assemble(Params p, float bandY) {
-        if (p.done()) return 1.0F;
-        float delay = Math.abs(bandY) / p.radius() * 0.35F;
-        float k = Mth.clamp((p.emerge() - delay) / 0.6F, 0.0F, 1.0F);
-        return 1.0F - (1.0F - k) * (1.0F - k) * (1.0F - k); // ease-out
-    }
-
     // ------------------------------------------------------------------ Einsaugen der Bloecke (nur Animation)
 
     /** Einsaug-Fortschritt eines Blocks (0 = an seinem Platz, 1 = im Kern verschwunden). Aussen zuerst. */
@@ -228,54 +254,10 @@ public final class ReactorShellRenderer {
         return !s.is(ModBlocks.ENERGY_PORT.get()) && !s.is(ModBlocks.ITEM_PORT.get());
     }
 
-    /** Radius und Verdrehung eines Plattenrings inkl. Einflug-Animation und Instabilitaets-Zittern. */
-    private static float bandRotation(Params p, int b) {
-        float[] band = BANDS[b];
-        return p.t() * 0.004F * p.spin() * band[3] * (1.0F + 0.25F * (b % 3));
-    }
-
-    // ------------------------------------------------------------------ Pass 1: Sternenfeld-Platten
+    // ------------------------------------------------------------------ Pass 1: Konsole und eingesaugte Bloecke
 
     public static void solid(PoseStack pose, MultiBufferSource buffers, Params p) {
-        float r = p.radius();
-        VertexConsumer portal = buffers.getBuffer(RenderType.endPortal());
         Matrix4f m = pose.last().pose();
-
-        for (int b = 0; b < BANDS.length; b++) {
-            float[] band = BANDS[b];
-            float lat0 = band[0] * Mth.DEG_TO_RAD, lat1 = band[1] * Mth.DEG_TO_RAD;
-            float bandY = r * Mth.sin((lat0 + lat1) * 0.5F);
-            float in = assemble(p, bandY);
-            if (in <= 0.001F) continue;
-            float rot = bandRotation(p, b) + (1.0F - in) * 2.5F * band[3];
-            int plates = (int) band[2];
-            float step = Mth.TWO_PI / plates;
-            for (int k = 0; k < plates; k++) {
-                float jitter = p.heat() > 0.6F ? (p.heat() - 0.6F) * 0.35F * Math.max(0, hash((int) (p.t() * 0.7F) + k * 31 + b * 7)) : 0.0F;
-                float rr = r * in + jitter;
-                if (rr < THICK + 0.05F) continue;
-                float o0 = rot + k * step, o1 = o0 + step * PLATE_FILL;
-                plate(portal, m, rr, lat0, lat1, o0, o1);
-            }
-        }
-
-        // Iris-Blende im oberen Pol: Lamellen schieben sich zusammen (geschlossen) oder ziehen sich zurueck (offen)
-        float irisIn = assemble(p, r * Mth.sin(IRIS_LAT));
-        if (irisIn > 0.001F) {
-            float open = p.active() ? 0.75F + 0.1F * Mth.sin(p.t() * 0.05F) : 0.15F;
-            float rimR = r * irisIn * Mth.cos(IRIS_LAT), y = r * irisIn * Mth.sin(IRIS_LAT);
-            int blades = 8;
-            float rot = p.t() * 0.01F * p.spin();
-            for (int k = 0; k < blades; k++) {
-                float a0 = rot + k * Mth.TWO_PI / blades, a1 = a0 + Mth.TWO_PI / blades * 1.35F;
-                float inner = rimR * open;
-                float[] q0 = {Mth.cos(a0) * rimR, y, Mth.sin(a0) * rimR};
-                float[] q1 = {Mth.cos(a1) * rimR, y, Mth.sin(a1) * rimR};
-                float tip = a0 + 0.9F;
-                float[] q2 = {Mth.cos(tip) * inner, y + 0.02F * k, Mth.sin(tip) * inner};
-                starQuad(portal, m, q0, q1, q2, q2);
-            }
-        }
 
         // Controller wird zur holografischen Steuerkonsole: Sockel und Bildschirmplatte aus Sternenfeld
         if (p.done()) {
@@ -315,24 +297,6 @@ public final class ReactorShellRenderer {
         }
     }
 
-    /** Eine gewoelbte Platte mit Dicke (Aussen-, Innenflaeche und Kanten). */
-    private static void plate(VertexConsumer vc, Matrix4f m, float r, float lat0, float lat1, float o0, float o1) {
-        float ri = r - THICK;
-        int sub = 3;
-        for (int i = 0; i < sub; i++) {
-            float la = Mth.lerp(i / (float) sub, lat0, lat1), lb = Mth.lerp((i + 1) / (float) sub, lat0, lat1);
-            for (int j = 0; j < sub; j++) {
-                float oa = Mth.lerp(j / (float) sub, o0, o1), ob = Mth.lerp((j + 1) / (float) sub, o0, o1);
-                starQuad(vc, m, sph(r, la, oa), sph(r, la, ob), sph(r, lb, ob), sph(r, lb, oa));
-            }
-        }
-        // Kanten (Dicke)
-        starQuad(vc, m, sph(r, lat0, o0), sph(ri, lat0, o0), sph(ri, lat1, o0), sph(r, lat1, o0));
-        starQuad(vc, m, sph(r, lat0, o1), sph(ri, lat0, o1), sph(ri, lat1, o1), sph(r, lat1, o1));
-        starQuad(vc, m, sph(r, lat0, o0), sph(ri, lat0, o0), sph(ri, lat0, o1), sph(r, lat0, o1));
-        starQuad(vc, m, sph(r, lat1, o0), sph(ri, lat1, o0), sph(ri, lat1, o1), sph(r, lat1, o1));
-    }
-
     private static void starQuad(VertexConsumer vc, Matrix4f m, float[] a, float[] b, float[] c, float[] d) {
         vc.addVertex(m, a[0], a[1], a[2]);
         vc.addVertex(m, b[0], b[1], b[2]);
@@ -354,86 +318,79 @@ public final class ReactorShellRenderer {
         float base = p.energy();
         float pulse = 0.65F + 0.35F * Mth.sin(p.t() * 0.11F * p.spin());
 
-        for (int b = 0; b < BANDS.length; b++) {
-            float[] band = BANDS[b];
-            float lat0 = band[0] * Mth.DEG_TO_RAD, lat1 = band[1] * Mth.DEG_TO_RAD;
-            float bandY = r * Mth.sin((lat0 + lat1) * 0.5F);
-            float in = assemble(p, bandY);
-            if (in <= 0.001F) continue;
-            float rot = bandRotation(p, b) + (1.0F - in) * 2.5F * band[3];
-            int plates = (int) band[2];
-            float step = Mth.TWO_PI / plates;
-            float rr = r * in;
-            if (rr < THICK + 0.05F) continue;
-            float snap = in < 1.0F ? 1.0F + 2.0F * (1.0F - in) : 1.0F; // beim Entstehen gleissen die Fugen auf
-            for (int k = 0; k < plates; k++) {
-                float o0 = rot + k * step, o1 = o0 + step * PLATE_FILL, oGap = o0 + step;
-                float flick = p.unstable() ? 0.5F + 0.5F * (0.5F + 0.5F * hash((int) (p.t() * 0.6F) + k * 13 + b * 101)) : 1.0F;
-                float a = Math.min(1.0F, base * pulse * flick * snap);
-                // Fuge: Licht dringt von innen durch (vom Innen- zum Aussenradius ausblendend)
-                for (int i = 0; i < 3; i++) {
-                    float la = Mth.lerp(i / 3.0F, lat0, lat1), lb = Mth.lerp((i + 1) / 3.0F, lat0, lat1);
-                    float[] a0 = sph(rr - THICK, la, o1), a1 = sph(rr - THICK, la, oGap), b0 = sph(rr + 0.05F, lb, o1), b1 = sph(rr + 0.05F, lb, oGap);
-                    quadFade(vc, m, a0[0], a0[1], a0[2], a1[0], a1[1], a1[2], b1[0], b1[1], b1[2], b0[0], b0[1], b0[2],
-                            seam[0], seam[1], seam[2], a * 0.6F, a * 0.25F);
-                }
-                // feine Leuchtkanten oben/unten an jeder Platte
-                float[] e0 = sph(rr + 0.01F, lat0, o0), e1 = sph(rr + 0.01F, lat0, o1);
-                float[] f0 = sph(rr + 0.01F, lat1, o0), f1 = sph(rr + 0.01F, lat1, o1);
-                segment(vc, m, e0[0], e0[1], e0[2], e1[0], e1[1], e1[2], 0.007F, seam[0], seam[1], seam[2], a * 0.5F, a * 0.5F);
-                segment(vc, m, f0[0], f0[1], f0[2], f1[0], f1[1], f1[2], 0.007F, seam[0], seam[1], seam[2], a * 0.5F, a * 0.5F);
-                // Innenseite wird vom Kern angestrahlt
-                float[] i0 = sph(rr - THICK - 0.01F, lat0, o0), i1 = sph(rr - THICK - 0.01F, lat0, o1);
-                float[] j0 = sph(rr - THICK - 0.01F, lat1, o0), j1 = sph(rr - THICK - 0.01F, lat1, o1);
-                float lit = base * 0.14F * (lat0 < 0 ? 1.0F : 0.8F);
-                quadFade(vc, m, i0[0], i0[1], i0[2], i1[0], i1[1], i1[2], j1[0], j1[1], j1[2], j0[0], j0[1], j0[2],
-                        SEAM_HOT[0], SEAM_HOT[1], SEAM_HOT[2], lat0 < 0 ? lit * 0.4F : lit, lat0 < 0 ? lit : lit * 0.4F);
-            }
-        }
-
-        // Lichtringe an den Kanten des offenen Guertels
+        holdingNet(m, vc, p, seam, base, pulse);
         if (p.done()) {
-            for (float lat : new float[]{-30 * Mth.DEG_TO_RAD, 30 * Mth.DEG_TO_RAD}) {
-                float y = r * Mth.sin(lat) * 0.98F, rr = r * Mth.cos(lat) * 0.98F;
-                Matrix4f mm = new Matrix4f(m).translate(0, y, 0);
-                flatCircle(vc, mm, rr, 0.015F, 96, seam, base * pulse * 0.8F);
-            }
-            // Rippen durch den Guertel mit wandernden Lichtpulsen
-            int ribs = p.size() >= 9 ? 8 : 4;
-            for (int k = 0; k < ribs; k++) {
-                float lon = Mth.PI / 4 + k * Mth.TWO_PI / ribs;
-                float[] prev = null;
-                for (int i = 0; i <= 10; i++) {
-                    float[] q = sph(r * 0.98F, Mth.lerp(i / 10.0F, -30 * Mth.DEG_TO_RAD, 30 * Mth.DEG_TO_RAD), lon);
-                    if (prev != null) segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.012F, seam[0], seam[1], seam[2], base * 0.6F, base * 0.6F);
-                    prev = q;
-                }
-                float s = Mth.frac(p.t() * 0.02F * p.spin() + k * 0.37F);
-                float[] q = sph(r * 0.98F, Mth.lerp(s, -30 * Mth.DEG_TO_RAD, 30 * Mth.DEG_TO_RAD), lon);
-                cube(vc, m, q[0], q[1], q[2], 0.04F, 1.0F, 1.0F, 1.0F, base * Mth.sin(s * Mth.PI));
-            }
-            // Iris-Rand
-            float rimR = r * Mth.cos(IRIS_LAT);
-            Matrix4f top = new Matrix4f(m).translate(0, r * Mth.sin(IRIS_LAT) + 0.03F, 0);
-            flatCircle(vc, top, rimR, 0.018F, 48, seam, base * 0.8F);
-            // Instabilitaet: Blitze springen ueber die Huelle
-            if (p.heat() > 0.55F) arcs(m, vc, p, r);
             glyphs(m, vc, p, r);
         } else {
             formationGlow(m, vc, p, seam);
         }
     }
 
-    private static void arcs(Matrix4f m, VertexConsumer vc, Params p, float r) {
-        int count = 1 + Math.round((p.heat() - 0.55F) * 10);
-        int seed = (int) (p.t() * 0.5F);
-        for (int k = 0; k < count; k++) {
-            float lat = hash(seed * 13 + k) * 1.2F, lon = hash(seed * 29 + k) * Mth.PI;
-            float[] prev = sph(r + 0.08F, lat, lon);
-            for (int i = 1; i <= 6; i++) {
-                float[] q = sph(r + 0.08F + 0.1F * Math.abs(hash(seed + k * 7 + i)), lat + hash(seed * 3 + k + i) * 0.25F, lon + i * 0.12F);
-                segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.02F, 1.0F, 0.9F, 0.9F, 0.9F, 0.9F);
-                prev = q;
+    /** Das Partikel-Haltenetz, das das Feld um das Loch zusammenhaelt. */
+    private static void holdingNet(Matrix4f m, VertexConsumer vc, Params p, float[] seam, float base, float pulse) {
+        float grow = p.done() ? 1.0F : Mth.clamp((p.emerge() - 0.05F) / 0.7F, 0.0F, 1.0F);
+        if (grow <= 0.0F) return;
+        grow = 1.0F - (1.0F - grow) * (1.0F - grow) * (1.0F - grow);
+        Lattice net = lattice(p.size());
+        float R = p.radius() * grow * (1.0F + 0.012F * Mth.sin(p.t() * 0.09F));
+        float strength = 0.3F + 0.7F * p.core().getShield();
+        float danger = Mth.clamp((p.heat() - 0.4F) / 0.6F, 0.0F, 1.0F);
+        float t = p.t();
+        int window = (int) (t / 30.0F);
+        float waveY = Mth.sin(t * 0.03F * p.spin()); // Kompressionswelle von Pol zu Pol
+
+        // Drehung des ganzen Netzes (starr, damit die Fesseln ihre Laenge halten)
+        Matrix4f rot = new Matrix4f().rotateY(t * 0.003F * p.spin()).rotateX(0.25F * Mth.sin(t * 0.002F));
+        int n = net.points().length;
+        Vector3f[] home = new Vector3f[n];
+        Vector3f[] pos = new Vector3f[n];
+        float[] push = new float[n];
+        for (int i = 0; i < n; i++) {
+            Vector3f v = rot.transformDirection(new Vector3f(net.points()[i]));
+            home[i] = v;
+            float ph = 0.5F + 0.5F * hash(i * 97);
+            // Draengen nach aussen (selten, bei Gefahr haeufiger und weiter)
+            float bulge = (float) Math.pow(Math.max(0.0F, Mth.sin(t * 0.05F + ph * Mth.TWO_PI)), 8.0) * (0.05F + 0.25F * danger);
+            float escape = 0.0F;
+            if (danger > 0.25F && hash(window * 131 + i * 7) > 1.0F - danger * 0.3F) {
+                escape = Mth.sin(Mth.frac(t / 30.0F) * Mth.PI) * 0.35F * danger; // bricht aus und wird zurueckgezogen
+            }
+            push[i] = (bulge + escape) * R;
+            pos[i] = new Vector3f(v).mul(R + push[i]);
+        }
+
+        // Fesseln zwischen Nachbarn
+        for (int[] l : net.links()) {
+            int a = l[0], b = l[1];
+            boolean broken = (danger > 0.2F || strength < 0.6F)
+                    && hash(a * 31 + b * 17 + window) > 1.0F - Math.max(danger * 0.45F, (0.6F - strength) * 0.8F);
+            if (broken) continue;
+            float wave = (float) Math.exp(-Math.pow(home[a].y - waveY, 2) * 18.0);
+            float al = base * strength * (0.12F + 0.4F * wave) * pulse;
+            Vector3f pa = pos[a], pb = pos[b];
+            segment(vc, m, pa.x, pa.y, pa.z, pb.x, pb.y, pb.z, 0.005F, seam[0], seam[1], seam[2], al, al);
+        }
+
+        // Partikel, ihre Fesseln nach innen und feine Zugspuren zum Kern
+        for (int i = 0; i < n; i++) {
+            Vector3f q = pos[i];
+            float wave = (float) Math.exp(-Math.pow(home[i].y - waveY, 2) * 18.0);
+            float pushing = push[i] / Math.max(0.01F, R);
+            float flick = p.unstable() ? 0.6F + 0.4F * (0.5F + 0.5F * hash(i * 13 + (int) (t * 0.8F))) : 1.0F;
+            float a = base * flick * (0.55F + 0.45F * wave);
+            cube(vc, m, q.x, q.y, q.z, 0.022F + 0.03F * pushing, 1.0F, 1.0F, 1.0F, a);
+            cube(vc, m, q.x, q.y, q.z, 0.05F + 0.05F * pushing, seam[0], seam[1], seam[2], a * 0.3F);
+            if (pushing > 0.015F) {
+                // die Fessel spannt sich und zieht das Partikel zurueck
+                Vector3f anchor = new Vector3f(home[i]).mul(R);
+                float ta = Math.min(1.0F, base * (0.4F + 3.0F * pushing));
+                segment(vc, m, anchor.x, anchor.y, anchor.z, q.x, q.y, q.z, 0.01F, 1.0F, 0.95F, 0.9F, ta * 0.4F, ta);
+            }
+            if (hash(i * 53 + (int) (t * 0.1F)) > 0.75F) {
+                // Zug nach innen: kurze Spur Richtung Kern
+                float s = Mth.frac(t * 0.04F + i * 0.13F);
+                Vector3f from = new Vector3f(q).mul(1.0F - 0.05F * s), to = new Vector3f(q).mul(1.0F - 0.05F * s - 0.12F);
+                segment(vc, m, from.x, from.y, from.z, to.x, to.y, to.z, 0.006F, seam[0], seam[1], seam[2], a * 0.5F * (1.0F - s), 0.0F);
             }
         }
     }

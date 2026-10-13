@@ -93,12 +93,13 @@ public class ControllerMenu extends AbstractContainerMenu {
         return (data.get(hi) << 16) | (data.get(lo) & 0xFFFF);
     }
 
-    public int energy() {
-        return wide(D_ENERGY_LO, D_ENERGY_HI);
+    /** Energie in RF (uebertragen in kRF). */
+    public long energy() {
+        return (wide(D_ENERGY_LO, D_ENERGY_HI) & 0xFFFFFFFFL) * 1000L;
     }
 
-    public int capacity() {
-        return wide(D_CAPACITY_LO, D_CAPACITY_HI);
+    public long capacity() {
+        return (wide(D_CAPACITY_LO, D_CAPACITY_HI) & 0xFFFFFFFFL) * 1000L;
     }
 
     public int output() {

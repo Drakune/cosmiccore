@@ -90,7 +90,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private int overdrive;
 
     private boolean formed;
-    private int energy;
+    /** Gespeicherte Energie (long: bei Stufe 10 bis zu 2,5 Mrd. RF). */
+    private long energy;
     private int burnTime;
     private int burnTotal;
     private int burnPower;
@@ -129,7 +130,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return formed;
     }
 
-    public int getEnergy() {
+    public long getEnergy() {
         return energy;
     }
 
@@ -150,9 +151,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return withLasers;
     }
 
-    public int getCapacity() {
-        double factor = size == null ? 1.0 : size.capacityFactor();
-        return (int) Math.min(Integer.MAX_VALUE, Math.round(CoreConfig.ENERGY_CAPACITY.get() * factor));
+    /** Kapazitaet waechst mit der Leistungsstufe: Stufe x energyPerLevel (Standard 250 Mio. RF). */
+    public long getCapacity() {
+        return CoreConfig.ENERGY_PER_LEVEL.get() * Math.max(1, scale);
     }
 
     public ItemStackHandler getInventory() {
@@ -169,7 +170,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     public int extractEnergy(int max, boolean simulate) {
         if (!formed || max <= 0) return 0;
-        int out = Math.min(energy, max);
+        int out = (int) Math.min(energy, max);
         if (!simulate && out > 0) {
             energy -= out;
             setChanged();
@@ -180,7 +181,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Nimmt Energie von aussen auf (z. B. aus dem Kosmos-Laser). Liefert die tatsaechlich aufgenommene Menge. */
     public int receiveCosmicEnergy(int amount) {
         if (!formed || amount <= 0) return 0;
-        int accepted = (int) Math.min(amount, (long) getCapacity() - energy);
+        int accepted = (int) Math.max(0, Math.min(amount, getCapacity() - energy));
         if (accepted > 0) {
             energy += accepted;
             setChanged();
@@ -318,7 +319,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private void simulate(ServerLevel level) {
-        final int capacity = getCapacity();
+        final long capacity = getCapacity();
         final int ramp = CoreConfig.RAMP_UP_TICKS.get();
         boolean burning = false;
         float gain = 0f;
@@ -352,7 +353,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 double factor = 0.2 + 0.8 * resonance / (double) ramp;
                 double gen = burnPower * factor * outputScale() * lastCosmic * CoreConfig.OUTPUT_MULTIPLIER.get();
                 int out = (int) Math.min(Integer.MAX_VALUE, Math.round(gen));
-                energy = (int) Math.min((long) capacity, (long) energy + out);
+                energy = Math.min(capacity, energy + out);
                 lastOutput = out;
                 gain = (float) (CoreConfig.INSTABILITY_RATE.get() * (burnPower / 1000.0)
                         * instabilityScale() * cosmicInstability(level));
@@ -555,7 +556,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
             be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic, shield, funnel,
                     laserArray, laserTarget, overdrive, lastOutput,
-                    (int) Math.round(100.0 * energy / Math.max(1, getCapacity())));
+                    (int) Math.min(100, Math.round(100.0 * energy / Math.max(1, getCapacity()))));
         }
     }
 
@@ -892,7 +893,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putBoolean("withLasers", withLasers);
         tag.putInt("overdrive", overdrive);
         tag.putBoolean("formed", formed);
-        tag.putInt("energy", energy);
+        tag.putLong("energy", energy);
         tag.putInt("burnTime", burnTime);
         tag.putInt("burnTotal", burnTotal);
         tag.putInt("burnPower", burnPower);
@@ -919,7 +920,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         overdrive = Math.max(0, tag.getInt("overdrive"));
         if (size != null) overdrive = Math.min(overdrive, size.maxOverdrive());
         formed = tag.getBoolean("formed");
-        energy = tag.getInt("energy");
+        energy = tag.getLong("energy");
         burnTime = tag.getInt("burnTime");
         burnTotal = tag.getInt("burnTotal");
         burnPower = tag.getInt("burnPower");
@@ -992,10 +993,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         @Override
         public int get(int index) {
             return switch (index) {
-                case ControllerMenu.D_ENERGY_LO -> energy & 0xFFFF;
-                case ControllerMenu.D_ENERGY_HI -> energy >>> 16;
-                case ControllerMenu.D_CAPACITY_LO -> getCapacity() & 0xFFFF;
-                case ControllerMenu.D_CAPACITY_HI -> getCapacity() >>> 16;
+                // Energie und Kapazitaet in kRF (passt so auch bei 2,5 Mrd. RF in 32 Bit)
+                case ControllerMenu.D_ENERGY_LO -> (int) (energy / 1000) & 0xFFFF;
+                case ControllerMenu.D_ENERGY_HI -> (int) (energy / 1000) >>> 16;
+                case ControllerMenu.D_CAPACITY_LO -> (int) (getCapacity() / 1000) & 0xFFFF;
+                case ControllerMenu.D_CAPACITY_HI -> (int) (getCapacity() / 1000) >>> 16;
                 case ControllerMenu.D_OUTPUT_LO -> lastOutput & 0xFFFF;
                 case ControllerMenu.D_OUTPUT_HI -> lastOutput >>> 16;
                 case ControllerMenu.D_INSTABILITY -> Math.round(instability * 100f);
@@ -1078,12 +1080,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public int getEnergyStored() {
-            return energy;
+            return (int) Math.min(Integer.MAX_VALUE, energy);
         }
 
         @Override
         public int getMaxEnergyStored() {
-            return getCapacity();
+            return (int) Math.min(Integer.MAX_VALUE, getCapacity());
         }
 
         @Override

@@ -5,9 +5,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class CoreConfig {
     private static final ModConfigSpec.Builder B = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.IntValue ENERGY_CAPACITY = B
-            .comment("Groesse des RF-Puffers im Controller (7x7x7; 5x5x5 hat die Haelfte, 9x9x9 das 2,5-fache)")
-            .defineInRange("energyCapacity", 100_000_000, 1_000, Integer.MAX_VALUE);
+    public static final ModConfigSpec.LongValue ENERGY_PER_LEVEL = B
+            .comment("RF-Puffer pro Leistungsstufe (Stufe 10 = das Zehnfache)")
+            .defineInRange("energyPerLevel", 250_000_000L, 1_000L, 1_000_000_000_000L);
     public static final ModConfigSpec.IntValue PORT_TRANSFER = B
             .comment("Maximale RF pro Tick, die ein Energie-Port abgibt (pro Port)")
             .defineInRange("portTransferPerTick", 50_000, 1, Integer.MAX_VALUE);

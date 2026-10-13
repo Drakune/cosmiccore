@@ -49,12 +49,13 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
         @Override
         public int getEnergyStored() {
             ControllerBlockEntity c = controller();
-            return c == null ? 0 : c.getEnergy();
+            return c == null ? 0 : (int) Math.min(Integer.MAX_VALUE, c.getEnergy());
         }
 
         @Override
         public int getMaxEnergyStored() {
-            return CoreConfig.ENERGY_CAPACITY.get();
+            ControllerBlockEntity c = controller();
+            return c == null ? 0 : (int) Math.min(Integer.MAX_VALUE, c.getCapacity());
         }
 
         @Override

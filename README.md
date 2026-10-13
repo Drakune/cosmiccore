@@ -18,8 +18,9 @@ Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich 
 
 - **Platzieren:** Direkt nach dem Platzieren öffnet sich die (einmalige) Wahl der Baugröße 5x5x5 / 7x7x7 / 9x9x9
   (angezeigt wird die RF/t-Spanne mit Sternenstaub von Stufe 1 bis zur Maximalstufe).
-- **Gebildete Struktur:** Alle Blöcke verwandeln sich (Scan-Animation von unten nach oben) in eine runde Sternenfeld-Kammer
-  um ein schwarzes Loch mit Akkretionsscheibe, Photonenring und Jets. Der Resonanzschild-Emitter unter dem
+- **Gebildete Struktur:** Die Blöcke werden (als Animation) in den Kern gesaugt, daraus entsteht ein schwarzes Loch mit
+  Akkretionsscheibe, Photonenring und Jets, zusammengehalten von einem Netz aus Partikeln, die über leuchtende Fesseln
+  verbunden sind. Der Resonanzschild-Emitter unter dem
   Kern projiziert ein Eindämmungsfeld um das Loch, dessen Stärke den Stabilisator-Vorrat zeigt.
 - **Rechtsklick:** GUI mit Brennstoff- und Stabilisator-Slot (frei befüllen und wieder herausnehmen), Balken für
   Energie / Instabilität / Resonanz, Leistungsstufe (-/+), Zünden/Stopp, Bauvorschau und (nur Kreativ) **Bauen**.
@@ -27,11 +28,14 @@ Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich 
 - **Bauvorschau:** zeigt fehlende Blöcke als halbtransparente Geister, falsche Blöcke rot umrandet.
 - **Bauen (Kreativ):** setzt die komplette Struktur in Blickrichtung des Controllers (inkl. Energie- und Item-Port).
 
-| Größe | Stufen | Leistung/Stufe | Puffer | Instabilität/Stufe | Stabilisator-Wirkung | Overdrive |
-|-------|-------:|---------------:|-------:|-------------------:|---------------------:|----------:|
-| 5x5x5 | 1–10 | x0,6 | x0,5 | x1,0 | x1,0 | 1 |
-| 7x7x7 | 1–10 | x1,0 | x1,0 | x0,8 | x1,25 | 2 |
-| 9x9x9 | 1–10 | x1,6 | x2,5 | x0,6 | x1,6 | 3 |
+| Größe | Stufen | Leistung/Stufe | Instabilität/Stufe | Stabilisator-Wirkung | Overdrive |
+|-------|-------:|---------------:|-------------------:|---------------------:|----------:|
+| 5x5x5 | 1–10 | x0,6 | x1,0 | x1,0 | 1 |
+| 7x7x7 | 1–10 | x1,0 | x0,8 | x1,25 | 2 |
+| 9x9x9 | 1–10 | x1,6 | x0,6 | x1,6 | 3 |
+
+**Energiepuffer:** 250 Mio. RF pro Leistungsstufe (Stufe 10 = 2,5 Mrd. RF, `energyPerLevel` in der Config).
+Ist der Puffer voll, pausiert der Reaktor (kein Brennstoffverbrauch), bis Energie abfließt.
 
 Stufe s: Leistung x s^1,3, Brennstoffverbrauch x s, Instabilität x s^1,35 (Exponenten in der Config).
 Der Kern wird mit der Stufe sichtbar größer und färbt sich mit steigender Instabilität von Blau über Orange nach Rot.
@@ -103,7 +107,7 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
 
 ## Balancing ohne Neukompilieren
 
-- `config/cosmiccore-common.toml` (Kapazität, Port-Rate, globaler `outputMultiplier`, Instabilitätsrate, Kollaps ...)
+- `config/cosmiccore-common.toml` (Puffer pro Stufe, Port-Rate, globaler `outputMultiplier`, Instabilitätsrate, Kollaps ...)
 - Data Maps (auch per Datapack überschreibbar):
   `data/cosmiccore/data_maps/item/core_fuel.json` und `core_stabilizer.json`. Fuel-Tooltips zeigen die Werte im Spiel an.
 
