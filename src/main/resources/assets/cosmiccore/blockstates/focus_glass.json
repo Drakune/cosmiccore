@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "phase=dormant": {
+      "model": "cosmiccore:block/focus_glass_dormant"
+    },
+    "phase=formed": {
+      "model": "cosmiccore:block/focus_glass_formed"
+    },
+    "phase=active": {
+      "model": "cosmiccore:block/focus_glass_active"
+    },
+    "phase=unstable": {
+      "model": "cosmiccore:block/focus_glass_unstable"
+    }
+  }
+}

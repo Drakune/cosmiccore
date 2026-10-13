@@ -1,0 +1,16 @@
+{
+  "values": {
+    "minecraft:obsidian": {
+      "duration": 1200,
+      "strength": 0.02
+    },
+    "minecraft:crying_obsidian": {
+      "duration": 2400,
+      "strength": 0.035
+    },
+    "minecraft:netherite_scrap": {
+      "duration": 3600,
+      "strength": 0.06
+    }
+  }
+}

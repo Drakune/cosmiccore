@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "cosmiccore:block/void_casing_active",
+    "down": "cosmiccore:block/void_casing_active",
+    "up": "cosmiccore:block/void_casing_active",
+    "north": "cosmiccore:block/controller_front_active",
+    "east": "cosmiccore:block/void_casing_active",
+    "south": "cosmiccore:block/void_casing_active",
+    "west": "cosmiccore:block/void_casing_active"
+  }
+}

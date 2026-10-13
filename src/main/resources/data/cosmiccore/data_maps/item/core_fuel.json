@@ -1,0 +1,28 @@
+{
+  "values": {
+    "cosmiccore:star_dust": {
+      "burn_time": 2400,
+      "power": 1200
+    },
+    "minecraft:ender_pearl": {
+      "burn_time": 1200,
+      "power": 400
+    },
+    "minecraft:ender_eye": {
+      "burn_time": 1800,
+      "power": 700
+    },
+    "minecraft:echo_shard": {
+      "burn_time": 3600,
+      "power": 900
+    },
+    "minecraft:sculk_catalyst": {
+      "burn_time": 2400,
+      "power": 600
+    },
+    "minecraft:nether_star": {
+      "burn_time": 12000,
+      "power": 3000
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,phase=dormant": {
+      "model": "cosmiccore:block/controller_dormant"
+    },
+    "facing=north,phase=formed": {
+      "model": "cosmiccore:block/controller_formed"
+    },
+    "facing=north,phase=active": {
+      "model": "cosmiccore:block/controller_active"
+    },
+    "facing=north,phase=unstable": {
+      "model": "cosmiccore:block/controller_unstable"
+    },
+    "facing=east,phase=dormant": {
+      "model": "cosmiccore:block/controller_dormant",
+      "y": 90
+    },
+    "facing=east,phase=formed": {
+      "model": "cosmiccore:block/controller_formed",
+      "y": 90
+    },
+    "facing=east,phase=active": {
+      "model": "cosmiccore:block/controller_active",
+      "y": 90
+    },
+    "facing=east,phase=unstable": {
+      "model": "cosmiccore:block/controller_unstable",
+      "y": 90
+    },
+    "facing=south,phase=dormant": {
+      "model": "cosmiccore:block/controller_dormant",
+      "y": 180
+    },
+    "facing=south,phase=formed": {
+      "model": "cosmiccore:block/controller_formed",
+      "y": 180
+    },
+    "facing=south,phase=active": {
+      "model": "cosmiccore:block/controller_active",
+      "y": 180
+    },
+    "facing=south,phase=unstable": {
+      "model": "cosmiccore:block/controller_unstable",
+      "y": 180
+    },
+    "facing=west,phase=dormant": {
+      "model": "cosmiccore:block/controller_dormant",
+      "y": 270
+    },
+    "facing=west,phase=formed": {
+      "model": "cosmiccore:block/controller_formed",
+      "y": 270
+    },
+    "facing=west,phase=active": {
+      "model": "cosmiccore:block/controller_active",
+      "y": 270
+    },
+    "facing=west,phase=unstable": {
+      "model": "cosmiccore:block/controller_unstable",
+      "y": 270
+    }
+  }
+}
