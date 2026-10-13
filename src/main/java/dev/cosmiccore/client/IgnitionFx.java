@@ -25,8 +25,8 @@ public final class IgnitionFx {
 
     public static void render(Matrix4f m, VertexConsumer vc, int size, float ph, float energy) {
         if (ph < 0.0F) return;
-        int stars = 30 + size * 3;
-        float spread = 18.0F + size * 3.0F;
+        int stars = 24 + size * 2;
+        float spread = 5.0F + size * 1.2F; // nah am Reaktor, damit man es gut erkennt
         float env = Mth.clamp((1.0F - ph) / 0.2F, 0.0F, 1.0F);
         for (int k = 0; k < stars; k++) {
             float delay = (0.5F + 0.5F * hash(k * 37)) * 0.45F;
@@ -39,15 +39,15 @@ public final class IgnitionFx {
             Vector3f q = starPos(lon, lat, r0, Math.max(0.0F, s - 0.08F));
             float[] c = lerp(k % 2 == 0 ? CYAN : VIOLET, GOLD, s * s);
             float a = energy * Mth.sin(s * Mth.PI * 0.5F + Mth.HALF_PI * 0.2F);
-            segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.05F + 0.04F * (1.0F - s), c[0], c[1], c[2], 0.0F, a);
-            cube(vc, m, p.x, p.y, p.z, 0.07F + 0.08F * (1.0F - s), WHITE[0], WHITE[1], WHITE[2], a);
+            segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.025F + 0.02F * (1.0F - s), c[0], c[1], c[2], 0.0F, a);
+            cube(vc, m, p.x, p.y, p.z, 0.035F + 0.04F * (1.0F - s), WHITE[0], WHITE[1], WHITE[2], a);
         }
         // Lichtblitz und Ringwelle, wenn die Sterne im Kern ankommen
         float hit = Mth.clamp((ph - 0.55F) / 0.45F, 0.0F, 1.0F);
         if (hit > 0.0F) {
             float pulse = Mth.sin(hit * Mth.PI);
-            RenderUtil.glowSphere(vc, m, 0.4F + 0.9F * pulse, 10, 14, WHITE, 0.35F * energy * pulse);
-            flatCircle(vc, m, 0.5F + size * 0.5F * hit, 0.04F, 64, GOLD, energy * (1.0F - hit) * env);
+            RenderUtil.glowSphere(vc, m, 0.3F + 0.5F * pulse, 10, 14, WHITE, 0.3F * energy * pulse);
+            flatCircle(vc, m, 0.4F + size * 0.25F * hit, 0.025F, 64, GOLD, energy * (1.0F - hit) * env);
         }
     }
 

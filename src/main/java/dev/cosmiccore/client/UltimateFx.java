@@ -18,7 +18,6 @@ import org.joml.Matrix4f;
  *   <li><b>Spiralgalaxie:</b> drei Arme aus Sternen winden sich in der Scheibenebene um das Loch.</li>
  *   <li><b>Sonnensystem:</b> drei Sterne umkreisen den Kern auf geneigten Bahnen und ziehen Lichtschweife.</li>
  *   <li><b>Krone:</b> zwei goldene Lichtringe stehen senkrecht um den Horizont und drehen sich langsam.</li>
- *   <li><b>Nebel:</b> zarte farbige Schleier treiben in der Kammer.</li>
  * </ul>
  */
 public final class UltimateFx {
@@ -33,15 +32,6 @@ public final class UltimateFx {
                               float spin, float energy, float tilt) {
         if (energy <= 0.01F) return;
         Matrix4f m = pose.last().pose();
-
-        // Nebelschleier
-        for (int k = 0; k < 5; k++) {
-            float ang = k * 1.26F + t * 0.002F;
-            float r = reach * 0.55F;
-            float[] c = k % 3 == 0 ? VIOLET : k % 3 == 1 ? ROSE : CYAN;
-            Matrix4f nm = new Matrix4f(m).translate(Mth.cos(ang) * r, 0.6F * hash(k * 7), Mth.sin(ang) * r);
-            RenderUtil.glowSphere(vc, nm, reach * 0.45F, 8, 12, c, 0.035F * energy);
-        }
 
         // Spiralgalaxie in der (gekippten) Scheibenebene
         pose.pushPose();

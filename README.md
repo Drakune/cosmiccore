@@ -90,7 +90,7 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
 - Stufen 1–12, stärkste Leistung pro Stufe, am stabilsten.
 - **Vakuum-Energie:** Mit freiem Himmel erzeugt er zusätzlich 2.000 RF/t pro Stufe x kosmischer Faktor - auch ohne
   Brennstoff und ohne Instabilität (`vacuumEnergyPerLevel`).
-- Eigene Optik: Spiralgalaxie in der Scheibe, drei umlaufende Sterne, goldene Krone, Nebelschleier.
+- Eigene Optik: Spiralgalaxie in der Scheibe, drei umlaufende Sterne, goldene Krone.
 - **Erwachen:** Sein erster Start (einmalig pro Controller) löst für alle Spieler der Dimension einen Himmelseffekt
   aus - Himmelsblitz, Lichtsäule ins All, Schockwellen über den Himmel, Polarlichter rund um die Welt, Sternschnuppen.
 

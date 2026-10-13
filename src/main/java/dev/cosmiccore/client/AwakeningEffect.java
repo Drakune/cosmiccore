@@ -99,8 +99,8 @@ public final class AwakeningEffect {
         // 1) Himmelsblitz: der ganze Himmel leuchtet kurz auf
         float flash = Mth.clamp(1.0F - t / 40.0F, 0.0F, 1.0F);
         if (flash > 0.0F) {
-            RenderUtil.glowSphere(vc, new Matrix4f(m).translate((float) cam.x, (float) cam.y, (float) cam.z), 180.0F, 16, 24,
-                    lerp(WHITE, VIOLET, 0.4F), 0.35F * flash);
+            RenderUtil.glowSphere(vc, new Matrix4f(m).translate((float) cam.x, (float) cam.y, (float) cam.z), 60.0F, 16, 24,
+                    lerp(WHITE, VIOLET, 0.4F), 0.2F * flash);
         }
 
         // 2) Lichtsaeule vom Reaktor ins All (nur wenn in Sichtweite)
@@ -108,8 +108,8 @@ public final class AwakeningEffect {
         if (dist < 700) {
             float ox = origin.getX() + 0.5F, oy = origin.getY() + 0.5F, oz = origin.getZ() + 0.5F;
             float grow = Mth.clamp(t / 25.0F, 0.0F, 1.0F);
-            float top = oy + 30.0F + 420.0F * grow;
-            float w = 0.6F + 4.0F * grow * (0.9F + 0.1F * Mth.sin(t * 0.5F));
+            float top = oy + 20.0F + 160.0F * grow;
+            float w = 0.4F + 1.4F * grow * (0.9F + 0.1F * Mth.sin(t * 0.5F));
             // runder Strahl aus ineinanderliegenden Lichtroehren (von allen Seiten gleich)
             float pulse = 0.85F + 0.15F * Mth.sin(t * 0.6F);
             RenderUtil.tube(vc, m, ox, oy, oz, top, w * 0.3F, 16, WHITE, env * pulse, env * 0.7F);
@@ -131,7 +131,7 @@ public final class AwakeningEffect {
                     float ang = f * 40.0F - t * 0.2F + s * Mth.TWO_PI / 3;
                     float r = w * (0.8F + 1.2F * f);
                     float x = ox + Mth.cos(ang) * r, z = oz + Mth.sin(ang) * r;
-                    segment(vc, m, px, py, pz, x, y, z, 0.25F, GOLD[0], GOLD[1], GOLD[2], 0.6F * env * (1 - f), 0.6F * env * (1 - f));
+                    segment(vc, m, px, py, pz, x, y, z, 0.1F, GOLD[0], GOLD[1], GOLD[2], 0.6F * env * (1 - f), 0.6F * env * (1 - f));
                     px = x;
                     py = y;
                     pz = z;
@@ -139,16 +139,16 @@ public final class AwakeningEffect {
             }
             // Bodenwelle am Reaktor
             float shock = Mth.clamp(t / 60.0F, 0.0F, 1.0F);
-            flatCircle(vc, new Matrix4f(m).translate(ox, oy, oz), 4.0F + 90.0F * shock, 0.6F, 128, WHITE, env * (1.0F - shock));
+            flatCircle(vc, new Matrix4f(m).translate(ox, oy, oz), 3.0F + 30.0F * shock, 0.25F, 128, WHITE, env * (1.0F - shock));
         }
 
         // 3) Schockwelle ueber den Himmel (Ring um den Spieler, hoch oben)
-        float sky = (float) cam.y + 140.0F;
+        float sky = (float) cam.y + 45.0F;
         for (int k = 0; k < 3; k++) {
             float s = Mth.clamp((t - k * 25.0F) / 140.0F, 0.0F, 1.0F);
             if (s <= 0.0F || s >= 1.0F) continue;
-            float r = 20.0F + 330.0F * s;
-            flatCircle(vc, new Matrix4f(m).translate((float) cam.x, sky - 60.0F * s, (float) cam.z), r, 2.0F + 6.0F * s, 160,
+            float r = 8.0F + 90.0F * s;
+            flatCircle(vc, new Matrix4f(m).translate((float) cam.x, sky - 15.0F * s, (float) cam.z), r, 0.6F + 1.5F * s, 160,
                     k == 1 ? GOLD : CYAN, env * (1.0F - s) * 0.8F);
         }
 
@@ -156,14 +156,14 @@ public final class AwakeningEffect {
         float aur = Mth.clamp((t - 30.0F) / 60.0F, 0.0F, 1.0F) * env;
         if (aur > 0.0F) {
             int bands = 96;
-            float radius = 260.0F;
+            float radius = 70.0F;
             for (int i = 0; i < bands; i++) {
                 float a0 = Mth.TWO_PI * i / bands, a1 = Mth.TWO_PI * (i + 1) / bands;
-                float wave0 = Mth.sin(a0 * 5.0F + t * 0.04F) * 25.0F, wave1 = Mth.sin(a1 * 5.0F + t * 0.04F) * 25.0F;
-                float r0 = radius + Mth.sin(a0 * 3.0F + t * 0.02F) * 30.0F, r1 = radius + Mth.sin(a1 * 3.0F + t * 0.02F) * 30.0F;
+                float wave0 = Mth.sin(a0 * 5.0F + t * 0.04F) * 8.0F, wave1 = Mth.sin(a1 * 5.0F + t * 0.04F) * 8.0F;
+                float r0 = radius + Mth.sin(a0 * 3.0F + t * 0.02F) * 10.0F, r1 = radius + Mth.sin(a1 * 3.0F + t * 0.02F) * 10.0F;
                 float x0 = (float) cam.x + Mth.cos(a0) * r0, z0 = (float) cam.z + Mth.sin(a0) * r0;
                 float x1 = (float) cam.x + Mth.cos(a1) * r1, z1 = (float) cam.z + Mth.sin(a1) * r1;
-                float yb = (float) cam.y + 70.0F, yt = (float) cam.y + 170.0F;
+                float yb = (float) cam.y + 25.0F, yt = (float) cam.y + 60.0F;
                 float[] c = lerp(lerp(CYAN, VIOLET, 0.5F + 0.5F * Mth.sin(a0 * 2.0F + t * 0.03F)), GOLD, 0.15F);
                 float a = aur * (0.25F + 0.2F * Mth.sin(a0 * 7.0F + t * 0.08F));
                 quadFade(vc, m, x0, yb + wave0, z0, x1, yb + wave1, z1, x1, yt + wave1, z1, x0, yt + wave0, z0,
@@ -173,17 +173,17 @@ public final class AwakeningEffect {
 
         // 5) Sternschnuppen stuerzen zur Lichtsaeule
         if (dist < 700) {
-            float ox = origin.getX() + 0.5F, oz = origin.getZ() + 0.5F, top = origin.getY() + 200.0F;
+            float ox = origin.getX() + 0.5F, oz = origin.getZ() + 0.5F, top = origin.getY() + 50.0F;
             for (int k = 0; k < 40; k++) {
                 float s = Mth.frac(t * 0.012F + k * 0.137F);
                 float ang = hash(k * 31) * Mth.PI;
-                float startR = 150.0F + 100.0F * (0.5F + 0.5F * hash(k * 7));
+                float startR = 30.0F + 25.0F * (0.5F + 0.5F * hash(k * 7));
                 float r = startR * (1.0F - s);
                 float x = ox + Mth.cos(ang) * r, z = oz + Mth.sin(ang) * r;
-                float y = top + 60.0F * hash(k * 13) * (1.0F - s);
-                float tx = ox + Mth.cos(ang) * (r + 12.0F), tz = oz + Mth.sin(ang) * (r + 12.0F);
-                segment(vc, m, tx, y + 4.0F, tz, x, y, z, 0.35F, WHITE[0], WHITE[1], WHITE[2], 0.0F, env * Mth.sin(s * Mth.PI));
-                cube(vc, m, x, y, z, 0.6F, GOLD[0], GOLD[1], GOLD[2], env * Mth.sin(s * Mth.PI));
+                float y = top + 20.0F * hash(k * 13) * (1.0F - s);
+                float tx = ox + Mth.cos(ang) * (r + 4.0F), tz = oz + Mth.sin(ang) * (r + 4.0F);
+                segment(vc, m, tx, y + 1.5F, tz, x, y, z, 0.12F, WHITE[0], WHITE[1], WHITE[2], 0.0F, env * Mth.sin(s * Mth.PI));
+                cube(vc, m, x, y, z, 0.25F, GOLD[0], GOLD[1], GOLD[2], env * Mth.sin(s * Mth.PI));
             }
         }
 
