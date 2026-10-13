@@ -2,7 +2,6 @@ package dr4kun3.cosmiccore.block.entity;
 
 import dr4kun3.cosmiccore.CoreConfig;
 import dr4kun3.cosmiccore.ModItems;
-import dr4kun3.cosmiccore.ModSounds;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModBlocks;
@@ -269,8 +268,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 }
                 overdrive++;
                 Vec3 c = Vec3.atCenterOf(center(sl));
-                sl.playSound(null, c.x, c.y, c.z, ModSounds.CORE_IGNITE.get(), SoundSource.BLOCKS, 2.5F, 0.7F + 0.15F * overdrive);
-                sl.playSound(null, c.x, c.y, c.z, ModSounds.ORB_FORMED.get(), SoundSource.BLOCKS, 2.0F, 0.8F);
+                sl.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 1.5F, 0.6F + 0.2F * overdrive);
+                sl.playSound(null, c.x, c.y, c.z, SoundEvents.WITHER_SPAWN, SoundSource.BLOCKS, 0.6F, 1.6F);
                 sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 200, 1.0, 1.0, 1.0, 0.8);
             }
             case ControllerMenu.BTN_OVERDRIVE_DOWN -> {
@@ -381,7 +380,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                     burnHeat = fuel.heat();
                     if (resonance == 0) {
                         Vec3 c = Vec3.atCenterOf(center(level));
-                        level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_IGNITE.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+                        level.playSound(null, c.x, c.y, c.z, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1.2F, 0.7F);
                     }
                     setChanged();
                 }
@@ -444,7 +443,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             meltdown++;
             if (meltdown == 1 || meltdown % 20 == 0) {
                 Vec3 c = Vec3.atCenterOf(center(level));
-                level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_ALARM.get(), SoundSource.BLOCKS, 3.0F, 1.25F);
+                level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_HEARTBEAT, SoundSource.BLOCKS, 3.0F, 1.2F);
                 for (Player pl : level.getEntitiesOfClass(Player.class, new AABB(c, c).inflate(32))) {
                     pl.displayClientMessage(Component.translatable("message.cosmiccore.meltdown",
                             (MELTDOWN_TICKS - meltdown) / 20 + 1).withStyle(ChatFormatting.RED, ChatFormatting.BOLD), true);
@@ -479,7 +478,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             long t = level.getGameTime();
             Vec3 c = Vec3.atCenterOf(center(level));
             if (t % 100 == 0) {
-                level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_HUM.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_AMBIENT, SoundSource.BLOCKS, 0.6F, 0.6F);
             }
             if (t % 47 == 0) {
                 level.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1.0F,
@@ -489,7 +488,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (instability >= ALARM_AT) {
                 int period = instability >= 95f ? 8 : instability >= 90f ? 14 : 20;
                 if (t % period == 0) {
-                    level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_ALARM.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+                    level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_HEARTBEAT, SoundSource.BLOCKS, 2.0F, 0.8F);
                 }
             }
         }
@@ -515,7 +514,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         BlockPos core = center(level);
         Vec3 c = Vec3.atCenterOf(core);
         int structure = size == null ? 7 : size.size();
-        level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_COLLAPSE.get(), SoundSource.BLOCKS, 6.0F, 1.0F);
+        level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.BLOCKS, 4.0F, 0.6F);
+        level.playSound(null, c.x, c.y, c.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 4.0F, 0.5F);
         level.sendParticles(ParticleTypes.SCULK_SOUL, c.x, c.y, c.z, 40 + structure * 10, structure * 0.25, structure * 0.25, structure * 0.25, 0.08);
         level.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 200, 0.5, 0.5, 0.5, 1.2);
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, c.x, c.y, c.z, 1, 0.0, 0.0, 0.0, 0.0);
@@ -630,14 +630,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (target == null) return;
             laserTarget = target.getId();
             laserCharge = 0;
-            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.LASER_LOCK.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 2.0F, 1.6F);
             pushVisuals(level);
         }
         // erst aufladen, dann feuern
         if (laserCharge < LASER_CHARGE_TICKS) {
             laserCharge++;
             if (laserCharge == LASER_CHARGE_TICKS) {
-                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.LASER_CHARGE.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 2.0F, 1.8F);
             }
             return;
         }
@@ -674,14 +674,16 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         for (int k = 0; k < 24; k += 2) {
             int arrival = Math.round((k / 24.0F * 0.35F + 0.65F) * collect);
             if (deliverTicks == arrival) {
-                level.playSound(null, mid.x, mid.y, mid.z, ModSounds.COLLECT_PING.get(), SoundSource.BLOCKS, 3.0F, 0.85F + k * 0.03F);
+                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, 0.9F + k * 0.04F);
             }
         }
         int formed = collect + 2; // Kugel formt sich (Schockwelle) - passt zu EnergyLaserFx
         if (deliverTicks == formed) {
-            level.playSound(null, mid.x, mid.y, mid.z, ModSounds.ORB_FORMED.get(), SoundSource.BLOCKS, 3.0F, 1.0F);
+            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 3.0F, 1.4F);
+            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 3.0F, 0.8F);
         } else if (deliverTicks >= SingularityCoreBlockEntity.DELIVER_TICKS) {
-            level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_ABSORB.get(), SoundSource.BLOCKS, 4.0F, 1.0F);
+            level.playSound(null, c.x, c.y, c.z, SoundEvents.CONDUIT_ACTIVATE, SoundSource.BLOCKS, 4.0F, 1.3F);
+            level.playSound(null, c.x, c.y, c.z, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 2.5F, 1.2F);
             level.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 30, 0.3, 0.3, 0.3, 0.15);
             deliverTicks = -1;
         }
@@ -832,7 +834,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         applyPhase(level);
         linkPorts(level, true);
         Vec3 c = Vec3.atCenterOf(center(level));
-        level.playSound(null, c.x, c.y, c.z, ModSounds.CORE_FORM.get(), SoundSource.BLOCKS, 3.0F, 1.0F);
+        level.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.5F, 0.6F);
+        level.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 0.6F, 1.4F);
         pushVisuals(level);
         if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) {
             core.markFormed(level.getGameTime()); // startet die Verwandlungs-Animation auf den Clients

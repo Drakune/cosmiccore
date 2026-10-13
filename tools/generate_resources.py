@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Erzeugt alle Texturen (inkl. Animationen), Modelle, Blockstates, Sprachdateien und das Mod-Logo fuer Cosmic Core.
-Rezepte, Loot-Tables, Tags, Data Maps und sounds.json kommen aus der NeoForge-Datengenerierung (./gradlew runData). Braucht nur Pillow:  pip install pillow
+Rezepte, Loot-Tables, Tags, Data Maps kommen aus der NeoForge-Datengenerierung (./gradlew runData). Braucht nur Pillow:  pip install pillow
 Aufruf (im Projektordner):  python3 tools/generate_resources.py
 Alles hier ist absichtlich in einer Datei, damit du Farben/Texte/Zahlen leicht anpassen kannst.
 """
@@ -1105,22 +1105,7 @@ EN = {
 }
 
 
-SOUND_NAMES = ['core_hum', 'core_ignite', 'core_form', 'core_alarm', 'core_collapse', 'laser_lock', 'laser_charge',
-               'asteroid_shatter', 'collect_ping', 'orb_formed', 'core_absorb', 'awakening']
-SUBTITLES_DE = {'core_hum': 'Kern brummt', 'core_ignite': 'Kern zündet', 'core_form': 'Reaktor formt sich',
-                'core_alarm': 'Kern-Alarm', 'core_collapse': 'Kern kollabiert', 'laser_lock': 'Laser erfasst Ziel',
-                'laser_charge': 'Laser lädt auf', 'asteroid_shatter': 'Asteroid zerbricht', 'collect_ping': 'Bruchstück gesammelt',
-                'orb_formed': 'Energiekugel geformt', 'core_absorb': 'Kern nimmt Energie auf', 'awakening': 'Der ultimative Kern erwacht'}
-SUBTITLES_EN = {'core_hum': 'Core hums', 'core_ignite': 'Core ignites', 'core_form': 'Reactor forms',
-                'core_alarm': 'Core alarm', 'core_collapse': 'Core collapses', 'laser_lock': 'Laser locks on',
-                'laser_charge': 'Laser charges', 'asteroid_shatter': 'Asteroid shatters', 'collect_ping': 'Fragment collected',
-                'orb_formed': 'Energy orb formed', 'core_absorb': 'Core absorbs energy', 'awakening': 'The ultimate core awakens'}
-
-
 def lang():
-    for n in SOUND_NAMES:
-        DE[f'subtitles.{MOD}.{n}'] = SUBTITLES_DE[n]
-        EN[f'subtitles.{MOD}.{n}'] = SUBTITLES_EN[n]
     wjson(f'{ASSETS}/lang/de_de.json', DE)
     wjson(f'{ASSETS}/lang/en_us.json', EN)
 

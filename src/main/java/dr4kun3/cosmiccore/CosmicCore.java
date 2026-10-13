@@ -27,7 +27,6 @@ public class CosmicCore {
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModCreativeTabs.TABS.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
-        ModSounds.SOUNDS.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);
 
         modEventBus.addListener(CosmicCore::registerCapabilities);

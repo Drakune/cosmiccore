@@ -139,8 +139,7 @@ Stabilisatoren halten dank `stabilizerMultiplier` (Standard x3) dreimal so lange
 ## Ressourcen erzeugen
 
 - `./gradlew runData` – NeoForge-Datengenerierung nach `src/generated/resources`: Rezepte, Loot-Tables (Blöcke und
-  Asteroiden, Quelle `entity/AsteroidLoot.java`), Block-Tags, Data Maps (`datagen/ModDataMapProvider.java`) und `sounds.json`.
+  Asteroiden, Quelle `entity/AsteroidLoot.java`), Block-Tags und Data Maps (`datagen/ModDataMapProvider.java`).
 - `python3 tools/generate_resources.py` (braucht Pillow) – Texturen, Animationen, Modelle, Blockstates, Sprachdateien, Mod-Logo.
-- `python3 tools/generate_sounds.py` (numpy + ffmpeg) – synthetisiert die eigenen Sounds als OGG.
 
 Die Singularität und alle Effekte werden prozedural in `client/` gezeichnet (z. B. `SingularityCoreRenderer.java`).

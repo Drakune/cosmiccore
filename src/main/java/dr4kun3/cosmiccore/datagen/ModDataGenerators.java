@@ -15,7 +15,7 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 /**
- * Datengenerierung ({@code ./gradlew runData}): Rezepte, Loot-Tables, Tags, Data Maps und sounds.json landen in
+ * Datengenerierung ({@code ./gradlew runData}): Rezepte, Loot-Tables, Tags, und Data Maps landen in
  * src/generated/resources. Texturen, Modelle und Sprachdateien erzeugt weiterhin tools/generate_resources.py.
  */
 @EventBusSubscriber(modid = CosmicCore.MODID, bus = EventBusSubscriber.Bus.MOD)
@@ -33,7 +33,6 @@ public final class ModDataGenerators {
                 new LootTableProvider.SubProviderEntry(ModAsteroidLoot::new, LootContextParamSets.EMPTY)), lookup));
         gen.addProvider(event.includeServer(), new ModBlockTagProvider(out, lookup, files));
         gen.addProvider(event.includeServer(), new ModDataMapProvider(out, lookup));
-        gen.addProvider(event.includeClient(), new ModSoundProvider(out, files));
     }
 
     private ModDataGenerators() {}
