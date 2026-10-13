@@ -32,6 +32,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
     private static final float[] VIOLET = {0.65F, 0.35F, 1.0F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
     private static final float[] CRITICAL = {1.0F, 0.2F, 0.2F};
+    // (Trichter-Koerper: siehe body())
 
     public StarFunnelRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -50,6 +51,52 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         return 160;
     }
 
+    /**
+     * Animierter Trichter-Koerper (wie Kern, Emitter und Kristall): Kelch aus Sternenfeld, darauf gegenlaeufig
+     * drehende Lichtringe und Spiralbahnen, ein gleissender Rand und Licht, das nach unten in den Hals stroemt.
+     */
+    private static void body(PoseStack pose, MultiBufferSource buffers, float t, float energy, boolean unstable) {
+        float[] a = unstable ? CRITICAL : SKY, b = unstable ? CRITICAL : VIOLET;
+        final float y0 = 0.05F, y1 = 0.9F, r0 = 0.16F, r1 = 0.5F, exp = 1.6F;
+        pose.pushPose();
+        pose.translate(0.5, 0.0, 0.5);
+        pose.pushPose();
+        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(t * 0.6F));
+        RenderUtil.starTrumpet(buffers.getBuffer(RenderType.endPortal()), pose.last().pose(), y0, y1, r0, r1, exp, 24, 6);
+        pose.popPose();
+        VertexConsumer vc = buffers.getBuffer(CosmicRenderTypes.glow());
+        Matrix4f m = pose.last().pose();
+        int rings = 6;
+        for (int k = 0; k <= rings; k++) {
+            float f = k / (float) rings;
+            float y = Mth.lerp(f, y0, y1), r = r0 + (r1 - r0) * (float) Math.pow(f, exp) + 0.01F;
+            float pulse = 0.5F + 0.5F * Mth.sin(t * 0.18F + f * 6.0F); // Licht laeuft von oben nach unten
+            Matrix4f rm = new Matrix4f(m).translate(0, y, 0).rotateY(t * 0.03F * (k % 2 == 0 ? 1 : -1));
+            flatCircle(vc, rm, r, k == rings ? 0.02F : 0.007F, 40, lerp(b, a, f), energy * (k == rings ? 1.0F : 0.3F + 0.5F * pulse));
+        }
+        for (int k = 0; k < 8; k++) {
+            float px = 0, py = 0, pz = 0;
+            for (int i = 0; i <= 12; i++) {
+                float f = i / 12.0F;
+                float ang = k * Mth.TWO_PI / 8 - f * 2.0F - t * 0.04F;
+                float r = r0 + (r1 - r0) * (float) Math.pow(f, exp) + 0.012F;
+                float x = Mth.cos(ang) * r, y = Mth.lerp(f, y0, y1), z = Mth.sin(ang) * r;
+                if (i > 0) segment(vc, m, px, py, pz, x, y, z, 0.005F, a[0], a[1], a[2], energy * 0.6F, energy * 0.6F);
+                px = x;
+                py = y;
+                pz = z;
+            }
+        }
+        for (int k = 0; k < 6; k++) {
+            float f = 1.0F - Mth.frac(t * 0.025F + k / 6.0F); // faellt nach unten in den Hals
+            float ang = k * 1.7F + f * 3.0F;
+            float r = (r0 + (r1 - r0) * (float) Math.pow(f, exp)) * 0.85F;
+            cube(vc, m, Mth.cos(ang) * r, Mth.lerp(f, y0, y1), Mth.sin(ang) * r, 0.02F, WHITE[0], WHITE[1], WHITE[2], energy * Mth.sin(f * Mth.PI));
+        }
+        RenderUtil.glowSphere(vc, new Matrix4f(m).translate(0, y0 + 0.05F, 0), 0.12F, 8, 12, a, 0.45F * energy);
+        pose.popPose();
+    }
+
     private static float radiusAt(float h) {
         // Trompetenform: unten eng, oben weit
         float f = h / HEIGHT;
@@ -64,9 +111,13 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         if (!below.hasProperty(ModProperties.PHASE)) return;
         CorePhase phase = below.getValue(ModProperties.PHASE);
         boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
+        float t = (float) (level.getGameTime() % 144000L) + partialTick;
+        // verbunden mit einem gebildeten Reaktor: das Blockmodell ist ausgeblendet, hier entsteht der animierte Trichter
+        if (be.getBlockState().getValue(ModProperties.LINKED)) {
+            body(pose, buffers, t, running ? 1.0F : 0.4F, phase == CorePhase.UNSTABLE);
+        }
         if (phase == CorePhase.DORMANT || !level.canSeeSky(be.getBlockPos().above())) return;
 
-        float t = (float) (level.getGameTime() % 144000L) + partialTick;
         float energy = running ? 0.85F : 0.25F;
         float speed = running ? 1.0F : 0.3F;
         float[] c1 = phase == CorePhase.UNSTABLE ? CRITICAL : SKY;

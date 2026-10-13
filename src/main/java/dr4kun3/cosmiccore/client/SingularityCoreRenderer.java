@@ -196,7 +196,11 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
         // Zuenden: Sterne rasen aus dem Himmel in die Mitte (bei jedem Kern)
         IgnitionFx.render(pose.last().pose(), glow, be.getStructureSize(), be.getIgnitePhase(partialTick), 1.0F);
-        if (active && form >= 1.0F) IgnitionFx.ambient(pose.last().pose(), glow, be.getStructureSize(), t, 0.9F);
+        if (active && form >= 1.0F) {
+            // Mittelpunkt der Trichteroeffnung bzw. Deckenmitte
+            float mouth = be.hasFunnel() ? half + 1.35F : half + 0.6F;
+            IgnitionFx.ambient(pose.last().pose(), glow, be.getStructureSize(), mouth, t, 0.9F);
+        }
 
         // Energieleitung vom Sternentrichter durch die Decke zum Fokuskristall
         if (be.hasFunnel() && form >= 1.0F) funnelLink(pose.last().pose(), glow, reach + 0.5F, half, t, Math.max(0.4F, energy), heat);

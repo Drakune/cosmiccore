@@ -40,7 +40,7 @@ import org.joml.Matrix4f;
 public final class AwakeningEffect {
     private AwakeningEffect() {}
 
-    private static final int DURATION = 220;
+    private static final int DURATION = 160;
     private static final float[] VIOLET = {0.7F, 0.4F, 1.0F};
     private static final float[] CYAN = {0.35F, 0.95F, 1.0F};
     private static final float[] GOLD = {1.0F, 0.8F, 0.35F};
@@ -72,7 +72,7 @@ public final class AwakeningEffect {
             }
             case 30 -> sound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6F, 0.8F);
             case 60 -> sound(SoundEvents.ENDER_DRAGON_GROWL, 0.5F, 0.5F);
-            case 120 -> sound(SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5F, 1.0F);
+            case 90 -> sound(SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5F, 1.0F);
             default -> {}
         }
         if (++age > DURATION) age = -1;
@@ -86,7 +86,7 @@ public final class AwakeningEffect {
         float t = age + event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float ph = t / DURATION;
         // Huellkurve: schnell an, lange halten, sanft aus
-        float env = Mth.clamp(t / 12.0F, 0.0F, 1.0F) * Mth.clamp((DURATION - t) / 60.0F, 0.0F, 1.0F);
+        float env = Mth.clamp(t / 10.0F, 0.0F, 1.0F) * Mth.clamp((DURATION - t) / 45.0F, 0.0F, 1.0F);
         Vec3 cam = event.getCamera().getPosition();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack pose = event.getPoseStack();

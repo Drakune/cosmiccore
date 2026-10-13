@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "linked=false": {
       "model": "cosmiccore:block/star_funnel"
+    },
+    "linked=true": {
+      "model": "cosmiccore:block/star_funnel_hidden"
     }
   }
 }

@@ -199,6 +199,20 @@ public final class RenderUtil {
         }
     }
 
+    /** Trompetenfoermige Rotationsflaeche (senkrecht) mit Sternenfeld-Shader: Radius waechst von r0 (y0) zu r1 (y1). */
+    public static void starTrumpet(VertexConsumer vc, Matrix4f m, float y0, float y1, float r0, float r1, float exp, int seg, int steps) {
+        for (int i = 0; i < steps; i++) {
+            float f0 = i / (float) steps, f1 = (i + 1) / (float) steps;
+            float ya = Mth.lerp(f0, y0, y1), yb = Mth.lerp(f1, y0, y1);
+            float ra = r0 + (r1 - r0) * (float) Math.pow(f0, exp), rb = r0 + (r1 - r0) * (float) Math.pow(f1, exp);
+            for (int j = 0; j < seg; j++) {
+                float a0 = Mth.TWO_PI * j / seg, a1 = Mth.TWO_PI * (j + 1) / seg;
+                starQuad(vc, m, new float[]{Mth.cos(a0) * ra, ya, Mth.sin(a0) * ra}, new float[]{Mth.cos(a1) * ra, ya, Mth.sin(a1) * ra},
+                        new float[]{Mth.cos(a1) * rb, yb, Mth.sin(a1) * rb}, new float[]{Mth.cos(a0) * rb, yb, Mth.sin(a0) * rb});
+            }
+        }
+    }
+
     /** Achsparalleler Quader mit Sternenfeld-Shader. */
     public static void starBox(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, float x1, float y1, float z1) {
         float[] a = {x0, y0, z0}, b = {x1, y0, z0}, c = {x1, y0, z1}, d = {x0, y0, z1};

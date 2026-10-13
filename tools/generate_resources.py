@@ -681,7 +681,11 @@ def models():
     wjson(f'{ASSETS}/models/block/star_funnel.json', {
         'parent': 'minecraft:block/block', 'textures': {'particle': side, 'side': side, 'top': top},
         'elements': [box([4, 0, 4], [12, 4, 12]), box([2, 4, 2], [14, 9, 14]), box([0, 9, 0], [16, 13, 16])]})
-    wjson(f'{ASSETS}/blockstates/star_funnel.json', {'variants': {'': {'model': f'{MOD}:block/star_funnel'}}})
+    # verbunden mit einem gebildeten Reaktor: Modell aus, der animierte Trichter wird gerendert
+    wjson(f'{ASSETS}/models/block/star_funnel_hidden.json', {'textures': {'particle': side}})
+    wjson(f'{ASSETS}/blockstates/star_funnel.json', {'variants': {
+        'linked=false': {'model': f'{MOD}:block/star_funnel'},
+        'linked=true': {'model': f'{MOD}:block/star_funnel_hidden'}}})
     wjson(f'{ASSETS}/models/item/star_funnel.json', {'parent': f'{MOD}:block/star_funnel'})
     lside, ltop = f'{MOD}:block/cosmic_laser_side', f'{MOD}:block/cosmic_laser_top'
     def lbox(a, b):

@@ -28,6 +28,13 @@ public class StarFunnelBlock extends Block implements EntityBlock {
 
     public StarFunnelBlock(Properties props) {
         super(props);
+        registerDefaultState(stateDefinition.any().setValue(ModProperties.LINKED, false));
+    }
+
+    /** LINKED = Teil eines gebildeten Reaktors: Modell ausgeblendet, der animierte Trichter wird gerendert. */
+    @Override
+    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(ModProperties.LINKED);
     }
 
     @Override

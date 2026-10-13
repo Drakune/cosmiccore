@@ -531,6 +531,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /** Schaltet das Modell des Sternentrichters um (verbunden = animierter Trichter wird gerendert). */
+    private static void setFunnelLinked(ServerLevel level, BlockPos top, boolean linked) {
+        if (!level.hasChunkAt(top)) return;
+        BlockState s = level.getBlockState(top);
+        if (s.is(ModBlocks.STAR_FUNNEL.get()) && s.getValue(ModProperties.LINKED) != linked) {
+            level.setBlock(top, s.setValue(ModProperties.LINKED, linked), Block.UPDATE_ALL);
+        }
+    }
+
     /** Erfasst Asteroiden, laedt auf und schiesst sie mit dem Strahl ab. Die freigesetzte Energie fliesst in den Puffer. */
     private void tickLasers(ServerLevel level) {
         CorePattern p = pattern();
@@ -724,6 +733,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
             BlockPos above = pattern.center(worldPosition, bestDir).above(pattern.half() + 1);
             funnel = level.getBlockState(above).is(ModBlocks.STAR_FUNNEL.get());
+            setFunnelLinked(level, above, funnel);
             boolean lasers = true;
             for (Direction d : Direction.Plane.HORIZONTAL) {
                 if (!level.getBlockState(above.relative(d)).is(ModBlocks.COSMIC_LASER.get())) lasers = false;
@@ -747,6 +757,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 laserTarget = -1;
                 setLasersLinked(level, center(level).above(pattern.half() + 1), false);
             }
+            setFunnelLinked(level, center(level).above(pattern.half() + 1), false);
             if (formed) onUnformed(level);
         }
     }
@@ -896,7 +907,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             });
         }
         if (p != null && oldState.hasProperty(ControllerBlock.FACING)) {
-            setLasersLinked(level, p.center(worldPosition, oldState.getValue(ControllerBlock.FACING)).above(p.half() + 1), false);
+            BlockPos top = p.center(worldPosition, oldState.getValue(ControllerBlock.FACING)).above(p.half() + 1);
+            setLasersLinked(level, top, false);
+            setFunnelLinked(level, top, false);
         }
         for (int i = 0; i < inventory.getSlots(); i++) {
             ItemStack stack = inventory.getStackInSlot(i);
