@@ -4,13 +4,13 @@
       "model": "cosmiccore:block/rune_frame_dormant"
     },
     "phase=formed": {
-      "model": "cosmiccore:block/rune_frame_formed"
+      "model": "cosmiccore:block/rune_frame_hidden"
     },
     "phase=active": {
-      "model": "cosmiccore:block/rune_frame_active"
+      "model": "cosmiccore:block/rune_frame_hidden"
     },
     "phase=unstable": {
-      "model": "cosmiccore:block/rune_frame_unstable"
+      "model": "cosmiccore:block/rune_frame_hidden"
     }
   }
 }

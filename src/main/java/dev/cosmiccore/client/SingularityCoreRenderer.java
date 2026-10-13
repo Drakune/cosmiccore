@@ -97,16 +97,22 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.pushPose();
         pose.translate(0.5, 0.5, 0.5);
 
+        float[] c1 = unstable ? lerp(heat(BASE1, heatLevel), CRITICAL, 0.5F) : heat(BASE1, heatLevel);
+        float[] c2 = unstable ? lerp(heat(BASE2, heatLevel), CRITICAL, 0.3F) : heat(BASE2, heatLevel);
+        float[] c3 = unstable ? lerp(heat(BASE3, heatLevel), CRITICAL, 0.5F) : heat(BASE3, heatLevel);
+
+        // Die ganze Struktur als kosmisches Geraet: erst die Sternenfeld-Teile (eigene RenderTypes) ...
+        CosmicMachineFx.Params fx = new CosmicMachineFx.Params(be.getStructureSize() / 2, t, speed, intensity, flicker,
+                growth, active, c1, c2, c3);
+        CosmicMachineFx.starfield(pose, buffers, fx);
+
+        pose.pushPose();
         // kurz vor dem Kollaps zittert der Kern
         if (heatLevel > 0.7F) {
             float amp = (heatLevel - 0.7F) * 0.2F;
             int s = (int) (t * 2.0F);
             pose.translate(hash(s) * amp, hash(s + 17) * amp, hash(s + 31) * amp);
         }
-
-        float[] c1 = unstable ? lerp(heat(BASE1, heatLevel), CRITICAL, 0.5F) : heat(BASE1, heatLevel);
-        float[] c2 = unstable ? lerp(heat(BASE2, heatLevel), CRITICAL, 0.3F) : heat(BASE2, heatLevel);
-        float[] c3 = unstable ? lerp(heat(BASE3, heatLevel), CRITICAL, 0.5F) : heat(BASE3, heatLevel);
 
         // 1) Kugel mit Sternenhimmel-Shader - waechst mit der Leistungsstufe
         float maxRadius = Math.max(0.3F, reach * 0.36F);
@@ -194,6 +200,10 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             pose.popPose();
         }
 
+        pose.popPose(); // Zittern
+
+        // ... dann die leuchtenden Teile der Maschine
+        CosmicMachineFx.glow(pose, buffers.getBuffer(RenderType.lightning()), fx);
         pose.popPose();
     }
 }

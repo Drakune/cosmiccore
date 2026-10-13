@@ -422,7 +422,7 @@ def preview(sheets):
 
 
 # ----------------------------------------------------------------- Modelle / Blockstates
-COSMIC = ['resonance_coil', 'focus_crystal']
+COSMIC = ['resonance_coil', 'focus_crystal', 'rune_frame']
 SIMPLE = ['void_casing', 'rune_frame', 'resonance_coil', 'focus_crystal', 'energy_port', 'item_port']
 
 

@@ -16,7 +16,7 @@ public final class ModBlocks {
             StructureBlock::new, metal(MapColor.COLOR_BLACK, SoundType.NETHERITE_BLOCK, 2, 5, 5));
 
     public static final DeferredBlock<StructureBlock> RUNE_FRAME = BLOCKS.registerBlock("rune_frame",
-            StructureBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 4, 8, 8));
+            StructureBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
 
     public static final DeferredBlock<ResonatorBlock> RESONANCE_COIL = BLOCKS.registerBlock("resonance_coil",
             ResonatorBlock::new, metal(MapColor.COLOR_CYAN, SoundType.COPPER, 5, 10, 10).noOcclusion());

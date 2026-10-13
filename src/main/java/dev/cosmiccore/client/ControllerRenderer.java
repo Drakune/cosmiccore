@@ -85,9 +85,8 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             }
             BlockState target = CorePattern.blockFor(cell);
             if (target == null) return;
-            // aktive Variante sieht in der Vorschau schoener aus; der Kern braucht sein sichtbares Ruhe-Modell
-            if (target.hasProperty(ModProperties.PHASE) && !target.is(ModBlocks.SINGULARITY_CORE.get())
-                    && !target.is(ModBlocks.RESONANCE_COIL.get()) && !target.is(ModBlocks.FOCUS_CRYSTAL.get())) {
+            // leuchtende Variante sieht schoener aus - nur bei Bloecken, deren gebildetes Modell nicht ausgeblendet ist
+            if (target.is(ModBlocks.VOID_CASING.get()) || target.is(ModBlocks.FOCUS_GLASS.get())) {
                 target = target.setValue(ModProperties.PHASE, CorePhase.FORMED);
             }
             BakedModel model = dispatcher.getBlockModel(target);
