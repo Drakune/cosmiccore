@@ -33,6 +33,7 @@ Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich 
 | 5x5x5 | 1–10 | x0,6 | x1,0 | x1,0 | 1 |
 | 7x7x7 | 1–10 | x1,0 | x0,8 | x1,25 | 2 |
 | 9x9x9 | 1–10 | x1,6 | x0,6 | x1,6 | 3 |
+| **11x11x11 (Ultimativ)** | 1–12 | x2,6 | x0,45 | x2,0 | 3 |
 
 **Energiepuffer:** 250 Mio. RF pro Leistungsstufe (Stufe 10 = 2,5 Mrd. RF, `energyPerLevel` in der Config).
 Ist der Puffer voll, pausiert der Reaktor (kein Brennstoffverbrauch), bis Energie abfließt.
@@ -84,6 +85,15 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
   Energie direkt in den Puffer.
 - **Phantom-Blöcke:** Hüllenblöcke außerhalb der sichtbaren Kugel haben bei gebildeter Struktur keine Kollision und
   sind nicht anwählbar. Ports bleiben sichtbar, damit Rohre/Kabel anderer Mods sauber andocken.
+## Ultimativer Kern (11x11x11)
+
+- Stufen 1–12, stärkste Leistung pro Stufe, am stabilsten.
+- **Vakuum-Energie:** Mit freiem Himmel erzeugt er zusätzlich 2.000 RF/t pro Stufe x kosmischer Faktor - auch ohne
+  Brennstoff und ohne Instabilität (`vacuumEnergyPerLevel`).
+- Eigene Optik: Spiralgalaxie in der Scheibe, drei umlaufende Sterne, goldene Krone, Nebelschleier.
+- **Erwachen:** Sein erster Start (einmalig pro Controller) löst für alle Spieler der Dimension einen Himmelseffekt
+  aus - Himmelsblitz, Lichtsäule ins All, Schockwellen über den Himmel, Polarlichter rund um die Welt, Sternschnuppen.
+
 ## Overdrive
 
 - **Overdrive-Partikel** (4 Endkristalle um einen Netherstern): in der GUI mit „Overdrive +“ installieren (Warnung vorab).

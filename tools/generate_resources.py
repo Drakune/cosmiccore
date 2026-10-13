@@ -828,6 +828,8 @@ DE = {
     'console.cosmiccore.level': 'Leistungsstufe',
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Eindämmungsfeld',
+    'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
+    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er auch ohne Brennstoff Strom.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -938,6 +940,8 @@ EN = {
     'console.cosmiccore.level': 'Power level',
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Containment field',
+    'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
+    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.',
 }
 
 

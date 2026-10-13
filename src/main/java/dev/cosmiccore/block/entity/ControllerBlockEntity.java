@@ -105,6 +105,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private int resonance;
     private int collapseCooldown;
     private int meltdown;
+    /** Ultimativer Kern: das einmalige Erwachen (globaler Himmelseffekt) wurde bereits ausgeloest. */
+    private boolean awakened;
     private CorePhase phase = CorePhase.DORMANT;
 
     // nicht gespeichert
@@ -374,6 +376,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             resonance = Math.max(0, resonance - 2);
         }
 
+        // Ultimativer Kern: Vakuum-Energie aus dem All - auch ohne Brennstoff, ohne Instabilitaet
+        if (size.isUltimate() && enabled && skyLink && collapseCooldown <= 0 && energy < capacity) {
+            int vacuum = (int) Math.round(CoreConfig.VACUUM_ENERGY.get() * scale * lastCosmic * CoreConfig.OUTPUT_MULTIPLIER.get());
+            energy = Math.min(capacity, energy + vacuum);
+            lastOutput += vacuum;
+        }
+
         // Eindaemmungsfeld: ab dem Zielwert wird genau so viel Kuehlung verbraucht, wie die Hitze verlangt,
         // plus ein Zug zurueck auf den Zielwert. Fehlen die Punkte, wird automatisch der naechste Stabilisator
         // aus dem Slot verbraucht. Hoehere Stufen kosten also mehr Stabilisatoren - gefaehrlich wird es erst,
@@ -423,6 +432,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             phase = target;
             applyPhase(level);
             setChanged();
+            if (size.isUltimate() && !awakened && phase == CorePhase.ACTIVE) awaken(level);
         }
 
         // Atmosphaere
@@ -602,6 +612,18 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             level.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 30, 0.3, 0.3, 0.3, 0.15);
             deliverTicks = -1;
         }
+    }
+
+    /**
+     * Einmaliges Erwachen des ultimativen Kerns: alle Spieler der Dimension sehen den Himmelseffekt
+     * (Lichtsaeule ins All, Himmelsblitz, Polarlichter rund um die Welt, Schockwelle, Sternschnuppen).
+     */
+    private void awaken(ServerLevel level) {
+        awakened = true;
+        setChanged();
+        BlockPos c = center(level);
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayersInDimension(level,
+                new dev.cosmiccore.network.AwakeningPayload(c, size.size()));
     }
 
     /** Uebergibt die Darstellungswerte an den Singularitaetskern (der sie an die Clients schickt). */
@@ -963,6 +985,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putInt("resonance", resonance);
         tag.putInt("collapseCooldown", collapseCooldown);
         tag.putInt("meltdown", meltdown);
+        tag.putBoolean("awakened", awakened);
         tag.putString("phase", phase.getSerializedName());
         tag.put("inventory", inventory.serializeNBT(registries));
     }
@@ -991,6 +1014,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         resonance = tag.getInt("resonance");
         collapseCooldown = tag.getInt("collapseCooldown");
         meltdown = tag.getInt("meltdown");
+        awakened = tag.getBoolean("awakened");
         phase = CorePhase.byName(tag.getString("phase"));
         if (tag.contains("inventory")) {
             inventory.deserializeNBT(registries, tag.getCompound("inventory"));

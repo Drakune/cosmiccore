@@ -31,6 +31,7 @@ public class CosmicCore {
 
         modEventBus.addListener(CosmicCore::registerCapabilities);
         modEventBus.addListener(CosmicCore::registerDataMaps);
+        modEventBus.addListener(dev.cosmiccore.network.ModNetwork::register);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CoreConfig.SPEC);
     }

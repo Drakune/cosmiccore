@@ -49,7 +49,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int OD_Y = ROW_Y + 20;
 
     // Groessenwahl: Reiter links, 3D-Vorschau rechts, Blockliste und Bestaetigung unten
-    private static final int TAB_X = 8, TAB_Y = 22, TAB_W = 58, TAB_H = 20, TAB_STEP = 26;
+    private static final int TAB_X = 8, TAB_Y = 20, TAB_W = 58, TAB_H = 18, TAB_STEP = 21;
     private static final int VIEW_X = 72, VIEW_Y = 18, VIEW_W = 154, VIEW_H = 150;
     private static final int ICON_Y = 182;
 
@@ -264,12 +264,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             long max = Math.round(base * sel.outputFactor() * Math.pow(sel.maxScale(), CoreConfig.SCALE_OUTPUT_EXPONENT.get())
                     * CoreConfig.OUTPUT_MULTIPLIER.get());
             // Infoblock unter den Reitern - endet oberhalb von "Benoetigte Bloecke" (ICON_Y - 9)
-            int ix = TAB_X, iy = TAB_Y + 3 * TAB_STEP;
+            int ix = TAB_X, iy = TAB_Y + ReactorSize.values().length * TAB_STEP + 2;
             g.drawString(font, Component.translatable("gui.cosmiccore.output_label"), ix, iy, 0xFFB8A8D8, false);
             g.drawString(font, fmt(min) + " -", ix, iy + 10, 0xFF9AE8FF, false);
             g.drawString(font, fmt(max) + " RF/t", ix, iy + 19, 0xFF9AE8FF, false);
             g.drawString(font, Component.translatable("gui.cosmiccore.max_level"), ix, iy + 32, 0xFFB8A8D8, false);
             g.drawString(font, String.valueOf(sel.maxScale()), ix, iy + 42, 0xFFE0A8FF, false);
+            if (sel.isUltimate()) {
+                g.drawString(font, Component.translatable("gui.cosmiccore.ultimate"), VIEW_X + 4, VIEW_Y + 4, 0xFFFFC040, true);
+            }
             g.drawString(font, Component.translatable("gui.cosmiccore.blocks_label"), 8, ICON_Y - 9 + 0, 0xFFB8A8D8, false);
             return;
         }
@@ -308,6 +311,17 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         int ty = y + TAB_Y + selected * TAB_STEP;
         int glowCol = 0xFF000000 | (0xA060FF);
         g.fill(x + TAB_X - 2, ty - 2, x + TAB_X + TAB_W + 2, ty + TAB_H + 2, glowCol);
+        // der ultimative Kern hat einen goldenen, pulsierenden Rahmen
+        for (int i = 0; i < ReactorSize.values().length; i++) {
+            if (!ReactorSize.values()[i].isUltimate()) continue;
+            int uy = y + TAB_Y + i * TAB_STEP;
+            int a = (int) (140 + 110 * Mth.sin(t * 0.15F));
+            int gold = (a << 24) | 0xFFC040;
+            g.fill(x + TAB_X - 1, uy - 1, x + TAB_X + TAB_W + 1, uy, gold);
+            g.fill(x + TAB_X - 1, uy + TAB_H, x + TAB_X + TAB_W + 1, uy + TAB_H + 1, gold);
+            g.fill(x + TAB_X - 1, uy, x + TAB_X, uy + TAB_H, gold);
+            g.fill(x + TAB_X + TAB_W, uy, x + TAB_X + TAB_W + 1, uy + TAB_H, gold);
+        }
 
         // Vorschaufenster
         g.fill(x + VIEW_X - 1, y + VIEW_Y - 1, x + VIEW_X + VIEW_W + 1, y + VIEW_Y + VIEW_H + 1, 0xFF3A2468);

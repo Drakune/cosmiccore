@@ -190,6 +190,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         tendrils(pose.last().pose(), glow, reach, inner, t, e, heat, active);
         lensing(pose, glow, rh, inner, t, e, heat, camYaw, camPitch, beat);
         if (active) jets(pose.last().pose(), glow, rh, reach, t, e, heat, growth + 0.25F * od);
+        if (be.getStructureSize() >= 11) UltimateFx.render(pose, glow, rh, inner, outer, reach, t, spin, e, tilt);
         FieldFx.render(pose.last().pose(), glow, reach + 0.5F, reach, t, e, heat, be.getShield(), unstable, od);
         pose.popPose(); // Zittern
 

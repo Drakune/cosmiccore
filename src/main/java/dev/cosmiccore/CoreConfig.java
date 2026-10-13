@@ -32,6 +32,9 @@ public final class CoreConfig {
     public static final ModConfigSpec.DoubleValue SCALE_INSTABILITY_EXPONENT = B
             .comment("Instabilitaet waechst mit Stufe^x (vor dem Stabilitaetsfaktor der Baugroesse)")
             .defineInRange("scaleInstabilityExponent", 1.35, 0.0, 5.0);
+    public static final ModConfigSpec.IntValue VACUUM_ENERGY = B
+            .comment("Ultimativer Kern: Vakuum-Energie in RF/t pro Leistungsstufe (mit Himmelssicht, ohne Brennstoff)")
+            .defineInRange("vacuumEnergyPerLevel", 2000, 0, 1_000_000);
     public static final ModConfigSpec.DoubleValue STABILIZER_MULTIPLIER = B
             .comment("Faktor auf die Kuehlpunkte aller Stabilisatoren (hoeher = halten laenger)")
             .defineInRange("stabilizerMultiplier", 3.0, 0.1, 100.0);

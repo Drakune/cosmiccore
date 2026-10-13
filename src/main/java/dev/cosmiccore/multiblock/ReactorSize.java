@@ -10,7 +10,9 @@ public enum ReactorSize {
     // Leistungsstufe immer 1..10; groessere Reaktoren liefern mehr pro Stufe und sind stabiler
     SMALL(5, 10, 0.6, 0.5, 1.0, 1.0, 1),
     MEDIUM(7, 10, 1.0, 1.0, 0.8, 1.25, 2),
-    LARGE(9, 10, 1.6, 2.5, 0.6, 1.6, 3);
+    LARGE(9, 10, 1.6, 2.5, 0.6, 1.6, 3),
+    /** Ultimativer Kern: Stufen 1-12, staerkster und stabilster Reaktor, erzeugt zusaetzlich Vakuum-Energie. */
+    ULTIMATE(11, 12, 2.6, 4.0, 0.45, 2.0, 3);
 
     private final int size;
     private final int maxScale;
@@ -70,6 +72,10 @@ public enum ReactorSize {
 
     public CorePattern pattern() {
         return pattern;
+    }
+
+    public boolean isUltimate() {
+        return this == ULTIMATE;
     }
 
     @Nullable
