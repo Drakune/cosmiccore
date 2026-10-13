@@ -89,6 +89,11 @@ public final class CorePattern {
         return half;
     }
 
+    /** Radius der animierten Kammer (gebildete Struktur); Bloecke ausserhalb werden zu Phantomen. */
+    public float shellRadius() {
+        return half + 0.2F;
+    }
+
     /** Abstand vom Kern zu den Achsen-Spulen und Kristallen (in Bloecken). */
     public int focus() {
         return focus;

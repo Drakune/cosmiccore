@@ -27,7 +27,7 @@ public final class TractorFx {
 
     /** Hoehe des Rings ueber der Kernmitte (relativ zur Baugroesse) - muss zur Server-Logik passen. */
     public static final float RING_HEIGHT = 3.5F;
-    private static final float RING_R = 1.3F;
+    private static final float RING_R = 0.9F;
     private static final float[] TRACTOR = {0.35F, 1.0F, 0.85F};
     private static final float[] VIOLET = {0.65F, 0.45F, 1.0F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
@@ -56,22 +56,22 @@ public final class TractorFx {
             // Sockel auf dem Laser-Block, Pylon schraeg nach aussen zum Haltering
             pose.pushPose();
             pose.translate(x, half + 0.6F, z);
-            RenderUtil.starCylinder(portal, pose.last().pose(), 0.38F, 0.1F, 16);
+            RenderUtil.starCylinder(portal, pose.last().pose(), 0.25F, 0.06F, 16);
             pose.popPose();
-            RenderUtil.starStrut(portal, m, x, half + 0.65F, z, x * (RING_R + 0.3F), y, z * (RING_R + 0.3F), 0.08F);
+            RenderUtil.starStrut(portal, m, x, half + 0.65F, z, x * (RING_R + 0.2F), y, z * (RING_R + 0.2F), 0.04F);
         }
         // Haltering (waagerecht)
         pose.pushPose();
         pose.translate(0.0, y, 0.0);
         pose.mulPose(new Quaternionf().rotationX(Mth.HALF_PI));
-        RenderUtil.starTorus(portal, pose.last().pose(), RING_R + 0.3F, 0.07F, 40, 8);
+        RenderUtil.starTorus(portal, pose.last().pose(), RING_R + 0.2F, 0.035F, 40, 8);
         pose.popPose();
         // Emitterring (kippt zum Ziel)
         pose.pushPose();
         pose.translate(0.0, y, 0.0);
         pose.mulPose(new Quaternionf().rotationTo(0, 0, 1, n.x, n.y, n.z));
         pose.mulPose(new Quaternionf().rotationZ(t * 0.01F));
-        RenderUtil.starTorus(portal, pose.last().pose(), RING_R, 0.12F, 40, 10);
+        RenderUtil.starTorus(portal, pose.last().pose(), RING_R, 0.06F, 40, 10);
         pose.popPose();
     }
 
@@ -83,14 +83,14 @@ public final class TractorFx {
         float pulse = 0.6F + 0.4F * Mth.sin(t * (pulling ? 0.4F : 0.1F));
 
         // Haltering-Rand und Energie, die die Pylonen hochlaeuft
-        flatCircle(vc, new Matrix4f(m).translate(0, y, 0), RING_R + 0.3F, 0.02F, 64, VIOLET, energy * 0.6F);
+        flatCircle(vc, new Matrix4f(m).translate(0, y, 0), RING_R + 0.2F, 0.02F, 64, VIOLET, energy * 0.6F);
         for (int k = 0; k < 4; k++) {
             float ang = k * Mth.HALF_PI;
             float x = Mth.cos(ang), z = Mth.sin(ang);
             float s = Mth.frac(t * (pulling ? 0.05F : 0.015F) + k * 0.25F);
-            float px = Mth.lerp(s, x, x * (RING_R + 0.3F)), py = Mth.lerp(s, half + 0.65F, y), pz = Mth.lerp(s, z, z * (RING_R + 0.3F));
+            float px = Mth.lerp(s, x, x * (RING_R + 0.2F)), py = Mth.lerp(s, half + 0.65F, y), pz = Mth.lerp(s, z, z * (RING_R + 0.2F));
             cube(vc, m, px, py, pz, 0.06F, TRACTOR[0], TRACTOR[1], TRACTOR[2], energy * Mth.sin(s * Mth.PI));
-            flatCircle(vc, new Matrix4f(m).translate(x, half + 0.72F, z), 0.38F, 0.015F, 24, TRACTOR, energy * 0.5F);
+            flatCircle(vc, new Matrix4f(m).translate(x, half + 0.68F, z), 0.25F, 0.01F, 24, TRACTOR, energy * 0.4F);
         }
 
         // Basis des Emitterrings
@@ -101,7 +101,7 @@ public final class TractorFx {
         int seg = 48;
         for (int i = 0; i < seg; i++) {
             float a0 = Mth.TWO_PI * i / seg, a1 = Mth.TWO_PI * (i + 1) / seg;
-            Vector3f p0 = ringPoint(c, u, v, RING_R - 0.13F, a0), p1 = ringPoint(c, u, v, RING_R - 0.13F, a1);
+            Vector3f p0 = ringPoint(c, u, v, RING_R - 0.07F, a0), p1 = ringPoint(c, u, v, RING_R - 0.07F, a1);
             segment(vc, m, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, 0.03F, TRACTOR[0], TRACTOR[1], TRACTOR[2], energy * pulse, energy * pulse);
         }
 

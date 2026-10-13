@@ -691,7 +691,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private static void setPhaseAround(ServerLevel level, CorePattern pattern, BlockPos center, CorePhase target, @Nullable BlockPos skip) {
-        float radius = pattern.half() + 0.5F;
+        float radius = pattern.shellRadius();
         pattern.forEach(center, (pos, cell) -> {
             if (!CorePattern.isBlockCell(cell) || pos.equals(skip) || !level.hasChunkAt(pos)) return;
             BlockState s = level.getBlockState(pos);

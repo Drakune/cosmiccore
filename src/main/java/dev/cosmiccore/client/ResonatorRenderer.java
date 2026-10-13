@@ -21,6 +21,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import dev.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
@@ -45,7 +47,11 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
     private static final float[] JET = {0.6F, 0.78F, 1.0F};
     private static final float[] CRITICAL = {1.0F, 0.12F, 0.12F};
     private static final float[] EYE_GLOW = {0.3F, 1.0F, 0.65F};
-    private static final ItemStack ENDER_EYE = new ItemStack(Items.ENDER_EYE);
+    private static final float[] EYE_BODY = {0.08F, 0.36F, 0.3F};
+    private static final float[] IRIS_IN = {0.62F, 1.0F, 0.72F};
+    private static final float[] IRIS_OUT = {0.12F, 0.7F, 0.45F};
+    private static final float[] PUPIL = {0.01F, 0.02F, 0.02F};
+    private static final float[] SHINE = {0.95F, 1.0F, 0.97F};
 
     public ResonatorRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -82,31 +88,48 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         if (be.getBlockState().is(ModBlocks.FOCUS_CRYSTAL.get())) {
             renderCrystal(pose, buffers, t + offset, speed, energy, unstable);
         } else {
-            renderCoil(pose, buffers, level, core, t + offset, speed, energy, rim);
+            renderCoil(pose, buffers, level, be.getBlockPos(), core, t + offset, speed, energy, rim, unstable ? 1.0F : 0.0F);
         }
         pose.popPose();
     }
 
     /**
-     * Schild-Emitter als schwebendes Enderauge: das echte Enderaugen-Item, immer zum Betrachter gedreht (wie ein
-     * geworfenes Auge), mit gruenem Schein und einem Fokusring, der zum Kern zeigt.
+     * Schild-Emitter als animiertes 3D-Enderauge: undurchsichtige Kugel mit Iris und Schlitzpupille, die dem
+     * Betrachter folgt, ab und zu den Blick springen laesst und blinzelt. Die Pupille weitet sich bei Instabilitaet.
+     * Darueber eine Projektorschale, die das Feld zum Kern projiziert.
      */
-    private static void renderCoil(PoseStack pose, MultiBufferSource buffers, Level level, int[] core, float t, float speed,
-                                   float energy, float[] rim) {
-        float bob = 0.06F * Mth.sin(t * 0.07F);
+    private static void renderCoil(PoseStack pose, MultiBufferSource buffers, Level level, BlockPos pos, int[] core, float t,
+                                   float speed, float energy, float[] rim, float heat) {
+        float bob = 0.05F * Mth.sin(t * 0.07F);
         pose.pushPose();
         pose.translate(0.0, bob, 0.0);
+
+        // Blickrichtung: zum Betrachter, mit kleinen Blickspruengen
+        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        double dx = cam.x - (pos.getX() + 0.5), dy = cam.y - (pos.getY() + 0.5 + bob), dz = cam.z - (pos.getZ() + 0.5);
+        int look = (int) (t / 45.0F);
+        float yaw = (float) Math.atan2(dx, dz) + 0.18F * hash(look * 31);
+        float pitch = (float) Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)) + 0.12F * hash(look * 17 + 3);
+        float blinkPhase = (t % 110.0F) / 6.0F;
+        float open = blinkPhase < 1.0F ? Math.abs(1.0F - 2.0F * blinkPhase) : 1.0F;
+        float dilate = 0.3F + 0.7F * heat;
+
         pose.pushPose();
-        pose.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
-        pose.mulPose(Axis.YP.rotationDegrees(180.0F));
-        pose.scale(0.9F, 0.9F, 0.9F);
-        Minecraft.getInstance().getItemRenderer().renderStatic(ENDER_EYE, ItemDisplayContext.GROUND, LightTexture.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY, pose, buffers, level, 0);
+        pose.mulPose(Axis.YP.rotation(yaw));
+        pose.mulPose(Axis.XP.rotation(-pitch));
+        Matrix4f m = pose.last().pose();
+        VertexConsumer solid = buffers.getBuffer(RenderType.debugQuads());
+        float r = 0.24F;
+        RenderUtil.solidSphere(solid, m, r, 14, 20, EYE_BODY[0], EYE_BODY[1], EYE_BODY[2]);
+        capEllipse(solid, m, r * 1.004F, r * 0.62F, r * 0.62F * Math.max(0.08F, open), 0, 0, IRIS_IN, IRIS_OUT);
+        capEllipse(solid, m, r * 1.008F, r * (0.07F + 0.07F * dilate), r * 0.42F * Math.max(0.05F, open), 0, 0, PUPIL, PUPIL);
+        if (open > 0.5F) {
+            capEllipse(solid, m, r * 1.012F, r * 0.07F, r * 0.07F, -r * 0.22F, r * 0.24F, SHINE, SHINE);
+        }
         pose.popPose();
 
         VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
         float pulse = 0.6F + 0.4F * Mth.sin(t * 0.12F * speed);
-        RenderUtil.glowSphere(glow, pose.last().pose(), 0.26F + 0.03F * pulse, 8, 12, EYE_GLOW, 0.12F * energy);
         // Projektorschale ueber dem Auge, zum Kern gerichtet (der Emitter sitzt unter dem Kern)
         float dir = core != null && core[1] != 0 ? Math.signum(core[1]) : 1.0F;
         for (int k = 0; k < 3; k++) {
@@ -119,6 +142,29 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
             pose.popPose();
         }
         pose.popPose();
+    }
+
+    /** Ellipse (Halbachsen a, b, Mitte ox/oy) als Kappe auf der Kugel mit Radius r, Blickrichtung +Z. */
+    private static void capEllipse(VertexConsumer vc, Matrix4f m, float r, float a, float b, float ox, float oy,
+                                   float[] inner, float[] outer) {
+        final int rings = 5, seg = 24;
+        for (int i = 0; i < rings; i++) {
+            float p0 = i / (float) rings, p1 = (i + 1) / (float) rings;
+            float[] c = RenderUtil.lerp(inner, outer, (p0 + p1) * 0.5F);
+            for (int k = 0; k < seg; k++) {
+                float f0 = Mth.TWO_PI * k / seg, f1 = Mth.TWO_PI * (k + 1) / seg;
+                float[] q0 = capPoint(r, ox + a * p0 * Mth.cos(f0), oy + b * p0 * Mth.sin(f0));
+                float[] q1 = capPoint(r, ox + a * p1 * Mth.cos(f0), oy + b * p1 * Mth.sin(f0));
+                float[] q2 = capPoint(r, ox + a * p1 * Mth.cos(f1), oy + b * p1 * Mth.sin(f1));
+                float[] q3 = capPoint(r, ox + a * p0 * Mth.cos(f1), oy + b * p0 * Mth.sin(f1));
+                RenderUtil.quad2(vc, m, q0[0], q0[1], q0[2], q1[0], q1[1], q1[2], q2[0], q2[1], q2[2], q3[0], q3[1], q3[2],
+                        c[0], c[1], c[2], 1.0F);
+            }
+        }
+    }
+
+    private static float[] capPoint(float r, float x, float y) {
+        return new float[]{x, y, Mth.sqrt(Math.max(0.0F, r * r - x * x - y * y))};
     }
 
     private static void renderCrystal(PoseStack pose, MultiBufferSource buffers, float t, float speed, float energy,

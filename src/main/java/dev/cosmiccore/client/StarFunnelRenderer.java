@@ -21,13 +21,13 @@ import net.minecraft.world.phys.AABB;
 import org.joml.Matrix4f;
 
 /**
- * Der Sternentrichter saugt kosmische Energie aus dem All: Ueber dem Block oeffnet sich ein Wirbeltrichter, der nach
- * oben weiter wird. Spiralarme aus Sternenlicht drehen sich nach unten zum Trichter, Ringe kreisen in mehreren
+ * Der Sternentrichter saugt kosmische Energie aus dem All: Ueber dem Block oeffnet sich ein hoher, schlanker Wirbeltrichter,
+ * der weit in den Himmel reicht. Spiralarme aus Sternenlicht drehen sich nach unten zum Trichter, Ringe kreisen in mehreren
  * Hoehen. Nur sichtbar, wenn der Reaktor darunter laeuft und der Himmel frei ist.
  */
 public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEntity> {
-    private static final float HEIGHT = 16.0F;
-    private static final float TOP_RADIUS = 6.0F;
+    private static final float HEIGHT = 34.0F;
+    private static final float TOP_RADIUS = 5.0F;
     private static final float[] SKY = {0.55F, 0.75F, 1.0F};
     private static final float[] VIOLET = {0.65F, 0.35F, 1.0F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
@@ -53,7 +53,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
     private static float radiusAt(float h) {
         // Trompetenform: unten eng, oben weit
         float f = h / HEIGHT;
-        return 0.35F + TOP_RADIUS * f * f;
+        return 0.3F + TOP_RADIUS * f * f * f;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         Matrix4f m = pose.last().pose();
 
         // Spiralarme: Sternenlicht stroemt von oben nach unten in den Trichter
-        int arms = 6, steps = 28;
+        int arms = 5, steps = 48;
         for (int k = 0; k < arms; k++) {
             float lx = 0, ly = 0, lz = 0;
             boolean first = true;
@@ -86,14 +86,14 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
                 float f = i / (float) steps;
                 float h = f * HEIGHT;
                 float r = radiusAt(h);
-                float ang = k * Mth.TWO_PI / arms + f * 5.0F + t * 0.03F * speed;
+                float ang = k * Mth.TWO_PI / arms + f * 7.0F + t * 0.03F * speed;
                 float x = Mth.cos(ang) * r, z = Mth.sin(ang) * r;
                 if (!first) {
                     // Helligkeit wandert nach unten (Energie fliesst zum Reaktor)
                     float flow = 0.5F + 0.5F * Mth.sin(f * 14.0F + t * 0.15F * speed + k);
                     float a = energy * (1.0F - f * 0.75F) * (0.3F + 0.7F * flow);
                     float[] col = lerp(c1, c2, f);
-                    segment(vc, m, lx, ly, lz, x, h, z, 0.03F + 0.05F * f, col[0], col[1], col[2], a, a);
+                    segment(vc, m, lx, ly, lz, x, h, z, 0.012F + 0.03F * f, col[0], col[1], col[2], a, a);
                 }
                 lx = x;
                 ly = h;
@@ -103,13 +103,13 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         }
 
         // kreisende Ringe in mehreren Hoehen (Trichterwand)
-        for (int i = 1; i <= 6; i++) {
-            float h = HEIGHT * i / 7.0F;
+        for (int i = 1; i <= 7; i++) {
+            float h = HEIGHT * i / 8.0F;
             float r = radiusAt(h);
             pose.pushPose();
             pose.translate(0.0, h, 0.0);
             float pulse = 0.5F + 0.5F * Mth.sin(t * 0.08F * speed - i * 0.9F);
-            flatCircle(vc, pose.last().pose(), r, 0.02F + 0.01F * i, 64, lerp(c1, c2, i / 7.0F), energy * (0.25F + 0.5F * pulse));
+            flatCircle(vc, pose.last().pose(), r, 0.008F + 0.004F * i, 64, lerp(c1, c2, i / 8.0F), energy * (0.2F + 0.4F * pulse));
             pose.popPose();
         }
 
@@ -120,11 +120,11 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
             float h = f * HEIGHT;
             float r = radiusAt(h) * 0.9F;
             float ang = i * 2.39F + f * 5.0F + t * 0.03F * speed;
-            cube(vc, m, Mth.cos(ang) * r, h, Mth.sin(ang) * r, 0.04F + 0.05F * f, WHITE[0], WHITE[1], WHITE[2], energy * (1.0F - f * 0.5F));
+            cube(vc, m, Mth.cos(ang) * r, h, Mth.sin(ang) * r, 0.02F + 0.04F * f, WHITE[0], WHITE[1], WHITE[2], energy * (1.0F - f * 0.5F));
         }
 
         // gleissender Hals des Trichters
-        flatCircle(vc, m, 0.35F, 0.08F, 32, WHITE, energy);
+        flatCircle(vc, m, 0.3F, 0.04F, 32, WHITE, energy);
         pose.popPose();
     }
 }

@@ -48,10 +48,10 @@ public final class ReactorShellRenderer {
 
     /** Plattenringe: {Breite unten, Breite oben, Plattenanzahl, Drehsinn}. Grad. */
     private static final float[][] BANDS = {
-            {-80, -62, 7, 1}, {-60, -44, 11, -1}, {-42, -28, 14, 1},
-            {28, 42, 14, -1}, {44, 60, 11, 1}, {62, 76, 7, -1}};
-    private static final float PLATE_FILL = 0.88F;   // Rest = Fuge
-    private static final float THICK = 0.14F;
+            {-78, -56, 10, 1}, {-52, -30, 16, -1},
+            {30, 52, 16, -1}, {56, 74, 10, 1}};
+    private static final float PLATE_FILL = 0.9F;    // Rest = Fuge
+    private static final float THICK = 0.07F;
     private static final float IRIS_LAT = 78.0F * Mth.DEG_TO_RAD;
 
     private static final float[] SEAM = {0.62F, 0.4F, 1.0F};
@@ -82,8 +82,9 @@ public final class ReactorShellRenderer {
 
     public record Params(Level level, BlockPos corePos, int size, float t, float form, float energy, float heat,
                          boolean active, boolean unstable, float growth, int overdrive, SingularityCoreBlockEntity core) {
+        /** muss zu CorePattern.shellRadius() passen (Phantom-Bloecke). */
         float radius() {
-            return size / 2 + 0.5F;
+            return size / 2 + 0.2F;
         }
 
         /** Entstehen der Kammer aus dem Kern (0..1), beginnt nach dem Einsaugen. */
@@ -122,7 +123,7 @@ public final class ReactorShellRenderer {
         int inst = Math.round(core.getInstability());
         int instColor = inst < 40 ? 0x80FF90 : inst < 70 ? 0xFFE060 : 0xFF5060;
         String[] lines = {
-                p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "KERN BEREIT",
+                p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "",
                 "OUT " + compact(core.getOutput()) + " RF/t",
                 "PUF " + core.getEnergyPct() + "%",
                 "INST " + inst + "%",
@@ -374,17 +375,17 @@ public final class ReactorShellRenderer {
                     float la = Mth.lerp(i / 3.0F, lat0, lat1), lb = Mth.lerp((i + 1) / 3.0F, lat0, lat1);
                     float[] a0 = sph(rr - THICK, la, o1), a1 = sph(rr - THICK, la, oGap), b0 = sph(rr + 0.05F, lb, o1), b1 = sph(rr + 0.05F, lb, oGap);
                     quadFade(vc, m, a0[0], a0[1], a0[2], a1[0], a1[1], a1[2], b1[0], b1[1], b1[2], b0[0], b0[1], b0[2],
-                            seam[0], seam[1], seam[2], a * 0.9F, a * 0.5F);
+                            seam[0], seam[1], seam[2], a * 0.6F, a * 0.25F);
                 }
                 // feine Leuchtkanten oben/unten an jeder Platte
                 float[] e0 = sph(rr + 0.01F, lat0, o0), e1 = sph(rr + 0.01F, lat0, o1);
                 float[] f0 = sph(rr + 0.01F, lat1, o0), f1 = sph(rr + 0.01F, lat1, o1);
-                segment(vc, m, e0[0], e0[1], e0[2], e1[0], e1[1], e1[2], 0.012F, seam[0], seam[1], seam[2], a * 0.6F, a * 0.6F);
-                segment(vc, m, f0[0], f0[1], f0[2], f1[0], f1[1], f1[2], 0.012F, seam[0], seam[1], seam[2], a * 0.6F, a * 0.6F);
+                segment(vc, m, e0[0], e0[1], e0[2], e1[0], e1[1], e1[2], 0.007F, seam[0], seam[1], seam[2], a * 0.5F, a * 0.5F);
+                segment(vc, m, f0[0], f0[1], f0[2], f1[0], f1[1], f1[2], 0.007F, seam[0], seam[1], seam[2], a * 0.5F, a * 0.5F);
                 // Innenseite wird vom Kern angestrahlt
                 float[] i0 = sph(rr - THICK - 0.01F, lat0, o0), i1 = sph(rr - THICK - 0.01F, lat0, o1);
                 float[] j0 = sph(rr - THICK - 0.01F, lat1, o0), j1 = sph(rr - THICK - 0.01F, lat1, o1);
-                float lit = base * 0.22F * (lat0 < 0 ? 1.0F : 0.8F);
+                float lit = base * 0.14F * (lat0 < 0 ? 1.0F : 0.8F);
                 quadFade(vc, m, i0[0], i0[1], i0[2], i1[0], i1[1], i1[2], j1[0], j1[1], j1[2], j0[0], j0[1], j0[2],
                         SEAM_HOT[0], SEAM_HOT[1], SEAM_HOT[2], lat0 < 0 ? lit * 0.4F : lit, lat0 < 0 ? lit : lit * 0.4F);
             }
@@ -392,10 +393,10 @@ public final class ReactorShellRenderer {
 
         // Lichtringe an den Kanten des offenen Guertels
         if (p.done()) {
-            for (float lat : new float[]{-28 * Mth.DEG_TO_RAD, 28 * Mth.DEG_TO_RAD}) {
+            for (float lat : new float[]{-30 * Mth.DEG_TO_RAD, 30 * Mth.DEG_TO_RAD}) {
                 float y = r * Mth.sin(lat) * 0.98F, rr = r * Mth.cos(lat) * 0.98F;
                 Matrix4f mm = new Matrix4f(m).translate(0, y, 0);
-                flatCircle(vc, mm, rr, 0.035F, 72, seam, base * pulse);
+                flatCircle(vc, mm, rr, 0.015F, 96, seam, base * pulse * 0.8F);
             }
             // Rippen durch den Guertel mit wandernden Lichtpulsen
             int ribs = p.size() >= 9 ? 8 : 4;
@@ -403,18 +404,18 @@ public final class ReactorShellRenderer {
                 float lon = Mth.PI / 4 + k * Mth.TWO_PI / ribs;
                 float[] prev = null;
                 for (int i = 0; i <= 10; i++) {
-                    float[] q = sph(r * 0.98F, Mth.lerp(i / 10.0F, -28 * Mth.DEG_TO_RAD, 28 * Mth.DEG_TO_RAD), lon);
-                    if (prev != null) segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.03F, seam[0], seam[1], seam[2], base * 0.8F, base * 0.8F);
+                    float[] q = sph(r * 0.98F, Mth.lerp(i / 10.0F, -30 * Mth.DEG_TO_RAD, 30 * Mth.DEG_TO_RAD), lon);
+                    if (prev != null) segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.012F, seam[0], seam[1], seam[2], base * 0.6F, base * 0.6F);
                     prev = q;
                 }
                 float s = Mth.frac(p.t() * 0.02F * p.spin() + k * 0.37F);
-                float[] q = sph(r * 0.98F, Mth.lerp(s, -28 * Mth.DEG_TO_RAD, 28 * Mth.DEG_TO_RAD), lon);
-                cube(vc, m, q[0], q[1], q[2], 0.07F, 1.0F, 1.0F, 1.0F, base * Mth.sin(s * Mth.PI));
+                float[] q = sph(r * 0.98F, Mth.lerp(s, -30 * Mth.DEG_TO_RAD, 30 * Mth.DEG_TO_RAD), lon);
+                cube(vc, m, q[0], q[1], q[2], 0.04F, 1.0F, 1.0F, 1.0F, base * Mth.sin(s * Mth.PI));
             }
             // Iris-Rand
             float rimR = r * Mth.cos(IRIS_LAT);
             Matrix4f top = new Matrix4f(m).translate(0, r * Mth.sin(IRIS_LAT) + 0.03F, 0);
-            flatCircle(vc, top, rimR, 0.04F, 48, seam, base);
+            flatCircle(vc, top, rimR, 0.018F, 48, seam, base * 0.8F);
             // Instabilitaet: Blitze springen ueber die Huelle
             if (p.heat() > 0.55F) arcs(m, vc, p, r);
             glyphs(m, vc, p, r);

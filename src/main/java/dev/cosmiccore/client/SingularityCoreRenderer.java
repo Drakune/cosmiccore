@@ -139,10 +139,10 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
 
         // Groessen
-        float rh = (active ? Mth.lerp(growth, 0.28F, Math.max(0.34F, reach * 0.32F)) : 0.2F) * Math.max(0.05F, coreFade);
+        float rh = (active ? Mth.lerp(growth, 0.22F, Math.max(0.27F, reach * 0.25F)) : 0.2F) * Math.max(0.05F, coreFade);
         rh *= 1.0F + 0.03F * Mth.sin(t * 0.1F) + 0.12F * beat + 0.15F * od;
         float inner = rh * 1.5F;
-        float outer = Math.max(inner + 0.25F, reach - 0.15F);
+        float outer = Math.max(inner + 0.25F, reach - 0.35F);
         outer = inner + (outer - inner) * (active ? 0.7F + 0.3F * growth : 0.5F);
 
         pose.pushPose();
@@ -241,9 +241,9 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         int seg = 48;
         for (int s = 0; s < seg; s++) {
             float a0 = Mth.TWO_PI * s / seg, a1 = Mth.TWO_PI * (s + 1) / seg;
-            float r0 = outer, r1 = outer * 1.3F;
+            float r0 = outer, r1 = outer * 1.2F;
             quadFade(vc, m, r0 * Mth.cos(a0), 0, r0 * Mth.sin(a0), r0 * Mth.cos(a1), 0, r0 * Mth.sin(a1),
-                    r1 * Mth.cos(a1), 0, r1 * Mth.sin(a1), r1 * Mth.cos(a0), 0, r1 * Mth.sin(a0), col[0], col[1], col[2], 0.25F * energy, 0.0F);
+                    r1 * Mth.cos(a1), 0, r1 * Mth.sin(a1), r1 * Mth.cos(a0), 0, r1 * Mth.sin(a0), col[0], col[1], col[2], 0.15F * energy, 0.0F);
         }
     }
 
@@ -253,10 +253,10 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         for (int k = 0; k < 3; k++) {
             float ang = t * 0.09F * spin + k * Mth.TWO_PI / 3;
             float r = inner * (1.1F + 0.15F * k);
-            cube(vc, m, Mth.cos(ang) * r, 0, Mth.sin(ang) * r, 0.06F + 0.02F * k, c[0], c[1], c[2], energy);
+            cube(vc, m, Mth.cos(ang) * r, 0, Mth.sin(ang) * r, 0.035F + 0.01F * k, c[0], c[1], c[2], energy);
             for (int s = 1; s <= 8; s++) {
                 float a2 = ang - s * 0.08F;
-                cube(vc, m, Mth.cos(a2) * r, 0, Mth.sin(a2) * r, 0.05F * (1 - s / 9.0F), c[0], c[1], c[2], energy * (1 - s / 9.0F));
+                cube(vc, m, Mth.cos(a2) * r, 0, Mth.sin(a2) * r, 0.03F * (1 - s / 9.0F), c[0], c[1], c[2], energy * (1 - s / 9.0F));
             }
         }
     }
@@ -265,7 +265,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     private static void tendrils(Matrix4f m, VertexConsumer vc, float reach, float inner, float t, float energy,
                                  float heat, boolean active) {
         if (!active) return;
-        int count = 6 + Math.round(heat * 6);
+        int count = 4 + Math.round(heat * 4);
         for (int k = 0; k < count; k++) {
             float cyc = t / 60.0F + k * 0.37F;
             int cycle = (int) cyc;
@@ -281,7 +281,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                 float lon = startLon + s * 2.4F;
                 float lat = startLat * (1.0F - s);
                 float[] q = {r * Mth.cos(lat) * Mth.cos(lon), r * Mth.sin(lat), r * Mth.cos(lat) * Mth.sin(lon)};
-                if (prev != null) segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.02F * (1 - s * 0.6F), col[0], col[1], col[2], a * s, a * s);
+                if (prev != null) segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.012F * (1 - s * 0.6F), col[0], col[1], col[2], a * s, a * s);
                 prev = q;
             }
         }
@@ -301,7 +301,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         for (int s = 0; s < seg; s++) {
             float a0 = Mth.TWO_PI * s / seg, a1 = Mth.TWO_PI * (s + 1) / seg;
             float am = (a0 + a1) * 0.5F;
-            annulusXY(vc, m, rh, rh * 3.4F, a0, a1, haloCol, Math.min(1.0F, 0.45F * energy * boost), 0.0F);
+            annulusXY(vc, m, rh, rh * 2.4F, a0, a1, haloCol, Math.min(1.0F, 0.3F * energy * boost), 0.0F);
             annulusXY(vc, m, rh, rh * 1.08F, a0, a1, ringCol, Math.min(1.0F, energy * 1.2F * boost), 0.6F * energy);
             annulusXY(vc, m, rh * 1.12F, rh * 1.17F, a0, a1, ringCol, 0.7F * energy, 0.2F * energy);
             float vertical = Mth.sin(am);
@@ -310,14 +310,14 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             annulusXY(vc, m, rh * 1.18F, inner * 1.15F, a0, a1, diskColor(0.12F, heat), Math.min(1.0F, energy * lensA * flow), 0.0F);
         }
         // Lichtstrahlen (Linsenreflex)
-        int rays = 6;
+        int rays = 4;
         for (int k = 0; k < rays; k++) {
             float ang = k * Mth.TWO_PI / rays + t * 0.004F;
-            float len = rh * (3.0F + 1.5F * Mth.sin(t * 0.07F + k)) * boost;
+            float len = rh * (2.0F + 0.8F * Mth.sin(t * 0.07F + k)) * boost;
             float ca = Mth.cos(ang), sa = Mth.sin(ang);
-            float w = rh * 0.06F;
+            float w = rh * 0.035F;
             quadFade(vc, m, ca * rh - sa * w, sa * rh + ca * w, 0, ca * rh + sa * w, sa * rh - ca * w, 0,
-                    ca * len, sa * len, 0, ca * len, sa * len, 0, ringCol[0], ringCol[1], ringCol[2], 0.6F * energy, 0.0F);
+                    ca * len, sa * len, 0, ca * len, sa * len, 0, ringCol[0], ringCol[1], ringCol[2], 0.35F * energy, 0.0F);
         }
         pose.popPose();
     }
@@ -325,11 +325,11 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     /** Relativistische Jets entlang der Pole. */
     private static void jets(Matrix4f m, VertexConsumer vc, float rh, float reach, float t, float energy, float heat, float growth) {
         float[] col = lerp(pJet, CRITICAL, heat * heat * 0.7F);
-        float w = 0.06F + 0.06F * growth;
+        float w = 0.035F + 0.03F * growth;
         for (int side = -1; side <= 1; side += 2) {
             float y0 = side * rh * 1.05F, y1 = side * (reach + 0.6F);
             segment(vc, m, 0, y0, 0, 0, y1, 0, w, 1.0F, 1.0F, 1.0F, energy, 0.5F * energy);
-            segment(vc, m, 0, y0, 0, 0, y1, 0, w * 2.6F, col[0], col[1], col[2], 0.55F * energy, 0.15F * energy);
+            segment(vc, m, 0, y0, 0, 0, y1, 0, w * 2.0F, col[0], col[1], col[2], 0.4F * energy, 0.1F * energy);
             for (int strand = 0; strand < 4; strand++) {
                 float lx = 0, ly = y0, lz = 0;
                 for (int i = 1; i <= 12; i++) {
