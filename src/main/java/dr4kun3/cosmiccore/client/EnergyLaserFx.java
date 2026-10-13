@@ -202,7 +202,7 @@ public final class EnergyLaserFx {
                 : new Vector3f(0, cy + 1.6F, 0);
         boolean funnel = src.y - mouthY > 10.0F; // am oberen Trichterrand explodiert
         Matrix4f sm = new Matrix4f(m).translate(src.x, src.y, src.z);
-        if (funnel) sm.scale(2.2F);
+        if (funnel) sm.scale(3.0F);
         Matrix4f mouth = new Matrix4f(m).translate(0, mouthY, 0);
         // Explosion am Haltepunkt
         if (ph < 0.12F) {

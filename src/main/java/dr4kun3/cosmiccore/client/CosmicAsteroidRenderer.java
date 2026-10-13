@@ -33,6 +33,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
     private static final float[] TRAIL = {0.6F, 0.75F, 1.0F};
     private static final float[] HOT = {1.0F, 0.45F, 0.12F};
     private static final float[] EMBER = {1.0F, 0.7F, 0.3F};
+    private static final float[] WHITE_HOT = {1.0F, 0.93F, 0.78F};
     private static final Vector3f MOON = new Vector3f(0.35F, 0.85F, 0.4F).normalize();
     private static final int LAT = 10, LON = 16;
 
@@ -49,16 +50,20 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
     @Override
     public void render(CosmicAsteroid a, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         float t = a.tickCount + partialTick;
-        float r = a.getSizeBlocks() * 0.5F * a.getPullScale();
-        float harvest = a.getHarvest();
+        float overload = a.getOverload();
+        // zum Schluss blaeht sich der ueberladene Asteroid auf
+        float swell = overload > 0.75F ? (overload - 0.75F) / 0.25F : 0.0F;
+        float r = a.getSizeBlocks() * 0.5F * a.getPullScale() * (1.0F + 0.15F * swell * swell);
+        float harvest = Math.max(a.getPull() * 0.6F, overload);
         int variant = a.getVariant();
         int seed = a.getId() * 7919;
 
         pose.pushPose();
         pose.translate(0.0, a.getBbHeight() / 2.0, 0.0);
         if (harvest > 0) {
-            float amp = 0.04F * harvest * r;
-            pose.translate(hash((int) (t * 3)) * amp, hash((int) (t * 3) + 5) * amp, hash((int) (t * 3) + 9) * amp);
+            float amp = (0.03F * harvest + 0.09F * overload * overload) * r;
+            float q = t * (3.0F + 4.0F * overload);
+            pose.translate(hash((int) q) * amp, hash((int) q + 5) * amp, hash((int) q + 9) * amp);
         }
         Matrix4f wm = new Matrix4f(pose.last().pose());
 
@@ -70,7 +75,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         Matrix3f nm = new Matrix3f(pose.last().normal());
         float[][][] pts = surface(r, seed);
         VertexConsumer solid = buffers.getBuffer(RenderType.debugQuads());
-        rock(solid, m, nm, pts, ROCK[variant], harvest, seed);
+        rock(solid, m, nm, pts, ROCK[variant], harvest, overload, seed);
         // abplatzende Splitter (in Weltrichtung nach unten, dem Strahl entgegen)
         int chips = harvest > 0.2F ? 6 : 0;
         for (int k = 0; k < chips; k++) {
@@ -84,7 +89,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         // ---------------------------------------------------------------- Leuchtendes (additiv)
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         // Kristall-Cluster
-        float pulse = 0.75F + 0.25F * Mth.sin(t * 0.12F + seed);
+        float pulse = 0.75F + 0.25F * Mth.sin(t * (0.12F + 0.6F * overload) + seed);
         for (int cl = 0; cl < CLUSTERS[variant]; cl++) {
             Vector3f d = new Vector3f(hash(seed + cl * 41), hash(seed + cl * 43) * 0.8F, hash(seed + cl * 47)).normalize();
             float[] col = CRYSTAL[(variant == 2 && cl % 3 == 2) ? 2 : (cl % 2)];
@@ -93,12 +98,14 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
                 Vector3f dir = new Vector3f(d).add(hash(seed + cl * 7 + s * 3) * 0.4F, hash(seed + cl * 11 + s * 5) * 0.4F,
                         hash(seed + cl * 13 + s * 9) * 0.4F).normalize();
                 float len = r * (0.22F + 0.18F * (hash(seed + cl * 17 + s) * 0.5F + 0.5F)) * (s == 0 ? 1.3F : 1.0F);
-                crystal(glow, m, new Vector3f(d.x * base, d.y * base * 0.85F, d.z * base), dir, len, len * 0.2F, col, (0.4F + 0.35F * harvest) * pulse);
+                crystal(glow, m, new Vector3f(d.x * base, d.y * base * 0.85F, d.z * base), dir, len, len * 0.2F,
+                        lerp(col, WHITE_HOT, overload), (0.4F + 0.35F * harvest + 0.5F * overload) * pulse);
             }
         }
         // Risse: werden unter Beschuss heiss
-        float[] crackCol = lerp(CRYSTAL[1], HOT, harvest);
+        float[] crackCol = lerp(lerp(CRYSTAL[1], HOT, harvest), WHITE_HOT, overload);
         float crackA = 0.25F + 0.75F * harvest;
+        float crackW = 1.0F + 2.5F * overload;
         for (int k = 0; k < 4 + variant * 2; k++) {
             float lat = hash(seed + k * 11) * 1.2F, lon = hash(seed + k * 23) * Mth.PI;
             Vector3f prev = null;
@@ -108,13 +115,47 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
                 Vector3f p = d.mul(radiusAt(d, r, seed) * 1.015F);
                 p.y *= 0.85F;
                 if (prev != null) {
-                    segment(glow, m, prev.x, prev.y, prev.z, p.x, p.y, p.z, 0.012F * r + 0.006F,
+                    segment(glow, m, prev.x, prev.y, prev.z, p.x, p.y, p.z, (0.012F * r + 0.006F) * crackW,
                             crackCol[0], crackCol[1], crackCol[2], crackA, crackA);
                 }
                 prev = p;
             }
         }
+        // Ueberladung: Entladungsblitze zucken ueber die Oberflaeche
+        if (overload > 0.1F) {
+            int arcs = 2 + (int) (overload * 6);
+            for (int k = 0; k < arcs; k++) {
+                int as = seed + k * 101 + (int) (t * (0.5F + overload));
+                if (hash(as) < 0.2F - overload) continue;
+                Vector3f d = new Vector3f(hash(as * 3), hash(as * 5), hash(as * 7)).normalize();
+                Vector3f prev = new Vector3f(d).mul(radiusAt(d, r, seed));
+                for (int i = 1; i <= 4; i++) {
+                    Vector3f n = new Vector3f(d).add(hash(as * 11 + i) * 0.25F * i, hash(as * 13 + i) * 0.25F * i, hash(as * 17 + i) * 0.25F * i)
+                            .normalize().mul(r * (1.02F + 0.12F * i * overload));
+                    segment(glow, m, prev.x, prev.y, prev.z, n.x, n.y, n.z, 0.015F * r + 0.01F, 1.0F, 0.95F, 0.85F,
+                            overload, overload * 0.6F);
+                    prev = n;
+                }
+            }
+        }
         pose.popPose();
+
+        // Ueberladung: pulsierender Hitzeschein und zum Schluss Lichtstrahlen
+        if (overload > 0.0F) {
+            float beat = 0.5F + 0.5F * Mth.sin(t * (0.3F + 1.4F * overload));
+            float[] hc = lerp(HOT, WHITE_HOT, overload);
+            RenderUtil.glowSphere(glow, wm, r * (1.15F + 0.35F * overload * beat), 10, 14, hc, (0.12F + 0.35F * overload) * (0.6F + 0.4F * beat));
+            RenderUtil.glowSphere(glow, wm, r * (1.6F + 0.8F * overload), 8, 12, HOT, 0.08F * overload);
+            if (overload > 0.5F) {
+                float rays = (overload - 0.5F) / 0.5F;
+                for (int k = 0; k < 10; k++) {
+                    Vector3f d = new Vector3f(hash(seed + k * 61), hash(seed + k * 67), hash(seed + k * 71)).normalize();
+                    float l = r * (1.2F + 2.5F * rays) * (0.6F + 0.4F * Mth.sin(t * 0.7F + k));
+                    segment(glow, wm, 0, 0, 0, d.x * l, d.y * l, d.z * l, r * 0.06F, WHITE_HOT[0], WHITE_HOT[1], WHITE_HOT[2],
+                            0.7F * rays, 0.0F);
+                }
+            }
+        }
 
         // Glut der Splitter
         for (int k = 0; k < chips; k++) {
@@ -189,7 +230,8 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
     }
 
     /** Flach schattierte Gesteinsflaechen: Mondlicht von oben, violettes Reaktorlicht und Laserglut von unten. */
-    private static void rock(VertexConsumer vc, Matrix4f m, Matrix3f nm, float[][][] pts, float[] base, float harvest, int seed) {
+    private static void rock(VertexConsumer vc, Matrix4f m, Matrix3f nm, float[][][] pts, float[] base, float harvest,
+                             float overload, int seed) {
         for (int i = 0; i < LAT; i++) {
             for (int j = 0; j < LON; j++) {
                 float[] a = pts[i][j], b = pts[i + 1][j], c = pts[i + 1][(j + 1) % LON], d = pts[i][(j + 1) % LON];
@@ -205,10 +247,12 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
                 float under = Math.max(0.0F, -wn.y);
                 float shade = 0.22F + 0.7F * diffuse;
                 float tint = 0.9F + 0.1F * hash(seed + i * 31 + j * 7);
-                float heat = harvest * under * under;
-                float rr = base[0] * shade * tint + 0.12F * under + HOT[0] * heat * 0.9F;
-                float gg = base[1] * shade * tint + 0.05F * under + HOT[1] * heat * 0.9F;
-                float bb = base[2] * shade * tint + 0.18F * under + HOT[2] * heat * 0.9F;
+                // Glut: erst die dem Strahl zugewandte Unterseite, bei Ueberladung der ganze Brocken bis zur Weissglut
+                float heat = Math.max(harvest * under * under, overload * (0.55F + 0.45F * under));
+                float[] hc = lerp(HOT, WHITE_HOT, overload * overload);
+                float rr = base[0] * shade * tint * (1.0F - heat) + 0.12F * under + hc[0] * heat;
+                float gg = base[1] * shade * tint * (1.0F - heat) + 0.05F * under + hc[1] * heat;
+                float bb = base[2] * shade * tint * (1.0F - heat) + 0.18F * under + hc[2] * heat;
                 quad2(vc, m, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], d[0], d[1], d[2],
                         Math.min(1.0F, rr), Math.min(1.0F, gg), Math.min(1.0F, bb), 1.0F);
             }

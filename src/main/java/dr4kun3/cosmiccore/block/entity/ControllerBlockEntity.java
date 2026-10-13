@@ -646,7 +646,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         int variant = target.getVariant();
         // mit Sternen-Trichter: am oberen Rand des Trichters zerbrechen, sonst knapp ueber den Lasern
         Vec3 hold = funnel ? Vec3.atCenterOf(center(level)).add(0, p.half() + 1.35 + SingularityCoreBlockEntity.FUNNEL_HEIGHT, 0)
-                : muzzle.add(0, HOLD_ABOVE, 0);
+                : muzzle.add(0, HOLD_ABOVE + target.getSizeBlocks() * 0.35, 0);
         int gained = target.harvestTick(hold, funnel);
         if (gained > 0) {
             receiveCosmicEnergy(gained);
