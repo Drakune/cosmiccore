@@ -547,14 +547,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (target == null) return;
             laserTarget = target.getId();
             laserCharge = 0;
-            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.6F, 1.6F);
+            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 2.0F, 1.6F);
             pushVisuals(level);
         }
         // erst aufladen, dann feuern
         if (laserCharge < LASER_CHARGE_TICKS) {
             laserCharge++;
             if (laserCharge == LASER_CHARGE_TICKS) {
-                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.5F, 1.8F);
+                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 2.0F, 1.8F);
             }
             return;
         }
@@ -569,7 +569,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Klaenge passend zur Uebergabe-Animation: Sammeln ueber dem Trichter, dann Aufnahme im Kern. */
+    /**
+     * Klaenge passend zur Uebergabe-Animation (Lautstaerke > 1 = groessere Hoerweite):
+     * jedes ankommende Bruchstueck ein heller Ton (steigende Tonhoehe), dann das Formen der Energiekugel und
+     * schliesslich ihre Aufnahme im Kern.
+     */
     private void tickDelivery(ServerLevel level) {
         if (deliverTicks < 0) return;
         deliverTicks++;
@@ -579,12 +583,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
         Vec3 c = Vec3.atCenterOf(center(level));
+        Vec3 mid = c.add(0, p.half() + 2.2, 0);
         int collect = SingularityCoreBlockEntity.DELIVER_TICKS / 2;
-        if (deliverTicks == collect) {
-            Vec3 mid = c.add(0, p.half() + 2.2, 0);
-            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.9F, 1.5F);
+        // Ankunft der Bruchstuecke (muss zu EnergyLaserFx.delivery passen)
+        for (int k = 0; k < 24; k += 2) {
+            int arrival = Math.round((k / 24.0F * 0.35F + 0.65F) * collect);
+            if (deliverTicks == arrival) {
+                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, 0.9F + k * 0.04F);
+            }
+        }
+        int formed = collect + 2; // Kugel formt sich (Schockwelle) - passt zu EnergyLaserFx
+        if (deliverTicks == formed) {
+            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 3.0F, 1.4F);
+            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 3.0F, 0.8F);
         } else if (deliverTicks >= SingularityCoreBlockEntity.DELIVER_TICKS) {
-            level.playSound(null, c.x, c.y, c.z, SoundEvents.CONDUIT_ACTIVATE, SoundSource.BLOCKS, 1.2F, 1.3F);
+            level.playSound(null, c.x, c.y, c.z, SoundEvents.CONDUIT_ACTIVATE, SoundSource.BLOCKS, 4.0F, 1.3F);
+            level.playSound(null, c.x, c.y, c.z, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 2.5F, 1.2F);
             level.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 30, 0.3, 0.3, 0.3, 0.15);
             deliverTicks = -1;
         }

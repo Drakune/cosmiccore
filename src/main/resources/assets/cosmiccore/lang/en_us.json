@@ -95,5 +95,16 @@
   "message.cosmiccore.overdrive.missing": "You need an Overdrive Particle in your inventory",
   "tooltip.cosmiccore.overdrive.effect": "Install in a formed reactor: RF x2, instability x3",
   "tooltip.cosmiccore.overdrive.limit": "Max 1 / 2 / 3 levels (5x5x5 / 7x7x7 / 9x9x9)",
-  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nOnly on a formed reactor. If it breaks, overdrive is lost."
+  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nOnly on a formed reactor. If it breaks, overdrive is lost.",
+  "console.cosmiccore.title": "COSMIC CORE",
+  "console.cosmiccore.meltdown": "COLLAPSE IN %s s",
+  "console.cosmiccore.full": "BUFFER FULL",
+  "console.cosmiccore.unstable": "UNSTABLE",
+  "console.cosmiccore.active": "ACTIVE",
+  "console.cosmiccore.output": "Output",
+  "console.cosmiccore.buffer": "Buffer",
+  "console.cosmiccore.instability": "Instability",
+  "console.cosmiccore.level": "Power level",
+  "console.cosmiccore.overdrive": "Overdrive",
+  "console.cosmiccore.field": "Containment field"
 }

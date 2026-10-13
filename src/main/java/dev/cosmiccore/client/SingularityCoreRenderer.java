@@ -156,7 +156,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), rh, 16, 24, 0.0F, 0.0F, 0.0F);
 
         // 3) Licht
-        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         Vec3 center = Vec3.atCenterOf(be.getBlockPos());
         double dx = cam.x - center.x, dy = cam.y - center.y, dz = cam.z - center.z;

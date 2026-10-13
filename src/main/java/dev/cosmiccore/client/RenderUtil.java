@@ -6,7 +6,7 @@ import com.mojang.math.Axis;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
-/** Prozedurale Geometrie fuer die leuchtenden Effekte (gedacht fuer RenderType.lightning()). */
+/** Prozedurale Geometrie fuer die leuchtenden Effekte (gedacht fuer CosmicRenderTypes.glow()). */
 public final class RenderUtil {
     private RenderUtil() {}
 
@@ -88,7 +88,7 @@ public final class RenderUtil {
                 col[0], col[1], col[2], aIn, aOut);
     }
 
-    /** Leuchtende Kugelhuelle (Farbe + Alpha, fuer RenderType.lightning()). */
+    /** Leuchtende Kugelhuelle (Farbe + Alpha, fuer CosmicRenderTypes.glow()). */
     public static void glowSphere(VertexConsumer vc, Matrix4f m, float r, int lat, int lon, float[] col, float alpha) {
         for (int i = 0; i < lat; i++) {
             float p0 = (float) (Math.PI * i / lat - Math.PI / 2);

@@ -123,7 +123,9 @@ public class CosmicAsteroid extends Entity {
             Vec3 c = position().add(0, getBbHeight() / 2, 0);
             sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 40 + getVariant() * 40, s * 0.4, s * 0.4, s * 0.4, 0.15);
             sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 80, s * 0.3, s * 0.3, s * 0.3, 0.3);
-            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.AMBIENT, 2.0F, 0.6F);
+            // laut genug, um auch auf Hoehe des Asteroiden (bis ~128 Bloecke) gehoert zu werden
+            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 8.0F, 0.6F);
+            sl.playSound(null, c.x, c.y, c.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 6.0F, 1.4F);
         }
         int energy = getEnergy();
         discard();

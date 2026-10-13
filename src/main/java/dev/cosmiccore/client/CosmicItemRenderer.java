@@ -58,7 +58,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.mulPose(Axis.YP.rotationDegrees(t * 2.0F));
         RenderUtil.sphere(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), 0.17F + 0.015F * pulse, 10, 14);
         pose.popPose();
-        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
         RenderUtil.glowSphere(glow, m, 0.22F + 0.02F * pulse, 10, 14, GOLD, 0.35F);
         RenderUtil.glowSphere(glow, m, 0.3F, 8, 12, VIOLET, 0.12F);
@@ -85,7 +85,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             RenderUtil.starOctahedron(gateway, pose.last().pose(), s[3], s[3] * 1.6F);
             pose.popPose();
         }
-        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
         for (int i = 0; i < shards.length; i++) {
             float[] s = shards[i];

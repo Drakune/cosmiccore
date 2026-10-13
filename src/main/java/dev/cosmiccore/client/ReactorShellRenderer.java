@@ -143,87 +143,127 @@ public final class ReactorShellRenderer {
 
     /** Punkt auf der (nach hinten geneigten) Bildschirmflaeche: u in [-1, 1] quer, v in [0, 1] hoch. */
     private static float[] screen(float u, float v) {
-        return new float[]{u * 0.4F, -0.04F + v * 0.42F, 0.075F - v * 0.18F};
+        return new float[]{u * 0.46F, -0.02F + v * 0.56F, 0.07F - v * 0.22F};
     }
 
-    /** Live-Daten als Text auf dem Bildschirm (links), beidseitig lesbar. */
+    private static final float TEXT_SCALE = 0.0052F;
+    private static final float PANEL_PX = 0.92F / TEXT_SCALE; // Breite in Textpixeln
+
+    /** Textraum des Bildschirms: Ursprung oben links, x nach rechts, y nach unten (in Schriftpixeln). */
+    private static Matrix4f textFrame(Matrix4f cm, float lift) {
+        float tilt = (float) Math.atan2(0.22, 0.56);
+        float[] tl = screen(-1, 1);
+        return new Matrix4f(cm).translate(tl[0], tl[1], tl[2]).rotateX(-tilt).translate(0, 0, lift).scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
+    }
+
+    private static final int ROW_TITLE = 3, ROW_STATUS = 14, ROW_OUT = 28, ROW_BUF = 39, BAR_BUF = 49, ROW_INST = 56,
+            BAR_INST = 66, ROW_LEVEL = 73, ROW_OD = 84, ROW_FIELD = 95;
+
+    /** Live-Daten als Tabelle: Bezeichnung links, Wert mit Einheit rechtsbuendig. */
     private static void consoleText(Matrix4f cm, MultiBufferSource buffers, Params p) {
         Font font = Minecraft.getInstance().font;
         SingularityCoreBlockEntity core = p.core();
         ReactorSize size = ReactorSize.bySize(p.size());
         int maxOd = size == null ? 0 : size.maxOverdrive();
         StringBuilder od = new StringBuilder();
-        for (int i = 0; i < maxOd; i++) od.append(i < core.getOverdrive() ? '■' : '□');
+        for (int i = 0; i < maxOd; i++) od.append(i < core.getOverdrive() ? "\u25A0 " : "\u25A1 ");
         int inst = Math.round(core.getInstability());
         int instColor = inst < 40 ? 0x80FF90 : inst < 70 ? 0xFFE060 : 0xFF5060;
-        String[] lines = {
-                core.getMeltdown() > 0 ? "KOLLAPS IN " + core.getMeltdown() + "s"
-                        : core.getEnergyPct() >= 100 ? "PUFFER VOLL" : p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "",
-                "OUT " + compact(core.getOutput()) + " RF/t",
-                "PUF " + core.getEnergyPct() + "%",
-                "INST " + inst + "%",
-                "STUFE " + core.getScale() + "/" + core.getScaleMax(),
-                maxOd > 0 ? "OD " + od : ""};
-        int[] colors = {core.getMeltdown() > 0 ? 0xFF3030 : core.getEnergyPct() >= 100 ? 0xFFB040 : p.unstable() ? 0xFF5060 : 0xB0E8FF, 0x7AE8FF, 0xC8B8F0, instColor, 0xE0A8FF, 0xFFB040};
-        float tilt = (float) Math.atan2(0.18, 0.42);
-        float s = 0.0062F;
-        for (int side = 0; side < 2; side++) {
-            Matrix4f tm = new Matrix4f(cm);
-            if (side == 1) tm.rotateY(Mth.PI); // Rueckseite (gespiegelt lesbar von innen)
-            tm.translate(-0.37F, 0.36F, -0.098F + (side == 0 ? 0.006F : -0.006F)).rotateX(-tilt).scale(s, -s, s);
-            for (int i = 0; i < lines.length; i++) {
-                if (lines[i].isEmpty()) continue;
-                font.drawInBatch(lines[i], 0, i * 10.5F, 0xFF000000 | colors[i], false, tm, buffers,
-                        Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
-            }
+        long cap = ReactorSizeCapacity.capacity(core.getScale());
+        long stored = Math.round(cap * core.getEnergyPct() / 100.0);
+
+        String status;
+        int statusColor;
+        if (core.getMeltdown() > 0) {
+            status = tr("console.cosmiccore.meltdown", core.getMeltdown());
+            statusColor = (p.t() / 5) % 2 < 1 ? 0xFF3030 : 0xFFFFFF;
+        } else if (core.getEnergyPct() >= 100) {
+            status = tr("console.cosmiccore.full");
+            statusColor = 0xFFB040;
+        } else if (p.unstable()) {
+            status = tr("console.cosmiccore.unstable");
+            statusColor = 0xFF5060;
+        } else if (p.active()) {
+            status = tr("console.cosmiccore.active");
+            statusColor = 0x80FF90;
+        } else {
+            status = "";
+            statusColor = 0;
+        }
+
+        Matrix4f tm = textFrame(cm, 0.004F);
+        center(font, tm, buffers, "\u25C6 " + tr("console.cosmiccore.title") + " \u25C6", ROW_TITLE, 0xD8B8FF);
+        if (!status.isEmpty()) center(font, tm, buffers, status, ROW_STATUS, statusColor);
+        row(font, tm, buffers, tr("console.cosmiccore.output"), compact(core.getOutput()) + " RF/t", ROW_OUT, 0x7AE8FF);
+        row(font, tm, buffers, tr("console.cosmiccore.buffer"), compact(stored) + " / " + compact(cap) + " RF", ROW_BUF, 0xC8B8F0);
+        row(font, tm, buffers, tr("console.cosmiccore.instability"), inst + " %", ROW_INST, instColor);
+        row(font, tm, buffers, tr("console.cosmiccore.level"), core.getScale() + " / " + core.getScaleMax(), ROW_LEVEL, 0xE0A8FF);
+        if (maxOd > 0) row(font, tm, buffers, tr("console.cosmiccore.overdrive"), od.toString().trim(), ROW_OD, 0xFFB040);
+        row(font, tm, buffers, tr("console.cosmiccore.field"), Math.round(core.getShield() * 100) + " %", ROW_FIELD, 0x9AD8FF);
+    }
+
+    private static String tr(String key, Object... args) {
+        return net.minecraft.network.chat.Component.translatable(key, args).getString();
+    }
+
+    private static void center(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
+        float x = (PANEL_PX - font.width(text)) / 2.0F;
+        font.drawInBatch(text, x, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+    }
+
+    private static void row(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int valueColor) {
+        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(value, PANEL_PX - 6 - font.width(value), y, 0xFF000000 | valueColor, false, tm, buffers,
+                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+    }
+
+    /** Puffer-Kapazitaet je Stufe (wie im Controller: Stufe x energyPerLevel). */
+    private static final class ReactorSizeCapacity {
+        static long capacity(int scale) {
+            return dev.cosmiccore.CoreConfig.ENERGY_PER_LEVEL.get() * Math.max(1, scale);
         }
     }
 
     private static String compact(long n) {
+        if (n >= 1_000_000_000L) return String.format("%.2fG", n / 1e9);
         if (n >= 1_000_000L) return String.format("%.1fM", n / 1e6);
         if (n >= 10_000L) return String.format("%.1fk", n / 1e3);
         return Long.toString(n);
     }
 
-    /** Holografische Anzeige der Konsole: Rahmen, Pufferbalken, Zeigerinstrument und Scanlinie. */
+    /** Leuchtender Teil der Konsole: Rahmen mit Eckakzenten, Trennlinien, Balken fuer Puffer und Instabilitaet. */
     private static void console(Matrix4f m, VertexConsumer vc, ShellCell c, Params p, float[] col) {
         Matrix4f cm = consoleFrame(m, c);
-        float e = p.energy();
-        float[] cyan = {0.35F, 0.9F, 1.0F}, violet = {0.75F, 0.5F, 1.0F};
+        float e = Math.max(0.6F, p.energy());
+        float[] cyan = {0.35F, 0.9F, 1.0F};
         float[] warn = lerp(new float[]{0.4F, 1.0F, 0.5F}, CRITICAL, p.heat());
         // Rahmen
-        float[][] fr = {screen(-1, 0), screen(1, 0), screen(1, 1), screen(-1, 1)};
+        float[][] fr = {screen(-1.02F, -0.02F), screen(1.02F, -0.02F), screen(1.02F, 1.02F), screen(-1.02F, 1.02F)};
         for (int i = 0; i < 4; i++) {
             float[] a = fr[i], b = fr[(i + 1) % 4];
-            segment(vc, cm, a[0], a[1], a[2], b[0], b[1], b[2], 0.012F, col[0], col[1], col[2], e, e);
+            segment(vc, cm, a[0], a[1], a[2], b[0], b[1], b[2], 0.006F, col[0], col[1], col[2], e * 0.8F, e * 0.8F);
+            cube(vc, cm, a[0], a[1], a[2], 0.018F, 1.0F, 1.0F, 1.0F, e);
         }
-        // Kopfzeile
-        float[] h0 = screen(-0.9F, 0.88F), h1 = screen(0.9F, 0.88F);
-        segment(vc, cm, h0[0], h0[1], h0[2], h1[0], h1[1], h1[2], 0.008F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
-        // Pufferbalken am unteren Rand (echter Fuellstand)
-        float fill = p.core().getEnergyPct() / 100.0F;
-        float[] e0 = screen(-0.92F, 0.06F), e1 = screen(-0.92F + 1.84F * fill, 0.06F);
-        if (fill > 0.0F) segment(vc, cm, e0[0], e0[1], e0[2], e1[0], e1[1], e1[2], 0.02F, cyan[0], cyan[1], cyan[2], e, e);
-        // Zeigerinstrument (Instabilitaet)
-        float cu = 0.62F, cv = 0.45F, rad = 0.26F;
-        float[] prev = null;
-        for (int i = 0; i <= 16; i++) {
-            float ang = Mth.PI * (1.0F - i / 16.0F);
-            float[] q = screen(cu + Mth.cos(ang) * rad, cv + Mth.sin(ang) * rad * 1.1F);
-            if (prev != null) segment(vc, cm, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.008F, col[0], col[1], col[2], e, e);
-            prev = q;
-        }
-        float needle = Mth.PI * (1.0F - p.heat()) + (p.unstable() ? 0.08F * Mth.sin(p.t() * 2.0F) : 0.0F);
-        float[] n0 = screen(cu, cv), n1 = screen(cu + Mth.cos(needle) * rad * 0.9F, cv + Mth.sin(needle) * rad);
-        segment(vc, cm, n0[0], n0[1], n0[2], n1[0], n1[1], n1[2], 0.012F, warn[0], warn[1], warn[2], e, e);
-        // Scanlinie
-        float sv = Mth.frac(p.t() * 0.02F);
-        float[] s0 = screen(-1, sv), s1 = screen(1, sv);
-        segment(vc, cm, s0[0], s0[1], s0[2], s1[0], s1[1], s1[2], 0.006F, 1.0F, 1.0F, 1.0F, e * 0.5F, e * 0.5F);
-        // Projektorstrahlen vom Sockel zu den Bildschirmecken
-        for (float[] corner : fr) {
-            segment(vc, cm, 0, -0.1F, 0.0F, corner[0], corner[1], corner[2], 0.006F, col[0], col[1], col[2], e * 0.25F, e * 0.05F);
-        }
+        // Bodenring des Sockels
+        RenderUtil.flatCircle(vc, new Matrix4f(cm).translate(0, -0.49F, 0), 0.44F, 0.012F, 48, col, e * 0.7F);
+
+        Matrix4f tm = textFrame(cm, 0.002F);
+        // Trennlinien unter Titel und Status
+        segment(vc, tm, 6, 12, 0, PANEL_PX - 6, 12, 0, 0.5F, col[0], col[1], col[2], e * 0.6F, e * 0.6F);
+        segment(vc, tm, 6, 25, 0, PANEL_PX - 6, 25, 0, 0.4F, col[0], col[1], col[2], e * 0.35F, e * 0.35F);
+        // Balken: Puffer und Instabilitaet (Spur + Fuellung)
+        bar(vc, tm, BAR_BUF, p.core().getEnergyPct() / 100.0F, cyan, e);
+        bar(vc, tm, BAR_INST, p.core().getInstability() / 100.0F, warn, e);
+        // feine Scanlinie
+        float sv = Mth.frac(p.t() * 0.012F) * 108.0F;
+        segment(vc, tm, 2, sv, 0, PANEL_PX - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.12F, e * 0.12F);
+    }
+
+    private static void bar(VertexConsumer vc, Matrix4f tm, float y, float frac, float[] col, float e) {
+        float x0 = 6, x1 = PANEL_PX - 6;
+        segment(vc, tm, x0, y, 0, x1, y, 0, 1.4F, col[0], col[1], col[2], e * 0.15F, e * 0.15F);
+        float fill = Mth.clamp(frac, 0.0F, 1.0F);
+        if (fill > 0.0F) segment(vc, tm, x0, y, 0, x0 + (x1 - x0) * fill, y, 0, 1.4F, col[0], col[1], col[2], e, e);
     }
 
     private static float[] sph(float r, float lat, float lon) {
@@ -266,11 +306,21 @@ public final class ReactorShellRenderer {
                 if (c.cell() != CorePattern.Cell.SLOT) continue;
                 if (!p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz())).is(ModBlocks.CONTROLLER.get())) continue;
                 Matrix4f cm = consoleFrame(m, c);
-                VertexConsumer gw = buffers.getBuffer(RenderType.endPortal());
-                RenderUtil.starStrut(gw, cm, 0, -0.5F, 0, 0, -0.08F, -0.05F, 0.1F);
-                RenderUtil.starStrut(gw, cm, 0, -0.5F, 0, 0, -0.45F, 0, 0.22F);
-                starQuad(gw, cm, new float[]{-0.44F, -0.08F, 0.06F}, new float[]{0.44F, -0.08F, 0.06F},
-                        new float[]{0.44F, 0.42F, -0.12F}, new float[]{-0.44F, 0.42F, -0.12F});
+                // Sockel: echte Gehaeuse-Saeule auf einer dunklen Bodenplatte (verdeckt die ausgeblendeten Bloecke darunter)
+                pose.pushPose();
+                pose.translate(c.dx(), c.dy(), c.dz());
+                pose.mulPose(com.mojang.math.Axis.YP.rotation((float) Math.atan2(c.dx(), c.dz())));
+                pose.translate(-0.17F, -0.5F, -0.17F);
+                pose.scale(0.34F, 0.44F, 0.34F);
+                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose,
+                        buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                pose.popPose();
+                VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
+                disc(dq, new Matrix4f(cm).translate(0, -0.495F, 0), 0.46F, PLATE);
+                // undurchsichtiger Bildschirmhintergrund
+                float[] b0 = screen(-1.03F, -0.03F), b1 = screen(1.03F, -0.03F), b2 = screen(1.03F, 1.03F), b3 = screen(-1.03F, 1.03F);
+                RenderUtil.quad2(dq, cm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], b2[0], b2[1], b2[2], b3[0], b3[1], b3[2],
+                        PANEL[0], PANEL[1], PANEL[2], 1.0F);
                 consoleText(cm, buffers, p);
             }
         }
@@ -295,6 +345,19 @@ public final class ReactorShellRenderer {
                         OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
                 pose.popPose();
             }
+        }
+    }
+
+    private static final float[] PLATE = {0.05F, 0.03F, 0.09F};
+    private static final float[] PANEL = {0.02F, 0.015F, 0.05F};
+
+    /** Flache, undurchsichtige Scheibe (debugQuads) in der XZ-Ebene. */
+    private static void disc(VertexConsumer vc, Matrix4f m, float r, float[] col) {
+        int seg = 32;
+        for (int i = 0; i < seg; i++) {
+            float a0 = Mth.TWO_PI * i / seg, a1 = Mth.TWO_PI * (i + 1) / seg;
+            RenderUtil.quad2(vc, m, 0, 0, 0, Mth.cos(a0) * r, 0, Mth.sin(a0) * r, Mth.cos(a1) * r, 0, Mth.sin(a1) * r, 0, 0, 0,
+                    col[0], col[1], col[2], 1.0F);
         }
     }
 

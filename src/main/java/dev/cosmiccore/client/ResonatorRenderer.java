@@ -103,7 +103,7 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
     private static void renderCoil(PoseStack pose, MultiBufferSource buffers, Level level, BlockPos pos, int[] core, float t,
                                    float speed, float energy, float[] rim, float heat) {
         float dir = core != null && core[1] != 0 ? Math.signum(core[1]) : 1.0F;
-        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         pose.pushPose();
         pose.translate(0.0, -0.35 * dir, 0.0);
         if (dir < 0) pose.mulPose(Axis.XP.rotationDegrees(180.0F));
@@ -185,7 +185,7 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
 
         RenderUtil.starOctahedron(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), 0.42F * breathe, 0.6F * breathe);
 
-        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         float[] edge = unstable ? CRITICAL : lerp(COOL, JET, 0.5F + 0.5F * Mth.sin(t * 0.05F));
         octahedron(glow, pose.last().pose(), 0.44F * breathe, 0.63F * breathe, 0.012F, edge, energy);
         ring(pose, glow, 0.62F, 0.01F, t * speed, 0.0F, 0.0F, t, JET, energy * 0.45F);

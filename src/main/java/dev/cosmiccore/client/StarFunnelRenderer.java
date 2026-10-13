@@ -74,7 +74,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
 
         pose.pushPose();
         pose.translate(0.5, 0.85, 0.5);
-        VertexConsumer vc = buffers.getBuffer(RenderType.lightning());
+        VertexConsumer vc = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
 
         // Spiralarme: Sternenlicht stroemt von oben nach unten in den Trichter

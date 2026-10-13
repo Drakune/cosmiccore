@@ -56,7 +56,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         pose.mulPose(Axis.YP.rotationDegrees(t * (1.5F + (seed & 3))));
         pose.mulPose(Axis.XP.rotationDegrees(t * 0.9F));
         rock(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), r, seed);
-        glow = buffers.getBuffer(RenderType.lightning());
+        glow = buffers.getBuffer(CosmicRenderTypes.glow());
         // gluehende Risse
         Matrix4f m = pose.last().pose();
         float crackA = 0.35F + 0.65F * harvest;

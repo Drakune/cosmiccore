@@ -147,33 +147,71 @@ public final class EnergyLaserFx {
     }
 
     /**
-     * Uebergabe nach einem Abschuss: die Bruchstuecke des Asteroiden fliegen zum Laser und verschmelzen dort zu einem
-     * grossen Energiepartikel, das danach mit Lichtschweif in den Kern sinkt und dort in einem Lichtblitz aufgeht.
+     * Uebergabe nach einem Abschuss (Phasen von ph 0..1):
+     * <ol>
+     *   <li>0 - 0.5: Explosionsblitz am Asteroiden, seine Bruchstuecke fliegen zum Laser - jedes landet mit kleinem
+     *       Lichtring; die Energiekugel waechst.</li>
+     *   <li>0.5 - 0.62: die Kugel formt sich - Schockwellen und Strahlenkranz.</li>
+     *   <li>0.62 - 1: sie sinkt mit Lichtschweif in den Kern und geht dort mit Blitz und Ringwellen auf.</li>
+     * </ol>
      */
     private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float t, float ph, float energy, Vec3 source) {
+        Vector3f mid = new Vector3f(0, cy, 0);
+        Vector3f src = source != null ? new Vector3f((float) source.x, (float) source.y, (float) source.z)
+                : new Vector3f(0, cy + 6.0F, 0);
         if (ph < 0.5F) {
             float g = ph / 0.5F;
-            Matrix4f om = new Matrix4f(m).translate(0, cy, 0);
-            RenderUtil.glowSphere(vc, om, 0.06F + 0.34F * g, 10, 14, GOLD, 0.45F * energy);
-            RenderUtil.glowSphere(vc, om, 0.04F + 0.17F * g, 8, 12, WHITE, 0.7F * energy);
-            Vector3f src = source != null ? new Vector3f((float) source.x, (float) source.y, (float) source.z)
-                    : new Vector3f(0, cy + 6.0F, 0);
-            Vector3f mid = new Vector3f(0, cy, 0);
+            // Explosionsblitz am Asteroiden
+            if (g < 0.35F) {
+                float e = g / 0.35F;
+                Matrix4f sm = new Matrix4f(m).translate(src.x, src.y, src.z);
+                RenderUtil.glowSphere(vc, sm, 0.5F + 3.0F * e, 10, 14, GOLD, 0.5F * energy * (1.0F - e));
+                RenderUtil.glowSphere(vc, sm, 0.3F + 1.2F * e, 8, 12, WHITE, 0.8F * energy * (1.0F - e));
+                flatCircle(vc, sm, 1.0F + 5.0F * e, 0.12F, 64, GOLD, energy * (1.0F - e));
+            }
+            // wachsende Energiekugel
+            Matrix4f om = new Matrix4f(m).translate(mid.x, mid.y, mid.z);
+            RenderUtil.glowSphere(vc, om, 0.06F + 0.3F * g, 10, 14, GOLD, 0.45F * energy);
+            RenderUtil.glowSphere(vc, om, 0.04F + 0.15F * g, 8, 12, WHITE, 0.7F * energy);
+            // Bruchstuecke
             int fragments = 24;
             for (int k = 0; k < fragments; k++) {
                 float delay = k / (float) fragments * 0.35F;
-                float local = Mth.clamp((g - delay) / 0.65F, 0.0F, 1.0F);
-                if (local <= 0.0F || local >= 1.0F) continue;
-                Vector3f scatter = new Vector3f(hash(k * 7), hash(k * 13), hash(k * 19)).mul(2.0F);
-                Vector3f p = fragmentPos(src, mid, scatter, local);
-                Vector3f q = fragmentPos(src, mid, scatter, Math.max(0.0F, local - 0.06F));
-                float[] c = lerp(GOLD, BEAM, hash(k * 3) * 0.5F + 0.5F);
-                cube(vc, m, p.x, p.y, p.z, 0.05F + 0.06F * (1.0F - local), c[0], c[1], c[2], energy);
-                segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.03F, c[0], c[1], c[2], 0.0F, 0.7F * energy);
+                float raw = (g - delay) / 0.65F;
+                if (raw <= 0.0F) continue;
+                if (raw < 1.0F) {
+                    Vector3f scatter = new Vector3f(hash(k * 7), hash(k * 13), hash(k * 19)).mul(2.0F);
+                    Vector3f p = fragmentPos(src, mid, scatter, raw);
+                    Vector3f q = fragmentPos(src, mid, scatter, Math.max(0.0F, raw - 0.06F));
+                    float[] c = lerp(GOLD, BEAM, hash(k * 3) * 0.5F + 0.5F);
+                    cube(vc, m, p.x, p.y, p.z, 0.05F + 0.06F * (1.0F - raw), c[0], c[1], c[2], energy);
+                    segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.03F, c[0], c[1], c[2], 0.0F, 0.7F * energy);
+                } else if (raw < 1.3F) {
+                    // Ankunft: kleiner Lichtring um die Kugel
+                    float a = (raw - 1.0F) / 0.3F;
+                    Matrix4f rm = new Matrix4f(om).rotateX(hash(k * 5) * Mth.PI).rotateZ(hash(k * 11) * Mth.PI);
+                    flatCircle(vc, rm, 0.2F + 0.5F * a, 0.015F, 32, WHITE, energy * (1.0F - a));
+                }
             }
             return;
         }
-        float d = (ph - 0.5F) / 0.5F;
+        if (ph < 0.62F) {
+            // Kugel formt sich: Schockwellen und Strahlenkranz
+            float f = (ph - 0.5F) / 0.12F;
+            Matrix4f om = new Matrix4f(m).translate(mid.x, mid.y, mid.z);
+            RenderUtil.glowSphere(vc, om, 0.36F + 0.08F * Mth.sin(f * Mth.PI), 10, 14, GOLD, 0.5F * energy);
+            RenderUtil.glowSphere(vc, om, 0.19F, 8, 12, WHITE, 0.85F * energy);
+            flatCircle(vc, om, 0.4F + 2.2F * f, 0.05F, 64, GOLD, energy * (1.0F - f));
+            flatCircle(vc, new Matrix4f(om).rotateX(Mth.HALF_PI), 0.4F + 1.6F * f, 0.04F, 64, WHITE, energy * (1.0F - f));
+            for (int k = 0; k < 8; k++) {
+                float ang = k * Mth.TWO_PI / 8;
+                float len = 0.5F + 1.2F * Mth.sin(f * Mth.PI);
+                segment(vc, om, 0, 0, 0, Mth.cos(ang) * len, Mth.sin(ang * 2) * 0.3F * len, Mth.sin(ang) * len, 0.02F,
+                        WHITE[0], WHITE[1], WHITE[2], energy, 0.0F);
+            }
+            return;
+        }
+        float d = (ph - 0.62F) / 0.38F;
         float fall = d * d;
         float y = Mth.lerp(fall, cy, 0.0F);
         float r = 0.4F * (1.0F - 0.55F * d);
@@ -188,6 +226,8 @@ public final class EnergyLaserFx {
             float f = (d - 0.85F) / 0.15F;
             RenderUtil.glowSphere(vc, m, 0.3F + 1.2F * f, 10, 14, WHITE, 0.6F * energy * (1.0F - f));
             flatCircle(vc, m, 0.5F + 2.2F * f, 0.04F, 64, GOLD, energy * (1.0F - f));
+            flatCircle(vc, new Matrix4f(m).rotateX(Mth.HALF_PI), 0.4F + 1.8F * f, 0.03F, 64, WHITE, energy * (1.0F - f));
+            flatCircle(vc, new Matrix4f(m).rotateZ(Mth.HALF_PI), 0.4F + 1.8F * f, 0.03F, 64, BEAM, energy * (1.0F - f));
         }
     }
 

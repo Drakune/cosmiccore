@@ -817,6 +817,17 @@ DE = {
     'tooltip.cosmiccore.overdrive.effect': 'Im Controller des gebildeten Reaktors installieren: RF x2, Instabilität x3',
     'tooltip.cosmiccore.overdrive.limit': 'Max. 1 / 2 / 3 Stufen (5x5x5 / 7x7x7 / 9x9x9)',
     'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 Stufen.\nNur am gebildeten Reaktor. Zerfällt er, ist der Overdrive weg.',
+    'console.cosmiccore.title': 'KOSMISCHER KERN',
+    'console.cosmiccore.meltdown': 'KOLLAPS IN %s s',
+    'console.cosmiccore.full': 'PUFFER VOLL',
+    'console.cosmiccore.unstable': 'INSTABIL',
+    'console.cosmiccore.active': 'AKTIV',
+    'console.cosmiccore.output': 'Leistung',
+    'console.cosmiccore.buffer': 'Puffer',
+    'console.cosmiccore.instability': 'Instabilität',
+    'console.cosmiccore.level': 'Leistungsstufe',
+    'console.cosmiccore.overdrive': 'Overdrive',
+    'console.cosmiccore.field': 'Eindämmungsfeld',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -916,6 +927,17 @@ EN = {
     'tooltip.cosmiccore.overdrive.effect': 'Install in a formed reactor: RF x2, instability x3',
     'tooltip.cosmiccore.overdrive.limit': 'Max 1 / 2 / 3 levels (5x5x5 / 7x7x7 / 9x9x9)',
     'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nOnly on a formed reactor. If it breaks, overdrive is lost.',
+    'console.cosmiccore.title': 'COSMIC CORE',
+    'console.cosmiccore.meltdown': 'COLLAPSE IN %s s',
+    'console.cosmiccore.full': 'BUFFER FULL',
+    'console.cosmiccore.unstable': 'UNSTABLE',
+    'console.cosmiccore.active': 'ACTIVE',
+    'console.cosmiccore.output': 'Output',
+    'console.cosmiccore.buffer': 'Buffer',
+    'console.cosmiccore.instability': 'Instability',
+    'console.cosmiccore.level': 'Power level',
+    'console.cosmiccore.overdrive': 'Overdrive',
+    'console.cosmiccore.field': 'Containment field',
 }
 
 
