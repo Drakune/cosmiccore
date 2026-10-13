@@ -80,7 +80,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         Level level = be.getLevel();
         if (level == null) return;
         CorePhase phase = be.getBlockState().getValue(ModProperties.PHASE);
-        if (phase == CorePhase.DORMANT) return;
+        if (phase == CorePhase.DORMANT || !be.isPrimary()) return;
         RenderQuality.begin(be.getBlockPos());
 
         final float t = (float) (level.getGameTime() % 144000L) + partialTick;

@@ -942,7 +942,7 @@ DE = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Eindämmungsfeld',
     'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er auch ohne Brennstoff Strom.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
+    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§6Kostet 5 Kerne§r: 4 Satelliten um den Hauptkern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er auch ohne Brennstoff Strom.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
     'item.cosmiccore.compressed_star_dust': 'Verdichteter Sternenstaub',
     'item.cosmiccore.neutron_fragment': 'Neutronenstern-Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar-Essenz',
@@ -996,6 +996,9 @@ DE = {
     'gui.cosmiccore.anti.off': 'Ausgeschaltet – Asteroiden erscheinen',
     'gui.cosmiccore.anti.missing': 'Wirkt erst mit eingesetztem Anti-Asteroiden-Modul',
     'jei.cosmiccore.info.anti_asteroid_module': 'Im Controller einsetzen und mit dem Schalter darunter aktivieren: Im Umkreis des Reaktors erscheinen keine Asteroiden mehr. Ausgeschaltet bleibt das Modul eingesetzt.',
+    'gui.cosmiccore.ultimate_title': 'ULTIMATE CORE',
+    'gui.cosmiccore.ultimate_cost': 'benötigt 5 Singularitätskerne',
+    'message.cosmiccore.expected_satellite': 'Singularitätskern (Satellit)',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1111,7 +1114,7 @@ EN = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Containment field',
     'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.',
+    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 5 cores§r: 4 satellites around the main core.\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.',
     'item.cosmiccore.compressed_star_dust': 'Compressed Star Dust',
     'item.cosmiccore.neutron_fragment': 'Neutron Star Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar Essence',
@@ -1165,6 +1168,9 @@ EN = {
     'gui.cosmiccore.anti.off': 'Off – asteroids appear',
     'gui.cosmiccore.anti.missing': 'Only works with an Anti-Asteroid Module inserted',
     'jei.cosmiccore.info.anti_asteroid_module': 'Insert it into the controller and turn it on with the switch below: no more asteroids appear around the reactor. Switched off, the module stays installed.',
+    'gui.cosmiccore.ultimate_title': 'ULTIMATE CORE',
+    'gui.cosmiccore.ultimate_cost': 'requires 5 singularity cores',
+    'message.cosmiccore.expected_satellite': 'Singularity Core (satellite)',
 }
 
 

@@ -87,7 +87,7 @@ public final class StructurePreview {
         out.add(new ItemStack(ModItems.FOCUS_GLASS.get(), p.count(CorePattern.Cell.GLASS)));
         out.add(new ItemStack(ModItems.RESONANCE_COIL.get(), p.count(CorePattern.Cell.COIL)));
         out.add(new ItemStack(ModItems.FOCUS_CRYSTAL.get(), p.count(CorePattern.Cell.CRYSTAL)));
-        out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE)));
+        out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE) + p.count(CorePattern.Cell.SATELLITE)));
         if (funnel) out.add(new ItemStack(ModItems.STAR_FUNNEL.get(), 1));
         if (lasers) out.add(new ItemStack(ModItems.COSMIC_LASER.get(), 4));
         return out;

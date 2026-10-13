@@ -301,7 +301,18 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             g.drawString(font, Component.translatable("gui.cosmiccore.max_level"), ix, iy + 32, 0xFFB8A8D8, false);
             g.drawString(font, String.valueOf(sel.maxScale()), ix, iy + 42, 0xFFE0A8FF, false);
             if (sel.isUltimate()) {
-                g.drawString(font, Component.translatable("gui.cosmiccore.ultimate"), VIEW_X + 4, VIEW_Y + 4, 0xFFFFC040, true);
+                // goldener, sanft pulsierender Schriftzug mittig ueber der Struktur
+                float tt = (System.currentTimeMillis() % 100000L) / 50.0F;
+                float glowA = 0.75F + 0.25F * Mth.sin(tt * 0.15F);
+                Component head = Component.translatable("gui.cosmiccore.ultimate_title").withStyle(ChatFormatting.BOLD);
+                g.pose().pushPose();
+                g.pose().translate(VIEW_X + VIEW_W / 2.0F, VIEW_Y + 7.0F, 200.0F);
+                g.pose().scale(1.5F, 1.5F, 1.0F);
+                int col = ((int) (glowA * 255) << 24) | 0xFFC040;
+                g.drawString(font, head, -font.width(head) / 2, 0, col, true);
+                g.pose().popPose();
+                Component sub = Component.translatable("gui.cosmiccore.ultimate_cost");
+                g.drawString(font, sub, VIEW_X + (VIEW_W - font.width(sub)) / 2, VIEW_Y + 22, 0xFFE0C080, true);
             }
             g.drawString(font, Component.translatable("gui.cosmiccore.blocks_label"), 8, ICON_Y - 9 + 0, 0xFFB8A8D8, false);
             return;

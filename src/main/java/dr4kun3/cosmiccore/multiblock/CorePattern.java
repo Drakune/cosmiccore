@@ -27,12 +27,17 @@ import org.jetbrains.annotations.Nullable;
  *  R = Resonanzschild-Emitter (unterer Pol)     X = Fokuskristall (oberer Pol)
  *  K = Singularitaetskern (Mitte)   a = Luft (Kammer muss frei sein)   . = egal (offene Seiten)
  * </pre>
+ * 11x11x11 (ultimativ): zusaetzlich S = vier Satellitenkerne auf Kernhoehe, je 2 Bloecke vom Zentrum in alle vier
+ * Richtungen - sie verschmelzen beim Formen mit dem Kern.
  * 5x5x5: die Kammer ist zu eng, Emitter und Kristall sitzen deshalb in der Mitte von Boden bzw. Decke.
  * Alle Muster sind 4-fach drehsymmetrisch; deshalb muss nur der Mittelpunkt aus der Controller-Ausrichtung
  * berechnet werden, nicht das Muster gedreht.
  */
 public final class CorePattern {
-    public enum Cell { ANY, AIR, HULL, SLOT, FRAME, GLASS, COIL, CRYSTAL, CORE }
+    public enum Cell { ANY, AIR, HULL, SLOT, FRAME, GLASS, COIL, CRYSTAL, CORE, SATELLITE }
+
+    /** Abstand der vier Satellitenkerne des ultimativen Kerns vom Zentrum (auf Kernhoehe, in alle vier Richtungen). */
+    public static final int SATELLITE_DISTANCE = 2;
 
     private final int size;
     private final int half;
@@ -77,6 +82,9 @@ public final class CorePattern {
         }
         // Kammer: Kern in der Mitte, Fokuskristall darueber, Resonanzschild-Emitter darunter
         if (dx == 0 && dy == 0 && dz == 0) return Cell.CORE;
+        if (size >= 11 && dy == 0 && ((ax == SATELLITE_DISTANCE && dz == 0) || (az == SATELLITE_DISTANCE && dx == 0))) {
+            return Cell.SATELLITE;
+        }
         if (dx == 0 && dz == 0 && ay == focus) return dy < 0 ? Cell.COIL : Cell.CRYSTAL;
         return Cell.AIR;
     }
@@ -176,7 +184,7 @@ public final class CorePattern {
             case GLASS -> s.is(ModBlocks.FOCUS_GLASS.get());
             case COIL -> s.is(ModBlocks.RESONANCE_COIL.get());
             case CRYSTAL -> s.is(ModBlocks.FOCUS_CRYSTAL.get());
-            case CORE -> s.is(ModBlocks.SINGULARITY_CORE.get());
+            case CORE, SATELLITE -> s.is(ModBlocks.SINGULARITY_CORE.get());
         };
     }
 
@@ -190,7 +198,7 @@ public final class CorePattern {
             case GLASS -> ModBlocks.FOCUS_GLASS.get().defaultBlockState();
             case COIL -> ModBlocks.RESONANCE_COIL.get().defaultBlockState();
             case CRYSTAL -> ModBlocks.FOCUS_CRYSTAL.get().defaultBlockState();
-            case CORE -> ModBlocks.SINGULARITY_CORE.get().defaultBlockState();
+            case CORE, SATELLITE -> ModBlocks.SINGULARITY_CORE.get().defaultBlockState();
         };
     }
 
@@ -205,6 +213,7 @@ public final class CorePattern {
             case COIL -> ModBlocks.RESONANCE_COIL.get().getName();
             case CRYSTAL -> ModBlocks.FOCUS_CRYSTAL.get().getName();
             case CORE -> ModBlocks.SINGULARITY_CORE.get().getName();
+            case SATELLITE -> Component.translatable("message.cosmiccore.expected_satellite");
         };
     }
 }

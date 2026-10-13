@@ -107,7 +107,8 @@ public final class ReactorShellRenderer {
             if (rs == null) return out;
             rs.pattern().forEach(BlockPos.ZERO, (pos, cell) -> {
                 if (cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT || cell == CorePattern.Cell.FRAME
-                        || cell == CorePattern.Cell.GLASS || cell == CorePattern.Cell.COIL || cell == CorePattern.Cell.CRYSTAL) {
+                        || cell == CorePattern.Cell.GLASS || cell == CorePattern.Cell.COIL || cell == CorePattern.Cell.CRYSTAL
+                        || cell == CorePattern.Cell.SATELLITE) {
                     out.add(new ShellCell(pos.getX(), pos.getY(), pos.getZ(), cell));
                 }
             });

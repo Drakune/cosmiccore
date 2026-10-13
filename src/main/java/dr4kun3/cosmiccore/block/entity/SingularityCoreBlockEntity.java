@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class SingularityCoreBlockEntity extends BlockEntity {
     private int structureSize = 7;
+    /** Nur der zentrale Kern zeichnet den Reaktor; Satellitenkerne des ultimativen Kerns bleiben unsichtbar. */
+    private boolean primary;
     private int scale = 1;
     private int maxScale = 1;
     private int instability;      // 0..100 (gerundet, damit nicht jeder Tick ein Paket ausloest)
@@ -87,7 +89,9 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         int inst = Math.round(instability);
         int cos = (int) Math.round(cosmic * 100.0);
         shield = Math.max(0, Math.min(100, shield));
-        if (structureSize == this.structureSize && scale == this.scale && maxScale == this.maxScale
+        boolean wasPrimary = primary;
+        primary = true;
+        if (wasPrimary && structureSize == this.structureSize && scale == this.scale && maxScale == this.maxScale
                 && inst == this.instability && skyLink == this.skyLink && cos == this.cosmic
                 && shield / 5 == this.shield / 5 && funnel == this.funnel
                 && laserArray == this.laserArray && laserTarget == this.laserTarget && overdrive == this.overdrive
@@ -156,6 +160,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
+    }
+
+    public boolean isPrimary() {
+        return primary;
     }
 
     public int getStructureSize() {
@@ -253,7 +261,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
             be.igniteStart = level.getGameTime();
         }
         be.lastClientPhase = phase;
-        if (phase == CorePhase.DORMANT) return;
+        if (phase == CorePhase.DORMANT || !be.primary) return;
         float form = be.getFormProgress(0.0F);
         if (form < 0.55F) {
             // Sog: Teilchen stroemen aus der ganzen Struktur in den Kern
@@ -326,6 +334,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        primary = tag.getBoolean("primary");
         if (tag.contains("structureSize")) structureSize = tag.getInt("structureSize");
         scale = Math.max(1, tag.getInt("scale"));
         maxScale = Math.max(1, tag.getInt("maxScale"));
@@ -350,6 +359,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     private void writeVisuals(CompoundTag tag) {
+        tag.putBoolean("primary", primary);
         tag.putInt("structureSize", structureSize);
         tag.putInt("scale", scale);
         tag.putInt("maxScale", maxScale);
