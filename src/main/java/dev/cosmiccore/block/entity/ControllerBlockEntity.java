@@ -62,7 +62,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public static final float UNSTABLE_ON = 70f;
     private static final float UNSTABLE_OFF = 55f;
     private static final float ALARM_AT = 85f;
-    private static final float STABILIZE_BELOW = 25f;   // Stabilisator wird erst ab dieser Instabilitaet verbraucht
+    /** Das Eindaemmungsfeld haelt die Instabilitaet auf diesem Wert, solange Stabilisatoren vorhanden sind. */
+    public static final float FIELD_TARGET = 20f;
+    /** Zusaetzliche Kuehlung pro Tick und Prozentpunkt ueber dem Zielwert (zieht die Instabilitaet zurueck). */
+    private static final float FIELD_PULL = 0.01f;
     private static final float IDLE_DECAY = 0.05f;      // Abkuehlung pro Tick ohne Verbrennung
 
     private final CoreInventory inventory = new CoreInventory(this::setChanged);
@@ -82,9 +85,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private int burnTime;
     private int burnTotal;
     private int burnPower;
-    private int stabTime;
-    private int stabTotal;
-    private float stabStrength;
+    /** Verbleibende Kuehlpunkte im Eindaemmungsfeld (aus verbrauchten Stabilisatoren). */
+    private float field;
+    /** Kuehlpunkte des zuletzt verbrauchten Stabilisators (nur fuer die Anzeige). */
+    private float fieldMax;
     private float instability;
     private int resonance;
     private int collapseCooldown;
@@ -236,6 +240,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         final int capacity = getCapacity();
         final int ramp = CoreConfig.RAMP_UP_TICKS.get();
         boolean burning = false;
+        float gain = 0f;
         lastOutput = 0;
         lastCosmic = cosmicOutput(level);
 
@@ -268,8 +273,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 int out = (int) Math.min(Integer.MAX_VALUE, Math.round(gen));
                 energy = (int) Math.min((long) capacity, (long) energy + out);
                 lastOutput = out;
-                instability += (float) (CoreConfig.INSTABILITY_RATE.get() * (burnPower / 1000.0)
+                gain = (float) (CoreConfig.INSTABILITY_RATE.get() * (burnPower / 1000.0)
                         * instabilityScale() * cosmicInstability(level));
+                instability += gain;
                 setChanged();
             } else if (burnTime <= 0) {
                 resonance = Math.max(0, resonance - 2);
@@ -278,20 +284,19 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             resonance = Math.max(0, resonance - 2);
         }
 
-        // Stabilisator - groessere Reaktoren verteilen ihn auf mehr Spulen und nutzen ihn besser
-        if (stabTime <= 0 && instability > STABILIZE_BELOW) {
-            CoreStabilizer stab = ModDataMaps.stabilizer(inventory.getStackInSlot(SLOT_STAB));
-            if (stab != null) {
-                inventory.extractItem(SLOT_STAB, 1, false);
-                stabTime = stab.duration();
-                stabTotal = stabTime;
-                stabStrength = (float) (stab.strength() * size.stabilizerFactor());
-                setChanged();
+        // Eindaemmungsfeld: ab dem Zielwert wird genau so viel Kuehlung verbraucht, wie die Hitze verlangt,
+        // plus ein Zug zurueck auf den Zielwert. Fehlen die Punkte, wird automatisch der naechste Stabilisator
+        // aus dem Slot verbraucht. Hoehere Stufen kosten also mehr Stabilisatoren - gefaehrlich wird es erst,
+        // wenn der Vorrat ausgeht.
+        if (instability > FIELD_TARGET) {
+            float demand = gain + (instability - FIELD_TARGET) * FIELD_PULL;
+            while (field < demand && consumeStabilizer()) {
+                // weiter nachladen, bis der Bedarf gedeckt ist oder der Slot leer ist
             }
-        }
-        if (stabTime > 0) {
-            stabTime--;
-            instability -= stabStrength;
+            float used = Math.min(field, demand);
+            field -= used;
+            instability -= used;
+            if (used > 0) setChanged();
         }
         if (!burning) instability -= IDLE_DECAY;
         instability = Mth.clamp(instability, 0f, 100f);
@@ -335,6 +340,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /** Verbraucht einen Stabilisator aus dem Slot und laedt das Feld. Groessere Reaktoren nutzen ihn besser. */
+    private boolean consumeStabilizer() {
+        CoreStabilizer stab = ModDataMaps.stabilizer(inventory.getStackInSlot(SLOT_STAB));
+        if (stab == null || size == null) return false;
+        inventory.extractItem(SLOT_STAB, 1, false);
+        float points = (float) (stabilizerPoints(stab) * size.stabilizerFactor());
+        field += points;
+        fieldMax = Math.max(points, field);
+        return true;
+    }
+
+    /** Kuehlpunkte eines Stabilisators (vor dem Groessenfaktor): Wirkdauer x Staerke aus der Data Map. */
+    public static double stabilizerPoints(CoreStabilizer stab) {
+        return stab.duration() * (double) stab.strength();
+    }
+
     private void collapse(ServerLevel level) {
         BlockPos core = center(level);
         Vec3 c = Vec3.atCenterOf(core);
@@ -366,7 +387,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         burnTotal = 0;
         burnPower = 0;
         resonance = 0;
-        stabTime = 0;
+        field = 0f;
         instability = 35f;
         collapseCooldown = CoreConfig.COLLAPSE_COOLDOWN.get();
         lastOutput = 0;
@@ -673,9 +694,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putInt("burnTime", burnTime);
         tag.putInt("burnTotal", burnTotal);
         tag.putInt("burnPower", burnPower);
-        tag.putInt("stabTime", stabTime);
-        tag.putInt("stabTotal", stabTotal);
-        tag.putFloat("stabStrength", stabStrength);
+        tag.putFloat("field", field);
+        tag.putFloat("fieldMax", fieldMax);
         tag.putFloat("instability", instability);
         tag.putInt("resonance", resonance);
         tag.putInt("collapseCooldown", collapseCooldown);
@@ -697,9 +717,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         burnTime = tag.getInt("burnTime");
         burnTotal = tag.getInt("burnTotal");
         burnPower = tag.getInt("burnPower");
-        stabTime = tag.getInt("stabTime");
-        stabTotal = tag.getInt("stabTotal");
-        stabStrength = tag.getFloat("stabStrength");
+        field = tag.getFloat("field");
+        fieldMax = tag.getFloat("fieldMax");
         instability = tag.getFloat("instability");
         resonance = tag.getInt("resonance");
         collapseCooldown = tag.getInt("collapseCooldown");
@@ -781,7 +800,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (lastOutput > 0 ? ControllerMenu.F_BURNING : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
-                case ControllerMenu.D_STAB -> stabTotal <= 0 ? 0 : Math.round(1000f * stabTime / stabTotal);
+                case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));
                 case ControllerMenu.D_COLLAPSE -> collapseCooldown / 20;
                 case ControllerMenu.D_ERRORS -> lastReport == null || formed ? 0 : Math.min(32767, lastReport.mismatches());
                 default -> 0;

@@ -26,7 +26,7 @@
   "message.cosmiccore.expected_hull": "Leerengehäuse oder Port",
   "message.cosmiccore.expected_slot": "Leerengehäuse, Port oder Controller (Mitte einer Bodenkante)",
   "tooltip.cosmiccore.fuel": "Kerngenerator-Brennstoff: %s RF/t, %s s",
-  "tooltip.cosmiccore.stabilizer": "Kerngenerator-Stabilisator: -%s Instabilität/s, %s s",
+  "tooltip.cosmiccore.stabilizer": "Kerngenerator-Stabilisator: kühlt %s Instabilität",
   "message.cosmiccore.status.no_size": "Noch keine Reaktorgröße gewählt - Rechtsklick öffnet die Auswahl.",
   "gui.cosmiccore.choose_size": "Reaktorgröße wählen",
   "gui.cosmiccore.size_button": "%sx%sx%s",
@@ -52,6 +52,7 @@
   "gui.cosmiccore.status.active": "Aktiv",
   "gui.cosmiccore.tip.energy": "Energiepuffer",
   "gui.cosmiccore.tip.instability": "Instabilität",
+  "gui.cosmiccore.tip.field": "Eindämmungsfeld",
   "gui.cosmiccore.tip.resonance": "Resonanz",
   "item.cosmiccore.guide_book": "Kosmisches Handbuch",
   "guide.cosmiccore.page.1": "§5§lKosmischer Kern§r\n§8Handbuch für Reaktorbauer§r\n\nDer Kerngenerator bündelt Sternenlicht in einer Singularität und wandelt es in RF um.\n\nMehr Leistung bedeutet mehr Risiko.",
@@ -61,7 +62,7 @@
   "guide.cosmiccore.page.5": "§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...",
   "guide.cosmiccore.page.6": "§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.",
   "guide.cosmiccore.page.7": "§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nMax. Stufe: 5x5x5 → 3, 7x7x7 → 5, 9x9x9 → 8\n\nGroße Reaktoren sind stabiler.",
-  "guide.cosmiccore.page.8": "§5§lInstabilität§r\n\nJede Verbrennung erhitzt den Kern. Stabilisatoren kühlen ihn automatisch ab 25 %.\n\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: §lKollaps§r - der Singularitätskern zerbricht!",
+  "guide.cosmiccore.page.8": "§5§lInstabilität§r\n\nBrennstoff erhitzt den Kern. Ab 20 % hält das Feld ihn dort und verbraucht dafür Stabilisatoren - je höher die Stufe, desto mehr.\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: §lKollaps§r - der Singularitätskern zerbricht!",
   "guide.cosmiccore.page.9": "§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung und ein Lichtstrahl ins All.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.",
-  "guide.cosmiccore.page.10": "§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Stabilisatoren nie ausgehen lassen.\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r"
+  "guide.cosmiccore.page.10": "§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r"
 }

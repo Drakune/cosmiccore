@@ -1,6 +1,7 @@
 package dev.cosmiccore.client;
 
 import dev.cosmiccore.CosmicCore;
+import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.block.entity.ModBlockEntities;
 import dev.cosmiccore.data.CoreFuel;
 import dev.cosmiccore.data.CoreStabilizer;
@@ -42,7 +43,7 @@ public final class CosmicCoreClient {
         CoreStabilizer stab = ModDataMaps.stabilizer(stack);
         if (stab != null) {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stabilizer",
-                    String.format("%.1f", stab.strength() * 20.0F), stab.duration() / 20).withStyle(ChatFormatting.DARK_AQUA));
+                    String.format("%.0f", ControllerBlockEntity.stabilizerPoints(stab))).withStyle(ChatFormatting.DARK_AQUA));
         }
     }
 

@@ -66,6 +66,28 @@ public final class RenderUtil {
         }
     }
 
+    /** Undurchsichtige einfarbige Kugel (fuer RenderType.debugQuads(), z. B. den schwarzen Ereignishorizont). */
+    public static void solidSphere(VertexConsumer vc, Matrix4f m, float r, int lat, int lon, float red, float green, float blue) {
+        for (int i = 0; i < lat; i++) {
+            float p0 = (float) (Math.PI * i / lat - Math.PI / 2);
+            float p1 = (float) (Math.PI * (i + 1) / lat - Math.PI / 2);
+            for (int j = 0; j < lon; j++) {
+                float l0 = (float) (Math.PI * 2 * j / lon);
+                float l1 = (float) (Math.PI * 2 * (j + 1) / lon);
+                float[] a = sph(r, p0, l0), b = sph(r, p1, l0), c = sph(r, p1, l1), d = sph(r, p0, l1);
+                quad2(vc, m, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], d[0], d[1], d[2], red, green, blue, 1.0F);
+            }
+        }
+    }
+
+    /** Ringsegment in der XY-Ebene, Alpha verlaeuft von innen (aIn) nach aussen (aOut). */
+    public static void annulusXY(VertexConsumer vc, Matrix4f m, float r0, float r1, float ang0, float ang1,
+                                 float[] col, float aIn, float aOut) {
+        float c0 = Mth.cos(ang0), s0 = Mth.sin(ang0), c1 = Mth.cos(ang1), s1 = Mth.sin(ang1);
+        quadFade(vc, m, r0 * c0, r0 * s0, 0, r0 * c1, r0 * s1, 0, r1 * c1, r1 * s1, 0, r1 * c0, r1 * s0, 0,
+                col[0], col[1], col[2], aIn, aOut);
+    }
+
     /** Leuchtende Kugelhuelle (Farbe + Alpha, fuer RenderType.lightning()). */
     public static void glowSphere(VertexConsumer vc, Matrix4f m, float r, int lat, int lon, float[] col, float alpha) {
         for (int i = 0; i < lat; i++) {

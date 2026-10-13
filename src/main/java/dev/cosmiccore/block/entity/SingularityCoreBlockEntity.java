@@ -109,10 +109,6 @@ public class SingularityCoreBlockEntity extends BlockEntity {
             level.addParticle(ParticleTypes.PORTAL, cx, cy, cz, dx / len * rad, dy / len * rad, dz / len * rad);
         }
 
-        if (running && r.nextInt(12) == 0) {
-            level.addParticle(ParticleTypes.SCULK_SOUL, cx + (r.nextDouble() - 0.5) * 2.0, cy - 0.8,
-                    cz + (r.nextDouble() - 0.5) * 2.0, 0.0, 0.03, 0.0);
-        }
         if (phase == CorePhase.UNSTABLE && r.nextInt(2) == 0) {
             double s = reach * 1.6;
             level.addParticle(ParticleTypes.ELECTRIC_SPARK, cx + (r.nextDouble() - 0.5) * s, cy + (r.nextDouble() - 0.5) * s,
@@ -125,15 +121,6 @@ public class SingularityCoreBlockEntity extends BlockEntity {
             level.addParticle(ParticleTypes.SOUL_FIRE_FLAME, cx, cy, cz, dx / len * 0.25, dy / len * 0.25, dz / len * 0.25);
         }
 
-        // Energiefluss von den Spulen in den Kern
-        if (running && r.nextInt(3) == 0) {
-            int side = r.nextInt(4);
-            double fx = side == 0 ? reach : side == 1 ? -reach : 0;
-            double fz = side == 2 ? reach : side == 3 ? -reach : 0;
-            level.addParticle(ParticleTypes.END_ROD, cx + fx, cy + (r.nextDouble() - 0.5) * 0.3, cz + fz,
-                    -fx * 0.04, 0.0, -fz * 0.04);
-        }
-
         // Verbindung zum Kosmos: Sternenlicht faellt vom Himmel durch den Strahl in den Reaktor
         if (running && be.skyLink) {
             int falls = 1 + Math.round(be.getCosmic() * 1.5F);
@@ -144,14 +131,6 @@ public class SingularityCoreBlockEntity extends BlockEntity {
                 double d = 0.3 + r.nextDouble() * 1.4;
                 level.addParticle(ParticleTypes.END_ROD, cx + Math.cos(a) * d, cy + h, cz + Math.sin(a) * d,
                         -Math.cos(a) * d * 0.01, -0.45 - r.nextDouble() * 0.35, -Math.sin(a) * d * 0.01);
-            }
-            // kreisender Sternenstaub ueber der Decke
-            if (r.nextInt(2) == 0) {
-                int half = be.structureSize / 2;
-                double a = r.nextDouble() * Math.PI * 2;
-                double rad = half + 0.5;
-                level.addParticle(ParticleTypes.GLOW, cx + Math.cos(a) * rad, cy + half + 1.2, cz + Math.sin(a) * rad,
-                        -Math.sin(a) * 0.08, -0.01, Math.cos(a) * 0.08);
             }
         }
     }

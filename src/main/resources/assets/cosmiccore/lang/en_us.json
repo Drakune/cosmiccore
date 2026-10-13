@@ -26,7 +26,7 @@
   "message.cosmiccore.expected_hull": "Void Casing or port",
   "message.cosmiccore.expected_slot": "Void Casing, port or controller (middle of a bottom edge)",
   "tooltip.cosmiccore.fuel": "Core generator fuel: %s RF/t, %s s",
-  "tooltip.cosmiccore.stabilizer": "Core generator stabilizer: -%s instability/s, %s s",
+  "tooltip.cosmiccore.stabilizer": "Core generator stabilizer: cools %s instability",
   "message.cosmiccore.status.no_size": "No reactor size chosen yet - right-click to open the selection.",
   "gui.cosmiccore.choose_size": "Choose reactor size",
   "gui.cosmiccore.size_button": "%sx%sx%s",
@@ -52,6 +52,7 @@
   "gui.cosmiccore.status.active": "Active",
   "gui.cosmiccore.tip.energy": "Energy buffer",
   "gui.cosmiccore.tip.instability": "Instability",
+  "gui.cosmiccore.tip.field": "Containment field",
   "gui.cosmiccore.tip.resonance": "Resonance",
   "item.cosmiccore.guide_book": "Cosmic Handbook",
   "guide.cosmiccore.page.1": "§5§lCosmic Core§r\n§8A reactor builder's guide§r\n\nThe core generator focuses starlight into a singularity and turns it into RF.\n\nMore power means more risk.",
@@ -61,7 +62,7 @@
   "guide.cosmiccore.page.5": "§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...",
   "guide.cosmiccore.page.6": "§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.",
   "guide.cosmiccore.page.7": "§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nMax level:\n5x5x5 → 3\n7x7x7 → 5\n9x9x9 → 8\n\nBigger reactors are more stable per level.",
-  "guide.cosmiccore.page.8": "§5§lInstability§r\n\nBurning fuel heats the core. Stabilizers cool it automatically from 25 %.\n\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: §lcollapse§r - the singularity core shatters!",
+  "guide.cosmiccore.page.8": "§5§lInstability§r\n\nFuel heats the core. From 20 % the field holds it there, using stabilizers - the higher the level, the more.\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: §lcollapse§r - the singularity core shatters!",
   "guide.cosmiccore.page.9": "§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output and a beam into space.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.",
   "guide.cosmiccore.page.10": "§5§lTips§r\n\n- Test on level 1 first.\n- Never run out of stabilizers.\n- On alarm, lower the level or press Stop.\n- In creative, §dBuild§r places the structure instantly.\n\n§8Good luck, starsmith.§r"
 }
