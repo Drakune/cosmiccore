@@ -422,7 +422,7 @@ def preview(sheets):
 
 
 # ----------------------------------------------------------------- Modelle / Blockstates
-COSMIC = ['resonance_coil', 'focus_crystal', 'rune_frame']
+COSMIC = ['resonance_coil', 'focus_crystal', 'rune_frame', 'void_casing', 'energy_port', 'item_port']
 SIMPLE = ['void_casing', 'rune_frame', 'resonance_coil', 'focus_crystal', 'energy_port', 'item_port']
 
 
@@ -445,8 +445,9 @@ def models():
         wjson(f'{ASSETS}/models/block/focus_glass_{p}.json',
               {'parent': 'minecraft:block/cube_all', 'render_type': 'minecraft:translucent',
                'textures': {'all': f'{MOD}:block/focus_glass_{p}'}})
+    wjson(f'{ASSETS}/models/block/focus_glass_hidden.json', {'textures': {'particle': f'{MOD}:block/focus_glass_formed'}})
     wjson(f'{ASSETS}/blockstates/focus_glass.json',
-          {'variants': {f'phase={p}': {'model': f'{MOD}:block/focus_glass_{p}'} for p in PHASES}})
+          {'variants': {f'phase={p}': {'model': f'{MOD}:block/focus_glass_{p if p == "dormant" else "hidden"}'} for p in PHASES}})
     wjson(f'{ASSETS}/models/item/focus_glass.json', {'parent': f'{MOD}:block/focus_glass_formed'})
 
     # Controller: Front (north) mit Auge, Rest wie Gehaeuse
@@ -523,6 +524,10 @@ DE = {
     'gui.cosmiccore.choose_size': 'Reaktorgröße wählen',
     'gui.cosmiccore.size_button': '%sx%sx%s',
     'gui.cosmiccore.size_info': '%s – %s RF/t',
+    'gui.cosmiccore.confirm': 'Mit %sx%sx%s bauen',
+    'gui.cosmiccore.output_label': 'Leistung',
+    'gui.cosmiccore.max_level': 'Max. Stufe',
+    'gui.cosmiccore.blocks_label': 'Benötigte Blöcke',
     'gui.cosmiccore.build': 'Bauen',
     'gui.cosmiccore.start': 'Zünden',
     'gui.cosmiccore.stop': 'Stopp',
@@ -591,6 +596,10 @@ EN = {
     'gui.cosmiccore.choose_size': 'Choose reactor size',
     'gui.cosmiccore.size_button': '%sx%sx%s',
     'gui.cosmiccore.size_info': '%s – %s RF/t',
+    'gui.cosmiccore.confirm': 'Build as %sx%sx%s',
+    'gui.cosmiccore.output_label': 'Output',
+    'gui.cosmiccore.max_level': 'Max level',
+    'gui.cosmiccore.blocks_label': 'Required blocks',
     'gui.cosmiccore.build': 'Build',
     'gui.cosmiccore.start': 'Ignite',
     'gui.cosmiccore.stop': 'Stop',

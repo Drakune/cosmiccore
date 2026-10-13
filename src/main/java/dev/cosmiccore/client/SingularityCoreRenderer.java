@@ -36,7 +36,7 @@ import org.joml.Matrix4f;
  *       mit Doppler-Aufhellung auf der dem Betrachter entgegenkommenden Seite.</li>
  *   <li><b>Materiestroeme:</b> von jeder Resonanzspule spiralt Materie in die Scheibe.</li>
  *   <li><b>Jets:</b> entlang der Pole zu den Fokuskristallen; mit Himmelssicht schiesst der obere Jet ins All.</li>
- *   <li><b>Runenrahmen</b> werden zu stillen Sternenfeld-Saeulen.</li>
+ *   <li><b>Huelle:</b> alle Strukturbloecke verschmelzen zu einer Sternenfeld-Panzerung, siehe {@link ReactorShellRenderer}.</li>
  * </ul>
  * Instabilitaet: die Scheibe wird heisser (rot), unruhiger und taumelt, das Loch zittert.
  * <p>
@@ -81,8 +81,11 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         final float reach = be.getReach();
         final int half = be.getStructureSize() / 2;
         final float heat = active ? Mth.clamp(be.getInstability() / 100.0F, 0.0F, 1.0F) : 0.0F;
+        final float form = be.getFormProgress(partialTick);
         final float energy = (unstable ? 1.0F : active ? 0.85F : 0.3F)
                 * (unstable ? 0.75F + 0.25F * (0.5F + 0.5F * hash((int) (t * 0.8F))) : 1.0F);
+        // waehrend der Verwandlung blendet das schwarze Loch langsam auf
+        final float coreFade = Mth.clamp((form - 0.35F) / 0.65F, 0.0F, 1.0F);
         final float spin = (unstable ? 1.7F : active ? 1.0F : 0.25F) * (1.0F + 0.5F * growth);
 
         // 0) mit Himmelssicht setzt sich der obere Jet als Lichtsaeule bis ins All fort
@@ -97,18 +100,13 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.pushPose();
         pose.translate(0.5, 0.5, 0.5);
 
-        // 1) Sternenfeld-Saeulen an den Ecken (ersetzen die ausgeblendeten Runenrahmen)
-        VertexConsumer portal = buffers.getBuffer(RenderType.endPortal());
-        Matrix4f base = pose.last().pose();
-        for (int sx = -1; sx <= 1; sx += 2) {
-            for (int sz = -1; sz <= 1; sz += 2) {
-                RenderUtil.starBox(portal, base, sx * half - 0.3F, -half + 0.5F, sz * half - 0.3F,
-                        sx * half + 0.3F, half - 0.5F, sz * half + 0.3F);
-            }
-        }
+        // 1) einheitliche kosmische Huelle (ersetzt Gehaeuse, Ports, Rahmen und Glas)
+        ReactorShellRenderer.Params shell = new ReactorShellRenderer.Params(level, be.getBlockPos(), be.getStructureSize(), t,
+                form, Math.max(0.35F, energy), heat, active, unstable);
+        ReactorShellRenderer.solid(pose, buffers, shell);
 
         // Groessen
-        float rh = active ? Mth.lerp(growth, 0.2F, Math.max(0.26F, reach * 0.27F)) : 0.15F;
+        float rh = (active ? Mth.lerp(growth, 0.2F, Math.max(0.26F, reach * 0.27F)) : 0.15F) * Math.max(0.05F, coreFade);
         rh *= 1.0F + 0.03F * Mth.sin(t * 0.1F);
         float inner = rh * 1.55F;
         float outer = Math.max(inner + 0.2F, reach - 0.12F);
@@ -138,27 +136,16 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.pushPose();
         pose.mulPose(Axis.XP.rotationDegrees(tilt));
         pose.mulPose(Axis.ZP.rotationDegrees(tilt * 0.4F * Mth.sin(t * 0.013F)));
-        accretionDisk(pose.last().pose(), glow, inner, outer, t, spin, energy, heat, camYaw);
-        infallStreams(pose.last().pose(), glow, be.getStructureSize(), reach, inner, t, spin, energy, heat, active);
+        accretionDisk(pose.last().pose(), glow, inner, outer, t, spin, energy * coreFade, heat, camYaw);
+        infallStreams(pose.last().pose(), glow, be.getStructureSize(), reach, inner, t, spin, energy * coreFade, heat, active);
         pose.popPose();
 
-        lensing(pose, glow, rh, inner, t, energy, heat, camYaw, camPitch);
-        if (active) jets(pose.last().pose(), glow, rh, reach, t, energy, heat, growth);
+        lensing(pose, glow, rh, inner, t, energy * coreFade, heat, camYaw, camPitch);
+        if (active) jets(pose.last().pose(), glow, rh, reach, t, energy * coreFade, heat, growth);
         pose.popPose(); // Zittern
 
-        // stille Leuchtkanten der Saeulen
-        Matrix4f m = pose.last().pose();
-        float pa = 0.18F * energy;
-        for (int sx = -1; sx <= 1; sx += 2) {
-            for (int sz = -1; sz <= 1; sz += 2) {
-                for (int ex = -1; ex <= 1; ex += 2) {
-                    for (int ez = -1; ez <= 1; ez += 2) {
-                        float x = sx * half + ex * 0.31F, z = sz * half + ez * 0.31F;
-                        segment(glow, m, x, -half + 0.5F, z, x, half - 0.5F, z, 0.01F, COOL[0], COOL[1], COOL[2], pa, pa);
-                    }
-                }
-            }
-        }
+        // leuchtende Panele der Huelle
+        ReactorShellRenderer.glow(pose.last().pose(), glow, shell);
         pose.popPose();
     }
 

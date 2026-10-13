@@ -509,8 +509,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         linkPorts(level, true);
         Vec3 c = Vec3.atCenterOf(center(level));
         level.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.5F, 0.6F);
-        changedAndSync();
+        level.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 0.6F, 1.4F);
         pushVisuals(level);
+        if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) {
+            core.markFormed(level.getGameTime()); // startet die Verwandlungs-Animation auf den Clients
+        }
+        changedAndSync();
     }
 
     private void onUnformed(ServerLevel level) {

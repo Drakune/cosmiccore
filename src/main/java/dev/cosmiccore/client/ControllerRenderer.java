@@ -3,9 +3,7 @@ package dev.cosmiccore.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.cosmiccore.block.ControllerBlock;
-import dev.cosmiccore.block.CorePhase;
 import dev.cosmiccore.block.ModBlocks;
-import dev.cosmiccore.block.ModProperties;
 import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.multiblock.CorePattern;
 import dev.cosmiccore.multiblock.ReactorSize;
@@ -85,10 +83,6 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             }
             BlockState target = CorePattern.blockFor(cell);
             if (target == null) return;
-            // leuchtende Variante sieht schoener aus - nur bei Bloecken, deren gebildetes Modell nicht ausgeblendet ist
-            if (target.is(ModBlocks.VOID_CASING.get()) || target.is(ModBlocks.FOCUS_GLASS.get())) {
-                target = target.setValue(ModProperties.PHASE, CorePhase.FORMED);
-            }
             BakedModel model = dispatcher.getBlockModel(target);
             pose.pushPose();
             pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);

@@ -28,6 +28,9 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private boolean skyLink;
     private int cosmic = 100;     // kosmischer Faktor in Prozent
 
+    /** Spielzeit, zu der die Struktur gebildet wurde (vom Controller gesetzt, startet die Verwandlungs-Animation). */
+    private long formStart = Long.MIN_VALUE;
+
     public SingularityCoreBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CORE.get(), pos, state);
     }
@@ -47,6 +50,15 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         this.instability = inst;
         this.skyLink = skyLink;
         this.cosmic = cos;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** Vom Controller beim Bilden der Struktur aufgerufen. */
+    public void markFormed(long gameTime) {
+        formStart = gameTime;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
@@ -87,9 +99,31 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     // ------------------------------------------------------------------ Partikel (Client)
 
+    /** Fortschritt der Verwandlung 0..1 (1 = fertig bzw. keine Animation laufend). */
+    public float getFormProgress(float partialTick) {
+        if (level == null || formStart == Long.MIN_VALUE) return 1.0F;
+        float p = (level.getGameTime() - formStart + partialTick) / (float) FORM_TICKS;
+        return Math.min(1.0F, Math.max(0.0F, p));
+    }
+
+    public static final int FORM_TICKS = 60;
+
     public static void clientTick(Level level, BlockPos pos, BlockState state, SingularityCoreBlockEntity be) {
         CorePhase phase = state.getValue(ModProperties.PHASE);
         if (phase == CorePhase.DORMANT) return;
+        float form = be.getFormProgress(0.0F);
+        if (form < 1.0F) {
+            // Funken entlang der Scan-Ebene
+            int half = be.structureSize / 2;
+            double y = pos.getY() + 0.5 - half - 0.5 + form * (be.structureSize + 1);
+            RandomSource rr = level.random;
+            for (int i = 0; i < 6; i++) {
+                double a = rr.nextDouble() * Math.PI * 2;
+                double d = half + 0.5;
+                level.addParticle(ParticleTypes.END_ROD, pos.getX() + 0.5 + Math.cos(a) * d, y, pos.getZ() + 0.5 + Math.sin(a) * d,
+                        0.0, 0.02, 0.0);
+            }
+        }
         RandomSource r = level.random;
         double cx = pos.getX() + 0.5, cy = pos.getY() + 0.5, cz = pos.getZ() + 0.5;
         float growth = be.getGrowth();
@@ -152,6 +186,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         instability = tag.getInt("instability");
         skyLink = tag.getBoolean("skyLink");
         cosmic = tag.contains("cosmic") ? tag.getInt("cosmic") : 100;
+        formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
     }
 
     private void writeVisuals(CompoundTag tag) {
@@ -161,6 +196,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         tag.putInt("instability", instability);
         tag.putBoolean("skyLink", skyLink);
         tag.putInt("cosmic", cosmic);
+        tag.putLong("formStart", formStart);
     }
 
     @Override

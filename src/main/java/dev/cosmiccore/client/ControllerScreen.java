@@ -8,6 +8,20 @@ import net.minecraft.world.item.ItemStack;
 import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.menu.ControllerMenu;
 import dev.cosmiccore.multiblock.ReactorSize;
+import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import dev.cosmiccore.block.ControllerBlock;
+import dev.cosmiccore.block.ModBlocks;
+import dev.cosmiccore.multiblock.CorePattern;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +45,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int INFO_X = 92;
     private static final int ROW_Y = 104;
 
+    // Groessenwahl: Reiter links, 3D-Vorschau rechts, Blockliste und Bestaetigung unten
+    private static final int TAB_X = 8, TAB_Y = 22, TAB_W = 58, TAB_H = 20, TAB_STEP = 26;
+    private static final int VIEW_X = 72, VIEW_Y = 18, VIEW_W = 154, VIEW_H = 150;
+    private static final int ICON_Y = 176;
+
     private final List<Button> sizeButtons = new ArrayList<>();
-    private Button scaleDown, scaleUp, toggle, preview, build;
+    private Button scaleDown, scaleUp, toggle, preview, build, confirm;
+    private int selected = 1; // 7x7x7 vorausgewaehlt
+    private float dragYaw, dragPitch;
 
     public ControllerScreen(ControllerMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -50,12 +71,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         sizeButtons.clear();
         ReactorSize[] sizes = ReactorSize.values();
         for (int i = 0; i < sizes.length; i++) {
-            final int id = ControllerMenu.BTN_SIZE_FIRST + i;
+            final int index = i;
             ReactorSize s = sizes[i];
             Button b = Button.builder(Component.translatable("gui.cosmiccore.size_button", s.size(), s.size(), s.size()),
-                    btn -> press(id)).bounds(leftPos + 17, topPos + 46 + i * 50, 200, 20).build();
+                    btn -> selected = index).bounds(leftPos + TAB_X, topPos + TAB_Y + i * TAB_STEP, TAB_W, TAB_H).build();
             sizeButtons.add(addRenderableWidget(b));
         }
+        confirm = addRenderableWidget(Button.builder(Component.empty(), b -> press(ControllerMenu.BTN_SIZE_FIRST + selected))
+                .bounds(leftPos + 42, topPos + H - 26, W - 84, 18).build());
         scaleDown = addRenderableWidget(Button.builder(Component.literal("-"), b -> press(ControllerMenu.BTN_SCALE_DOWN))
                 .bounds(leftPos + 8, topPos + ROW_Y, 16, 16).build());
         scaleUp = addRenderableWidget(Button.builder(Component.literal("+"), b -> press(ControllerMenu.BTN_SCALE_UP))
@@ -84,6 +107,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private void updateWidgets() {
         boolean chosen = menu.sizeChosen();
         for (Button b : sizeButtons) b.visible = !chosen;
+        confirm.visible = !chosen;
+        ReactorSize sel = ReactorSize.values()[selected];
+        confirm.setMessage(Component.translatable("gui.cosmiccore.confirm", sel.size(), sel.size(), sel.size()));
         scaleDown.visible = scaleUp.visible = toggle.visible = preview.visible = chosen;
         scaleDown.active = menu.scale() > 1;
         scaleUp.active = menu.scale() < menu.maxScale();
@@ -108,7 +134,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fillGradient(x + 2, y + 2, x + W - 2, y + H - 2, 0xFF1A0F33, 0xFF070410);
         drawStars(g, x, y, t);
 
-        if (!menu.sizeChosen()) return;
+        if (!menu.sizeChosen()) {
+            renderSizeSelection(g, x, y, t);
+            return;
+        }
 
         // Slots
         drawSlotBox(g, x + ControllerMenu.FUEL_X, y + ControllerMenu.FUEL_Y, 0xFFB06A20);
@@ -172,19 +201,21 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(font, title, titleLabelX, titleLabelY, 0xFFE0B0FF, false);
+        g.drawString(font, menu.sizeChosen() ? title : Component.translatable("gui.cosmiccore.choose_size"),
+                titleLabelX, titleLabelY, 0xFFE0B0FF, false);
         if (!menu.sizeChosen()) {
-            g.drawCenteredString(font, Component.translatable("gui.cosmiccore.choose_size"), W / 2, 26, 0xFFFFFFFF);
-            ReactorSize[] sizes = ReactorSize.values();
+            ReactorSize sel = ReactorSize.values()[selected];
             int base = referencePower();
-            for (int i = 0; i < sizes.length; i++) {
-                ReactorSize s = sizes[i];
-                long max = Math.round(base * Math.pow(s.maxScale(), CoreConfig.SCALE_OUTPUT_EXPONENT.get())
-                        * CoreConfig.OUTPUT_MULTIPLIER.get());
-                long min = Math.round(base * CoreConfig.OUTPUT_MULTIPLIER.get());
-                Component info = Component.translatable("gui.cosmiccore.size_info", fmt(min), fmt(max));
-                g.drawCenteredString(font, info, W / 2, 46 + i * 50 + 24, 0xFFB8A8D8);
-            }
+            long min = Math.round(base * CoreConfig.OUTPUT_MULTIPLIER.get());
+            long max = Math.round(base * Math.pow(sel.maxScale(), CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * CoreConfig.OUTPUT_MULTIPLIER.get());
+            int ix = TAB_X, iy = TAB_Y + 3 * TAB_STEP + 6;
+            g.drawString(font, Component.translatable("gui.cosmiccore.output_label"), ix, iy, 0xFFB8A8D8, false);
+            g.drawString(font, fmt(min) + " -", ix, iy + 11, 0xFF9AE8FF, false);
+            g.drawString(font, fmt(max), ix, iy + 21, 0xFF9AE8FF, false);
+            g.drawString(font, "RF/t", ix, iy + 31, 0xFF708098, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.max_level"), ix, iy + 46, 0xFFB8A8D8, false);
+            g.drawString(font, String.valueOf(sel.maxScale()), ix, iy + 57, 0xFFE0A8FF, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.blocks_label"), 8, ICON_Y - 9 + 0, 0xFFB8A8D8, false);
             return;
         }
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xFFB8A8D8, false);
@@ -207,6 +238,93 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawString(font, Component.translatable("gui.cosmiccore.size", menu.size(), menu.size(), menu.size()), INFO_X, ly, 0xFF908AA8, false);
 
         g.drawString(font, Component.translatable("gui.cosmiccore.scale"), 8, ROW_Y - 12, 0xFFB8A8D8, false);
+    }
+
+    // ------------------------------------------------------------------ Groessenwahl
+
+    private void renderSizeSelection(GuiGraphics g, int x, int y, float t) {
+        // Markierung des gewaehlten Reiters
+        int ty = y + TAB_Y + selected * TAB_STEP;
+        int glowCol = 0xFF000000 | (0xA060FF);
+        g.fill(x + TAB_X - 2, ty - 2, x + TAB_X + TAB_W + 2, ty + TAB_H + 2, glowCol);
+
+        // Vorschaufenster
+        g.fill(x + VIEW_X - 1, y + VIEW_Y - 1, x + VIEW_X + VIEW_W + 1, y + VIEW_Y + VIEW_H + 1, 0xFF3A2468);
+        g.fillGradient(x + VIEW_X, y + VIEW_Y, x + VIEW_X + VIEW_W, y + VIEW_Y + VIEW_H, 0xFF120A26, 0xFF05030C);
+        renderStructure(g, ReactorSize.values()[selected], x + VIEW_X + VIEW_W / 2, y + VIEW_Y + VIEW_H / 2 + 6, t);
+
+        // benoetigte Bloecke
+        List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected]);
+        for (int i = 0; i < icons.size(); i++) {
+            int ix = x + iconX(i, icons.size()), iy = y + ICON_Y;
+            drawSlotBox(g, ix, iy, 0xFF2E2050);
+            g.renderItem(icons.get(i), ix, iy);
+            g.renderItemDecorations(font, icons.get(i), ix, iy);
+        }
+    }
+
+    private static int iconX(int i, int count) {
+        int step = 26;
+        return W / 2 - (count * step - 10) / 2 + i * step;
+    }
+
+    /** Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen). */
+    private static List<ItemStack> requiredBlocks(ReactorSize size) {
+        CorePattern p = size.pattern();
+        List<ItemStack> out = new ArrayList<>();
+        out.add(new ItemStack(ModItems.CONTROLLER.get(), 1));
+        out.add(new ItemStack(ModItems.VOID_CASING.get(), p.count(CorePattern.Cell.HULL) + p.count(CorePattern.Cell.SLOT) - 1));
+        out.add(new ItemStack(ModItems.RUNE_FRAME.get(), p.count(CorePattern.Cell.FRAME)));
+        out.add(new ItemStack(ModItems.FOCUS_GLASS.get(), p.count(CorePattern.Cell.GLASS)));
+        out.add(new ItemStack(ModItems.RESONANCE_COIL.get(), p.count(CorePattern.Cell.COIL)));
+        out.add(new ItemStack(ModItems.FOCUS_CRYSTAL.get(), p.count(CorePattern.Cell.CRYSTAL)));
+        out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE)));
+        return out;
+    }
+
+    /** Dreht die echte Struktur als 3D-Modell im Vorschaufenster (mit der Maus ziehbar). */
+    private void renderStructure(GuiGraphics g, ReactorSize size, int cx, int cy, float t) {
+        if (minecraft == null) return;
+        CorePattern p = size.pattern();
+        int half = p.half();
+        float scale = 118.0F / (size.size() * 1.75F);
+        BlockRenderDispatcher dispatcher = minecraft.getBlockRenderer();
+        BlockPos controller = new BlockPos(0, -half, half);
+
+        g.enableScissor(leftPos + VIEW_X, topPos + VIEW_Y, leftPos + VIEW_X + VIEW_W, topPos + VIEW_Y + VIEW_H);
+        PoseStack ps = g.pose();
+        ps.pushPose();
+        ps.translate(cx, cy, 400);
+        ps.scale(scale, -scale, scale);
+        ps.mulPose(Axis.XP.rotationDegrees(22.0F + dragPitch));
+        ps.mulPose(Axis.YP.rotationDegrees(t * 0.8F + 30.0F + dragYaw));
+        Lighting.setupFor3DItems();
+        MultiBufferSource.BufferSource buffers = g.bufferSource();
+        p.forEach(BlockPos.ZERO, (pos, cell) -> {
+            BlockState state = CorePattern.blockFor(cell);
+            if (state == null) return;
+            if (pos.equals(controller)) {
+                state = ModBlocks.CONTROLLER.get().defaultBlockState().setValue(ControllerBlock.FACING, Direction.SOUTH);
+            }
+            ps.pushPose();
+            ps.translate(pos.getX() - 0.5F, pos.getY() - 0.5F, pos.getZ() - 0.5F);
+            dispatcher.renderSingleBlock(state, ps, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                    ModelData.EMPTY, null);
+            ps.popPose();
+        });
+        g.flush();
+        ps.popPose();
+        g.disableScissor();
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (!menu.sizeChosen() && in((int) mouseX - leftPos, (int) mouseY - topPos, VIEW_X, VIEW_Y, VIEW_W, VIEW_H)) {
+            dragYaw += (float) dragX * 1.5F;
+            dragPitch = Mth.clamp(dragPitch + (float) dragY, -40.0F, 50.0F);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     /** RF/t des Sternenstaubs als Referenz fuer die Leistungsspanne in der Groessenwahl. */
@@ -245,7 +363,16 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         renderTooltip(g, mouseX, mouseY);
-        if (!menu.sizeChosen()) return;
+        if (!menu.sizeChosen()) {
+            List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected]);
+            for (int i = 0; i < icons.size(); i++) {
+                int ix = leftPos + iconX(i, icons.size()), iy = topPos + ICON_Y;
+                if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {
+                    g.renderTooltip(font, icons.get(i).getHoverName(), mouseX, mouseY);
+                }
+            }
+            return;
+        }
 
         int mx = mouseX - leftPos, my = mouseY - topPos;
         List<Component> tip = new ArrayList<>();
