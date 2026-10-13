@@ -92,50 +92,91 @@ public final class EnergyLaserFx {
         if (fire <= 0.0F) return;
         Vector3f tp = new Vector3f((float) target.x, (float) target.y, (float) target.z);
         float tr = Math.max(0.4F, targetSize * 0.5F);
-        float flick = 0.85F + 0.15F * Mth.sin(t * 2.3F);
-
-        // Strahl: gleissender Kern, Glut und Doppelhelix
-        segment(vc, m, focus.x, focus.y, focus.z, tp.x, tp.y, tp.z, 0.045F, 1.0F, 1.0F, 1.0F, energy * flick, energy * flick);
-        segment(vc, m, focus.x, focus.y, focus.z, tp.x, tp.y, tp.z, 0.14F, BEAM[0], BEAM[1], BEAM[2], 0.45F * energy * fire, 0.4F * energy * fire);
-        segment(vc, m, focus.x, focus.y, focus.z, tp.x, tp.y, tp.z, 0.3F, VIOLET[0], VIOLET[1], VIOLET[2], 0.12F * energy * fire, 0.1F * energy * fire);
+        // Einschlagpunkt auf der Oberflaeche; der Strahl faehrt beim Zuenden zum Ziel aus
+        Vector3f hit = new Vector3f(dir).mul(-tr * 0.8F).add(tp);
+        float ext = fire * fire * (3.0F - 2.0F * fire);
+        Vector3f end = new Vector3f(focus).lerp(hit, ext);
+        float flick = 0.88F + 0.12F * Mth.sin(t * 2.3F) * Mth.sin(t * 0.7F);
         Vector3f u = new Vector3f(dir).cross(Math.abs(dir.y) > 0.95F ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
         Vector3f w = new Vector3f(dir).cross(u).normalize();
-        float len = new Vector3f(tp).sub(focus).length();
-        int steps = Math.max(12, (int) (len * 3));
-        for (int strand = 0; strand < 2; strand++) {
-            Vector3f prev = null;
-            for (int i = 0; i <= steps; i++) {
-                float s = i / (float) steps;
-                float ang = s * len * 2.2F - t * 0.6F + strand * Mth.PI;
-                float hr = 0.12F * (1.0F - 0.4F * s);
-                Vector3f p = new Vector3f(focus).lerp(tp, s).add(new Vector3f(u).mul(Mth.cos(ang) * hr)).add(new Vector3f(w).mul(Mth.sin(ang) * hr));
-                if (prev != null) {
-                    float[] c = strand == 0 ? BEAM : VIOLET;
-                    segment(vc, m, prev.x, prev.y, prev.z, p.x, p.y, p.z, 0.012F, c[0], c[1], c[2], 0.8F * energy, 0.8F * energy);
-                }
-                prev = p;
-            }
-        }
+        float len = new Vector3f(end).sub(focus).length();
 
-        // Einschlag: Blitz und Schockwellen am Asteroiden
-        RenderUtil.glowSphere(vc, new Matrix4f(m).translate(tp.x, tp.y, tp.z), tr * (1.1F + 0.2F * pulse), 8, 12, GOLD, (0.25F + 0.3F * harvest) * energy);
-        for (int k = 0; k < 3; k++) {
-            float ph = Mth.frac(t * 0.05F + k / 3.0F);
-            boolean steep = Math.abs(dir.y) > 0.95F;
-            Matrix4f sm = new Matrix4f(m).translate(tp.x, tp.y, tp.z)
-                    .rotateTowards(-dir.x, -dir.y, -dir.z, steep ? 1 : 0, steep ? 0 : 1, 0).rotateX(Mth.HALF_PI);
-            flatCircle(vc, sm, tr * (0.8F + 1.6F * ph), 0.03F, 32, GOLD, energy * (1.0F - ph) * 0.8F);
+        // Strahl: gleissender Kern mit weich auslaufenden Huellen
+        float[] widths = {0.025F, 0.06F, 0.13F, 0.26F};
+        float[][] cols = {WHITE, lerp(WHITE, BEAM, 0.4F), BEAM, VIOLET};
+        float[] alphas = {1.0F, 0.6F, 0.26F, 0.09F};
+        for (int i = 0; i < 4; i++) {
+            float a = alphas[i] * energy * flick;
+            segment(vc, m, focus.x, focus.y, focus.z, end.x, end.y, end.z, widths[i], cols[i][0], cols[i][1], cols[i][2], a, a * 0.85F);
         }
+        // Lichtimpulse, die zum Asteroiden jagen
+        for (int k = 0; k < 5; k++) {
+            float s = Mth.frac(t * 0.07F + k / 5.0F);
+            if (s > ext) continue;
+            Vector3f p = new Vector3f(focus).lerp(hit, s);
+            float a = energy * Mth.sin(s * Mth.PI);
+            RenderUtil.glowSphere(vc, new Matrix4f(m).translate(p.x, p.y, p.z), 0.07F, 6, 8, WHITE, 0.35F * a);
+            segment(vc, m, p.x - dir.x * 0.4F, p.y - dir.y * 0.4F, p.z - dir.z * 0.4F, p.x, p.y, p.z, 0.05F,
+                    BEAM[0], BEAM[1], BEAM[2], 0.0F, 0.6F * a);
+        }
+        // eine feine Spirale um den Strahl
+        int steps = Math.max(12, (int) (len * 4));
+        Vector3f prev = null;
+        for (int i = 0; i <= steps; i++) {
+            float s = i / (float) steps;
+            float ang = s * len * 1.8F - t * 0.5F;
+            float hr = 0.085F * (1.0F - 0.3F * s);
+            Vector3f p = new Vector3f(focus).lerp(end, s).add(new Vector3f(u).mul(Mth.cos(ang) * hr)).add(new Vector3f(w).mul(Mth.sin(ang) * hr));
+            if (prev != null) segment(vc, m, prev.x, prev.y, prev.z, p.x, p.y, p.z, 0.007F, VIOLET[0], VIOLET[1], VIOLET[2], 0.55F * energy, 0.55F * energy);
+            prev = p;
+        }
+        // kurze Entladungen, die am Strahl entlangkriechen
+        int arcSeed = (int) (t * 0.5F);
+        if (hash(arcSeed * 3) > 0.1F) {
+            float s = 0.15F + 0.7F * (hash(arcSeed * 7) * 0.5F + 0.5F);
+            Vector3f p = new Vector3f(focus).lerp(end, s);
+            Vector3f out = new Vector3f(u).mul(hash(arcSeed * 11) * 0.35F).add(new Vector3f(w).mul(hash(arcSeed * 13) * 0.35F)).add(p);
+            lightning(m, vc, new float[]{p.x, p.y, p.z}, new float[]{out.x, out.y, out.z}, arcSeed, 0.7F * energy);
+        }
+        // Muendungsblitz am Brennpunkt
+        Matrix4f fm = new Matrix4f(m).translate(focus.x, focus.y, focus.z);
+        RenderUtil.glowSphere(vc, fm, 0.16F + 0.04F * flick, 8, 10, WHITE, 0.5F * energy);
+        segment(vc, fm, 0, 0, 0, u.x * 0.45F, u.y * 0.45F, u.z * 0.45F, 0.012F, 1, 1, 1, 0.8F * energy, 0.0F);
+        segment(vc, fm, 0, 0, 0, -u.x * 0.45F, -u.y * 0.45F, -u.z * 0.45F, 0.012F, 1, 1, 1, 0.8F * energy, 0.0F);
+        segment(vc, fm, 0, 0, 0, w.x * 0.45F, w.y * 0.45F, w.z * 0.45F, 0.012F, 1, 1, 1, 0.8F * energy, 0.0F);
+        segment(vc, fm, 0, 0, 0, -w.x * 0.45F, -w.y * 0.45F, -w.z * 0.45F, 0.012F, 1, 1, 1, 0.8F * energy, 0.0F);
+        if (ext < 0.99F) return;
+
+        // Einschlag: heisser Fleck, Funkenregen und eine dezente Schockwelle
+        Matrix4f hm = new Matrix4f(m).translate(hit.x, hit.y, hit.z);
+        RenderUtil.glowSphere(vc, hm, 0.12F + 0.05F * flick, 8, 10, WHITE, 0.7F * energy);
+        RenderUtil.glowSphere(vc, hm, 0.3F + 0.25F * harvest, 8, 12, GOLD, (0.25F + 0.2F * harvest) * energy);
+        for (int k = 0; k < 14; k++) {
+            float ph = Mth.frac(t * 0.08F + hash(k * 17) * 0.5F + k / 14.0F);
+            Vector3f sd = new Vector3f(dir).mul(-0.5F).add(new Vector3f(u).mul(hash(k * 5) * 0.9F))
+                    .add(new Vector3f(w).mul(hash(k * 9) * 0.9F)).normalize();
+            float dist = ph * (0.6F + 0.6F * (hash(k * 3) * 0.5F + 0.5F)) * (1.0F + harvest);
+            Vector3f p = new Vector3f(sd).mul(dist);
+            p.y -= ph * ph * 0.5F;
+            Vector3f q = new Vector3f(sd).mul(Math.max(0.0F, dist - 0.18F));
+            q.y -= Math.max(0.0F, ph - 0.1F) * Math.max(0.0F, ph - 0.1F) * 0.5F;
+            float[] c = lerp(WHITE, GOLD, ph);
+            segment(vc, hm, q.x, q.y, q.z, p.x, p.y, p.z, 0.012F, c[0], c[1], c[2], 0.0F, energy * (1.0F - ph));
+        }
+        float ph = Mth.frac(t * 0.06F);
+        boolean steep = Math.abs(dir.y) > 0.95F;
+        Matrix4f sm = new Matrix4f(hm).rotateTowards(-dir.x, -dir.y, -dir.z, steep ? 1 : 0, steep ? 0 : 1, 0).rotateX(Mth.HALF_PI);
+        flatCircle(vc, sm, tr * (0.3F + 0.9F * ph), 0.02F, 32, GOLD, energy * (1.0F - ph) * 0.6F);
 
         // Energie stroemt aus dem Asteroiden den Strahl entlang zurueck ...
-        int motes = 10;
+        int motes = 7;
         for (int k = 0; k < motes; k++) {
             float s = Mth.frac(t * 0.03F + k / (float) motes); // 0 = Asteroid, 1 = Brennpunkt
-            Vector3f p = new Vector3f(tp).lerp(focus, s * s);
-            float off = 0.18F * (1.0F - s);
+            Vector3f p = new Vector3f(hit).lerp(focus, s * s);
+            float off = 0.14F * (1.0F - s);
             p.add(new Vector3f(u).mul(hash(k * 13) * off)).add(new Vector3f(w).mul(hash(k * 29) * off));
             float[] c = lerp(GOLD, BEAM, s);
-            cube(vc, m, p.x, p.y, p.z, 0.04F * (1.0F - 0.4F * s), c[0], c[1], c[2], energy * Mth.sin(s * Mth.PI));
+            cube(vc, m, p.x, p.y, p.z, 0.03F * (1.0F - 0.4F * s), c[0], c[1], c[2], energy * Mth.sin(s * Mth.PI));
         }
         // ... und vom Brennpunkt hinab in den Reaktor
         for (int k = 0; k < 4; k++) {
@@ -184,7 +225,7 @@ public final class EnergyLaserFx {
                     Vector3f p = fragmentPos(src, mid, scatter, raw);
                     Vector3f q = fragmentPos(src, mid, scatter, Math.max(0.0F, raw - 0.06F));
                     float[] c = lerp(GOLD, BEAM, hash(k * 3) * 0.5F + 0.5F);
-                    cube(vc, m, p.x, p.y, p.z, 0.05F + 0.06F * (1.0F - raw), c[0], c[1], c[2], energy);
+                    shard(vc, m, p, 0.05F + 0.05F * (1.0F - raw), t * 0.4F + k, c, energy);
                     segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.03F, c[0], c[1], c[2], 0.0F, 0.7F * energy);
                 } else if (raw < 1.3F) {
                     // Ankunft: kleiner Lichtring um die Kugel
@@ -229,6 +270,14 @@ public final class EnergyLaserFx {
             flatCircle(vc, new Matrix4f(m).rotateX(Mth.HALF_PI), 0.4F + 1.8F * f, 0.03F, 64, WHITE, energy * (1.0F - f));
             flatCircle(vc, new Matrix4f(m).rotateZ(Mth.HALF_PI), 0.4F + 1.8F * f, 0.03F, 64, BEAM, energy * (1.0F - f));
         }
+    }
+
+    /** Rotierender Kristallsplitter: heller Kern mit leuchtender Doppelpyramide. */
+    private static void shard(VertexConsumer vc, Matrix4f m, Vector3f p, float s, float spin, float[] c, float a) {
+        Matrix4f sm = new Matrix4f(m).translate(p.x, p.y, p.z).rotateY(spin).rotateZ(spin * 0.6F);
+        cube(vc, sm, 0, 0, 0, s * 0.35F, 1.0F, 1.0F, 1.0F, a);
+        RenderUtil.octahedron(vc, sm, s * 0.7F, s * 1.6F, 0.008F, c, a);
+        RenderUtil.glowSphere(vc, sm, s * 1.1F, 6, 8, c, 0.18F * a);
     }
 
     /** Flugbahn eines Bruchstuecks: vom (aufgesprengten) Asteroiden in einem Bogen zum Laser. */

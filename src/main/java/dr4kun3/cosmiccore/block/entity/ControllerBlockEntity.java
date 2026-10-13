@@ -674,7 +674,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         for (int k = 0; k < 24; k += 2) {
             int arrival = Math.round((k / 24.0F * 0.35F + 0.65F) * collect);
             if (deliverTicks == arrival) {
-                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, 0.9F + k * 0.04F);
+                // Lautstaerke > 1 erhoeht nur die Reichweite - lauter wird es durch mehrere uebereinanderliegende Klaenge
+                float pitch = 0.9F + k * 0.04F;
+                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, pitch);
+                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 3.0F, pitch * 1.5F);
+                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.BLOCKS, 3.0F, 0.7F + k * 0.05F);
+                level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 2.0F, 0.8F + k * 0.04F);
             }
         }
         int formed = collect + 2; // Kugel formt sich (Schockwelle) - passt zu EnergyLaserFx
