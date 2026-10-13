@@ -3,7 +3,7 @@
   "category": "misc",
   "pattern": [
     "CDC",
-    "ESE",
+    "ENE",
     "CDC"
   ],
   "key": {
@@ -16,8 +16,8 @@
     "E": {
       "item": "minecraft:ender_eye"
     },
-    "S": {
-      "item": "cosmiccore:star_dust"
+    "N": {
+      "item": "minecraft:nether_star"
     }
   },
   "result": {

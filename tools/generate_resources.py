@@ -995,8 +995,9 @@ def data():
            {'A': 'minecraft:amethyst_shard', 'D': 'minecraft:diamond', 'E': 'minecraft:ender_eye'}, f'{MOD}:focus_crystal', 1)
     shaped('singularity_core', ['OEO', 'ENE', 'OEO'],
            {'O': 'minecraft:crying_obsidian', 'E': 'minecraft:ender_eye', 'N': 'minecraft:nether_star'}, f'{MOD}:singularity_core', 1)
-    shaped('controller', ['CDC', 'ESE', 'CDC'],
-           {'C': f'{MOD}:void_casing', 'D': 'minecraft:diamond', 'E': 'minecraft:ender_eye', 'S': f'{MOD}:star_dust'}, f'{MOD}:controller', 1)
+    shaped('controller', ['CDC', 'ENE', 'CDC'],
+           {'C': f'{MOD}:void_casing', 'D': 'minecraft:diamond', 'E': 'minecraft:ender_eye', 'N': 'minecraft:nether_star'},
+           f'{MOD}:controller', 1)
     shapeless('energy_port', [f'{MOD}:void_casing', 'minecraft:redstone', 'minecraft:redstone', 'minecraft:copper_ingot'],
               f'{MOD}:energy_port', 1)
     shaped('star_funnel', ['G G', 'GSG', ' V '],
