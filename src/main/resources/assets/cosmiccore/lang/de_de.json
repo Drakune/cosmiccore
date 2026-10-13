@@ -71,18 +71,11 @@
   "guide.cosmiccore.page.9": "§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.",
   "guide.cosmiccore.page.10": "§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r",
   "block.cosmiccore.star_funnel": "Sternentrichter",
-  "item.cosmiccore.cosmic_laser": "Kosmos-Laser",
+  "block.cosmiccore.cosmic_laser": "Kosmos-Laser",
+  "gui.cosmiccore.laser_on": "✦ Laser-Array: aktiv",
   "entity.cosmiccore.cosmic_asteroid": "Kosmischer Asteroid",
-  "message.cosmiccore.laser.collected": "+%s RF gesammelt (%s gespeichert)",
-  "message.cosmiccore.laser.transferred": "%s RF in den Reaktor übertragen",
-  "message.cosmiccore.laser.full": "Der Laser ist voll - Energie am Reaktor abgeben",
-  "message.cosmiccore.laser.empty": "Der Laser hat keine Energie gespeichert",
-  "message.cosmiccore.laser.no_room": "Der Energiepuffer des Reaktors ist voll",
-  "tooltip.cosmiccore.laser.energy": "Gespeichert: %s / %s RF",
-  "tooltip.cosmiccore.laser.hint1": "Rechtsklick halten und auf einen Asteroiden zielen",
-  "tooltip.cosmiccore.laser.hint2": "Rechtsklick auf Controller/Energie-Port: Energie abgeben",
   "gui.cosmiccore.funnel_on": "✦ Sternentrichter: aktiv",
   "guide.cosmiccore.page.11": "§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.",
-  "guide.cosmiccore.page.12": "§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nHalte den §dKosmos-Laser§r auf sie, bis sie zerbrechen. Größere bringen mehr Energie.",
-  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nDie gesammelte Energie bleibt im Laser (max. 5 Mio. RF).\n\nRechtsklick auf Controller oder Energie-Port gibt sie in den Puffer des Reaktors."
+  "guide.cosmiccore.page.12": "§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nGroße bringen 1 Mio. RF, kleine 50.000 RF.",
+  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie verschmelzen zu einem Geschütz, das Asteroiden selbst abschießt."
 }

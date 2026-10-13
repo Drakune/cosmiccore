@@ -8,6 +8,7 @@ import dev.cosmiccore.block.ModProperties;
 import dev.cosmiccore.data.CoreFuel;
 import dev.cosmiccore.data.CoreStabilizer;
 import dev.cosmiccore.data.ModDataMaps;
+import dev.cosmiccore.entity.CosmicAsteroid;
 import dev.cosmiccore.menu.ControllerMenu;
 import dev.cosmiccore.multiblock.CorePattern;
 import dev.cosmiccore.multiblock.ReactorSize;
@@ -103,6 +104,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean skyLink;
     /** Sternentrichter direkt auf der Deckenmitte: verdoppelt den Himmelsbonus. */
     private boolean funnel;
+    /** Vier Kosmos-Laser rund um die Deckenmitte bilden ein Laser-Array, das Asteroiden abschiesst. */
+    private boolean laserArray;
+    private int laserTarget = -1;
     private double lastCosmic = 1.0;
     @Nullable
     private CorePattern.Report lastReport;
@@ -247,6 +251,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
         simulate(level);
+        if (laserArray) tickLasers(level);
         if (level.getGameTime() % 10 == 0) pushVisuals(level);
     }
 
@@ -421,6 +426,61 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         revalidate(level);
     }
 
+    // ------------------------------------------------------------------ Laser-Array
+
+    private static final double LASER_RANGE = 200.0;
+
+    /** Schaltet die Modelle der vier Laser um (im Verbund ausgeblendet, das grosse Geschuetz wird gerendert). */
+    /** @param top Position ueber der Deckenmitte (dort sitzt ggf. der Sternentrichter, die Laser drumherum). */
+    private static void setLasersLinked(ServerLevel level, BlockPos top, boolean linked) {
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            BlockPos lp = top.relative(d);
+            if (!level.hasChunkAt(lp)) continue;
+            BlockState s = level.getBlockState(lp);
+            if (s.is(ModBlocks.COSMIC_LASER.get()) && s.getValue(ModProperties.LINKED) != linked) {
+                level.setBlock(lp, s.setValue(ModProperties.LINKED, linked), Block.UPDATE_ALL);
+            }
+        }
+    }
+
+    /** Sucht Asteroiden, zielt und baut sie ab. Die Energie fliesst direkt in den Puffer. */
+    private void tickLasers(ServerLevel level) {
+        CorePattern p = pattern();
+        if (p == null) return;
+        Vec3 muzzle = Vec3.atCenterOf(center(level).above(p.half() + 3));
+        CosmicAsteroid target = laserTarget >= 0 && level.getEntity(laserTarget) instanceof CosmicAsteroid a && a.isAlive()
+                && a.position().distanceTo(muzzle) < LASER_RANGE ? a : null;
+        if (target == null) {
+            if (laserTarget != -1) {
+                laserTarget = -1;
+                pushVisuals(level);
+            }
+            if (level.getGameTime() % 20 != 0) return;
+            AABB area = new AABB(muzzle, muzzle).inflate(LASER_RANGE);
+            double best = Double.MAX_VALUE;
+            for (CosmicAsteroid a : level.getEntitiesOfClass(CosmicAsteroid.class, area)) {
+                double d = a.position().distanceToSqr(muzzle);
+                if (a.getY() > muzzle.y && d < best) {
+                    best = d;
+                    target = a;
+                }
+            }
+            if (target == null) return;
+            laserTarget = target.getId();
+            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 1.5F, 1.6F);
+            pushVisuals(level);
+        }
+        if (level.getGameTime() % 10 == 0) {
+            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_AMBIENT, SoundSource.BLOCKS, 1.0F, 1.8F);
+        }
+        int gained = target.harvestTick();
+        if (gained > 0) {
+            receiveCosmicEnergy(gained);
+            laserTarget = -1;
+            pushVisuals(level);
+        }
+    }
+
     /** Uebergibt die Darstellungswerte an den Singularitaetskern (der sie an die Clients schickt). */
     private void pushVisuals(ServerLevel level) {
         if (!formed || size == null) return;
@@ -429,7 +489,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
             ItemStack stab = inventory.getStackInSlot(SLOT_STAB);
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
-            be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic, shield, funnel);
+            be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic, shield, funnel,
+                    laserArray, laserTarget);
         }
     }
 
@@ -516,6 +577,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
             BlockPos above = pattern.center(worldPosition, bestDir).above(pattern.half() + 1);
             funnel = level.getBlockState(above).is(ModBlocks.STAR_FUNNEL.get());
+            boolean lasers = true;
+            for (Direction d : Direction.Plane.HORIZONTAL) {
+                if (!level.getBlockState(above.relative(d)).is(ModBlocks.COSMIC_LASER.get())) lasers = false;
+            }
+            if (lasers != laserArray) {
+                laserArray = lasers;
+                laserTarget = -1;
+                setLasersLinked(level, above, lasers);
+            }
             skyLink = level.canSeeSky(funnel ? above.above() : above);
             if (!formed) {
                 onFormed(level);
@@ -525,6 +595,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         } else {
             skyLink = false;
             funnel = false;
+            if (laserArray) {
+                laserArray = false;
+                laserTarget = -1;
+                setLasersLinked(level, center(level).above(pattern.half() + 1), false);
+            }
             if (formed) onUnformed(level);
         }
     }
@@ -563,12 +638,19 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private static void setPhaseAround(ServerLevel level, CorePattern pattern, BlockPos center, CorePhase target, @Nullable BlockPos skip) {
+        float radius = pattern.half() + 0.5F;
         pattern.forEach(center, (pos, cell) -> {
             if (!CorePattern.isBlockCell(cell) || pos.equals(skip) || !level.hasChunkAt(pos)) return;
             BlockState s = level.getBlockState(pos);
-            if (s.hasProperty(ModProperties.PHASE) && s.getValue(ModProperties.PHASE) != target) {
-                level.setBlock(pos, s.setValue(ModProperties.PHASE, target), Block.UPDATE_CLIENTS);
+            BlockState n = s;
+            if (n.hasProperty(ModProperties.PHASE)) n = n.setValue(ModProperties.PHASE, target);
+            if (n.hasProperty(ModProperties.PHANTOM)) {
+                // ausserhalb der sichtbaren Kugel: bei gebildeter Struktur kein Koerper
+                int dx = pos.getX() - center.getX(), dy = pos.getY() - center.getY(), dz = pos.getZ() - center.getZ();
+                boolean outside = dx * dx + dy * dy + dz * dz > radius * radius;
+                n = n.setValue(ModProperties.PHANTOM, target != CorePhase.DORMANT && outside);
             }
+            if (n != s) level.setBlock(pos, n, Block.UPDATE_CLIENTS);
         });
         // der Controller selbst ist Teil des Musters und wird hier ebenfalls gesetzt
         if (skip != null && level.hasChunkAt(skip)) {
@@ -645,14 +727,18 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             p.forEach(center, (pos, cell) -> {
                 if (!CorePattern.isBlockCell(cell) || pos.equals(worldPosition) || !level.hasChunkAt(pos)) return;
                 BlockState s = level.getBlockState(pos);
-                if (s.hasProperty(ModProperties.PHASE) && s.getValue(ModProperties.PHASE) != CorePhase.DORMANT) {
-                    level.setBlock(pos, s.setValue(ModProperties.PHASE, CorePhase.DORMANT), Block.UPDATE_CLIENTS);
-                }
+                BlockState n = s;
+                if (n.hasProperty(ModProperties.PHASE)) n = n.setValue(ModProperties.PHASE, CorePhase.DORMANT);
+                if (n.hasProperty(ModProperties.PHANTOM)) n = n.setValue(ModProperties.PHANTOM, false);
+                if (n != s) level.setBlock(pos, n, Block.UPDATE_CLIENTS);
                 if ((cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT)
                         && level.getBlockEntity(pos) instanceof PortBlockEntity port) {
                     port.link(null);
                 }
             });
+        }
+        if (p != null && oldState.hasProperty(ControllerBlock.FACING)) {
+            setLasersLinked(level, p.center(worldPosition, oldState.getValue(ControllerBlock.FACING)).above(p.half() + 1), false);
         }
         for (int i = 0; i < inventory.getSlots(); i++) {
             ItemStack stack = inventory.getStackInSlot(i);
@@ -840,7 +926,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (preview ? ControllerMenu.F_PREVIEW : 0)
                         | (skyLink ? ControllerMenu.F_SKY : 0)
                         | (lastOutput > 0 ? ControllerMenu.F_BURNING : 0)
-                        | (funnel ? ControllerMenu.F_FUNNEL : 0);
+                        | (funnel ? ControllerMenu.F_FUNNEL : 0)
+                        | (laserArray ? ControllerMenu.F_LASER : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));

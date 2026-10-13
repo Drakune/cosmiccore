@@ -67,9 +67,12 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
   Mit freiem Himmel verdoppelt er den Himmelsbonus (+50 %) und saugt sichtbar Energie aus dem All.
 - **Asteroiden:** Nachts (Overworld, freier Himmel) und im End ziehen kleine, mittlere und große Asteroiden vorbei
   (`asteroids`, `asteroidChance` in der Config). Energie: 50k / 250k / 1M RF.
-- **Kosmos-Laser** (Fokuskristall, Sternenstaub, Eisen): Rechtsklick halten und auf einen Asteroiden zielen, bis er
-  zerbricht. Speichert bis zu 5M RF; Rechtsklick auf Controller oder Energie-Port gibt die Energie in den Puffer.
-
+- **Kosmos-Laser** (Block: Fokuskristall, Sternenstaub, Eisen, Leerengehäuse): 4 Stück auf die Decke setzen - je einer
+  nördlich, östlich, südlich und westlich der Deckenmitte (der Sternentrichter darf in der Mitte sitzen).
+  Bei gebildeter Struktur verschmelzen sie zu einem Geschütz, das Asteroiden selbst anvisiert, abschießt und die
+  Energie direkt in den Puffer speist.
+- **Phantom-Blöcke:** Hüllenblöcke außerhalb der sichtbaren Kugel haben bei gebildeter Struktur keine Kollision und
+  sind nicht anwählbar. Ports bleiben sichtbar, damit Rohre/Kabel anderer Mods sauber andocken.
 ## Spielmechanik
 
 - **Zündung:** Brennstoff (Rechtsklick auf Controller oder per Trichter/Rohr in den Item-Port) startet den Kern.

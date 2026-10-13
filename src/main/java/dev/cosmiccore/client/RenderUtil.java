@@ -171,6 +171,34 @@ public final class RenderUtil {
         return new float[]{r * Mth.cos(u), r * Mth.sin(u), tube * Mth.sin(v)};
     }
 
+    /** Vierkant-Strebe mit Sternenfeld-Shader zwischen zwei beliebigen Punkten. */
+    public static void starStrut(VertexConsumer vc, Matrix4f m, float ax, float ay, float az, float bx, float by, float bz, float w) {
+        float dx = bx - ax, dy = by - ay, dz = bz - az;
+        float len = Mth.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 1.0E-4F) return;
+        dx /= len;
+        dy /= len;
+        dz /= len;
+        float ux = 0, uy = 1, uz = 0;
+        if (Math.abs(dy) > 0.95F) {
+            ux = 1;
+            uy = 0;
+        }
+        float n1x = dy * uz - dz * uy, n1y = dz * ux - dx * uz, n1z = dx * uy - dy * ux;
+        float l1 = Mth.sqrt(n1x * n1x + n1y * n1y + n1z * n1z);
+        n1x = n1x / l1 * w;
+        n1y = n1y / l1 * w;
+        n1z = n1z / l1 * w;
+        float n2x = dy * n1z - dz * n1y, n2y = dz * n1x - dx * n1z, n2z = dx * n1y - dy * n1x;
+        float[][] o = {{n1x + n2x, n1y + n2y, n1z + n2z}, {n1x - n2x, n1y - n2y, n1z - n2z},
+                {-n1x - n2x, -n1y - n2y, -n1z - n2z}, {-n1x + n2x, -n1y + n2y, -n1z + n2z}};
+        for (int i = 0; i < 4; i++) {
+            float[] p = o[i], q = o[(i + 1) % 4];
+            starQuad(vc, m, new float[]{ax + p[0], ay + p[1], az + p[2]}, new float[]{ax + q[0], ay + q[1], az + q[2]},
+                    new float[]{bx + q[0], by + q[1], bz + q[2]}, new float[]{bx + p[0], by + p[1], bz + p[2]});
+        }
+    }
+
     /** Achsparalleler Quader mit Sternenfeld-Shader. */
     public static void starBox(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, float x1, float y1, float z1) {
         float[] a = {x0, y0, z0}, b = {x1, y0, z0}, c = {x1, y0, z1}, d = {x0, y0, z1};

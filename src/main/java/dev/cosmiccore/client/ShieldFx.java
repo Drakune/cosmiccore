@@ -126,12 +126,12 @@ public final class ShieldFx {
         Matrix4f wm = pose.last().pose();
         // Emitter-Strahlen mit Einschlagsblitz
         int half = size / 2;
-        float lens = (size <= 5 ? half : half - 1) - 0.28F; // Fokuslinse der Emitter
+        float lens = (size <= 5 ? half : half - 1) - 0.1F; // Fokuslinse der (verkleinerten) Emitter
         int count = size >= 9 ? 8 : 4;
         for (int k = 0; k < count; k++) {
             boolean diag = k >= 4;
             float ang = (diag ? Mth.PI / 4 : 0.0F) + (k % 4) * Mth.HALF_PI;
-            float from = diag ? (half - 1) * Mth.SQRT_OF_TWO - 0.28F : lens;
+            float from = diag ? (half - 1) * Mth.SQRT_OF_TWO - 0.1F : lens;
             float dx = Mth.cos(ang), dz = Mth.sin(ang);
             float pulse = 0.6F + 0.4F * Mth.sin(t * 0.3F + k * 1.3F);
             float a = energy * strength * pulse;

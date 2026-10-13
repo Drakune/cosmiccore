@@ -1,7 +1,6 @@
 package dev.cosmiccore;
 
 import dev.cosmiccore.block.ModBlocks;
-import dev.cosmiccore.item.CosmicLaserItem;
 import dev.cosmiccore.item.GuideBookItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -27,8 +26,7 @@ public final class ModItems {
 
     public static final DeferredItem<BlockItem> STAR_FUNNEL = ITEMS.registerSimpleBlockItem("star_funnel", ModBlocks.STAR_FUNNEL);
 
-    public static final DeferredItem<CosmicLaserItem> COSMIC_LASER = ITEMS.registerItem("cosmic_laser",
-            CosmicLaserItem::new, new Item.Properties().stacksTo(1));
+    public static final DeferredItem<BlockItem> COSMIC_LASER = ITEMS.registerSimpleBlockItem("cosmic_laser", ModBlocks.COSMIC_LASER);
 
     private ModItems() {}
 }

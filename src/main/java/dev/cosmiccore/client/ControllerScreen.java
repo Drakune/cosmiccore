@@ -246,7 +246,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawString(font, Component.translatable(skyKey), INFO_X, ly,
                 sky ? 0xFF80FFD0 : 0xFF807090, false);
         ly += 11;
-        g.drawString(font, Component.translatable("gui.cosmiccore.size", menu.size(), menu.size(), menu.size()), INFO_X, ly, 0xFF908AA8, false);
+        if (menu.flag(ControllerMenu.F_LASER)) {
+            g.drawString(font, Component.translatable("gui.cosmiccore.laser_on"), INFO_X, ly, 0xFF80E8FF, false);
+        } else {
+            g.drawString(font, Component.translatable("gui.cosmiccore.size", menu.size(), menu.size(), menu.size()), INFO_X, ly, 0xFF908AA8, false);
+        }
 
         g.drawString(font, Component.translatable("gui.cosmiccore.scale"), 8, ROW_Y - 12, 0xFFB8A8D8, false);
     }

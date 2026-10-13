@@ -29,6 +29,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private int cosmic = 100;     // kosmischer Faktor in Prozent
     private int shield;           // Staerke des Eindaemmungsschilds 0..100 (Stabilisator-Vorrat)
     private boolean funnel;       // Sternentrichter auf der Decke
+    private boolean laserArray;   // vier Kosmos-Laser bilden das grosse Geschuetz
+    private int laserTarget = -1; // Entity-ID des anvisierten Asteroiden
 
     /** Spielzeit, zu der die Struktur gebildet wurde (vom Controller gesetzt, startet die Verwandlungs-Animation). */
     private long formStart = Long.MIN_VALUE;
@@ -40,15 +42,18 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     // ------------------------------------------------------------------ vom Controller gesetzt
 
     public void setVisuals(int structureSize, int scale, int maxScale, float instability, boolean skyLink, double cosmic,
-                           int shield, boolean funnel) {
+                           int shield, boolean funnel, boolean laserArray, int laserTarget) {
         int inst = Math.round(instability);
         int cos = (int) Math.round(cosmic * 100.0);
         shield = Math.max(0, Math.min(100, shield));
         if (structureSize == this.structureSize && scale == this.scale && maxScale == this.maxScale
                 && inst == this.instability && skyLink == this.skyLink && cos == this.cosmic
-                && shield / 5 == this.shield / 5 && funnel == this.funnel) {
+                && shield / 5 == this.shield / 5 && funnel == this.funnel
+                && laserArray == this.laserArray && laserTarget == this.laserTarget) {
             return;
         }
+        this.laserArray = laserArray;
+        this.laserTarget = laserTarget;
         this.shield = shield;
         this.funnel = funnel;
         this.structureSize = structureSize;
@@ -102,6 +107,14 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     public float getShield() {
         return shield / 100.0F;
+    }
+
+    public boolean hasLaserArray() {
+        return laserArray;
+    }
+
+    public int getLaserTarget() {
+        return laserTarget;
     }
 
     public boolean hasFunnel() {
@@ -203,6 +216,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         cosmic = tag.contains("cosmic") ? tag.getInt("cosmic") : 100;
         shield = tag.getInt("shield");
         funnel = tag.getBoolean("funnel");
+        laserArray = tag.getBoolean("laserArray");
+        laserTarget = tag.contains("laserTarget") ? tag.getInt("laserTarget") : -1;
         formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
     }
 
@@ -215,6 +230,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         tag.putInt("cosmic", cosmic);
         tag.putInt("shield", shield);
         tag.putBoolean("funnel", funnel);
+        tag.putBoolean("laserArray", laserArray);
+        tag.putInt("laserTarget", laserTarget);
         tag.putLong("formStart", formStart);
     }
 

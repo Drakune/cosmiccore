@@ -157,6 +157,19 @@ public final class ReactorShellRenderer {
             }
         }
 
+        // Controller wird zum schwebenden Interface-Knoten
+        if (p.done()) {
+            for (ShellCell c : cells(p.size())) {
+                if (c.cell() != CorePattern.Cell.SLOT) continue;
+                if (!p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz())).is(ModBlocks.CONTROLLER.get())) continue;
+                pose.pushPose();
+                pose.translate(c.dx(), c.dy() + 0.05F * Mth.sin(p.t() * 0.08F), c.dz());
+                pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(p.t() * 1.2F));
+                RenderUtil.starOctahedron(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), 0.26F, 0.36F);
+                pose.popPose();
+            }
+        }
+
         // waehrend der Verwandlung: Bloecke oberhalb der Scan-Scheibe zeigen noch ihr altes Aussehen
         if (!p.done()) {
             var dispatcher = Minecraft.getInstance().getBlockRenderer();
@@ -309,8 +322,20 @@ public final class ReactorShellRenderer {
             Vector3f east = new Vector3f(-Mth.sin(lon), 0, Mth.cos(lon));
             Vector3f north = new Vector3f(normal).cross(east).normalize().negate();
             float pulse = 0.6F + 0.4F * Mth.sin(p.t() * 0.12F + c.dx() + c.dz());
+            // Lichtbruecke vom Block (Knoten bzw. Port) zur Kugel - mit Pulsen, die zur Kammer laufen
+            float[] bridgeCol = controller ? new float[]{0.8F, 0.6F, 1.0F} : energy ? ENERGY_GLYPH : ITEM_GLYPH;
+            segment(vc, m, c.dx(), c.dy(), c.dz(), cpos[0], cpos[1], cpos[2], 0.05F, bridgeCol[0], bridgeCol[1], bridgeCol[2],
+                    p.energy() * 0.8F, p.energy() * 0.4F);
+            segment(vc, m, c.dx(), c.dy(), c.dz(), cpos[0], cpos[1], cpos[2], 0.015F, 1.0F, 1.0F, 1.0F, p.energy(), p.energy() * 0.6F);
+            float bs = Mth.frac(p.t() * 0.04F + c.dx() * 0.3F);
+            cube(vc, m, Mth.lerp(bs, c.dx(), cpos[0]), Mth.lerp(bs, c.dy(), cpos[1]), Mth.lerp(bs, c.dz(), cpos[2]),
+                    0.05F, 1.0F, 1.0F, 1.0F, p.energy() * Mth.sin(bs * Mth.PI));
             if (controller) {
                 circle(m, vc, cpos, east, north, 0.32F, new float[]{0.8F, 0.6F, 1.0F}, p.energy() * pulse);
+                // Kranz um den schwebenden Knoten
+                Matrix4f nm = new Matrix4f(m).translate(c.dx(), c.dy(), c.dz()).rotateY(p.t() * 0.03F);
+                flatCircle(vc, nm, 0.42F, 0.02F, 32, bridgeCol, p.energy() * pulse);
+                cube(vc, m, c.dx(), c.dy(), c.dz(), 0.08F + 0.03F * pulse, 1.0F, 1.0F, 1.0F, p.energy());
             } else if (energy) {
                 float[] g = ENERGY_GLYPH;
                 gl(m, vc, cpos, east, north, 0.08F, 0.3F, -0.1F, 0.0F, g, p.energy());

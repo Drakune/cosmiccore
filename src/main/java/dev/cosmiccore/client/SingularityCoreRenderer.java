@@ -108,6 +108,18 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                 form, Math.max(0.4F, energy), heat, active, unstable, growth);
         ReactorShellRenderer.solid(pose, buffers, shell);
 
+        // Kosmos-Laser-Geschuetz auf der Decke
+        Vec3 laserTarget = null;
+        org.joml.Vector3f aim = null;
+        if (be.hasLaserArray() && form >= 1.0F) {
+            if (be.getLaserTarget() >= 0 && level.getEntity(be.getLaserTarget()) instanceof net.minecraft.world.entity.Entity target) {
+                laserTarget = target.getPosition(partialTick).add(0, target.getBbHeight() / 2, 0)
+                        .subtract(Vec3.atCenterOf(be.getBlockPos()));
+            }
+            aim = BigLaserFx.aim(half, t, laserTarget);
+            BigLaserFx.solid(pose, buffers, half, t, aim);
+        }
+
         // Groessen
         float rh = (active ? Mth.lerp(growth, 0.28F, Math.max(0.34F, reach * 0.32F)) : 0.2F) * Math.max(0.05F, coreFade);
         rh *= 1.0F + 0.03F * Mth.sin(t * 0.1F) + 0.12F * beat;
@@ -154,8 +166,9 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         ShieldFx.render(pose, glow, be.getStructureSize(), reach, t, e, heat, be.getShield(), unstable, camYaw, camPitch);
         pose.popPose(); // Zittern
 
-        // 4) Licht der Kammer
+        // 4) Licht der Kammer und des Geschuetzes
         ReactorShellRenderer.glow(pose.last().pose(), glow, shell);
+        if (aim != null) BigLaserFx.glow(pose, glow, half, t, aim, laserTarget, Math.max(0.5F, energy));
         pose.popPose();
     }
 

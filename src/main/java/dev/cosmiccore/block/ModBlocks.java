@@ -45,7 +45,7 @@ public final class ModBlocks {
                     .lightLevel(light(10, 15, 15)));
 
     public static final DeferredBlock<ControllerBlock> CONTROLLER = BLOCKS.registerBlock("controller",
-            ControllerBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 6, 10, 10));
+            ControllerBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 6, 10, 10).noOcclusion());
 
     public static final DeferredBlock<EnergyPortBlock> ENERGY_PORT = BLOCKS.registerBlock("energy_port",
             EnergyPortBlock::new, metal(MapColor.COLOR_CYAN, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
@@ -57,6 +57,11 @@ public final class ModBlocks {
             StarFunnelBlock::new, BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE).strength(5.0F, 600.0F).sound(SoundType.AMETHYST)
                     .requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 7));
+
+    public static final DeferredBlock<CosmicLaserBlock> COSMIC_LASER = BLOCKS.registerBlock("cosmic_laser",
+            CosmicLaserBlock::new, BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_CYAN).strength(5.0F, 600.0F).sound(SoundType.NETHERITE_BLOCK)
+                    .requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 5));
 
     private static BlockBehaviour.Properties metal(MapColor color, SoundType sound, int formed, int active, int unstable) {
         return BlockBehaviour.Properties.of()

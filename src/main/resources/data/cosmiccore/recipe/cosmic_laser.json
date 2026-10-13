@@ -2,9 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "  C",
-    " S ",
-    "I  "
+    " C ",
+    "ISI",
+    "IVI"
   ],
   "key": {
     "C": {
@@ -15,6 +15,9 @@
     },
     "I": {
       "item": "minecraft:iron_ingot"
+    },
+    "V": {
+      "item": "cosmiccore:void_casing"
     }
   },
   "result": {

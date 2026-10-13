@@ -3,7 +3,6 @@ package dev.cosmiccore.block;
 import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.block.entity.ModBlockEntities;
 import dev.cosmiccore.data.ModDataMaps;
-import dev.cosmiccore.item.CosmicLaserItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -25,7 +24,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 public class ControllerBlock extends Block implements EntityBlock {
@@ -41,6 +44,14 @@ public class ControllerBlock extends Block implements EntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, ModProperties.PHASE);
+    }
+
+    private static final VoxelShape NODE = Block.box(3, 3, 3, 13, 13, 13);
+
+    /** Bei gebildeter Struktur schwebt der Controller als Interface-Knoten - nur dieser ist anwaehlbar. */
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return state.getValue(ModProperties.PHASE) == CorePhase.DORMANT ? Shapes.block() : NODE;
     }
 
     @Override
@@ -74,13 +85,6 @@ public class ControllerBlock extends Block implements EntityBlock {
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
-        // Kosmos-Laser: gesammelte Asteroiden-Energie in den Puffer abgeben
-        if (stack.getItem() instanceof CosmicLaserItem) {
-            if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
-                CosmicLaserItem.discharge(stack, be, player);
-            }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
-        }
         boolean feedable = ModDataMaps.fuel(stack) != null || ModDataMaps.stabilizer(stack) != null;
         if (!feedable) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {

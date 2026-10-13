@@ -81,6 +81,9 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         // lokale +Z-Achse zeigt zum Kern
         float dx = core != null ? core[0] : 1, dz = core != null ? core[2] : 0;
         pose.mulPose(Axis.YP.rotation((float) Math.atan2(dx, dz)));
+        // kompakt und zur Aussenseite versetzt, damit der Blick auf das Loch frei bleibt
+        pose.translate(0.0, 0.0, -0.25);
+        pose.scale(0.55F, 0.55F, 0.55F);
 
         // Schuessel: flache Sternenfeld-Scheibe hinten (Zylinder um die Z-Achse)
         pose.pushPose();

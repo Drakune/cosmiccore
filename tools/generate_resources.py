@@ -379,22 +379,31 @@ def draw_funnel_top():
     return img
 
 
-def draw_laser():
-    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+def draw_laser_side():
+    img = plate(31, base=(16, 20, 34), noise=4)
     px = img.load()
-    body = [(3, 12), (4, 11), (5, 10), (6, 9), (7, 8), (8, 7), (9, 6), (10, 5)]
-    for (x, y) in body:
-        for dx, dy in ((0, 0), (1, 0), (0, 1)):
-            put(px, x + dx, y + dy, (70, 60, 110))
-        put(px, x, y, (120, 100, 170))
-    for (x, y) in [(2, 13), (3, 14), (2, 14), (1, 14), (2, 15)]:  # Griff
-        put(px, x, y, (40, 30, 60))
-    put(px, 5, 12, (40, 30, 60)); put(px, 6, 12, (40, 30, 60))
-    for (x, y) in [(11, 4), (12, 3), (11, 3), (12, 4)]:  # Kristallspitze
-        put(px, x, y, (150, 230, 255))
-    put(px, 13, 2, (255, 255, 255)); put(px, 14, 1, (200, 240, 255))
-    for (x, y) in [(7, 9), (9, 7)]:
-        put(px, x, y, (180, 110, 255))
+    for x in range(16):
+        put(px, x, 10, (60, 90, 130)); put(px, x, 11, (12, 16, 28))
+    for y in range(2, 10):
+        for x in (6, 9):
+            put(px, x, y, (40, 60, 100))
+        put(px, 7, y, lerp((90, 220, 255), (170, 120, 255), y / 10))
+        put(px, 8, y, lerp((90, 220, 255), (170, 120, 255), y / 10))
+    for x in range(2, 14, 3):
+        put(px, x, 13, (120, 220, 255))
+    return img
+
+
+def draw_laser_top():
+    img = plate(32, base=(16, 20, 34), noise=4)
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if 3.5 < d < 4.6:
+                put(px, x, y, (90, 200, 255))
+            elif d <= 1.6:
+                put(px, x, y, (230, 245, 255))
     return img
 
 
@@ -454,7 +463,8 @@ def textures():
     save_strip('singularity_core_dormant', [draw_core_dormant()], 1)
     save_strip('star_dust', [draw_star_dust(f, 8) for f in range(8)], 3, folder='item')
     save_strip('guide_book', [draw_guide_book()], 1, folder='item')
-    save_strip('cosmic_laser', [draw_laser()], 1, folder='item')
+    save_strip('cosmic_laser_side', [draw_laser_side()], 1)
+    save_strip('cosmic_laser_top', [draw_laser_top()], 1)
     save_strip('star_funnel_side', [draw_funnel_side()], 1)
     save_strip('star_funnel_top', [draw_funnel_top()], 1)
     return sheets
@@ -477,7 +487,8 @@ def preview(sheets):
 
 
 # ----------------------------------------------------------------- Modelle / Blockstates
-COSMIC = ['resonance_coil', 'focus_crystal', 'rune_frame', 'void_casing', 'energy_port', 'item_port']
+# Ports bleiben sichtbar (Andockpunkte fuer Rohre/Kabel), der Rest geht in der runden Kammer auf
+COSMIC = ['resonance_coil', 'focus_crystal', 'rune_frame', 'void_casing']
 SIMPLE = ['void_casing', 'rune_frame', 'resonance_coil', 'focus_crystal', 'energy_port', 'item_port']
 
 
@@ -513,10 +524,12 @@ def models():
               {'parent': 'minecraft:block/cube',
                'textures': {'particle': side, 'down': side, 'up': side, 'north': f'{MOD}:block/controller_front_{p}',
                             'east': side, 'south': side, 'west': side}})
+    # gebildet: der Controller schwebt als Interface-Knoten (wird gerendert), das Blockmodell verschwindet
+    wjson(f'{ASSETS}/models/block/controller_hidden.json', {'textures': {'particle': f'{MOD}:block/void_casing_formed'}})
     variants = {}
     for facing, y in rot.items():
         for p in PHASES:
-            entry = {'model': f'{MOD}:block/controller_{p}'}
+            entry = {'model': f'{MOD}:block/controller_{p if p == "dormant" else "hidden"}'}
             if y:
                 entry['y'] = y
             variants[f'facing={facing},phase={p}'] = entry
@@ -550,8 +563,19 @@ def models():
         'elements': [box([4, 0, 4], [12, 4, 12]), box([2, 4, 2], [14, 9, 14]), box([0, 9, 0], [16, 13, 16])]})
     wjson(f'{ASSETS}/blockstates/star_funnel.json', {'variants': {'': {'model': f'{MOD}:block/star_funnel'}}})
     wjson(f'{ASSETS}/models/item/star_funnel.json', {'parent': f'{MOD}:block/star_funnel'})
-    wjson(f'{ASSETS}/models/item/cosmic_laser.json',
-          {'parent': 'minecraft:item/handheld', 'textures': {'layer0': f'{MOD}:item/cosmic_laser'}})
+    lside, ltop = f'{MOD}:block/cosmic_laser_side', f'{MOD}:block/cosmic_laser_top'
+    def lbox(a, b):
+        return {'from': a, 'to': b, 'faces': {
+            'down': {'texture': '#top'}, 'up': {'texture': '#top'}, 'north': {'texture': '#side'},
+            'south': {'texture': '#side'}, 'west': {'texture': '#side'}, 'east': {'texture': '#side'}}}
+    wjson(f'{ASSETS}/models/block/cosmic_laser.json', {
+        'parent': 'minecraft:block/block', 'textures': {'particle': lside, 'side': lside, 'top': ltop},
+        'elements': [lbox([1, 0, 1], [15, 5, 15]), lbox([5, 5, 5], [11, 11, 11]), lbox([7, 11, 7], [9, 16, 9])]})
+    wjson(f'{ASSETS}/models/block/cosmic_laser_hidden.json', {'textures': {'particle': lside}})
+    wjson(f'{ASSETS}/blockstates/cosmic_laser.json', {'variants': {
+        'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
+        'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
+    wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
     wjson(f'{ASSETS}/models/item/guide_book.json',
           {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/guide_book'}})
     wjson(f'{ASSETS}/models/item/star_dust.json',
@@ -632,20 +656,13 @@ DE = {
     'guide.cosmiccore.page.9': '§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.',
     'guide.cosmiccore.page.10': '§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r',
     'block.cosmiccore.star_funnel': 'Sternentrichter',
-    'item.cosmiccore.cosmic_laser': 'Kosmos-Laser',
+    'block.cosmiccore.cosmic_laser': 'Kosmos-Laser',
+    'gui.cosmiccore.laser_on': '✦ Laser-Array: aktiv',
     'entity.cosmiccore.cosmic_asteroid': 'Kosmischer Asteroid',
-    'message.cosmiccore.laser.collected': '+%s RF gesammelt (%s gespeichert)',
-    'message.cosmiccore.laser.transferred': '%s RF in den Reaktor übertragen',
-    'message.cosmiccore.laser.full': 'Der Laser ist voll - Energie am Reaktor abgeben',
-    'message.cosmiccore.laser.empty': 'Der Laser hat keine Energie gespeichert',
-    'message.cosmiccore.laser.no_room': 'Der Energiepuffer des Reaktors ist voll',
-    'tooltip.cosmiccore.laser.energy': 'Gespeichert: %s / %s RF',
-    'tooltip.cosmiccore.laser.hint1': 'Rechtsklick halten und auf einen Asteroiden zielen',
-    'tooltip.cosmiccore.laser.hint2': 'Rechtsklick auf Controller/Energie-Port: Energie abgeben',
     'gui.cosmiccore.funnel_on': '✦ Sternentrichter: aktiv',
     'guide.cosmiccore.page.11': '§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.',
-    'guide.cosmiccore.page.12': '§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nHalte den §dKosmos-Laser§r auf sie, bis sie zerbrechen. Größere bringen mehr Energie.',
-    'guide.cosmiccore.page.13': '§5§lKosmos-Laser§r\n\nDie gesammelte Energie bleibt im Laser (max. 5 Mio. RF).\n\nRechtsklick auf Controller oder Energie-Port gibt sie in den Puffer des Reaktors.',
+    'guide.cosmiccore.page.12': '§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nGroße bringen 1 Mio. RF, kleine 50.000 RF.',
+    'guide.cosmiccore.page.13': '§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie verschmelzen zu einem Geschütz, das Asteroiden selbst abschießt.',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -720,20 +737,13 @@ EN = {
     'guide.cosmiccore.page.9': '§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output, with a Star Funnel §b+50 %§r.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.',
     'guide.cosmiccore.page.10': '§5§lTips§r\n\n- Test on level 1 first.\n- Never run out of stabilizers.\n- On alarm, lower the level or press Stop.\n- In creative, §dBuild§r places the structure instantly.\n\n§8Good luck, starsmith.§r',
     'block.cosmiccore.star_funnel': 'Star Funnel',
-    'item.cosmiccore.cosmic_laser': 'Cosmic Energy Laser',
+    'block.cosmiccore.cosmic_laser': 'Cosmic Energy Laser',
+    'gui.cosmiccore.laser_on': '✦ Laser array: active',
     'entity.cosmiccore.cosmic_asteroid': 'Cosmic Asteroid',
-    'message.cosmiccore.laser.collected': '+%s RF collected (%s stored)',
-    'message.cosmiccore.laser.transferred': '%s RF transferred into the reactor',
-    'message.cosmiccore.laser.full': 'The laser is full - discharge it at the reactor',
-    'message.cosmiccore.laser.empty': 'The laser has no stored energy',
-    'message.cosmiccore.laser.no_room': "The reactor's energy buffer is full",
-    'tooltip.cosmiccore.laser.energy': 'Stored: %s / %s RF',
-    'tooltip.cosmiccore.laser.hint1': 'Hold right-click and aim at an asteroid',
-    'tooltip.cosmiccore.laser.hint2': 'Right-click controller/energy port: discharge',
     'gui.cosmiccore.funnel_on': '✦ Star funnel: active',
     'guide.cosmiccore.page.11': '§5§lStar Funnel§r\n\nPlace it right on the center of the ceiling.\n\nWith a clear sky it draws cosmic energy from space and §bdoubles§r the sky bonus.',
-    'guide.cosmiccore.page.12': '§5§lAsteroids§r\n\nAt night asteroids drift across the sky - small, medium or large.\n\nHold the §dCosmic Energy Laser§r on them until they shatter. Bigger ones give more energy.',
-    'guide.cosmiccore.page.13': '§5§lCosmic Energy Laser§r\n\nCollected energy stays in the laser (max 5M RF).\n\nRight-click the controller or an energy port to put it into the reactor buffer.',
+    'guide.cosmiccore.page.12': '§5§lAsteroids§r\n\nAt night asteroids drift across the sky - small, medium or large.\n\nLarge ones give 1M RF, small ones 50,000 RF.',
+    'guide.cosmiccore.page.13': '§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey merge into a turret that shoots asteroids on its own.',
 }
 
 
@@ -744,7 +754,7 @@ def lang():
 
 # ----------------------------------------------------------------- Daten
 BLOCKS = ['void_casing', 'rune_frame', 'focus_glass', 'resonance_coil', 'focus_crystal',
-          'singularity_core', 'controller', 'energy_port', 'item_port', 'star_funnel']
+          'singularity_core', 'controller', 'energy_port', 'item_port', 'star_funnel', 'cosmic_laser']
 
 
 def item(i):
@@ -793,8 +803,9 @@ def data():
               f'{MOD}:energy_port', 1)
     shaped('star_funnel', ['G G', 'GSG', ' V '],
            {'G': f'{MOD}:focus_glass', 'S': f'{MOD}:star_dust', 'V': f'{MOD}:void_casing'}, f'{MOD}:star_funnel', 1)
-    shaped('cosmic_laser', ['  C', ' S ', 'I  '],
-           {'C': f'{MOD}:focus_crystal', 'S': f'{MOD}:star_dust', 'I': 'minecraft:iron_ingot'}, f'{MOD}:cosmic_laser', 1)
+    shaped('cosmic_laser', [' C ', 'ISI', 'IVI'],
+           {'C': f'{MOD}:focus_crystal', 'S': f'{MOD}:star_dust', 'I': 'minecraft:iron_ingot', 'V': f'{MOD}:void_casing'},
+           f'{MOD}:cosmic_laser', 1)
     shapeless('guide_book', ['minecraft:book', f'{MOD}:star_dust'], f'{MOD}:guide_book', 1)
     shapeless('item_port', [f'{MOD}:void_casing', 'minecraft:hopper'], f'{MOD}:item_port', 1)
     shapeless('star_dust', ['minecraft:amethyst_shard', 'minecraft:amethyst_shard', 'minecraft:ender_pearl',

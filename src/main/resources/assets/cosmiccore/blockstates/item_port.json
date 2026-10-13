@@ -4,13 +4,13 @@
       "model": "cosmiccore:block/item_port_dormant"
     },
     "phase=formed": {
-      "model": "cosmiccore:block/item_port_hidden"
+      "model": "cosmiccore:block/item_port_formed"
     },
     "phase=active": {
-      "model": "cosmiccore:block/item_port_hidden"
+      "model": "cosmiccore:block/item_port_active"
     },
     "phase=unstable": {
-      "model": "cosmiccore:block/item_port_hidden"
+      "model": "cosmiccore:block/item_port_unstable"
     }
   }
 }
