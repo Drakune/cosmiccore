@@ -9,6 +9,8 @@ import dev.cosmiccore.block.ModProperties;
 import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.multiblock.CorePattern;
 import dev.cosmiccore.multiblock.ReactorSize;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -68,36 +70,45 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
         float alpha = 0.35F + 0.15F * Mth.sin(t * 0.15F);
         BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
         VertexConsumer ghost = new AlphaVertexConsumer(buffers.getBuffer(Sheets.translucentCullBlockSheet()), alpha);
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+        List<BlockPos> wrong = new ArrayList<>();
 
+        // 1) Geisterbloecke (Linien erst danach - ein Wechsel des RenderTypes schliesst den vorherigen Puffer ab)
         pattern.forEach(center, (pos, cell) -> {
             if (cell == CorePattern.Cell.ANY || pos.equals(origin)) return;
             BlockState current = level.getBlockState(pos);
             if (CorePattern.matches(cell, current, false)) return;
 
-            double ox = pos.getX() - origin.getX(), oy = pos.getY() - origin.getY(), oz = pos.getZ() - origin.getZ();
             // in der Kammer stoert jeder Block (auch Gras), sonst nur Bloecke, die man nicht einfach ueberbauen kann
-            boolean wrongBlock = !current.isAir() && (cell == CorePattern.Cell.AIR || !current.canBeReplaced());
-            if (wrongBlock) {
-                // falscher Block: rot markieren
-                LevelRenderer.renderLineBox(pose, lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01),
-                        1.0F, 0.2F, 0.25F, 1.0F);
+            if (!current.isAir() && (cell == CorePattern.Cell.AIR || !current.canBeReplaced())) {
+                wrong.add(pos.immutable());
+                return;
             }
             BlockState target = CorePattern.blockFor(cell);
-            if (target == null || wrongBlock) return;
+            if (target == null) return;
             // aktive Variante sieht in der Vorschau schoener aus; der Kern braucht sein sichtbares Ruhe-Modell
-            if (target.hasProperty(ModProperties.PHASE) && !target.is(ModBlocks.SINGULARITY_CORE.get())) {
+            if (target.hasProperty(ModProperties.PHASE) && !target.is(ModBlocks.SINGULARITY_CORE.get())
+                    && !target.is(ModBlocks.RESONANCE_COIL.get()) && !target.is(ModBlocks.FOCUS_CRYSTAL.get())) {
                 target = target.setValue(ModProperties.PHASE, CorePhase.FORMED);
             }
             BakedModel model = dispatcher.getBlockModel(target);
             pose.pushPose();
-            pose.translate(ox + 0.5, oy + 0.5, oz + 0.5);
+            pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
             pose.scale(0.82F, 0.82F, 0.82F);
             pose.translate(-0.5, -0.5, -0.5);
             dispatcher.getModelRenderer().renderModel(pose.last(), ghost, target, model, 1.0F, 1.0F, 1.0F,
                     LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
             pose.popPose();
         });
+
+        // 2) falsche Bloecke rot markieren
+        if (!wrong.isEmpty()) {
+            VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+            for (BlockPos pos : wrong) {
+                double ox = pos.getX() - origin.getX(), oy = pos.getY() - origin.getY(), oz = pos.getZ() - origin.getZ();
+                LevelRenderer.renderLineBox(pose, lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01),
+                        1.0F, 0.2F, 0.25F, 1.0F);
+            }
+        }
     }
 
     /** Leitet alles weiter, multipliziert aber den Alphakanal (fuer die Geisterbloecke). */

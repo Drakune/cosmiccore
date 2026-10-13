@@ -15,6 +15,7 @@ public final class ModCreativeTabs {
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .icon(() -> ModItems.CONTROLLER.get().getDefaultInstance())
             .displayItems((params, out) -> {
+                out.accept(ModItems.GUIDE_BOOK.get());
                 out.accept(ModItems.CONTROLLER.get());
                 out.accept(ModItems.SINGULARITY_CORE.get());
                 out.accept(ModItems.VOID_CASING.get());

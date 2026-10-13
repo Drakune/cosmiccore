@@ -19,10 +19,10 @@ public final class ModBlocks {
             StructureBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 4, 8, 8));
 
     public static final DeferredBlock<ResonatorBlock> RESONANCE_COIL = BLOCKS.registerBlock("resonance_coil",
-            ResonatorBlock::new, metal(MapColor.COLOR_CYAN, SoundType.COPPER, 5, 10, 10));
+            ResonatorBlock::new, metal(MapColor.COLOR_CYAN, SoundType.COPPER, 5, 10, 10).noOcclusion());
 
     public static final DeferredBlock<ResonatorBlock> FOCUS_CRYSTAL = BLOCKS.registerBlock("focus_crystal",
-            ResonatorBlock::new, metal(MapColor.COLOR_MAGENTA, SoundType.AMETHYST, 8, 15, 15));
+            ResonatorBlock::new, metal(MapColor.COLOR_MAGENTA, SoundType.AMETHYST, 8, 15, 15).noOcclusion());
 
     public static final DeferredBlock<FocusGlassBlock> FOCUS_GLASS = BLOCKS.registerBlock("focus_glass",
             FocusGlassBlock::new, BlockBehaviour.Properties.of()

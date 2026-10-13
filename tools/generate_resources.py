@@ -346,6 +346,26 @@ def draw_star_dust(f, nf):
     return img
 
 
+def draw_guide_book():
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(2, 15):
+        for x in range(3, 14):
+            px[x, y] = lerp((60, 30, 120), (25, 12, 55), (x + y) / 26) + (255,)
+    for y in range(2, 15):  # Buchruecken
+        put(px, 3, y, (110, 70, 200)); put(px, 4, y, (40, 20, 80))
+    for x in range(5, 14):  # Seiten
+        put(px, x, 14, (225, 215, 240))
+    for (x, y) in [(5, 2), (13, 2), (5, 13), (13, 13)]:
+        put(px, x, y, (200, 170, 90))
+    for (x, y) in [(9, 5), (9, 6), (9, 9), (9, 10), (7, 8), (8, 8), (10, 8), (11, 8)]:  # Stern
+        put(px, x, y, (150, 230, 255))
+    put(px, 9, 8, (255, 255, 255)); put(px, 9, 7, (220, 245, 255))
+    for (x, y) in [(6, 4), (12, 11), (12, 4)]:
+        put(px, x, y, (230, 200, 255))
+    return img
+
+
 # ----------------------------------------------------------------- Ausgabe der Texturen
 PAINTERS = {
     'void_casing': draw_casing,
@@ -381,6 +401,7 @@ def textures():
             sheets[(name, phase)] = frames
     save_strip('singularity_core_dormant', [draw_core_dormant()], 1)
     save_strip('star_dust', [draw_star_dust(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('guide_book', [draw_guide_book()], 1, folder='item')
     return sheets
 
 
@@ -401,6 +422,7 @@ def preview(sheets):
 
 
 # ----------------------------------------------------------------- Modelle / Blockstates
+COSMIC = ['resonance_coil', 'focus_crystal']
 SIMPLE = ['void_casing', 'rune_frame', 'resonance_coil', 'focus_crystal', 'energy_port', 'item_port']
 
 
@@ -409,8 +431,13 @@ def models():
         for p in PHASES:
             wjson(f'{ASSETS}/models/block/{b}_{p}.json',
                   {'parent': 'minecraft:block/cube_all', 'textures': {'all': f'{MOD}:block/{b}_{p}'}})
-        wjson(f'{ASSETS}/blockstates/{b}.json',
-              {'variants': {f'phase={p}': {'model': f'{MOD}:block/{b}_{p}'} for p in PHASES}})
+        if b in COSMIC:
+            # gebildete Struktur: Modell ausblenden, ResonatorRenderer zeichnet den Sternenfeld-Koerper
+            wjson(f'{ASSETS}/models/block/{b}_hidden.json', {'textures': {'particle': f'{MOD}:block/{b}_formed'}})
+            variants = {f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'} for p in PHASES}
+        else:
+            variants = {f'phase={p}': {'model': f'{MOD}:block/{b}_{p}'} for p in PHASES}
+        wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
         wjson(f'{ASSETS}/models/item/{b}.json', {'parent': f'{MOD}:block/{b}_formed'})
 
     # Glas (transluzent)
@@ -456,6 +483,8 @@ def models():
               'phase=unstable': {'model': f'{MOD}:block/singularity_core_hidden'}}})
     wjson(f'{ASSETS}/models/item/singularity_core.json', {'parent': f'{MOD}:block/singularity_core_dormant'})
 
+    wjson(f'{ASSETS}/models/item/guide_book.json',
+          {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/guide_book'}})
     wjson(f'{ASSETS}/models/item/star_dust.json',
           {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/star_dust'}})
 
@@ -492,9 +521,8 @@ DE = {
     'tooltip.cosmiccore.stabilizer': 'Kerngenerator-Stabilisator: -%s Instabilität/s, %s s',
     'message.cosmiccore.status.no_size': 'Noch keine Reaktorgröße gewählt - Rechtsklick öffnet die Auswahl.',
     'gui.cosmiccore.choose_size': 'Reaktorgröße wählen',
-    'gui.cosmiccore.choose_once': 'Einmalige Wahl - später nicht änderbar',
     'gui.cosmiccore.size_button': '%sx%sx%s',
-    'gui.cosmiccore.size_info': 'Max. Stufe %s · %s Blöcke · %s Spulen · Puffer x%s',
+    'gui.cosmiccore.size_info': '%s – %s RF/t',
     'gui.cosmiccore.build': 'Bauen',
     'gui.cosmiccore.start': 'Zünden',
     'gui.cosmiccore.stop': 'Stopp',
@@ -504,11 +532,10 @@ DE = {
     'gui.cosmiccore.energy': 'Energie: %s / %s RF',
     'gui.cosmiccore.instability': 'Instabilität: %s %%',
     'gui.cosmiccore.cosmic': 'Kosmischer Faktor: x%s',
-    'gui.cosmiccore.sky_on': '✦ Sternenlicht verbunden',
-    'gui.cosmiccore.sky_off': '✧ Kein Himmel über der Decke',
+    'gui.cosmiccore.sky_on': '✦ Himmel: frei',
+    'gui.cosmiccore.sky_off': '✧ Himmel: verdeckt',
     'gui.cosmiccore.size': 'Reaktor: %sx%sx%s',
     'gui.cosmiccore.scale': 'Leistungsstufe',
-    'gui.cosmiccore.hint_errors': 'Schleichen + Rechtsklick: erster Baufehler',
     'gui.cosmiccore.status.incomplete': 'Unvollständig (%s Fehler)',
     'gui.cosmiccore.status.collapsed': 'Kollabiert! (%s s)',
     'gui.cosmiccore.status.off': 'Abgeschaltet',
@@ -517,15 +544,18 @@ DE = {
     'gui.cosmiccore.status.active': 'Aktiv',
     'gui.cosmiccore.tip.energy': 'Energiepuffer',
     'gui.cosmiccore.tip.instability': 'Instabilität',
-    'gui.cosmiccore.tip.instability_hint': 'Bei 100 % kollabiert der Kern und zerbricht!',
-    'gui.cosmiccore.tip.resonance': 'Resonanz (Leistung baut sich langsam auf)',
-    'gui.cosmiccore.tip.scale': 'Leistungsstufe %s von %s',
-    'gui.cosmiccore.tip.scale_output': 'Leistung x%s',
-    'gui.cosmiccore.tip.scale_fuel': 'Brennstoffverbrauch x%s',
-    'gui.cosmiccore.tip.scale_instability': 'Instabilität x%s',
-    'gui.cosmiccore.tip.fuel_slot': 'Brennstoff (z. B. Sternenstaub)',
-    'gui.cosmiccore.tip.stab_slot': 'Stabilisator (z. B. Obsidian)',
-    'gui.cosmiccore.tip.sky': 'Freie Sicht zum Himmel über der Decke bringt Sternenlicht: mehr Leistung, nachts und bei Vollmond noch mehr.',
+    'gui.cosmiccore.tip.resonance': 'Resonanz',
+    'item.cosmiccore.guide_book': 'Kosmisches Handbuch',
+    'guide.cosmiccore.page.1': '§5§lKosmischer Kern§r\n§8Handbuch für Reaktorbauer§r\n\nDer Kerngenerator bündelt Sternenlicht in einer Singularität und wandelt es in RF um.\n\nMehr Leistung bedeutet mehr Risiko.',
+    'guide.cosmiccore.page.2': '§5§lAufbau§r\n\n1. Controller platzieren.\n2. Größe wählen: 5x5x5, 7x7x7 oder 9x9x9. Die Wahl ist endgültig!\n3. In der GUI die §dVorschau§r einschalten: Geisterblöcke zeigen, was wohin gehört, rot = falscher Block.',
+    'guide.cosmiccore.page.3': '§5§lBlöcke§r\n§lGehäuse:§r Boden, Decke\n§lRunenrahmen:§r Ecken\n§lFokusglas:§r Deckenring\n§lSpulen:§r Kernhöhe\n§lKristalle:§r über und unter dem Kern\n§lKern:§r Mitte\n\nDas Innere muss leer sein. Die Vorschau zeigt alles genau.',
+    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an.',
+    'guide.cosmiccore.page.5': '§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...',
+    'guide.cosmiccore.page.6': '§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.',
+    'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nMax. Stufe: 5x5x5 → 3, 7x7x7 → 5, 9x9x9 → 8\n\nGroße Reaktoren sind stabiler.',
+    'guide.cosmiccore.page.8': '§5§lInstabilität§r\n\nJede Verbrennung erhitzt den Kern. Stabilisatoren kühlen ihn automatisch ab 25 %.\n\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: §lKollaps§r - der Singularitätskern zerbricht!',
+    'guide.cosmiccore.page.9': '§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung und ein Lichtstrahl ins All.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.',
+    'guide.cosmiccore.page.10': '§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Stabilisatoren nie ausgehen lassen.\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -558,9 +588,8 @@ EN = {
     'tooltip.cosmiccore.stabilizer': 'Core generator stabilizer: -%s instability/s, %s s',
     'message.cosmiccore.status.no_size': 'No reactor size chosen yet - right-click to open the selection.',
     'gui.cosmiccore.choose_size': 'Choose reactor size',
-    'gui.cosmiccore.choose_once': 'One-time choice - cannot be changed later',
     'gui.cosmiccore.size_button': '%sx%sx%s',
-    'gui.cosmiccore.size_info': 'Max level %s · %s blocks · %s coils · buffer x%s',
+    'gui.cosmiccore.size_info': '%s – %s RF/t',
     'gui.cosmiccore.build': 'Build',
     'gui.cosmiccore.start': 'Ignite',
     'gui.cosmiccore.stop': 'Stop',
@@ -570,11 +599,10 @@ EN = {
     'gui.cosmiccore.energy': 'Energy: %s / %s RF',
     'gui.cosmiccore.instability': 'Instability: %s %%',
     'gui.cosmiccore.cosmic': 'Cosmic factor: x%s',
-    'gui.cosmiccore.sky_on': '✦ Starlight connected',
-    'gui.cosmiccore.sky_off': '✧ No sky above the ceiling',
+    'gui.cosmiccore.sky_on': '✦ Sky: clear',
+    'gui.cosmiccore.sky_off': '✧ Sky: blocked',
     'gui.cosmiccore.size': 'Reactor: %sx%sx%s',
     'gui.cosmiccore.scale': 'Power level',
-    'gui.cosmiccore.hint_errors': 'Sneak + right-click: first build error',
     'gui.cosmiccore.status.incomplete': 'Incomplete (%s errors)',
     'gui.cosmiccore.status.collapsed': 'Collapsed! (%s s)',
     'gui.cosmiccore.status.off': 'Shut down',
@@ -583,15 +611,18 @@ EN = {
     'gui.cosmiccore.status.active': 'Active',
     'gui.cosmiccore.tip.energy': 'Energy buffer',
     'gui.cosmiccore.tip.instability': 'Instability',
-    'gui.cosmiccore.tip.instability_hint': 'At 100 % the core collapses and shatters!',
-    'gui.cosmiccore.tip.resonance': 'Resonance (output builds up slowly)',
-    'gui.cosmiccore.tip.scale': 'Power level %s of %s',
-    'gui.cosmiccore.tip.scale_output': 'Output x%s',
-    'gui.cosmiccore.tip.scale_fuel': 'Fuel consumption x%s',
-    'gui.cosmiccore.tip.scale_instability': 'Instability x%s',
-    'gui.cosmiccore.tip.fuel_slot': 'Fuel (e.g. Star Dust)',
-    'gui.cosmiccore.tip.stab_slot': 'Stabilizer (e.g. Obsidian)',
-    'gui.cosmiccore.tip.sky': 'A clear view of the sky above the ceiling channels starlight: more output, even more at night and full moon.',
+    'gui.cosmiccore.tip.resonance': 'Resonance',
+    'item.cosmiccore.guide_book': 'Cosmic Handbook',
+    'guide.cosmiccore.page.1': "§5§lCosmic Core§r\n§8A reactor builder's guide§r\n\nThe core generator focuses starlight into a singularity and turns it into RF.\n\nMore power means more risk.",
+    'guide.cosmiccore.page.2': '§5§lBuilding§r\n\n1. Place the controller.\n2. Choose a size: 5x5x5, 7x7x7 or 9x9x9. This choice is final!\n3. Turn on the §dPreview§r in the GUI: ghost blocks show what goes where, red = wrong block.',
+    'guide.cosmiccore.page.3': '§5§lBlocks§r\n§lCasing:§r floor, ceiling\n§lRune Frame:§r corners\n§lFocus Glass:§r ceiling ring\n§lCoils:§r core height\n§lCrystals:§r above and below the core\n§lCore:§r center\n\nThe inside must be empty. The preview shows everything.',
+    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts can replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes.',
+    'guide.cosmiccore.page.5': '§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...',
+    'guide.cosmiccore.page.6': '§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.',
+    'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nMax level:\n5x5x5 → 3\n7x7x7 → 5\n9x9x9 → 8\n\nBigger reactors are more stable per level.',
+    'guide.cosmiccore.page.8': '§5§lInstability§r\n\nBurning fuel heats the core. Stabilizers cool it automatically from 25 %.\n\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: §lcollapse§r - the singularity core shatters!',
+    'guide.cosmiccore.page.9': '§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output and a beam into space.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.',
+    'guide.cosmiccore.page.10': '§5§lTips§r\n\n- Test on level 1 first.\n- Never run out of stabilizers.\n- On alarm, lower the level or press Stop.\n- In creative, §dBuild§r places the structure instantly.\n\n§8Good luck, starsmith.§r',
 }
 
 
@@ -649,6 +680,7 @@ def data():
            {'C': f'{MOD}:void_casing', 'D': 'minecraft:diamond', 'E': 'minecraft:ender_eye', 'S': f'{MOD}:star_dust'}, f'{MOD}:controller', 1)
     shapeless('energy_port', [f'{MOD}:void_casing', 'minecraft:redstone', 'minecraft:redstone', 'minecraft:copper_ingot'],
               f'{MOD}:energy_port', 1)
+    shapeless('guide_book', ['minecraft:book', f'{MOD}:star_dust'], f'{MOD}:guide_book', 1)
     shapeless('item_port', [f'{MOD}:void_casing', 'minecraft:hopper'], f'{MOD}:item_port', 1)
     shapeless('star_dust', ['minecraft:amethyst_shard', 'minecraft:amethyst_shard', 'minecraft:ender_pearl',
                             'minecraft:glowstone_dust'], f'{MOD}:star_dust', 2)

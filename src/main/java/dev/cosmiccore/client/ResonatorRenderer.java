@@ -26,9 +26,10 @@ import org.joml.Matrix4f;
 /**
  * Animation von Resonanzspule und Fokuskristall.
  * <ul>
- *   <li>Spule: zwei gegenlaeufige Feldringe, umlaufende Funken und ein pulsierender Kern-Glow.</li>
- *   <li>Kristall: schwebende, rotierende Kristallform (Oktaeder) mit Halo und Sternsplittern.</li>
+ *   <li>Spule: Koerper aus Sternenfeld mit leuchtenden Wicklungen, gegenlaeufige Feldringe und Funken.</li>
+ *   <li>Kristall: schwebender, rotierender Sternenfeld-Oktaeder mit leuchtenden Kanten, Halo und Splittern.</li>
  * </ul>
+ * Das Blockmodell ist bei gebildeter Struktur ausgeblendet; der Renderer ersetzt es komplett.
  * Geschwindigkeit, Farbe und Helligkeit haengen an der Phase der Struktur.
  */
 public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEntity> {
@@ -61,22 +62,37 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         final float offset = (be.getBlockPos().hashCode() & 0xFF) * 0.37F;
         final float flicker = unstable ? 0.6F + 0.4F * (0.5F + 0.5F * hash((int) (t * 1.3F) + (int) offset)) : 1.0F;
 
-        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        // Wichtig: Puffer erst holen, wenn sie gebraucht werden. Ein getBuffer() mit anderem RenderType
+        // schliesst den vorherigen (nicht festen) Puffer ab - weiteres Schreiben hinein stuerzt ab.
         pose.pushPose();
         pose.translate(0.5, 0.5, 0.5);
         if (be.getBlockState().is(ModBlocks.FOCUS_CRYSTAL.get())) {
-            renderCrystal(pose, glow, t + offset, speed, intensity * flicker, active, unstable);
+            renderCrystal(pose, buffers, t + offset, speed, intensity * flicker, active, unstable);
         } else {
-            renderCoil(pose, glow, t + offset, speed, intensity * flicker, active, unstable);
+            renderCoil(pose, buffers, t + offset, speed, intensity * flicker, active, unstable);
         }
         pose.popPose();
     }
 
-    private static void renderCoil(PoseStack pose, VertexConsumer glow, float t, float speed, float intensity,
-                                   boolean active, boolean unstable) {
+    private static void renderCoil(PoseStack pose, MultiBufferSource buffers, float t, float speed,
+                                   float intensity, boolean active, boolean unstable) {
         float[] a = unstable ? RED : CYAN;
         float[] b = unstable ? PINK : VIOLET;
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.25F * speed);
+
+        // Spulenkoerper aus Sternenfeld (End-Portal-Shader) mit leuchtenden Wicklungen
+        pose.pushPose();
+        pose.mulPose(Axis.YP.rotationDegrees(t * 0.5F * speed));
+        RenderUtil.starCylinder(buffers.getBuffer(RenderType.endPortal()), pose.last().pose(), 0.4F, 0.47F, 16);
+        pose.popPose();
+        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        for (int w = -2; w <= 2; w++) {
+            pose.pushPose();
+            pose.translate(0.0, w * 0.19, 0.0);
+            float wave = 0.5F + 0.5F * Mth.sin(t * 0.3F * speed - w * 1.2F);
+            ring(pose, glow, 0.43F, 0.018F, t * 2.0F * speed, 0.0F, 0.0F, t + w * 9.0F, w % 2 == 0 ? a : b, intensity * (0.4F + 0.6F * wave));
+            pose.popPose();
+        }
 
         // zwei gegenlaeufige Feldringe ober- und unterhalb der Wicklungsmitte
         pose.pushPose();
@@ -114,8 +130,8 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         }
     }
 
-    private static void renderCrystal(PoseStack pose, VertexConsumer glow, float t, float speed, float intensity,
-                                      boolean active, boolean unstable) {
+    private static void renderCrystal(PoseStack pose, MultiBufferSource buffers, float t, float speed,
+                                      float intensity, boolean active, boolean unstable) {
         float[] a = unstable ? RED : MAGENTA;
         float[] b = unstable ? PINK : CYAN;
         float bob = 0.05F * Mth.sin(t * 0.08F * speed);
@@ -125,6 +141,9 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         pose.translate(0.0, bob, 0.0);
         pose.mulPose(Axis.YP.rotationDegrees(t * 1.6F * speed));
         float breathe = 1.0F + 0.06F * Mth.sin(t * 0.2F * speed);
+        // Kristallkoerper aus Sternenfeld (End-Gateway-Shader, wie der Kern)
+        RenderUtil.starOctahedron(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), 0.5F * breathe, 0.7F * breathe);
+        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
         octahedron(glow, pose.last().pose(), 0.62F * breathe, 0.85F * breathe, 0.022F, a, intensity);
         pose.mulPose(Axis.YP.rotationDegrees(45.0F));
         octahedron(glow, pose.last().pose(), 0.5F * breathe, 0.7F * breathe, 0.015F, b, intensity * 0.6F);

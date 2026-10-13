@@ -1,9 +1,12 @@
 package dev.cosmiccore.client;
 
 import dev.cosmiccore.CoreConfig;
+import dev.cosmiccore.ModItems;
+import dev.cosmiccore.data.CoreFuel;
+import dev.cosmiccore.data.ModDataMaps;
+import net.minecraft.world.item.ItemStack;
 import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.menu.ControllerMenu;
-import dev.cosmiccore.multiblock.CorePattern;
 import dev.cosmiccore.multiblock.ReactorSize;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -23,7 +26,7 @@ import net.minecraft.world.inventory.Slot;
  */
 public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int W = 234, H = 226;
-    private static final int BAR_Y = 18, BAR_H = 72, BAR_W = 10;
+    private static final int BAR_Y = 18, BAR_H = 60, BAR_W = 10;
     private static final int BAR_ENERGY_X = 42, BAR_INST_X = 58, BAR_RES_X = 74;
     private static final int INFO_X = 92;
     private static final int ROW_Y = 104;
@@ -171,14 +174,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(font, title, titleLabelX, titleLabelY, 0xFFE0B0FF, false);
         if (!menu.sizeChosen()) {
-            g.drawCenteredString(font, Component.translatable("gui.cosmiccore.choose_size"), W / 2, 22, 0xFFFFFFFF);
-            g.drawCenteredString(font, Component.translatable("gui.cosmiccore.choose_once").withStyle(ChatFormatting.GRAY), W / 2, 32, 0xFFAAAAAA);
+            g.drawCenteredString(font, Component.translatable("gui.cosmiccore.choose_size"), W / 2, 26, 0xFFFFFFFF);
             ReactorSize[] sizes = ReactorSize.values();
+            int base = referencePower();
             for (int i = 0; i < sizes.length; i++) {
                 ReactorSize s = sizes[i];
-                CorePattern p = s.pattern();
-                Component info = Component.translatable("gui.cosmiccore.size_info", s.maxScale(), p.blockCount(),
-                        p.count(CorePattern.Cell.COIL), String.format("%.1f", s.capacityFactor()));
+                long max = Math.round(base * Math.pow(s.maxScale(), CoreConfig.SCALE_OUTPUT_EXPONENT.get())
+                        * CoreConfig.OUTPUT_MULTIPLIER.get());
+                long min = Math.round(base * CoreConfig.OUTPUT_MULTIPLIER.get());
+                Component info = Component.translatable("gui.cosmiccore.size_info", fmt(min), fmt(max));
                 g.drawCenteredString(font, info, W / 2, 46 + i * 50 + 24, 0xFFB8A8D8);
             }
             return;
@@ -202,10 +206,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         ly += 11;
         g.drawString(font, Component.translatable("gui.cosmiccore.size", menu.size(), menu.size(), menu.size()), INFO_X, ly, 0xFF908AA8, false);
 
-        g.drawString(font, Component.translatable("gui.cosmiccore.scale"), 8, ROW_Y - 10, 0xFFB8A8D8, false);
-        if (!menu.flag(ControllerMenu.F_FORMED)) {
-            g.drawString(font, Component.translatable("gui.cosmiccore.hint_errors"), 8, ROW_Y + 20, 0xFF807090, false);
-        }
+        g.drawString(font, Component.translatable("gui.cosmiccore.scale"), 8, ROW_Y - 12, 0xFFB8A8D8, false);
+    }
+
+    /** RF/t des Sternenstaubs als Referenz fuer die Leistungsspanne in der Groessenwahl. */
+    private static int referencePower() {
+        CoreFuel fuel = ModDataMaps.fuel(new ItemStack(ModItems.STAR_DUST.get()));
+        return fuel == null ? 1200 : fuel.power();
     }
 
     private Component statusLine() {
@@ -248,25 +255,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         } else if (in(mx, my, BAR_INST_X, BAR_Y, BAR_W, BAR_H)) {
             tip.add(Component.translatable("gui.cosmiccore.tip.instability"));
             tip.add(Component.literal(String.format("%.1f %%", menu.instability())).withStyle(ChatFormatting.GRAY));
-            tip.add(Component.translatable("gui.cosmiccore.tip.instability_hint").withStyle(ChatFormatting.DARK_GRAY));
         } else if (in(mx, my, BAR_RES_X, BAR_Y, BAR_W, BAR_H)) {
             tip.add(Component.translatable("gui.cosmiccore.tip.resonance"));
             tip.add(Component.literal(menu.resonance() + " %").withStyle(ChatFormatting.GRAY));
-        } else if (in(mx, my, 25, ROW_Y, 42, 16)) {
-            int s = Math.max(1, menu.scale());
-            tip.add(Component.translatable("gui.cosmiccore.tip.scale", s, menu.maxScale()));
-            tip.add(Component.translatable("gui.cosmiccore.tip.scale_output",
-                    String.format("%.2f", Math.pow(s, CoreConfig.SCALE_OUTPUT_EXPONENT.get()))).withStyle(ChatFormatting.AQUA));
-            tip.add(Component.translatable("gui.cosmiccore.tip.scale_fuel", s).withStyle(ChatFormatting.GOLD));
-            ReactorSize size = ReactorSize.bySize(menu.size());
-            double inst = Math.pow(s, CoreConfig.SCALE_INSTABILITY_EXPONENT.get()) * (size == null ? 1.0 : size.instabilityFactor());
-            tip.add(Component.translatable("gui.cosmiccore.tip.scale_instability", String.format("%.2f", inst)).withStyle(ChatFormatting.RED));
-        } else if (in(mx, my, ControllerMenu.FUEL_X, ControllerMenu.FUEL_Y, 16, 16) && !menu.slots.get(0).hasItem()) {
-            tip.add(Component.translatable("gui.cosmiccore.tip.fuel_slot"));
-        } else if (in(mx, my, ControllerMenu.STAB_X, ControllerMenu.STAB_Y, 16, 16) && !menu.slots.get(1).hasItem()) {
-            tip.add(Component.translatable("gui.cosmiccore.tip.stab_slot"));
-        } else if (in(mx, my, INFO_X, BAR_Y + 55, 136, 10)) {
-            tip.add(Component.translatable("gui.cosmiccore.tip.sky"));
         }
         if (!tip.isEmpty()) g.renderComponentTooltip(font, tip, mouseX, mouseY);
     }

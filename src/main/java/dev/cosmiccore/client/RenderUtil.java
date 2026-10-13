@@ -80,6 +80,47 @@ public final class RenderUtil {
         }
     }
 
+    /** Dreieck (nur Position, beidseitig) als entartetes Quad - fuer endGateway()/endPortal(). */
+    private static void starTri(VertexConsumer vc, Matrix4f m, float[] a, float[] b, float[] c) {
+        vc.addVertex(m, a[0], a[1], a[2]);
+        vc.addVertex(m, b[0], b[1], b[2]);
+        vc.addVertex(m, c[0], c[1], c[2]);
+        vc.addVertex(m, c[0], c[1], c[2]);
+        vc.addVertex(m, c[0], c[1], c[2]);
+        vc.addVertex(m, b[0], b[1], b[2]);
+        vc.addVertex(m, a[0], a[1], a[2]);
+        vc.addVertex(m, a[0], a[1], a[2]);
+    }
+
+    /** Massiver Oktaeder mit Sternenfeld-Shader. */
+    public static void starOctahedron(VertexConsumer vc, Matrix4f m, float rx, float ry) {
+        float[][] eq = {{rx, 0, 0}, {0, 0, rx}, {-rx, 0, 0}, {0, 0, -rx}};
+        float[] top = {0, ry, 0}, bottom = {0, -ry, 0};
+        for (int i = 0; i < 4; i++) {
+            starTri(vc, m, eq[i], eq[(i + 1) % 4], top);
+            starTri(vc, m, eq[i], eq[(i + 1) % 4], bottom);
+        }
+    }
+
+    /** Massiver senkrechter Zylinder mit Deckeln und Sternenfeld-Shader. */
+    public static void starCylinder(VertexConsumer vc, Matrix4f m, float r, float halfH, int seg) {
+        float[] ct = {0, halfH, 0}, cb = {0, -halfH, 0};
+        for (int i = 0; i < seg; i++) {
+            float a0 = Mth.TWO_PI * i / seg, a1 = Mth.TWO_PI * (i + 1) / seg;
+            float x0 = Mth.cos(a0) * r, z0 = Mth.sin(a0) * r, x1 = Mth.cos(a1) * r, z1 = Mth.sin(a1) * r;
+            vc.addVertex(m, x0, -halfH, z0);
+            vc.addVertex(m, x1, -halfH, z1);
+            vc.addVertex(m, x1, halfH, z1);
+            vc.addVertex(m, x0, halfH, z0);
+            vc.addVertex(m, x0, halfH, z0);
+            vc.addVertex(m, x1, halfH, z1);
+            vc.addVertex(m, x1, -halfH, z1);
+            vc.addVertex(m, x0, -halfH, z0);
+            starTri(vc, m, new float[]{x0, halfH, z0}, new float[]{x1, halfH, z1}, ct);
+            starTri(vc, m, new float[]{x0, -halfH, z0}, new float[]{x1, -halfH, z1}, cb);
+        }
+    }
+
     private static float[] sph(float r, float phi, float lam) {
         float cp = Mth.cos(phi);
         return new float[]{r * cp * Mth.cos(lam), r * Mth.sin(phi), r * cp * Mth.sin(lam)};

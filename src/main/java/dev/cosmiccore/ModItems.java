@@ -1,6 +1,7 @@
 package dev.cosmiccore;
 
 import dev.cosmiccore.block.ModBlocks;
+import dev.cosmiccore.item.GuideBookItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -10,6 +11,8 @@ public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(CosmicCore.MODID);
 
     public static final DeferredItem<Item> STAR_DUST = ITEMS.registerSimpleItem("star_dust");
+    public static final DeferredItem<GuideBookItem> GUIDE_BOOK = ITEMS.registerItem("guide_book",
+            GuideBookItem::new, new Item.Properties().stacksTo(1));
 
     public static final DeferredItem<BlockItem> VOID_CASING = ITEMS.registerSimpleBlockItem("void_casing", ModBlocks.VOID_CASING);
     public static final DeferredItem<BlockItem> RUNE_FRAME = ITEMS.registerSimpleBlockItem("rune_frame", ModBlocks.RUNE_FRAME);

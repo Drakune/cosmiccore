@@ -14,7 +14,11 @@ Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich 
 
 ## Controller & GUI
 
-- **Platzieren:** Direkt nach dem Platzieren öffnet sich die (einmalige) Wahl der Baugröße 5x5x5 / 7x7x7 / 9x9x9.
+- **Kosmisches Handbuch** (Buch + Sternenstaub): erklärt Aufbau, Stufen, Instabilität und Kosmos-Boni im Spiel.
+
+- **Platzieren:** Direkt nach dem Platzieren öffnet sich die (einmalige) Wahl der Baugröße 5x5x5 / 7x7x7 / 9x9x9
+  (angezeigt wird die RF/t-Spanne mit Sternenstaub von Stufe 1 bis zur Maximalstufe).
+- **Spulen und Fokuskristalle** verwandeln sich bei gebildeter Struktur in animierte Sternenfeld-Körper (wie der Kern).
 - **Rechtsklick:** GUI mit Brennstoff- und Stabilisator-Slot (frei befüllen und wieder herausnehmen), Balken für
   Energie / Instabilität / Resonanz, Leistungsstufe (-/+), Zünden/Stopp, Bauvorschau und (nur Kreativ) **Bauen**.
 - **Schleichen + Rechtsklick:** Status im Chat inkl. erstem Baufehler (mit Partikel an der Stelle).
