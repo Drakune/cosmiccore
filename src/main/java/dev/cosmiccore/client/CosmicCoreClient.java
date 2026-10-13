@@ -6,6 +6,7 @@ import dev.cosmiccore.block.entity.ModBlockEntities;
 import dev.cosmiccore.data.CoreFuel;
 import dev.cosmiccore.data.CoreStabilizer;
 import dev.cosmiccore.data.ModDataMaps;
+import dev.cosmiccore.entity.ModEntities;
 import dev.cosmiccore.menu.ModMenus;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -25,6 +26,8 @@ public final class CosmicCoreClient {
         event.registerBlockEntityRenderer(ModBlockEntities.CORE.get(), SingularityCoreRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.RESONATOR.get(), ResonatorRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.CONTROLLER.get(), ControllerRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.STAR_FUNNEL.get(), StarFunnelRenderer::new);
+        event.registerEntityRenderer(ModEntities.ASTEROID.get(), CosmicAsteroidRenderer::new);
     }
 
     @SubscribeEvent

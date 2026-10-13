@@ -1,7 +1,7 @@
 # Cosmic Core - Kerngenerator (NeoForge 1.21.1)
 
 Multiblock-Reaktor (5x5x5, 7x7x7 oder 9x9x9) mit animierter Singularität, der aus kosmischem Brennstoff RF erzeugt.
-Leistungsstufe hoch = mehr Strom, aber schneller instabil.
+Leistungsstufe hoch = mehr Strom, aber mehr Verbrauch und mehr Risiko.
 
 ## Bauen (wichtig: Das Projekt ist hier NICHT kompiliert worden)
 
@@ -18,7 +18,9 @@ Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich 
 
 - **Platzieren:** Direkt nach dem Platzieren öffnet sich die (einmalige) Wahl der Baugröße 5x5x5 / 7x7x7 / 9x9x9
   (angezeigt wird die RF/t-Spanne mit Sternenstaub von Stufe 1 bis zur Maximalstufe).
-- **Spulen und Fokuskristalle** verwandeln sich bei gebildeter Struktur in animierte Sternenfeld-Körper (wie der Kern).
+- **Gebildete Struktur:** Alle Blöcke verwandeln sich (Scan-Animation von unten nach oben) in eine runde Sternenfeld-Kammer
+  um ein schwarzes Loch mit Akkretionsscheibe, Photonenring und Jets. Die Resonanzschild-Emitter halten ein
+  geodätisches Eindämmungsschild, dessen Stärke den Stabilisator-Vorrat zeigt.
 - **Rechtsklick:** GUI mit Brennstoff- und Stabilisator-Slot (frei befüllen und wieder herausnehmen), Balken für
   Energie / Instabilität / Resonanz, Leistungsstufe (-/+), Zünden/Stopp, Bauvorschau und (nur Kreativ) **Bauen**.
 - **Schleichen + Rechtsklick:** Status im Chat inkl. erstem Baufehler (mit Partikel an der Stelle).
@@ -58,6 +60,15 @@ plus 4 diagonale Spulen in den Kammerecken auf Kernhöhe. Die Bauvorschau zeigt 
 7x7x7: 125 Blöcke, die Seiten sind offen, damit man die Animation sieht. Der Controller richtet sich beim Bilden
 automatisch nach außen aus. Rechtsklick auf den Controller (ohne Brennstoff in der Hand) zeigt Status bzw.
 den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stelle).
+
+## Kosmos-Erweiterungen
+
+- **Sternentrichter** (2x Fokusglas oben, Sternenstaub, Leerengehäuse): direkt auf die Deckenmitte setzen.
+  Mit freiem Himmel verdoppelt er den Himmelsbonus (+50 %) und saugt sichtbar Energie aus dem All.
+- **Asteroiden:** Nachts (Overworld, freier Himmel) und im End ziehen kleine, mittlere und große Asteroiden vorbei
+  (`asteroids`, `asteroidChance` in der Config). Energie: 50k / 250k / 1M RF.
+- **Kosmos-Laser** (Fokuskristall, Sternenstaub, Eisen): Rechtsklick halten und auf einen Asteroiden zielen, bis er
+  zerbricht. Speichert bis zu 5M RF; Rechtsklick auf Controller oder Energie-Port gibt die Energie in den Puffer.
 
 ## Spielmechanik
 

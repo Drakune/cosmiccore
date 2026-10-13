@@ -27,6 +27,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private int instability;      // 0..100 (gerundet, damit nicht jeder Tick ein Paket ausloest)
     private boolean skyLink;
     private int cosmic = 100;     // kosmischer Faktor in Prozent
+    private int shield;           // Staerke des Eindaemmungsschilds 0..100 (Stabilisator-Vorrat)
+    private boolean funnel;       // Sternentrichter auf der Decke
 
     /** Spielzeit, zu der die Struktur gebildet wurde (vom Controller gesetzt, startet die Verwandlungs-Animation). */
     private long formStart = Long.MIN_VALUE;
@@ -37,13 +39,18 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     // ------------------------------------------------------------------ vom Controller gesetzt
 
-    public void setVisuals(int structureSize, int scale, int maxScale, float instability, boolean skyLink, double cosmic) {
+    public void setVisuals(int structureSize, int scale, int maxScale, float instability, boolean skyLink, double cosmic,
+                           int shield, boolean funnel) {
         int inst = Math.round(instability);
         int cos = (int) Math.round(cosmic * 100.0);
+        shield = Math.max(0, Math.min(100, shield));
         if (structureSize == this.structureSize && scale == this.scale && maxScale == this.maxScale
-                && inst == this.instability && skyLink == this.skyLink && cos == this.cosmic) {
+                && inst == this.instability && skyLink == this.skyLink && cos == this.cosmic
+                && shield / 5 == this.shield / 5 && funnel == this.funnel) {
             return;
         }
+        this.shield = shield;
+        this.funnel = funnel;
         this.structureSize = structureSize;
         this.scale = scale;
         this.maxScale = maxScale;
@@ -91,6 +98,14 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     public boolean hasSkyLink() {
         return skyLink;
+    }
+
+    public float getShield() {
+        return shield / 100.0F;
+    }
+
+    public boolean hasFunnel() {
+        return funnel;
     }
 
     public float getCosmic() {
@@ -186,6 +201,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         instability = tag.getInt("instability");
         skyLink = tag.getBoolean("skyLink");
         cosmic = tag.contains("cosmic") ? tag.getInt("cosmic") : 100;
+        shield = tag.getInt("shield");
+        funnel = tag.getBoolean("funnel");
         formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
     }
 
@@ -196,6 +213,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         tag.putInt("instability", instability);
         tag.putBoolean("skyLink", skyLink);
         tag.putInt("cosmic", cosmic);
+        tag.putInt("shield", shield);
+        tag.putBoolean("funnel", funnel);
         tag.putLong("formStart", formStart);
     }
 

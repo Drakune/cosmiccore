@@ -53,7 +53,8 @@ import org.jetbrains.annotations.Nullable;
  * verwaltet die Instabilitaet und spiegelt den Zustand (CorePhase) auf alle Strukturbloecke.
  * <p>
  * Die Baugroesse (5/7/9) wird einmalig beim Platzieren gewaehlt. Die Leistungsstufe (1..maxScale der
- * Baugroesse) multipliziert Leistung, Brennstoffverbrauch und Instabilitaet - mehr Strom, aber schneller am Limit.
+ * Baugroesse) multipliziert Leistung, Brennstoffverbrauch und Instabilitaet: mehr Strom,
+ * aber schneller am Limit.
  */
 public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public static final int SLOT_FUEL = 0;
@@ -98,6 +99,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private int checkTimer;
     private int lastOutput;
     private boolean skyLink;
+    /** Sternentrichter direkt auf der Deckenmitte: verdoppelt den Himmelsbonus. */
+    private boolean funnel;
     private double lastCosmic = 1.0;
     @Nullable
     private CorePattern.Report lastReport;
@@ -150,6 +153,17 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             setChanged();
         }
         return out;
+    }
+
+    /** Nimmt Energie von aussen auf (z. B. aus dem Kosmos-Laser). Liefert die tatsaechlich aufgenommene Menge. */
+    public int receiveCosmicEnergy(int amount) {
+        if (!formed || amount <= 0) return 0;
+        int accepted = (int) Math.min(amount, (long) getCapacity() - energy);
+        if (accepted > 0) {
+            energy += accepted;
+            setChanged();
+        }
+        return accepted;
     }
 
     public ItemStack insertFromPlayer(ItemStack stack) {
@@ -404,7 +418,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         BlockPos core = center(level);
         if (level.hasChunkAt(core) && level.getBlockEntity(core) instanceof SingularityCoreBlockEntity be) {
             boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
-            be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic);
+            ItemStack stab = inventory.getStackInSlot(SLOT_STAB);
+            int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
+            be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic, shield, funnel);
         }
     }
 
@@ -426,7 +442,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      */
     public double cosmicOutput(ServerLevel level) {
         if (!CoreConfig.COSMIC_MODIFIERS.get()) return 1.0;
-        double sky = skyLink ? CoreConfig.SKY_LINK_BONUS.get() : 0.0;
+        double sky = skyLink ? CoreConfig.SKY_LINK_BONUS.get() * (funnel ? 2.0 : 1.0) : 0.0;
         if (level.dimension() == Level.END) return 1.4 + sky;
         if (level.dimension() == Level.OVERWORLD && skyLink) {
             double f = 1.0 + sky;
@@ -490,7 +506,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 level.setBlock(worldPosition, state.setValue(ControllerBlock.FACING, bestDir), Block.UPDATE_ALL);
             }
             BlockPos above = pattern.center(worldPosition, bestDir).above(pattern.half() + 1);
-            skyLink = level.canSeeSky(above);
+            funnel = level.getBlockState(above).is(ModBlocks.STAR_FUNNEL.get());
+            skyLink = level.canSeeSky(funnel ? above.above() : above);
             if (!formed) {
                 onFormed(level);
             } else {
@@ -498,6 +515,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
         } else {
             skyLink = false;
+            funnel = false;
             if (formed) onUnformed(level);
         }
     }
@@ -801,7 +819,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (enabled ? ControllerMenu.F_ENABLED : 0)
                         | (preview ? ControllerMenu.F_PREVIEW : 0)
                         | (skyLink ? ControllerMenu.F_SKY : 0)
-                        | (lastOutput > 0 ? ControllerMenu.F_BURNING : 0);
+                        | (lastOutput > 0 ? ControllerMenu.F_BURNING : 0)
+                        | (funnel ? ControllerMenu.F_FUNNEL : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));

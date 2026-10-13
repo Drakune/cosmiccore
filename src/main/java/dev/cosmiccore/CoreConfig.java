@@ -44,6 +44,12 @@ public final class CoreConfig {
     public static final ModConfigSpec.IntValue COLLAPSE_COOLDOWN = B
             .comment("Ticks, die der Kern nach einem Kollaps ausfaellt")
             .defineInRange("collapseCooldownTicks", 600, 0, 72_000);
+    public static final ModConfigSpec.BooleanValue ASTEROIDS = B
+            .comment("Kosmische Asteroiden ziehen nachts (und im End) ueber Spieler hinweg und koennen mit dem Kosmos-Laser abgebaut werden")
+            .define("asteroids", true);
+    public static final ModConfigSpec.DoubleValue ASTEROID_CHANCE = B
+            .comment("Chance pro Spieler alle 5 Sekunden, dass ein Asteroid erscheint (max. 3 gleichzeitig in der Naehe)")
+            .defineInRange("asteroidChance", 0.12, 0.0, 1.0);
     public static final ModConfigSpec.IntValue VALIDATION_INTERVAL = B
             .comment("Alle wie viele Ticks die Struktur neu geprueft wird")
             .defineInRange("validationIntervalTicks", 20, 1, 200);

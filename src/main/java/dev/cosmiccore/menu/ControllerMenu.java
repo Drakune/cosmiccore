@@ -36,7 +36,7 @@ public class ControllerMenu extends AbstractContainerMenu {
             D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16;
     public static final int DATA_COUNT = 17;
 
-    public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16;
+    public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16, F_FUNNEL = 32;
 
     // Layout (auch vom Screen benutzt)
     public static final int FUEL_X = 15, FUEL_Y = 26, STAB_X = 15, STAB_Y = 66;

@@ -3,6 +3,7 @@ package dev.cosmiccore.block;
 import dev.cosmiccore.block.entity.ControllerBlockEntity;
 import dev.cosmiccore.block.entity.ModBlockEntities;
 import dev.cosmiccore.data.ModDataMaps;
+import dev.cosmiccore.item.CosmicLaserItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -73,6 +74,13 @@ public class ControllerBlock extends Block implements EntityBlock {
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
+        // Kosmos-Laser: gesammelte Asteroiden-Energie in den Puffer abgeben
+        if (stack.getItem() instanceof CosmicLaserItem) {
+            if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
+                CosmicLaserItem.discharge(stack, be, player);
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
         boolean feedable = ModDataMaps.fuel(stack) != null || ModDataMaps.stabilizer(stack) != null;
         if (!feedable) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {

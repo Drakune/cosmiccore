@@ -33,5 +33,9 @@ public final class ModBlockEntities {
                     () -> BlockEntityType.Builder.of(ResonatorBlockEntity::new,
                             ModBlocks.RESONANCE_COIL.get(), ModBlocks.FOCUS_CRYSTAL.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<StarFunnelBlockEntity>> STAR_FUNNEL =
+            BLOCK_ENTITIES.register("star_funnel",
+                    () -> BlockEntityType.Builder.of(StarFunnelBlockEntity::new, ModBlocks.STAR_FUNNEL.get()).build(null));
+
     private ModBlockEntities() {}
 }

@@ -51,6 +51,11 @@ public final class ModBlocks {
     public static final DeferredBlock<ItemPortBlock> ITEM_PORT = BLOCKS.registerBlock("item_port",
             ItemPortBlock::new, metal(MapColor.COLOR_MAGENTA, SoundType.NETHERITE_BLOCK, 4, 8, 8));
 
+    public static final DeferredBlock<StarFunnelBlock> STAR_FUNNEL = BLOCKS.registerBlock("star_funnel",
+            StarFunnelBlock::new, BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE).strength(5.0F, 600.0F).sound(SoundType.AMETHYST)
+                    .requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 7));
+
     private static BlockBehaviour.Properties metal(MapColor color, SoundType sound, int formed, int active, int unstable) {
         return BlockBehaviour.Properties.of()
                 .mapColor(color)

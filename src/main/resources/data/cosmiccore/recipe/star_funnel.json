@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "G G",
+    "GSG",
+    " V "
+  ],
+  "key": {
+    "G": {
+      "item": "cosmiccore:focus_glass"
+    },
+    "S": {
+      "item": "cosmiccore:star_dust"
+    },
+    "V": {
+      "item": "cosmiccore:void_casing"
+    }
+  },
+  "result": {
+    "id": "cosmiccore:star_funnel",
+    "count": 1
+  }
+}

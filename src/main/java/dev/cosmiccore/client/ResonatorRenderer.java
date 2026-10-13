@@ -27,7 +27,7 @@ import org.joml.Matrix4f;
  * Resonanzspule und Fokuskristall als ruhige Teile des schwarzen Lochs (das Blockmodell ist bei gebildeter
  * Struktur ausgeblendet):
  * <ul>
- *   <li>Spule: Emitter (Schuessel, gegenlaeufige Segmentringe, Fokuslinse), zum Kern
+ *   <li>Spule: Schild-Emitter (Schuessel, gegenlaeufige Segmentringe, Fokuslinse), zum Kern
  *       ausgerichtet - aus ihm stroemt die Materie in die Akkretionsscheibe (gezeichnet vom Kern-Renderer).</li>
  *   <li>Kristall: schwebender Sternenfeld-Oktaeder mit leuchtenden Kanten - er buendelt die Jets.</li>
  * </ul>
@@ -73,7 +73,7 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
     }
 
     /**
-     * Emitter: eine Sternenfeld-Schuessel, davor drei gestaffelte Segmentringe,
+     * Schild-Emitter: eine Sternenfeld-Schuessel, davor drei gestaffelte Segmentringe,
      * die sich gegenlaeufig drehen und zum Kern hin kleiner werden, und eine Fokuslinse, aus der die Materie stroemt.
      */
     private static void renderCoil(PoseStack pose, MultiBufferSource buffers, int[] core, float t, float speed,

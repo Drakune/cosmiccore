@@ -25,7 +25,9 @@ public final class ModCreativeTabs {
                 out.accept(ModItems.FOCUS_CRYSTAL.get());
                 out.accept(ModItems.ENERGY_PORT.get());
                 out.accept(ModItems.ITEM_PORT.get());
+                out.accept(ModItems.STAR_FUNNEL.get());
                 out.accept(ModItems.STAR_DUST.get());
+                out.accept(ModItems.COSMIC_LASER.get());
             }).build());
 
     private ModCreativeTabs() {}

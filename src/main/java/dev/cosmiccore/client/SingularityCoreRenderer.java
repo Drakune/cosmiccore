@@ -34,7 +34,8 @@ import org.joml.Matrix4f;
  *       woelbt sich als Lichtbogen ueber und unter das Loch.</li>
  *   <li><b>Akkretionsscheibe:</b> innen weissgluehend, aussen violett, innen schneller rotierend (differentiell),
  *       mit Doppler-Aufhellung auf der dem Betrachter entgegenkommenden Seite.</li>
- *   <li><b>Materiestroeme:</b> von jeder Resonanzspule spiralt Materie in die Scheibe.</li>
+ *   <li><b>Eindaemmungsschild:</b> die Resonanzschild-Emitter halten ein geodaetisches Kraftfeld um das Loch,
+ *       siehe {@link ShieldFx}.</li>
  *   <li><b>Jets:</b> entlang der Pole zu den Fokuskristallen; mit Himmelssicht schiesst der obere Jet ins All.</li>
  *   <li><b>Huelle:</b> alle Strukturbloecke verschmelzen zu einer Sternenfeld-Panzerung, siehe {@link ReactorShellRenderer}.</li>
  * </ul>
@@ -137,10 +138,10 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.mulPose(Axis.XP.rotationDegrees(tilt));
         pose.mulPose(Axis.ZP.rotationDegrees(tilt * 0.4F * Mth.sin(t * 0.013F)));
         accretionDisk(pose.last().pose(), glow, inner, outer, t, spin, energy * coreFade, heat, camYaw);
-        infallStreams(pose.last().pose(), glow, be.getStructureSize(), reach, inner, t, spin, energy * coreFade, heat, active);
         pose.popPose();
 
         lensing(pose, glow, rh, inner, t, energy * coreFade, heat, camYaw, camPitch);
+        ShieldFx.render(pose.last().pose(), glow, be.getStructureSize(), reach, t, energy * coreFade, heat, be.getShield(), unstable);
         if (active) jets(pose.last().pose(), glow, rh, reach, t, energy * coreFade, heat, growth);
         pose.popPose(); // Zittern
 
@@ -205,35 +206,6 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             annulusXY(vc, m, rh * 1.15F, inner * 1.05F, a0, a1, diskColor(0.15F, heat), 0.9F * energy * lensA * flow, 0.0F);
         }
         pose.popPose();
-    }
-
-    /** Materie stroemt von den Resonanzspulen spiralfoermig in die Scheibe. */
-    private static void infallStreams(Matrix4f m, VertexConsumer vc, int size, float reach, float inner, float t, float spin,
-                                      float energy, float heat, boolean active) {
-        int half = size / 2;
-        float focus = reach + 0.5F;
-        int count = size >= 9 ? 8 : 4;
-        float[] hot = diskColor(0.05F, heat), warm = diskColor(0.45F, heat);
-        for (int k = 0; k < count; k++) {
-            boolean diagonal = k >= 4;
-            float start = diagonal ? (half - 1) * Mth.SQRT_OF_TWO : focus;
-            float ang0 = (diagonal ? Mth.PI / 4 : 0.0F) + (k % 4) * Mth.HALF_PI;
-            int n = 22;
-            float px = Mth.cos(ang0) * (start - 0.3F), pz = Mth.sin(ang0) * (start - 0.3F);
-            for (int i = 1; i <= n; i++) {
-                float s = i / (float) n;
-                float r = Mth.lerp((float) Math.pow(s, 0.8), start - 0.3F, inner);
-                float ang = ang0 + s * s * 1.8F;
-                float x = Mth.cos(ang) * r, z = Mth.sin(ang) * r;
-                // Materieklumpen wandern nach innen
-                float pulse = 0.5F + 0.5F * Mth.sin((s - t * 0.03F * spin) * 18.0F + k);
-                float a = energy * (active ? 0.75F : 0.3F) * (0.35F + 0.65F * pulse) * (0.4F + 0.6F * s);
-                float[] col = lerp(warm, hot, s);
-                segment(vc, m, px, 0, pz, x, 0, z, 0.035F * (1.0F - 0.6F * s), col[0], col[1], col[2], a, a);
-                px = x;
-                pz = z;
-            }
-        }
     }
 
     /** Relativistische Jets entlang der Pole zu den Fokuskristallen. */

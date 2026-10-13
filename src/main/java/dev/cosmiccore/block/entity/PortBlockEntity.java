@@ -25,6 +25,12 @@ public abstract class PortBlockEntity extends BlockEntity {
         }
     }
 
+    /** Oeffentlicher Zugriff auf den angeschlossenen Controller (nur bei gebildeter Struktur). */
+    @Nullable
+    public ControllerBlockEntity linkedController() {
+        return controller();
+    }
+
     /** Liefert den Controller nur, wenn die Struktur gerade vollstaendig gebildet ist. */
     @Nullable
     protected ControllerBlockEntity controller() {

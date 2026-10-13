@@ -208,13 +208,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             int base = referencePower();
             long min = Math.round(base * CoreConfig.OUTPUT_MULTIPLIER.get());
             long max = Math.round(base * Math.pow(sel.maxScale(), CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * CoreConfig.OUTPUT_MULTIPLIER.get());
-            int ix = TAB_X, iy = TAB_Y + 3 * TAB_STEP + 6;
+            // Infoblock unter den Reitern - endet oberhalb von "Benoetigte Bloecke" (ICON_Y - 9)
+            int ix = TAB_X, iy = TAB_Y + 3 * TAB_STEP;
             g.drawString(font, Component.translatable("gui.cosmiccore.output_label"), ix, iy, 0xFFB8A8D8, false);
-            g.drawString(font, fmt(min) + " -", ix, iy + 11, 0xFF9AE8FF, false);
-            g.drawString(font, fmt(max), ix, iy + 21, 0xFF9AE8FF, false);
-            g.drawString(font, "RF/t", ix, iy + 31, 0xFF708098, false);
-            g.drawString(font, Component.translatable("gui.cosmiccore.max_level"), ix, iy + 46, 0xFFB8A8D8, false);
-            g.drawString(font, String.valueOf(sel.maxScale()), ix, iy + 57, 0xFFE0A8FF, false);
+            g.drawString(font, fmt(min) + " -", ix, iy + 10, 0xFF9AE8FF, false);
+            g.drawString(font, fmt(max) + " RF/t", ix, iy + 19, 0xFF9AE8FF, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.max_level"), ix, iy + 32, 0xFFB8A8D8, false);
+            g.drawString(font, String.valueOf(sel.maxScale()), ix, iy + 42, 0xFFE0A8FF, false);
             g.drawString(font, Component.translatable("gui.cosmiccore.blocks_label"), 8, ICON_Y - 9 + 0, 0xFFB8A8D8, false);
             return;
         }
@@ -232,7 +232,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawString(font, Component.translatable("gui.cosmiccore.cosmic", String.format("%.2f", menu.cosmic())), INFO_X, ly, 0xFFE0A8FF, false);
         ly += 11;
         boolean sky = menu.flag(ControllerMenu.F_SKY);
-        g.drawString(font, Component.translatable(sky ? "gui.cosmiccore.sky_on" : "gui.cosmiccore.sky_off"), INFO_X, ly,
+        String skyKey = !sky ? "gui.cosmiccore.sky_off" : menu.flag(ControllerMenu.F_FUNNEL) ? "gui.cosmiccore.funnel_on" : "gui.cosmiccore.sky_on";
+        g.drawString(font, Component.translatable(skyKey), INFO_X, ly,
                 sky ? 0xFF80FFD0 : 0xFF807090, false);
         ly += 11;
         g.drawString(font, Component.translatable("gui.cosmiccore.size", menu.size(), menu.size(), menu.size()), INFO_X, ly, 0xFF908AA8, false);

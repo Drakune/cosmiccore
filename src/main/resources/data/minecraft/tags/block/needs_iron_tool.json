@@ -9,6 +9,7 @@
     "cosmiccore:singularity_core",
     "cosmiccore:controller",
     "cosmiccore:energy_port",
-    "cosmiccore:item_port"
+    "cosmiccore:item_port",
+    "cosmiccore:star_funnel"
   ]
 }
