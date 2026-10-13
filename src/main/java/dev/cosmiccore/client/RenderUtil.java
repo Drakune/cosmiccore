@@ -121,6 +121,65 @@ public final class RenderUtil {
         }
     }
 
+    /** Beidseitiges Viereck nur mit Position (Sternenfeld-Shader). */
+    private static void starQuad(VertexConsumer vc, Matrix4f m, float[] a, float[] b, float[] c, float[] d) {
+        vc.addVertex(m, a[0], a[1], a[2]);
+        vc.addVertex(m, b[0], b[1], b[2]);
+        vc.addVertex(m, c[0], c[1], c[2]);
+        vc.addVertex(m, d[0], d[1], d[2]);
+        vc.addVertex(m, d[0], d[1], d[2]);
+        vc.addVertex(m, c[0], c[1], c[2]);
+        vc.addVertex(m, b[0], b[1], b[2]);
+        vc.addVertex(m, a[0], a[1], a[2]);
+    }
+
+    /** Torus in der XY-Ebene (Achse = Z) mit Sternenfeld-Shader. */
+    public static void starTorus(VertexConsumer vc, Matrix4f m, float big, float tube, int segU, int segV) {
+        for (int i = 0; i < segU; i++) {
+            float u0 = Mth.TWO_PI * i / segU, u1 = Mth.TWO_PI * (i + 1) / segU;
+            for (int j = 0; j < segV; j++) {
+                float v0 = Mth.TWO_PI * j / segV, v1 = Mth.TWO_PI * (j + 1) / segV;
+                starQuad(vc, m, torus(big, tube, u0, v0), torus(big, tube, u1, v0), torus(big, tube, u1, v1), torus(big, tube, u0, v1));
+            }
+        }
+    }
+
+    private static float[] torus(float big, float tube, float u, float v) {
+        float r = big + tube * Mth.cos(v);
+        return new float[]{r * Mth.cos(u), r * Mth.sin(u), tube * Mth.sin(v)};
+    }
+
+    /** Achsparalleler Quader mit Sternenfeld-Shader. */
+    public static void starBox(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, float x1, float y1, float z1) {
+        float[] a = {x0, y0, z0}, b = {x1, y0, z0}, c = {x1, y0, z1}, d = {x0, y0, z1};
+        float[] e = {x0, y1, z0}, f = {x1, y1, z0}, g = {x1, y1, z1}, h = {x0, y1, z1};
+        starQuad(vc, m, a, b, c, d);
+        starQuad(vc, m, e, f, g, h);
+        starQuad(vc, m, a, b, f, e);
+        starQuad(vc, m, d, c, g, h);
+        starQuad(vc, m, a, d, h, e);
+        starQuad(vc, m, b, c, g, f);
+    }
+
+    /** Flacher Leuchtkreis in der XZ-Ebene (y = 0), aus kurzen Segmenten. */
+    public static void flatCircle(VertexConsumer vc, Matrix4f m, float radius, float w, int seg, float[] col, float a) {
+        for (int i = 0; i < seg; i++) {
+            float a0 = Mth.TWO_PI * i / seg, a1 = Mth.TWO_PI * (i + 1) / seg;
+            float r0 = radius - w, r1 = radius + w;
+            quad2(vc, m, r0 * Mth.cos(a0), 0, r0 * Mth.sin(a0), r1 * Mth.cos(a0), 0, r1 * Mth.sin(a0),
+                    r1 * Mth.cos(a1), 0, r1 * Mth.sin(a1), r0 * Mth.cos(a1), 0, r0 * Mth.sin(a1), col[0], col[1], col[2], a);
+        }
+    }
+
+    /** Flaches Leuchtband zwischen zwei Punkten in der XZ-Ebene. */
+    public static void flatLine(VertexConsumer vc, Matrix4f m, float ax, float az, float bx, float bz, float w, float[] col, float a) {
+        float dx = bx - ax, dz = bz - az;
+        float len = Mth.sqrt(dx * dx + dz * dz);
+        if (len < 1.0E-4F) return;
+        float nx = -dz / len * w, nz = dx / len * w;
+        quad2(vc, m, ax - nx, 0, az - nz, ax + nx, 0, az + nz, bx + nx, 0, bz + nz, bx - nx, 0, bz - nz, col[0], col[1], col[2], a);
+    }
+
     private static float[] sph(float r, float phi, float lam) {
         float cp = Mth.cos(phi);
         return new float[]{r * cp * Mth.cos(lam), r * Mth.sin(phi), r * cp * Mth.sin(lam)};
