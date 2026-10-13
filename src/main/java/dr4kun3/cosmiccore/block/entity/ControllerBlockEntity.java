@@ -644,12 +644,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
         int variant = target.getVariant();
-        int gained = target.harvestTick(muzzle.add(0, HOLD_ABOVE, 0));
+        // mit Sternen-Trichter: am oberen Rand des Trichters zerbrechen, sonst knapp ueber den Lasern
+        Vec3 hold = funnel ? Vec3.atCenterOf(center(level)).add(0, p.half() + 1.35 + SingularityCoreBlockEntity.FUNNEL_HEIGHT, 0)
+                : muzzle.add(0, HOLD_ABOVE, 0);
+        int gained = target.harvestTick(hold, funnel);
         if (gained > 0) {
             receiveCosmicEnergy(gained);
             collectLoot(level, variant);
             // grosses Energiepartikel sammelt sich ueber dem Trichter und wird an den Kern uebergeben
-            if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime());
+            if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime(), hold);
             deliverTicks = 0;
             laserTarget = -1;
             pushVisuals(level);

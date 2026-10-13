@@ -200,11 +200,13 @@ public final class EnergyLaserFx {
     private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float mouthY, float t, float ph, float energy, Vec3 source) {
         Vector3f src = source != null ? new Vector3f((float) source.x, (float) source.y, (float) source.z)
                 : new Vector3f(0, cy + 1.6F, 0);
+        boolean funnel = src.y - mouthY > 10.0F; // am oberen Trichterrand explodiert
         Matrix4f sm = new Matrix4f(m).translate(src.x, src.y, src.z);
+        if (funnel) sm.scale(2.2F);
         Matrix4f mouth = new Matrix4f(m).translate(0, mouthY, 0);
         // Explosion am Haltepunkt
-        if (ph < 0.16F) {
-            float e = ph / 0.16F;
+        if (ph < 0.12F) {
+            float e = ph / 0.12F;
             float fade = 1.0F - e;
             RenderUtil.glowSphere(vc, sm, 0.3F + 1.3F * e, 10, 14, GOLD, 0.5F * energy * fade);
             RenderUtil.glowSphere(vc, sm, 0.15F + 0.6F * e, 8, 12, WHITE, 0.85F * energy * fade);
@@ -223,18 +225,19 @@ public final class EnergyLaserFx {
             float[] c = lerp(GOLD, k % 3 == 0 ? VIOLET : BEAM, hash(k * 3) * 0.5F + 0.5F);
             if (f < 0.0F) {
                 // noch im Funkenball: kleiner Lichtpunkt am Explosionsort
-                Vector3f p = spiralPos(k, src, mouthY, 0.0F);
+                Vector3f p = spiralPos(k, src, mouthY, 0.0F, funnel);
                 cube(vc, m, p.x, p.y, p.z, 0.03F, c[0], c[1], c[2], energy * 0.6F);
             } else if (f < 1.0F) {
-                Vector3f p = spiralPos(k, src, mouthY, f);
+                Vector3f p = spiralPos(k, src, mouthY, f, funnel);
                 Vector3f prev = p;
                 for (int i = 1; i <= 4; i++) {
-                    Vector3f q = spiralPos(k, src, mouthY, Math.max(0.0F, f - i * 0.03F));
+                    Vector3f q = spiralPos(k, src, mouthY, Math.max(0.0F, f - i * 0.025F), funnel);
                     float a = energy * (1.0F - i / 5.0F) * 0.7F;
                     segment(vc, m, q.x, q.y, q.z, prev.x, prev.y, prev.z, 0.02F * (1.0F - i / 6.0F), c[0], c[1], c[2], a * 0.6F, a);
                     prev = q;
                 }
-                shard(vc, m, p, 0.045F + 0.035F * (1.0F - f), t * 0.4F + k, c, energy);
+                float size = funnel ? 0.05F + 0.12F * Mth.clamp((p.y - mouthY) / 20.0F, 0.0F, 1.0F) : 0.045F + 0.035F * (1.0F - f);
+                shard(vc, m, p, size, t * 0.4F + k, c, energy);
                 collecting = Math.max(collecting, f);
             } else {
                 // eingesammelt: Lichtring in der Oeffnung
@@ -271,12 +274,28 @@ public final class EnergyLaserFx {
     }
 
     /**
-     * Bahn eines Bruchstuecks: erst kurz auseinanderstieben, dann in 2,5 Windungen mit schrumpfendem Radius
-     * hinab zur Trichteroeffnung.
+     * Bahn eines Bruchstuecks: erst kurz auseinanderstieben, dann in einer enger werdenden Spirale hinab zur
+     * Trichteroeffnung - mit Sternen-Trichter entlang seiner Trompetenwand vom oberen Rand bis zum Hals.
      */
-    private static Vector3f spiralPos(int k, Vector3f src, float mouthY, float f) {
+    private static Vector3f spiralPos(int k, Vector3f src, float mouthY, float f, boolean funnel) {
         float ang0 = k * 2.39996F; // goldener Winkel: gleichmaessig verteilt
-        float burstR = 0.9F + 0.5F * (hash(k * 5) * 0.5F + 0.5F);
+        float spread = hash(k * 5) * 0.5F + 0.5F;
+        if (funnel) {
+            float topR = SingularityCoreBlockEntity.funnelRadius(src.y - mouthY) * (0.75F + 0.2F * spread);
+            if (f < 0.12F) {
+                float b = f / 0.12F;
+                b = 1.0F - (1.0F - b) * (1.0F - b);
+                return new Vector3f(src.x + Mth.cos(ang0) * topR * b, src.y + hash(k * 9) * 1.2F * b, src.z + Mth.sin(ang0) * topR * b);
+            }
+            float g = (f - 0.12F) / 0.88F;
+            float e = g * g * (3.0F - 2.0F * g);
+            float y = Mth.lerp(e, src.y + hash(k * 9) * 1.2F, mouthY);
+            float rad = Math.max(0.08F, SingularityCoreBlockEntity.funnelRadius(y - mouthY) * (0.75F + 0.2F * spread) * (1.0F - g * 0.3F));
+            float ang = ang0 + g * 4.0F * Mth.TWO_PI;
+            float cx = src.x * (1.0F - e), cz = src.z * (1.0F - e);
+            return new Vector3f(cx + Mth.cos(ang) * rad, y, cz + Mth.sin(ang) * rad);
+        }
+        float burstR = 0.9F + 0.5F * spread;
         float burstH = hash(k * 9) * 0.5F;
         if (f < 0.15F) {
             float b = f / 0.15F;

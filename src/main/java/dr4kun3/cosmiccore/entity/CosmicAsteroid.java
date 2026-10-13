@@ -63,7 +63,7 @@ public class CosmicAsteroid extends Entity {
     /** Sichtbare Groesse 1..0.35: der Traktorstrahl presst den Asteroiden beim Heranziehen zusammen. */
     public float getPullScale() {
         float h = getHarvest();
-        return 1.0F - 0.65F * h * h * (3.0F - 2.0F * h);
+        return 1.0F - 0.45F * h * h * (3.0F - 2.0F * h);
     }
 
     public float getSizeBlocks() {
@@ -122,7 +122,7 @@ public class CosmicAsteroid extends Entity {
      * Ein Tick Traktorstrahl (Server): zieht den Asteroiden zum Haltepunkt ueber dem Trichter (Mitte = hold).
      * Liefert die gewonnene Energie, sobald er dort ankommt und zerbricht, sonst 0.
      */
-    public int harvestTick(Vec3 hold) {
+    public int harvestTick(Vec3 hold, boolean high) {
         if (isRemoved()) return 0;
         lastHit = tickCount;
         if (pullStart == null) pullStart = position();
@@ -141,9 +141,9 @@ public class CosmicAsteroid extends Entity {
             Vec3 c = position().add(0, getBbHeight() / 2, 0);
             sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 20 + getVariant() * 10, 0.3, 0.3, 0.3, 0.08);
             sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 30, 0.25, 0.25, 0.25, 0.15);
-            // Explosion direkt ueber dem Trichter
-            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 2.0F, 0.6F);
-            sl.playSound(null, c.x, c.y, c.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 0.7F, 1.5F);
+            // Explosion am oberen Trichterrand (hoch oben: groessere Hoerweite) bzw. knapp ueber den Lasern
+            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, high ? 5.0F : 2.0F, 0.6F);
+            sl.playSound(null, c.x, c.y, c.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, high ? 3.0F : 0.7F, 1.4F);
         }
         int energy = getEnergy();
         discard();

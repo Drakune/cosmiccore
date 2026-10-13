@@ -41,10 +41,20 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private long formStart = Long.MIN_VALUE;
     /** Spielzeit, zu der ein abgeschossener Asteroid sein Energiepartikel abgegeben hat (Uebergabe-Animation). */
     private long deliverStart = Long.MIN_VALUE;
-    public static final int DELIVER_TICKS = 80;
+    /** Explosionsort der laufenden Uebergabe relativ zur Kernmitte (vom Server festgehalten). */
+    private net.minecraft.world.phys.Vec3 deliverSource;
+    public static final int DELIVER_TICKS = 110;
+    /** Sternen-Trichter am Himmel: Hoehe ueber der Oeffnung und Radius am oberen Rand (Trompetenform). */
+    public static final float FUNNEL_HEIGHT = 34.0F;
+    public static final float FUNNEL_TOP_RADIUS = 5.0F;
+
+    public static float funnelRadius(float h) {
+        float f = Math.max(0.0F, Math.min(1.0F, h / FUNNEL_HEIGHT));
+        return 0.3F + FUNNEL_TOP_RADIUS * f * f * f;
+    }
     /** Zeitplan der Uebergabe (Anteile von DELIVER_TICKS), gemeinsam fuer Animation und Klaenge. */
     public static final int FRAGMENTS = 24;
-    public static final float FRAGMENT_TRAVEL = 0.32F;
+    public static final float FRAGMENT_TRAVEL = 0.36F;
     public static final float SINK_START = 0.8F;
 
     /** Startzeit des Bruchstuecks k (es fliegt FRAGMENT_TRAVEL lang). */
@@ -112,12 +122,18 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /** Vom Controller aufgerufen, wenn der Laser einen Asteroiden zerstoert hat. */
-    public void markDelivery(long gameTime) {
+    public void markDelivery(long gameTime, net.minecraft.world.phys.Vec3 source) {
         deliverStart = gameTime;
+        deliverSource = source.subtract(net.minecraft.world.phys.Vec3.atCenterOf(worldPosition));
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
+    }
+
+    /** Explosionsort der Uebergabe relativ zur Kernmitte (null, falls unbekannt). */
+    public net.minecraft.world.phys.Vec3 getDeliverSource() {
+        return deliverSource;
     }
 
     /** Fortschritt der Uebergabe 0..1, oder -1 wenn keine laeuft. */
@@ -322,6 +338,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         laserTarget = target;
         formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
         deliverStart = tag.contains("deliverStart") ? tag.getLong("deliverStart") : Long.MIN_VALUE;
+        deliverSource = tag.contains("deliverX")
+                ? new net.minecraft.world.phys.Vec3(tag.getDouble("deliverX"), tag.getDouble("deliverY"), tag.getDouble("deliverZ")) : null;
     }
 
     private void writeVisuals(CompoundTag tag) {
@@ -341,6 +359,11 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         tag.putInt("laserTarget", laserTarget);
         tag.putLong("formStart", formStart);
         tag.putLong("deliverStart", deliverStart);
+        if (deliverSource != null) {
+            tag.putDouble("deliverX", deliverSource.x);
+            tag.putDouble("deliverY", deliverSource.y);
+            tag.putDouble("deliverZ", deliverSource.z);
+        }
     }
 
     @Override

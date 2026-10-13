@@ -26,8 +26,8 @@ import org.joml.Matrix4f;
  * Hoehen. Nur sichtbar, wenn der Reaktor darunter laeuft und der Himmel frei ist.
  */
 public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEntity> {
-    private static final float HEIGHT = 34.0F;
-    private static final float TOP_RADIUS = 5.0F;
+    private static final float HEIGHT = dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.FUNNEL_HEIGHT;
+    private static final float TOP_RADIUS = dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.FUNNEL_TOP_RADIUS;
     private static final float[] SKY = {0.55F, 0.75F, 1.0F};
     private static final float[] VIOLET = {0.65F, 0.35F, 1.0F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
@@ -99,8 +99,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
 
     private static float radiusAt(float h) {
         // Trompetenform: unten eng, oben weit
-        float f = h / HEIGHT;
-        return 0.3F + TOP_RADIUS * f * f * f;
+        return dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.funnelRadius(h);
     }
 
     @Override
