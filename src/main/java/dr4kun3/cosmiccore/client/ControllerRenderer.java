@@ -71,7 +71,7 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
         List<BlockPos> wrong = new ArrayList<>();
 
         // 1) Geisterbloecke (Linien erst danach - ein Wechsel des RenderTypes schliesst den vorherigen Puffer ab)
-        pattern.forEach(center, (pos, cell) -> {
+        pattern.forEach(center, facing, (pos, cell) -> {
             if (cell == CorePattern.Cell.ANY || pos.equals(origin)) return;
             BlockState current = level.getBlockState(pos);
             if (CorePattern.matches(cell, current, false)) return;

@@ -107,11 +107,17 @@ public final class ReactorShellRenderer {
             if (rs == null) return out;
             rs.pattern().forEach(BlockPos.ZERO, (pos, cell) -> {
                 if (cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT || cell == CorePattern.Cell.FRAME
-                        || cell == CorePattern.Cell.GLASS || cell == CorePattern.Cell.COIL || cell == CorePattern.Cell.CRYSTAL
-                        || cell == CorePattern.Cell.SATELLITE) {
+                        || cell == CorePattern.Cell.GLASS || cell == CorePattern.Cell.COIL || cell == CorePattern.Cell.CRYSTAL) {
                     out.add(new ShellCell(pos.getX(), pos.getY(), pos.getZ(), cell));
                 }
             });
+            // Satellitenkerne des ultimativen Kerns: alle vier moeglichen Plaetze - der freie (Luft) wird uebersprungen
+            if (rs.pattern().satelliteCount() > 0) {
+                int d = CorePattern.SATELLITE_DISTANCE;
+                for (int[] o : new int[][]{{d, 0}, {-d, 0}, {0, d}, {0, -d}}) {
+                    out.add(new ShellCell(o[0], 0, o[1], CorePattern.Cell.SATELLITE));
+                }
+            }
             return out;
         });
     }

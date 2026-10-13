@@ -48,7 +48,7 @@ public final class StructurePreview {
         ps.mulPose(Axis.YP.rotationDegrees(yaw));
         Lighting.setupFor3DItems();
         MultiBufferSource.BufferSource buffers = g.bufferSource();
-        p.forEach(BlockPos.ZERO, (pos, cell) -> {
+        p.forEach(BlockPos.ZERO, Direction.SOUTH, (pos, cell) -> {
             BlockState state = CorePattern.blockFor(cell);
             if (state == null) return;
             if (pos.equals(controller)) {
@@ -87,7 +87,7 @@ public final class StructurePreview {
         out.add(new ItemStack(ModItems.FOCUS_GLASS.get(), p.count(CorePattern.Cell.GLASS)));
         out.add(new ItemStack(ModItems.RESONANCE_COIL.get(), p.count(CorePattern.Cell.COIL)));
         out.add(new ItemStack(ModItems.FOCUS_CRYSTAL.get(), p.count(CorePattern.Cell.CRYSTAL)));
-        out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE) + p.count(CorePattern.Cell.SATELLITE)));
+        out.add(new ItemStack(ModItems.SINGULARITY_CORE.get(), p.count(CorePattern.Cell.CORE) + p.satelliteCount()));
         if (funnel) out.add(new ItemStack(ModItems.STAR_FUNNEL.get(), 1));
         if (lasers) out.add(new ItemStack(ModItems.COSMIC_LASER.get(), 4));
         return out;

@@ -909,12 +909,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Spiegelt die aktuelle Phase auf alle Strukturbloecke (Textur-Variante, Licht, Animation). */
     private void applyPhase(ServerLevel level) {
         CorePattern p = pattern();
-        if (p != null) setPhaseAround(level, p, center(level), phase, worldPosition);
+        if (p != null) setPhaseAround(level, p, center(level), facing(), phase, worldPosition);
     }
 
-    private static void setPhaseAround(ServerLevel level, CorePattern pattern, BlockPos center, CorePhase target, @Nullable BlockPos skip) {
+    private static void setPhaseAround(ServerLevel level, CorePattern pattern, BlockPos center, Direction facing, CorePhase target,
+                                       @Nullable BlockPos skip) {
         float radius = pattern.shellRadius();
-        pattern.forEach(center, (pos, cell) -> {
+        pattern.forEach(center, facing, (pos, cell) -> {
             if (!CorePattern.isBlockCell(cell) || pos.equals(skip) || !level.hasChunkAt(pos)) return;
             BlockState s = level.getBlockState(pos);
             BlockState n = s;
@@ -959,7 +960,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         BlockPos center = p.center(worldPosition, facing);
         BlockPos energyPort = center.relative(facing.getOpposite(), p.half()).below(p.half());
         BlockPos itemPort = center.relative(facing.getClockWise(), p.half()).below(p.half());
-        p.forEach(center, (pos, cell) -> {
+        p.forEach(center, facing, (pos, cell) -> {
             if (cell == CorePattern.Cell.ANY || pos.equals(worldPosition)) return;
             BlockState target;
             if (cell == CorePattern.Cell.AIR) {
@@ -1008,7 +1009,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         CorePattern p = pattern();
         if (p != null && oldState.hasProperty(ControllerBlock.FACING)) {
             BlockPos center = p.center(worldPosition, oldState.getValue(ControllerBlock.FACING));
-            p.forEach(center, (pos, cell) -> {
+            p.forEach(center, oldState.getValue(ControllerBlock.FACING), (pos, cell) -> {
                 if (!CorePattern.isBlockCell(cell) || pos.equals(worldPosition) || !level.hasChunkAt(pos)) return;
                 BlockState s = level.getBlockState(pos);
                 BlockState n = s;

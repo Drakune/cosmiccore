@@ -27,8 +27,9 @@ import org.jetbrains.annotations.Nullable;
  *  R = Resonanzschild-Emitter (unterer Pol)     X = Fokuskristall (oberer Pol)
  *  K = Singularitaetskern (Mitte)   a = Luft (Kammer muss frei sein)   . = egal (offene Seiten)
  * </pre>
- * 11x11x11 (ultimativ): zusaetzlich S = vier Satellitenkerne auf Kernhoehe, je 2 Bloecke vom Zentrum in alle vier
- * Richtungen - sie verschmelzen beim Formen mit dem Kern.
+ * 11x11x11 (ultimativ): zusaetzlich S = drei Satellitenkerne auf Kernhoehe, je 2 Bloecke vom Zentrum links, rechts
+ * und hinten (die Seite zum Controller bleibt frei) - sie verschmelzen beim Formen mit dem Kern. Weil sie von der
+ * Ausrichtung abhaengen, stehen sie nicht im Zellraster, sondern kommen ueber forEach(center, facing, ...) dazu.
  * 5x5x5: die Kammer ist zu eng, Emitter und Kristall sitzen deshalb in der Mitte von Boden bzw. Decke.
  * Alle Muster sind 4-fach drehsymmetrisch; deshalb muss nur der Mittelpunkt aus der Controller-Ausrichtung
  * berechnet werden, nicht das Muster gedreht.
@@ -36,7 +37,10 @@ import org.jetbrains.annotations.Nullable;
 public final class CorePattern {
     public enum Cell { ANY, AIR, HULL, SLOT, FRAME, GLASS, COIL, CRYSTAL, CORE, SATELLITE }
 
-    /** Abstand der vier Satellitenkerne des ultimativen Kerns vom Zentrum (auf Kernhoehe, in alle vier Richtungen). */
+    /**
+     * Abstand der drei Satellitenkerne des ultimativen Kerns vom Zentrum. Sie sitzen auf Kernhoehe links, rechts und
+     * hinter dem Kern (vom Controller aus gesehen) - zusammen mit dem Hauptkern also 4 Kerne.
+     */
     public static final int SATELLITE_DISTANCE = 2;
 
     private final int size;
@@ -82,9 +86,6 @@ public final class CorePattern {
         }
         // Kammer: Kern in der Mitte, Fokuskristall darueber, Resonanzschild-Emitter darunter
         if (dx == 0 && dy == 0 && dz == 0) return Cell.CORE;
-        if (size >= 11 && dy == 0 && ((ax == SATELLITE_DISTANCE && dz == 0) || (az == SATELLITE_DISTANCE && dx == 0))) {
-            return Cell.SATELLITE;
-        }
         if (dx == 0 && dz == 0 && ay == focus) return dy < 0 ? Cell.COIL : Cell.CRYSTAL;
         return Cell.AIR;
     }
@@ -128,6 +129,25 @@ public final class CorePattern {
         return controller.relative(facing.getOpposite(), half).above(half);
     }
 
+    /** Anzahl der Satellitenkerne (nur beim ultimativen Kern). */
+    public int satelliteCount() {
+        return size >= 11 ? 3 : 0;
+    }
+
+    /** Positionen der Satellitenkerne; facing = Blickrichtung des Controllers (zeigt aus der Struktur heraus). */
+    public java.util.List<BlockPos> satellites(BlockPos center, Direction facing) {
+        if (satelliteCount() == 0) return java.util.List.of();
+        return java.util.List.of(center.relative(facing.getOpposite(), SATELLITE_DISTANCE),
+                center.relative(facing.getClockWise(), SATELLITE_DISTANCE),
+                center.relative(facing.getCounterClockWise(), SATELLITE_DISTANCE));
+    }
+
+    /** Wie forEach(center, visitor), meldet aber an den Satellitenplaetzen Cell.SATELLITE statt Luft. */
+    public void forEach(BlockPos center, Direction facing, Visitor visitor) {
+        java.util.List<BlockPos> sats = satellites(center, facing);
+        forEach(center, (pos, cell) -> visitor.visit(pos, sats.contains(pos) ? Cell.SATELLITE : cell));
+    }
+
     public void forEach(BlockPos center, Visitor visitor) {
         for (int x = 0; x < size; x++) {
             for (int y = 0; y < size; y++) {
@@ -151,7 +171,7 @@ public final class CorePattern {
         final Component[] expected = {null};
         final boolean[] unloaded = {false};
 
-        forEach(center(controllerPos, facing), (pos, cell) -> {
+        forEach(center(controllerPos, facing), facing, (pos, cell) -> {
             if (cell == Cell.ANY) return;
             if (!level.hasChunkAt(pos)) {
                 unloaded[0] = true;
