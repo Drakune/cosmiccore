@@ -101,9 +101,13 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
   Sternenstaub regnet herab und eine Akkretionsscheibe kreist über dem Reaktor. Nur mit Himmelssicht gibt es im Overworld
   den Nachtbonus (+25 %, Vollmond +50 %). The End: dauerhaft +40 %. Neumond und End machen den Kern instabiler.
 - **Instabilität:** Jede Verbrennung erhöht sie, stärkere Brennstoffe schneller. Stabilisatoren (Obsidian, Weinender Obsidian, Netherit-Schrott)
-  werden automatisch verbraucht und halten sie unten. Ab 70 % wird der Kern rot und unruhig, ab 85 % schlägt ein Herzschlag-Alarm, bei 100 % **kollabiert** er:
+  werden automatisch verbraucht und halten sie unten. Ab 70 % wird der Kern rot und unruhig (die Instabilität steigt ab hier gebremst), ab 85 % schlägt ein
+  Herzschlag-Alarm. Bei 100 % läuft ein **10-Sekunden-Countdown** (fällt sie vorher unter 95 %, ist der Kern gerettet),
+  danach **kollabiert** er:
   Dunkelheit/Übelkeit/Schaden im Umkreis und der **Singularitätskern zerbricht** (`collapseDestroysCore`). Blockzerstörung ist standardmäßig aus.
 - **Ausgabe:** Energie-Ports schieben RF aktiv in angrenzende Blöcke und bieten die Energy-Capability an (nur Entnahme).
+
+Stabilisatoren halten dank `stabilizerMultiplier` (Standard x3) dreimal so lange wie ihre Data-Map-Werte.
 
 ## Balancing ohne Neukompilieren
 

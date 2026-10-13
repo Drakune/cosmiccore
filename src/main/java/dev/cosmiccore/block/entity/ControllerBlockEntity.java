@@ -65,6 +65,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public static final float UNSTABLE_ON = 70f;
     private static final float UNSTABLE_OFF = 55f;
     private static final float ALARM_AT = 85f;
+    /** Zeit zwischen 100 % Instabilitaet und dem Kollaps. */
+    public static final int MELTDOWN_TICKS = 200;
     /** Das Eindaemmungsfeld haelt die Instabilitaet auf diesem Wert, solange Stabilisatoren vorhanden sind. */
     public static final float FIELD_TARGET = 20f;
     /** Zusaetzliche Kuehlung pro Tick und Prozentpunkt ueber dem Zielwert (zieht die Instabilitaet zurueck). */
@@ -102,6 +104,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private float instability;
     private int resonance;
     private int collapseCooldown;
+    private int meltdown;
     private CorePhase phase = CorePhase.DORMANT;
 
     // nicht gespeichert
@@ -357,6 +360,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 lastOutput = out;
                 gain = (float) (CoreConfig.INSTABILITY_RATE.get() * (burnPower / 1000.0)
                         * instabilityScale() * cosmicInstability(level));
+                // ab der roten Zone steigt die Instabilitaet gebremst - es bleibt Zeit zu reagieren
+                if (instability > UNSTABLE_ON) gain *= 0.4f;
                 instability += gain;
                 setChanged();
             } else if (burnTime <= 0) {
@@ -383,9 +388,24 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (!burning) instability -= IDLE_DECAY;
         instability = Mth.clamp(instability, 0f, 100f);
 
+        // Kollaps-Countdown: bei 100 % bleiben MELTDOWN_TICKS, um den Kern noch zu retten (unter 95 % = abgewendet)
         if (instability >= 100f) {
-            collapse(level);
-            return;
+            meltdown++;
+            if (meltdown == 1 || meltdown % 20 == 0) {
+                Vec3 c = Vec3.atCenterOf(center(level));
+                level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_HEARTBEAT, SoundSource.BLOCKS, 3.0F, 1.2F);
+                for (Player pl : level.getEntitiesOfClass(Player.class, new AABB(c, c).inflate(32))) {
+                    pl.displayClientMessage(Component.translatable("message.cosmiccore.meltdown",
+                            (MELTDOWN_TICKS - meltdown) / 20 + 1).withStyle(ChatFormatting.RED, ChatFormatting.BOLD), true);
+                }
+            }
+            if (meltdown >= MELTDOWN_TICKS) {
+                meltdown = 0;
+                collapse(level);
+                return;
+            }
+        } else if (meltdown > 0 && instability < 95f) {
+            meltdown = 0; // Kollaps abgewendet
         }
 
         // Phase bestimmen (mit Hysterese, damit die Bloecke nicht flackern)
@@ -436,7 +456,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Kuehlpunkte eines Stabilisators (vor dem Groessenfaktor): Wirkdauer x Staerke aus der Data Map. */
     public static double stabilizerPoints(CoreStabilizer stab) {
-        return stab.duration() * (double) stab.strength();
+        return stab.duration() * (double) stab.strength() * CoreConfig.STABILIZER_MULTIPLIER.get();
     }
 
     private void collapse(ServerLevel level) {
@@ -524,23 +544,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (target == null) return;
             laserTarget = target.getId();
             laserCharge = 0;
-            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 1.5F, 1.6F);
+            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.6F, 1.6F);
             pushVisuals(level);
-        }
-        if (level.getGameTime() % 10 == 0) {
-            level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_AMBIENT, SoundSource.BLOCKS, 1.0F, 1.8F);
         }
         // erst aufladen, dann feuern
         if (laserCharge < LASER_CHARGE_TICKS) {
             laserCharge++;
             if (laserCharge == LASER_CHARGE_TICKS) {
-                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.BLOCKS, 1.2F, 1.4F);
+                level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.5F, 1.8F);
             }
             return;
         }
         int gained = target.harvestTick();
         if (gained > 0) {
             receiveCosmicEnergy(gained);
+            // grosses Energiepartikel sammelt sich ueber dem Trichter und wird an den Kern uebergeben
+            if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime());
             laserTarget = -1;
             pushVisuals(level);
         }
@@ -556,7 +575,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
             be.setVisuals(size.size(), scale, size.maxScale(), instability, skyLink && running, lastCosmic, shield, funnel,
                     laserArray, laserTarget, overdrive, lastOutput,
-                    (int) Math.min(100, Math.round(100.0 * energy / Math.max(1, getCapacity()))));
+                    (int) Math.min(100, Math.round(100.0 * energy / Math.max(1, getCapacity()))),
+                    meltdown <= 0 ? 0 : (MELTDOWN_TICKS - meltdown) / 20 + 1);
         }
     }
 
@@ -687,6 +707,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     private void onUnformed(ServerLevel level) {
         formed = false;
+        meltdown = 0;
         overdrive = 0; // Overdrive gilt nur fuer den gebildeten Reaktor - die Partikel sind verbraucht
         phase = CorePhase.DORMANT;
         resonance = 0;
@@ -902,6 +923,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putFloat("instability", instability);
         tag.putInt("resonance", resonance);
         tag.putInt("collapseCooldown", collapseCooldown);
+        tag.putInt("meltdown", meltdown);
         tag.putString("phase", phase.getSerializedName());
         tag.put("inventory", inventory.serializeNBT(registries));
     }
@@ -929,6 +951,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         instability = tag.getFloat("instability");
         resonance = tag.getInt("resonance");
         collapseCooldown = tag.getInt("collapseCooldown");
+        meltdown = tag.getInt("meltdown");
         phase = CorePhase.byName(tag.getString("phase"));
         if (tag.contains("inventory")) {
             inventory.deserializeNBT(registries, tag.getCompound("inventory"));
@@ -1020,6 +1043,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));
                 case ControllerMenu.D_COLLAPSE -> collapseCooldown / 20;
                 case ControllerMenu.D_OVERDRIVE -> overdrive;
+                case ControllerMenu.D_MELTDOWN -> meltdown <= 0 ? 0 : (MELTDOWN_TICKS - meltdown) / 20 + 1;
                 case ControllerMenu.D_ERRORS -> lastReport == null || formed ? 0 : Math.min(32767, lastReport.mismatches());
                 default -> 0;
             };

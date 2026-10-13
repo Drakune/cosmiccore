@@ -32,10 +32,10 @@ import org.joml.Vector3f;
 
 /**
  * Die kosmische Kammer: Ist die Struktur gebildet, sind die Modelle von Gehaeuse, Rahmen und Glas ausgeblendet.
- * Statt einer festen Huelle haelt ein Netz aus leuchtenden Partikeln das Feld um das schwarze Loch zusammen:
+ * Statt einer festen Huelle haelt ein Sternbild-Netz das Feld um das schwarze Loch zusammen:
  * <ul>
- *   <li>Die Partikel liegen gleichmaessig auf einer Kugel und sind ueber leuchtende Fesseln mit ihren Nachbarn
- *       verbunden - das Netz dreht sich langsam, Kompressionswellen laufen von Pol zu Pol.</li>
+ *   <li>Funkelnde Sterne unterschiedlicher Helligkeit liegen auf einer Kugel, feine Sternbildlinien verbinden sie -
+ *       das Netz dreht sich langsam, Kompressionswellen laufen von Pol zu Pol.</li>
  *   <li>Immer wieder draengt ein Partikel nach aussen und wird von einer Fessel zurueckgezogen; feine Zugspuren
  *       zeigen, wie das Feld nach innen zieht.</li>
  *   <li>Fehlt Stabilisator oder steigt die Instabilitaet, reissen Fesseln, Partikel brechen weiter aus, das Netz glueht rot.</li>
@@ -157,13 +157,14 @@ public final class ReactorShellRenderer {
         int inst = Math.round(core.getInstability());
         int instColor = inst < 40 ? 0x80FF90 : inst < 70 ? 0xFFE060 : 0xFF5060;
         String[] lines = {
-                core.getEnergyPct() >= 100 ? "PUFFER VOLL" : p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "",
+                core.getMeltdown() > 0 ? "KOLLAPS IN " + core.getMeltdown() + "s"
+                        : core.getEnergyPct() >= 100 ? "PUFFER VOLL" : p.active() ? (p.unstable() ? "! INSTABIL !" : "KERN AKTIV") : "",
                 "OUT " + compact(core.getOutput()) + " RF/t",
                 "PUF " + core.getEnergyPct() + "%",
                 "INST " + inst + "%",
                 "STUFE " + core.getScale() + "/" + core.getScaleMax(),
                 maxOd > 0 ? "OD " + od : ""};
-        int[] colors = {core.getEnergyPct() >= 100 ? 0xFFB040 : p.unstable() ? 0xFF5060 : 0xB0E8FF, 0x7AE8FF, 0xC8B8F0, instColor, 0xE0A8FF, 0xFFB040};
+        int[] colors = {core.getMeltdown() > 0 ? 0xFF3030 : core.getEnergyPct() >= 100 ? 0xFFB040 : p.unstable() ? 0xFF5060 : 0xB0E8FF, 0x7AE8FF, 0xC8B8F0, instColor, 0xE0A8FF, 0xFFB040};
         float tilt = (float) Math.atan2(0.18, 0.42);
         float s = 0.0062F;
         for (int side = 0; side < 2; side++) {
@@ -359,16 +360,18 @@ public final class ReactorShellRenderer {
             pos[i] = new Vector3f(v).mul(R + push[i]);
         }
 
-        // Fesseln zwischen Nachbarn
+        // Sternbildlinien: nur ausgewaehlte Verbindungen, fein und hell
+        float[] lineCol = lerp(seam, new float[]{0.85F, 0.92F, 1.0F}, 0.55F);
         for (int[] l : net.links()) {
             int a = l[0], b = l[1];
+            if (hash(a * 7 + b * 13) > 0.1F) continue; // ca. 55 % der Fesseln bilden die Sternbilder
             boolean broken = (danger > 0.2F || strength < 0.6F)
                     && hash(a * 31 + b * 17 + window) > 1.0F - Math.max(danger * 0.45F, (0.6F - strength) * 0.8F);
             if (broken) continue;
             float wave = (float) Math.exp(-Math.pow(home[a].y - waveY, 2) * 18.0);
-            float al = base * strength * (0.12F + 0.4F * wave) * pulse;
+            float al = base * strength * (0.18F + 0.4F * wave) * pulse;
             Vector3f pa = pos[a], pb = pos[b];
-            segment(vc, m, pa.x, pa.y, pa.z, pb.x, pb.y, pb.z, 0.005F, seam[0], seam[1], seam[2], al, al);
+            segment(vc, m, pa.x, pa.y, pa.z, pb.x, pb.y, pb.z, 0.0035F, lineCol[0], lineCol[1], lineCol[2], al, al);
         }
 
         // Partikel, ihre Fesseln nach innen und feine Zugspuren zum Kern
@@ -377,9 +380,20 @@ public final class ReactorShellRenderer {
             float wave = (float) Math.exp(-Math.pow(home[i].y - waveY, 2) * 18.0);
             float pushing = push[i] / Math.max(0.01F, R);
             float flick = p.unstable() ? 0.6F + 0.4F * (0.5F + 0.5F * hash(i * 13 + (int) (t * 0.8F))) : 1.0F;
-            float a = base * flick * (0.55F + 0.45F * wave);
-            cube(vc, m, q.x, q.y, q.z, 0.022F + 0.03F * pushing, 1.0F, 1.0F, 1.0F, a);
-            cube(vc, m, q.x, q.y, q.z, 0.05F + 0.05F * pushing, seam[0], seam[1], seam[2], a * 0.3F);
+            // Stern: Helligkeit (Groessenklasse) und Funkeln je Partikel
+            float mag = 0.3F + 0.7F * (0.5F + 0.5F * hash(i * 211)) * (0.5F + 0.5F * hash(i * 389));
+            float twinkle = 0.6F + 0.4F * Mth.sin(t * (0.1F + 0.1F * (0.5F + 0.5F * hash(i * 17))) + i);
+            float a = Math.min(1.0F, base * flick * twinkle * (0.45F + 0.55F * wave) * (0.5F + 0.7F * mag));
+            float core = 0.01F + 0.018F * mag + 0.03F * pushing;
+            cube(vc, m, q.x, q.y, q.z, core, 1.0F, 1.0F, 1.0F, a);
+            cube(vc, m, q.x, q.y, q.z, core * 2.4F, seam[0], seam[1], seam[2], a * 0.25F);
+            if (mag > 0.55F) {
+                // vierzackiger Glanz der hellen Sterne
+                float sp = (0.05F + 0.07F * mag) * twinkle;
+                segment(vc, m, q.x - sp, q.y, q.z, q.x + sp, q.y, q.z, 0.003F, 1.0F, 1.0F, 1.0F, a * 0.7F, a * 0.7F);
+                segment(vc, m, q.x, q.y - sp, q.z, q.x, q.y + sp, q.z, 0.003F, 1.0F, 1.0F, 1.0F, a * 0.7F, a * 0.7F);
+                segment(vc, m, q.x, q.y, q.z - sp, q.x, q.y, q.z + sp, 0.003F, 1.0F, 1.0F, 1.0F, a * 0.7F, a * 0.7F);
+            }
             if (pushing > 0.015F) {
                 // die Fessel spannt sich und zieht das Partikel zurueck
                 Vector3f anchor = new Vector3f(home[i]).mul(R);

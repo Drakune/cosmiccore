@@ -195,7 +195,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         ReactorShellRenderer.glow(pose.last().pose(), glow, shell);
         if (lasers) {
             EnergyLaserFx.render(pose.last().pose(), glow, half, t, laserTarget, targetSize,
-                    laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy));
+                    laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy),
+                    be.getDeliverPhase(partialTick));
         }
         pose.popPose();
     }

@@ -37,8 +37,9 @@ public final class EnergyLaserFx {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
     public static void render(Matrix4f m, VertexConsumer vc, int half, float t, Vec3 target, float targetSize, float charge,
-                              float harvest, float energy) {
+                              float harvest, float energy, float deliver) {
         float cy = half + HEIGHT;
+        if (deliver >= 0.0F) delivery(m, vc, cy, t, deliver, energy);
         Vector3f center = new Vector3f(0, cy, 0);
         boolean locked = target != null;
         float fire = locked ? Mth.clamp((charge - 0.95F) / 0.05F, 0.0F, 1.0F) : 0.0F;
@@ -143,6 +144,43 @@ public final class EnergyLaserFx {
             cube(vc, m, focus.x * (1.0F - s), y, focus.z * (1.0F - s), 0.035F, GOLD[0], GOLD[1], GOLD[2], energy * (1.0F - s));
         }
         segment(vc, m, focus.x, focus.y, focus.z, 0, half + 0.5F, 0, 0.015F, GOLD[0], GOLD[1], GOLD[2], 0.5F * energy, 0.2F * energy);
+    }
+
+    /**
+     * Uebergabe nach einem Abschuss: ein grosses Energiepartikel sammelt sich in der Mitte (Funken stroemen hinein),
+     * sinkt dann mit Lichtschweif in den Kern und geht dort in einem Lichtblitz auf.
+     */
+    private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float t, float ph, float energy) {
+        if (ph < 0.45F) {
+            float g = ph / 0.45F;
+            Matrix4f om = new Matrix4f(m).translate(0, cy, 0);
+            RenderUtil.glowSphere(vc, om, 0.08F + 0.32F * g, 10, 14, GOLD, 0.45F * energy);
+            RenderUtil.glowSphere(vc, om, 0.05F + 0.16F * g, 8, 12, WHITE, 0.7F * energy);
+            for (int k = 0; k < 14; k++) {
+                float s = Mth.frac(t * 0.05F + k / 14.0F); // 0 = aussen, 1 = im Partikel
+                float ang = k * 2.4F + t * 0.02F;
+                float r = (1.0F - s) * 2.2F;
+                float y = cy + hash(k * 7) * (1.0F - s) * 1.2F;
+                cube(vc, m, Mth.cos(ang) * r, y, Mth.sin(ang) * r, 0.03F, GOLD[0], GOLD[1], GOLD[2], energy * s);
+            }
+            return;
+        }
+        float d = (ph - 0.45F) / 0.55F;
+        float fall = d * d;
+        float y = Mth.lerp(fall, cy, 0.0F);
+        float r = 0.4F * (1.0F - 0.55F * d);
+        Matrix4f om = new Matrix4f(m).translate(0, y, 0);
+        RenderUtil.glowSphere(vc, om, r, 10, 14, GOLD, 0.45F * energy);
+        RenderUtil.glowSphere(vc, om, r * 0.5F, 8, 12, WHITE, 0.8F * energy);
+        // Lichtschweif nach oben
+        float tail = Mth.lerp(Math.max(0.0F, d - 0.15F) * Math.max(0.0F, d - 0.15F), cy, 0.0F);
+        segment(vc, m, 0, tail, 0, 0, y, 0, r * 0.5F, GOLD[0], GOLD[1], GOLD[2], 0.0F, 0.6F * energy);
+        if (d > 0.85F) {
+            // Aufnahme im Kern
+            float f = (d - 0.85F) / 0.15F;
+            RenderUtil.glowSphere(vc, m, 0.3F + 1.2F * f, 10, 14, WHITE, 0.6F * energy * (1.0F - f));
+            flatCircle(vc, m, 0.5F + 2.2F * f, 0.04F, 64, GOLD, energy * (1.0F - f));
+        }
     }
 
     /** Position eines Partikels: Kreisbahn um die Bahnmitte, beim Aufladen hin zum Brennpunkt gezogen. */

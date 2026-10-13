@@ -47,6 +47,8 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
     private static final float[] JET = {0.6F, 0.78F, 1.0F};
     private static final float[] CRITICAL = {1.0F, 0.12F, 0.12F};
     private static final float[] EYE_GLOW = {0.3F, 1.0F, 0.65F};
+    private static final float[] FUNNEL_A = {0.35F, 0.75F, 1.0F};
+    private static final float[] FUNNEL_B = {0.7F, 0.45F, 1.0F};
     private static final float[] EYE_BODY = {0.08F, 0.36F, 0.3F};
     private static final float[] IRIS_IN = {0.62F, 1.0F, 0.72F};
     private static final float[] IRIS_OUT = {0.12F, 0.7F, 0.45F};
@@ -94,54 +96,62 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
     }
 
     /**
-     * Schild-Emitter als animiertes 3D-Enderauge: undurchsichtige Kugel mit Iris und Schlitzpupille, die dem
-     * Betrachter folgt, ab und zu den Blick springen laesst und blinzelt. Die Pupille weitet sich bei Instabilitaet.
-     * Darueber eine Projektorschale, die das Feld zum Kern projiziert.
+     * Schild-Emitter als runder Trichter aus purer Energie: Lichtringe formen einen Kelch, der sich zum Kern oeffnet,
+     * Spiralbahnen drehen sich darin, Lichtpunkte steigen auf und im Hals glueht die Quelle. Aus seiner Oeffnung
+     * steigt das Eindaemmungsfeld (FieldFx).
      */
     private static void renderCoil(PoseStack pose, MultiBufferSource buffers, Level level, BlockPos pos, int[] core, float t,
                                    float speed, float energy, float[] rim, float heat) {
-        float bob = 0.05F * Mth.sin(t * 0.07F);
-        pose.pushPose();
-        pose.translate(0.0, bob, 0.0);
-
-        // Blickrichtung: zum Betrachter, mit kleinen Blickspruengen
-        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        double dx = cam.x - (pos.getX() + 0.5), dy = cam.y - (pos.getY() + 0.5 + bob), dz = cam.z - (pos.getZ() + 0.5);
-        int look = (int) (t / 45.0F);
-        float yaw = (float) Math.atan2(dx, dz) + 0.18F * hash(look * 31);
-        float pitch = (float) Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)) + 0.12F * hash(look * 17 + 3);
-        float blinkPhase = (t % 110.0F) / 6.0F;
-        float open = blinkPhase < 1.0F ? Math.abs(1.0F - 2.0F * blinkPhase) : 1.0F;
-        float dilate = 0.3F + 0.7F * heat;
-
-        pose.pushPose();
-        pose.mulPose(Axis.YP.rotation(yaw));
-        pose.mulPose(Axis.XP.rotation(-pitch));
-        Matrix4f m = pose.last().pose();
-        VertexConsumer solid = buffers.getBuffer(RenderType.debugQuads());
-        float r = 0.24F;
-        RenderUtil.solidSphere(solid, m, r, 14, 20, EYE_BODY[0], EYE_BODY[1], EYE_BODY[2]);
-        capEllipse(solid, m, r * 1.004F, r * 0.62F, r * 0.62F * Math.max(0.08F, open), 0, 0, IRIS_IN, IRIS_OUT);
-        capEllipse(solid, m, r * 1.008F, r * (0.07F + 0.07F * dilate), r * 0.42F * Math.max(0.05F, open), 0, 0, PUPIL, PUPIL);
-        if (open > 0.5F) {
-            capEllipse(solid, m, r * 1.012F, r * 0.07F, r * 0.07F, -r * 0.22F, r * 0.24F, SHINE, SHINE);
-        }
-        pose.popPose();
-
-        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
-        float pulse = 0.6F + 0.4F * Mth.sin(t * 0.12F * speed);
-        // Projektorschale ueber dem Auge, zum Kern gerichtet (der Emitter sitzt unter dem Kern)
         float dir = core != null && core[1] != 0 ? Math.signum(core[1]) : 1.0F;
-        for (int k = 0; k < 3; k++) {
-            float y = dir * (0.22F + k * 0.1F);
-            float rr = 0.18F + k * 0.1F;
-            pose.pushPose();
-            pose.translate(0.0, y, 0.0);
-            ring(pose, glow, rr, 0.012F, t * (k % 2 == 0 ? 3.0F : -2.4F) * speed, 0.0F, 0.0F, t + k * 20.0F,
-                    k == 1 ? EYE_GLOW : rim, energy * pulse);
-            pose.popPose();
+        VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
+        pose.pushPose();
+        pose.translate(0.0, -0.35 * dir, 0.0);
+        if (dir < 0) pose.mulPose(Axis.XP.rotationDegrees(180.0F));
+        Matrix4f m = pose.last().pose();
+        float[] a = lerp(FUNNEL_A, CRITICAL, heat * 0.8F), b = lerp(FUNNEL_B, CRITICAL, heat * 0.6F);
+        final float height = 0.85F;
+
+        // Ringe des Kelchs
+        int rings = 7;
+        for (int k = 0; k <= rings; k++) {
+            float f = k / (float) rings;
+            float y = f * height, r = funnelRadius(f);
+            float pulse = 0.5F + 0.5F * Mth.sin(t * 0.2F * speed - f * 6.0F);
+            Matrix4f rm = new Matrix4f(m).translate(0, y, 0).rotateY(t * 0.03F * speed * (k % 2 == 0 ? 1 : -1));
+            RenderUtil.flatCircle(glow, rm, r, 0.008F + 0.006F * f, 40, lerp(a, b, f), energy * (0.35F + 0.5F * pulse));
         }
+        // Spiralbahnen auf der Kelchwand
+        int lines = 10;
+        for (int k = 0; k < lines; k++) {
+            float[] prev = null;
+            for (int i = 0; i <= 16; i++) {
+                float f = i / 16.0F;
+                float ang = k * Mth.TWO_PI / lines + f * 2.2F + t * 0.04F * speed;
+                float r = funnelRadius(f);
+                float[] q = {Mth.cos(ang) * r, f * height, Mth.sin(ang) * r};
+                if (prev != null) {
+                    float al = energy * (0.25F + 0.45F * f);
+                    RenderUtil.segment(glow, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.006F, a[0], a[1], a[2], al, al);
+                }
+                prev = q;
+            }
+        }
+        // aufsteigende Lichtpunkte
+        for (int k = 0; k < 8; k++) {
+            float f = Mth.frac(t * 0.02F * speed + k / 8.0F);
+            float ang = k * 2.4F + f * 3.0F + t * 0.03F;
+            float r = funnelRadius(f) * 0.9F;
+            cube(glow, m, Mth.cos(ang) * r, f * height, Mth.sin(ang) * r, 0.025F, 1.0F, 1.0F, 1.0F, energy * Mth.sin(f * Mth.PI));
+        }
+        // gluehender Hals
+        RenderUtil.glowSphere(glow, m, 0.1F + 0.02F * Mth.sin(t * 0.3F), 8, 12, b, 0.5F * energy);
+        cube(glow, m, 0, 0, 0, 0.045F, 1.0F, 1.0F, 1.0F, energy);
         pose.popPose();
+    }
+
+    /** Radius des Kelchs: schmaler Hals, weit geoeffneter Rand (f = 0 unten, 1 oben). */
+    private static float funnelRadius(float f) {
+        return 0.07F + 0.43F * f * f;
     }
 
     /** Ellipse (Halbachsen a, b, Mitte ox/oy) als Kappe auf der Kugel mit Radius r, Blickrichtung +Z. */

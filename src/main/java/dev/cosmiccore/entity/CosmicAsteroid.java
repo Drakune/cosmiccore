@@ -123,8 +123,7 @@ public class CosmicAsteroid extends Entity {
             Vec3 c = position().add(0, getBbHeight() / 2, 0);
             sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 40 + getVariant() * 40, s * 0.4, s * 0.4, s * 0.4, 0.15);
             sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 80, s * 0.3, s * 0.3, s * 0.3, 0.3);
-            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.AMBIENT, 4.0F, 0.6F);
-            sl.playSound(null, c.x, c.y, c.z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, SoundSource.AMBIENT, 4.0F, 0.7F);
+            sl.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.AMBIENT, 2.0F, 0.6F);
         }
         int energy = getEnergy();
         discard();

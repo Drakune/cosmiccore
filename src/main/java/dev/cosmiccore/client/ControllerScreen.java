@@ -416,6 +416,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (!menu.flag(ControllerMenu.F_FORMED)) {
             return Component.translatable("gui.cosmiccore.status.incomplete", menu.errors()).withStyle(ChatFormatting.RED);
         }
+        if (menu.meltdown() > 0) {
+            boolean blink = minecraft != null && minecraft.level != null && minecraft.level.getGameTime() / 5 % 2 == 0;
+            return Component.translatable("gui.cosmiccore.status.meltdown", menu.meltdown())
+                    .withStyle(blink ? ChatFormatting.RED : ChatFormatting.WHITE, ChatFormatting.BOLD);
+        }
         if (menu.collapseSeconds() > 0) {
             return Component.translatable("gui.cosmiccore.status.collapsed", menu.collapseSeconds()).withStyle(ChatFormatting.DARK_RED);
         }

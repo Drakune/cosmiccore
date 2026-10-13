@@ -35,9 +35,13 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private int overdrive;        // installierte Overdrive-Stufen (verwandeln das Loch)
     private int output;           // aktuelle RF/t (fuer die Konsole)
     private int energyPct;        // Pufferfuellstand 0..100 (fuer die Konsole)
+    private int meltdown;         // Sekunden bis zum Kollaps (0 = kein Countdown)
 
     /** Spielzeit, zu der die Struktur gebildet wurde (vom Controller gesetzt, startet die Verwandlungs-Animation). */
     private long formStart = Long.MIN_VALUE;
+    /** Spielzeit, zu der ein abgeschossener Asteroid sein Energiepartikel abgegeben hat (Uebergabe-Animation). */
+    private long deliverStart = Long.MIN_VALUE;
+    public static final int DELIVER_TICKS = 70;
 
     public SingularityCoreBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CORE.get(), pos, state);
@@ -47,7 +51,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     public void setVisuals(int structureSize, int scale, int maxScale, float instability, boolean skyLink, double cosmic,
                            int shield, boolean funnel, boolean laserArray, int laserTarget, int overdrive,
-                           int output, int energyPct) {
+                           int output, int energyPct, int meltdown) {
         int inst = Math.round(instability);
         int cos = (int) Math.round(cosmic * 100.0);
         shield = Math.max(0, Math.min(100, shield));
@@ -55,9 +59,11 @@ public class SingularityCoreBlockEntity extends BlockEntity {
                 && inst == this.instability && skyLink == this.skyLink && cos == this.cosmic
                 && shield / 5 == this.shield / 5 && funnel == this.funnel
                 && laserArray == this.laserArray && laserTarget == this.laserTarget && overdrive == this.overdrive
-                && energyPct == this.energyPct && Math.abs(output - this.output) <= Math.max(10, this.output / 50)) {
+                && energyPct == this.energyPct && Math.abs(output - this.output) <= Math.max(10, this.output / 50)
+                && meltdown == this.meltdown) {
             return;
         }
+        this.meltdown = meltdown;
         this.output = output;
         this.energyPct = energyPct;
         this.overdrive = overdrive;
@@ -75,6 +81,22 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
+    }
+
+    /** Vom Controller aufgerufen, wenn der Laser einen Asteroiden zerstoert hat. */
+    public void markDelivery(long gameTime) {
+        deliverStart = gameTime;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** Fortschritt der Uebergabe 0..1, oder -1 wenn keine laeuft. */
+    public float getDeliverPhase(float partialTick) {
+        if (level == null || deliverStart == Long.MIN_VALUE) return -1.0F;
+        float ph = (level.getGameTime() - deliverStart + partialTick) / DELIVER_TICKS;
+        return ph < 0.0F || ph > 1.0F ? -1.0F : ph;
     }
 
     /** Vom Controller beim Bilden der Struktur aufgerufen. */
@@ -120,6 +142,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     public int getOutput() {
         return output;
+    }
+
+    public int getMeltdown() {
+        return meltdown;
     }
 
     public int getEnergyPct() {
@@ -255,10 +281,12 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         overdrive = tag.getInt("overdrive");
         output = tag.getInt("output");
         energyPct = tag.getInt("energyPct");
+        meltdown = tag.getInt("meltdown");
         int target = tag.contains("laserTarget") ? tag.getInt("laserTarget") : -1;
         if (target != laserTarget && level != null) targetSince = level.getGameTime(); // Aufladen beginnt
         laserTarget = target;
         formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
+        deliverStart = tag.contains("deliverStart") ? tag.getLong("deliverStart") : Long.MIN_VALUE;
     }
 
     private void writeVisuals(CompoundTag tag) {
@@ -274,8 +302,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         tag.putInt("overdrive", overdrive);
         tag.putInt("output", output);
         tag.putInt("energyPct", energyPct);
+        tag.putInt("meltdown", meltdown);
         tag.putInt("laserTarget", laserTarget);
         tag.putLong("formStart", formStart);
+        tag.putLong("deliverStart", deliverStart);
     }
 
     @Override
