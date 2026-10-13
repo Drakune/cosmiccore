@@ -13,21 +13,21 @@ import org.jetbrains.annotations.Nullable;
  * <pre>
  * y=0 Boden   y=1 / y=5   y=2 / y=4   y=3 Aequator   y=6 Decke
  * HHHCHHH     F.....F     F.....F     F.....F        HHHHHHH
- * HHHHHHH     .aaaaa.     .aaaaa.     .aaRaa.        HGGGGGH
+ * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGGGGGH
  * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGHHHGH
- * CHHHHHC     .aaXaa.     .aaaaa.     .RaKaR.        HGHHHGH
+ * CHHHHHC     .aaXaa.     .aaaaa.     .aaKaa.        HGHHHGH
  * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGHHHGH
- * HHHHHHH     .aaaaa.     .aaaaa.     .aaRaa.        HGGGGGH
+ * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGGGGGH
  * HHHCHHH     F.....F     F.....F     F.....F        HHHHHHH
+ * (y=1: R statt X = Resonanzschild-Emitter unter dem Kern; y=5: X = Fokuskristall ueber dem Kern)
  *
  *  H = Huelle (Leerengehaeuse, Energie-Port oder Item-Port)
  *  C = wie H, aber hier darf (genau) der Controller sitzen - Mitte jeder Bodenkante
  *  F = Runenrahmen (Eckpfeiler)     G = Fokusglas (Deckenring)
- *  R = Resonanzspule (Aequator)     X = Fokuskristall (Pole)
+ *  R = Resonanzschild-Emitter (unterer Pol)     X = Fokuskristall (oberer Pol)
  *  K = Singularitaetskern (Mitte)   a = Luft (Kammer muss frei sein)   . = egal (offene Seiten)
  * </pre>
- * 5x5x5: die Kammer ist zu eng, Spulen sitzen deshalb in den offenen Seiten und die Kristalle in Boden/Decke.
- * 9x9x9: zusaetzlich vier diagonale Spulen in den Kammerecken des Aequators.
+ * 5x5x5: die Kammer ist zu eng, Emitter und Kristall sitzen deshalb in der Mitte von Boden bzw. Decke.
  * Alle Muster sind 4-fach drehsymmetrisch; deshalb muss nur der Mittelpunkt aus der Controller-Ausrichtung
  * berechnet werden, nicht das Muster gedreht.
  */
@@ -61,11 +61,10 @@ public final class CorePattern {
 
     private Cell compute(int dx, int dy, int dz) {
         int ax = Math.abs(dx), ay = Math.abs(dy), az = Math.abs(dz);
-        boolean axisXZ = (dx == 0 && az == focus) || (dz == 0 && ax == focus);
 
         if (ay == half) {
-            // Boden und Decke
-            if (dx == 0 && dz == 0 && focus == half) return Cell.CRYSTAL;
+            // Boden und Decke (5x5x5: Emitter in der Bodenmitte, Kristall in der Deckenmitte)
+            if (dx == 0 && dz == 0 && focus == half) return dy < 0 ? Cell.COIL : Cell.CRYSTAL;
             if (dy < 0) {
                 return (dx == 0 && az == half) || (dz == 0 && ax == half) ? Cell.SLOT : Cell.HULL;
             }
@@ -74,14 +73,11 @@ public final class CorePattern {
         if (ax == half || az == half) {
             // offene Seiten
             if (ax == half && az == half) return Cell.FRAME;
-            if (dy == 0 && axisXZ) return Cell.COIL;
             return Cell.ANY;
         }
-        // Kammer
+        // Kammer: Kern in der Mitte, Fokuskristall darueber, Resonanzschild-Emitter darunter
         if (dx == 0 && dy == 0 && dz == 0) return Cell.CORE;
-        if (dy == 0 && axisXZ) return Cell.COIL;
-        if (dy == 0 && size >= 9 && ax == half - 1 && az == half - 1) return Cell.COIL;
-        if (dx == 0 && dz == 0 && ay == focus) return Cell.CRYSTAL;
+        if (dx == 0 && dz == 0 && ay == focus) return dy < 0 ? Cell.COIL : Cell.CRYSTAL;
         return Cell.AIR;
     }
 

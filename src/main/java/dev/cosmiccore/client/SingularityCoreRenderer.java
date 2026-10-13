@@ -37,7 +37,7 @@ import org.joml.Matrix4f;
  *       Hotspots am Innenrand und eine Dunsthuelle.</li>
  *   <li><b>Materiefaeden:</b> werden von aussen durch das Schild gerissen und spiralen in die Scheibe.</li>
  *   <li><b>Jets</b> entlang der Pole; mit Himmelssicht schiesst der obere Jet ins All.</li>
- *   <li><b>Eindaemmungsschild</b> ({@link ShieldFx}) und <b>Kammer</b> ({@link ReactorShellRenderer}).</li>
+ *   <li><b>Eindaemmungsfeld</b> des Emitters unter dem Kern ({@link FieldFx}) und <b>Kammer</b> ({@link ReactorShellRenderer}).</li>
  * </ul>
  * Reihenfolge der Puffer beachten: ein getBuffer() mit anderem RenderType schliesst den vorherigen Puffer ab.
  */
@@ -190,7 +190,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         tendrils(pose.last().pose(), glow, reach, inner, t, e, heat, active);
         lensing(pose, glow, rh, inner, t, e, heat, camYaw, camPitch, beat);
         if (active) jets(pose.last().pose(), glow, rh, reach, t, e, heat, growth + 0.25F * od);
-        ShieldFx.render(pose, glow, be.getStructureSize(), reach, t, e, heat, be.getShield(), unstable, camYaw, camPitch, od);
+        FieldFx.render(pose.last().pose(), glow, reach + 0.5F, reach, t, e, heat, be.getShield(), unstable, od);
         pose.popPose(); // Zittern
 
         // 4) Licht der Kammer und des Geschuetzes

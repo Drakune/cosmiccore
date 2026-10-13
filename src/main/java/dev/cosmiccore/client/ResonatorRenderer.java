@@ -107,11 +107,17 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
         float pulse = 0.6F + 0.4F * Mth.sin(t * 0.12F * speed);
         RenderUtil.glowSphere(glow, pose.last().pose(), 0.26F + 0.03F * pulse, 8, 12, EYE_GLOW, 0.12F * energy);
-        // Fokusring quer zur Richtung des Kerns
-        float dx = core != null ? core[0] : 1, dz = core != null ? core[2] : 0;
-        pose.mulPose(Axis.YP.rotation((float) Math.atan2(dx, dz)));
-        pose.translate(0.0, 0.0, 0.18);
-        ring(pose, glow, 0.2F, 0.012F, t * 3.0F * speed, 90.0F, 0.0F, t, rim, energy * pulse);
+        // Projektorschale ueber dem Auge, zum Kern gerichtet (der Emitter sitzt unter dem Kern)
+        float dir = core != null && core[1] != 0 ? Math.signum(core[1]) : 1.0F;
+        for (int k = 0; k < 3; k++) {
+            float y = dir * (0.22F + k * 0.1F);
+            float rr = 0.18F + k * 0.1F;
+            pose.pushPose();
+            pose.translate(0.0, y, 0.0);
+            ring(pose, glow, rr, 0.012F, t * (k % 2 == 0 ? 3.0F : -2.4F) * speed, 0.0F, 0.0F, t + k * 20.0F,
+                    k == 1 ? EYE_GLOW : rim, energy * pulse);
+            pose.popPose();
+        }
         pose.popPose();
     }
 

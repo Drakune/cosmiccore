@@ -19,8 +19,8 @@ Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich 
 - **Platzieren:** Direkt nach dem Platzieren öffnet sich die (einmalige) Wahl der Baugröße 5x5x5 / 7x7x7 / 9x9x9
   (angezeigt wird die RF/t-Spanne mit Sternenstaub von Stufe 1 bis zur Maximalstufe).
 - **Gebildete Struktur:** Alle Blöcke verwandeln sich (Scan-Animation von unten nach oben) in eine runde Sternenfeld-Kammer
-  um ein schwarzes Loch mit Akkretionsscheibe, Photonenring und Jets. Die Resonanzschild-Emitter halten ein
-  geodätisches Eindämmungsschild, dessen Stärke den Stabilisator-Vorrat zeigt.
+  um ein schwarzes Loch mit Akkretionsscheibe, Photonenring und Jets. Der Resonanzschild-Emitter unter dem
+  Kern projiziert ein Eindämmungsfeld um das Loch, dessen Stärke den Stabilisator-Vorrat zeigt.
 - **Rechtsklick:** GUI mit Brennstoff- und Stabilisator-Slot (frei befüllen und wieder herausnehmen), Balken für
   Energie / Instabilität / Resonanz, Leistungsstufe (-/+), Zünden/Stopp, Bauvorschau und (nur Kreativ) **Bauen**.
 - **Schleichen + Rechtsklick:** Status im Chat inkl. erstem Baufehler (mit Partikel an der Stelle).
@@ -40,10 +40,16 @@ Der Kern wird mit der Stufe sichtbar größer und färbt sich mit steigender Ins
 
 ```
 H = Leerengehäuse / Energie-Port / Item-Port     C = wie H, hier sitzt der Controller (Mitte einer Bodenkante)
-F = Runenrahmen   G = Fokusglas   R = Resonanzspule   X = Fokuskristall   K = Singularitätskern
-a = Luft (muss frei bleiben)      . = egal
+F = Runenrahmen   G = Fokusglas   R = Resonanzschild-Emitter   X = Fokuskristall   K = Singularitätskern
+a = Luft (muss frei bleiben)      . = egal      ? = R in y=1, X in y=5
 
-y=0 Boden        y=1 / y=5        y=2 / y=4        y=3 Äquator      y=6 Decke
+y=0 Boden    y=1 (R) / y=5 (X)  y=2 / y=4        y=3 Äquator      y=6 Decke
+HHHCHHH          F.....F          F.....F          F.....F          HHHHHHH
+HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGGGGGH
+HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGHHHGH
+CHHHHHC          .aa?aa.          .aaaaa.          .aaKaa.          HGHHHGH
+HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGHHHGH
+HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGGGGGH
 HHHCHHH          F.....F          F.....F          F.....F          HHHHHHH
 HHHHHHH          .aaaaa.          .aaaaa.          .aaRaa.          HGGGGGH
 HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGHHHGH
@@ -53,9 +59,9 @@ HHHHHHH          .aaaaa.          .aaaaa.          .aaRaa.          HGGGGGH
 HHHCHHH          F.....F          F.....F          F.....F          HHHHHHH
 ```
 
-**5x5x5:** Die Kammer ist zu eng - die 4 Spulen sitzen in den offenen Seiten (Mitte jeder Seite auf Kernhöhe),
-die Fokuskristalle in der Mitte von Boden und Decke. **9x9x9:** wie 7x7x7 (Spulen/Kristalle 3 Blöcke vom Kern),
-plus 4 diagonale Spulen in den Kammerecken auf Kernhöhe. Die Bauvorschau zeigt alles genau an.
+Der **Resonanzschild-Emitter** sitzt unter dem Kern, der **Fokuskristall** darüber (7x7x7: 2 Blöcke Abstand,
+9x9x9: 3 Blöcke). **5x5x5:** Die Kammer ist zu eng - Emitter und Kristall sitzen in der Mitte von Boden bzw. Decke.
+Die Bauvorschau zeigt alles genau an.
 
 7x7x7: 125 Blöcke, die Seiten sind offen, damit man die Animation sieht. Der Controller richtet sich beim Bilden
 automatisch nach außen aus. Rechtsklick auf den Controller (ohne Brennstoff in der Hand) zeigt Status bzw.
