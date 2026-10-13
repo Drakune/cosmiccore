@@ -52,7 +52,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             {{1.0F, 0.95F, 0.85F}, {1.0F, 0.55F, 0.2F}, {0.62F, 0.28F, 0.95F}, {0.6F, 0.8F, 1.0F}},
             {{0.9F, 0.97F, 1.0F}, {0.3F, 0.65F, 1.0F}, {0.25F, 0.2F, 1.0F}, {0.5F, 0.9F, 1.0F}},      // Ueberladung
             {{1.0F, 0.95F, 0.7F}, {1.0F, 0.72F, 0.15F}, {1.0F, 0.2F, 0.75F}, {1.0F, 0.85F, 0.4F}},    // Supernova
-            {{1.0F, 1.0F, 1.0F}, {0.88F, 0.35F, 1.0F}, {0.85F, 0.05F, 0.3F}, {0.95F, 0.6F, 1.0F}}};   // Quasar
+            {{1.0F, 1.0F, 1.0F}, {0.85F, 0.55F, 1.0F}, {0.5F, 0.25F, 1.0F}, {0.9F, 0.75F, 1.0F}}};    // Quasar
     // pro Frame gesetzt (Rendering laeuft nur im Render-Thread)
     private static float[] pHot = HOT, pWarm = WARM, pCool = COOL, pJet = JET;
     private static final float[] CRITICAL = {1.0F, 0.1F, 0.1F};
@@ -123,16 +123,18 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                 form, Math.max(0.4F, energy), heat, active, unstable, growth, od);
         ReactorShellRenderer.solid(pose, buffers, shell);
 
-        // Kosmos-Laser-Geschuetz auf der Decke
+        // Traktorstrahl-Anlage auf der Decke
         Vec3 laserTarget = null;
-        org.joml.Vector3f aim = null;
+        float targetSize = 1.0F;
+        org.joml.Vector3f ringNormal = null;
         if (be.hasLaserArray() && form >= 1.0F) {
             if (be.getLaserTarget() >= 0 && level.getEntity(be.getLaserTarget()) instanceof net.minecraft.world.entity.Entity target) {
                 laserTarget = target.getPosition(partialTick).add(0, target.getBbHeight() / 2, 0)
                         .subtract(Vec3.atCenterOf(be.getBlockPos()));
+                targetSize = target.getBbWidth();
             }
-            aim = BigLaserFx.aim(half, t, laserTarget);
-            BigLaserFx.solid(pose, buffers, half, t, aim);
+            ringNormal = TractorFx.normal(half, t, laserTarget);
+            TractorFx.solid(pose, buffers, half, t, ringNormal);
         }
 
         // Groessen
@@ -179,20 +181,20 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             pose.pushPose();
             pose.mulPose(Axis.ZP.rotationDegrees(62.0F));
             pose.mulPose(Axis.YP.rotationDegrees(t * 0.3F));
-            accretionDisk(pose.last().pose(), glow, inner * 1.1F, outer * 0.85F, t, -spin * 1.3F, e * 0.6F, heat, camYaw, 0, od);
+            accretionDisk(pose.last().pose(), glow, inner * 1.1F, outer * 0.8F, t, -spin * 1.3F, e * 0.35F, heat, camYaw, 0, 0);
             pose.popPose();
         }
-        OverdriveFx.render(pose, glow, od, rh, inner, outer, reach, half, t, e, heat, camYaw, camPitch, pal);
+        OverdriveFx.render(pose, glow, od, rh, t, e, camYaw, camPitch, pal);
 
         tendrils(pose.last().pose(), glow, reach, inner, t, e, heat, active);
         lensing(pose, glow, rh, inner, t, e, heat, camYaw, camPitch, beat);
-        if (active) jets(pose.last().pose(), glow, rh, reach + (od >= 2 ? 2.5F : 0.0F) + (od >= 3 ? 22.0F : 0.0F), t, e, heat, growth + 0.5F * od);
+        if (active) jets(pose.last().pose(), glow, rh, reach, t, e, heat, growth + 0.25F * od);
         ShieldFx.render(pose, glow, be.getStructureSize(), reach, t, e, heat, be.getShield(), unstable, camYaw, camPitch, od);
         pose.popPose(); // Zittern
 
         // 4) Licht der Kammer und des Geschuetzes
         ReactorShellRenderer.glow(pose.last().pose(), glow, shell);
-        if (aim != null) BigLaserFx.glow(pose, glow, half, t, aim, laserTarget, Math.max(0.5F, energy));
+        if (ringNormal != null) TractorFx.glow(pose, glow, half, t, ringNormal, laserTarget, targetSize, Math.max(0.5F, energy));
         pose.popPose();
     }
 
@@ -214,7 +216,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             if (od >= 2) {
                 // Supernova: die Scheibe zerfaellt in leuchtende Ringe mit Luecken
                 float ringWave = 0.5F + 0.5F * Mth.sin(f0 * Mth.PI * 7.0F - t * 0.02F);
-                base *= 0.15F + 1.1F * ringWave * ringWave;
+                base *= 0.45F + 0.75F * ringWave * ringWave;
             }
             float omega = spin * 0.06F / (float) Math.pow(0.3F + f0, 1.5);
             float rot = t * omega + layer * 0.7F;

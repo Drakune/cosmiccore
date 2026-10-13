@@ -148,7 +148,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         ReactorSize current = ReactorSize.bySize(menu.size());
         int maxOd = current == null ? 0 : current.maxOverdrive();
         overdriveUp.visible = overdriveDown.visible = chosen;
-        overdriveUp.active = menu.overdrive() < maxOd;
+        // Overdrive nur am gebildeten (animierten) Reaktor
+        overdriveUp.active = menu.flag(ControllerMenu.F_FORMED) && menu.overdrive() < maxOd;
         overdriveDown.active = menu.overdrive() > 0;
         ReactorSize sel = ReactorSize.values()[selected];
         confirm.setMessage(Component.translatable("gui.cosmiccore.confirm", sel.size(), sel.size(), sel.size()));
@@ -258,8 +259,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (!menu.sizeChosen()) {
             ReactorSize sel = ReactorSize.values()[selected];
             int base = referencePower();
-            long min = Math.round(base * CoreConfig.OUTPUT_MULTIPLIER.get());
-            long max = Math.round(base * Math.pow(sel.maxScale(), CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * CoreConfig.OUTPUT_MULTIPLIER.get());
+            long min = Math.round(base * sel.outputFactor() * CoreConfig.OUTPUT_MULTIPLIER.get());
+            long max = Math.round(base * sel.outputFactor() * Math.pow(sel.maxScale(), CoreConfig.SCALE_OUTPUT_EXPONENT.get())
+                    * CoreConfig.OUTPUT_MULTIPLIER.get());
             // Infoblock unter den Reitern - endet oberhalb von "Benoetigte Bloecke" (ICON_Y - 9)
             int ix = TAB_X, iy = TAB_Y + 3 * TAB_STEP;
             g.drawString(font, Component.translatable("gui.cosmiccore.output_label"), ix, iy, 0xFFB8A8D8, false);

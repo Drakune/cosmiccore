@@ -66,7 +66,7 @@
   "guide.cosmiccore.page.4": "§5§lPorts§r\n\nPorts can replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes.",
   "guide.cosmiccore.page.5": "§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...",
   "guide.cosmiccore.page.6": "§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.",
-  "guide.cosmiccore.page.7": "§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nMax level:\n5x5x5 → 3\n7x7x7 → 5\n9x9x9 → 8\n\nBigger reactors are more stable per level.",
+  "guide.cosmiccore.page.7": "§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels 1 to 10.\n\nBigger reactors give more per level and are more stable.",
   "guide.cosmiccore.page.8": "§5§lInstability§r\n\nFuel heats the core. From 20 % the field holds it there, using stabilizers - the higher the level, the more.\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: §lcollapse§r - the singularity core shatters!",
   "guide.cosmiccore.page.9": "§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output, with a Star Funnel §b+50 %§r.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.",
   "guide.cosmiccore.page.10": "§5§lTips§r\n\n- Test on level 1 first.\n- Never run out of stabilizers.\n- On alarm, lower the level or press Stop.\n- In creative, §dBuild§r places the structure instantly.\n\n§8Good luck, starsmith.§r",
@@ -77,7 +77,7 @@
   "gui.cosmiccore.funnel_on": "✦ Star funnel: active",
   "guide.cosmiccore.page.11": "§5§lStar Funnel§r\n\nPlace it right on the center of the ceiling.\n\nWith a clear sky it draws cosmic energy from space and §bdoubles§r the sky bonus.",
   "guide.cosmiccore.page.12": "§5§lAsteroids§r\n\nAt night asteroids drift across the sky - small, medium or large.\n\nLarge ones give 1M RF, small ones 50,000 RF.",
-  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey merge into a turret that shoots asteroids on its own.",
+  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become a tractor beam that catches asteroids and pulls them into the reactor as energy.",
   "item.cosmiccore.overdrive_particle": "Cosmic Core Overdrive Particle",
   "gui.cosmiccore.with_lasers": "+ Lasers",
   "gui.cosmiccore.overdrive": "Overdrive",
@@ -85,10 +85,10 @@
   "gui.cosmiccore.overdrive_down": "Remove",
   "gui.cosmiccore.overdrive.confirm_up": "⚠ Activate overdrive?",
   "gui.cosmiccore.overdrive.confirm_down": "Remove an overdrive level?",
-  "gui.cosmiccore.overdrive.warning_up": "Per level: RF generation x2, instability x3! One Overdrive Particle from your inventory is consumed and NOT returned when deactivated.",
+  "gui.cosmiccore.overdrive.warning_up": "Per level: RF generation x2, instability x3! One Overdrive Particle from your inventory is consumed and NOT returned when deactivated or when the reactor is dismantled.",
   "gui.cosmiccore.overdrive.warning_down": "The level is deactivated. The Overdrive Particle is lost.",
   "message.cosmiccore.overdrive.missing": "You need an Overdrive Particle in your inventory",
-  "tooltip.cosmiccore.overdrive.effect": "Install in the controller: RF x2, instability x3",
+  "tooltip.cosmiccore.overdrive.effect": "Install in a formed reactor: RF x2, instability x3",
   "tooltip.cosmiccore.overdrive.limit": "Max 1 / 2 / 3 levels (5x5x5 / 7x7x7 / 9x9x9)",
-  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nRemoved particles are lost."
+  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nOnly on a formed reactor. If it breaks, overdrive is lost."
 }

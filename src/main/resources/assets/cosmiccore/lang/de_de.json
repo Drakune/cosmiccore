@@ -66,7 +66,7 @@
   "guide.cosmiccore.page.4": "§5§lPorts§r\n\nPorts ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an.",
   "guide.cosmiccore.page.5": "§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...",
   "guide.cosmiccore.page.6": "§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.",
-  "guide.cosmiccore.page.7": "§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nMax. Stufe: 5x5x5 → 3, 7x7x7 → 5, 9x9x9 → 8\n\nGroße Reaktoren sind stabiler.",
+  "guide.cosmiccore.page.7": "§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen 1 bis 10.\n\nGroße Reaktoren liefern mehr pro Stufe und sind stabiler.",
   "guide.cosmiccore.page.8": "§5§lInstabilität§r\n\nBrennstoff erhitzt den Kern. Ab 20 % hält das Feld ihn dort und verbraucht dafür Stabilisatoren - je höher die Stufe, desto mehr.\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: §lKollaps§r - der Singularitätskern zerbricht!",
   "guide.cosmiccore.page.9": "§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.",
   "guide.cosmiccore.page.10": "§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r",
@@ -77,7 +77,7 @@
   "gui.cosmiccore.funnel_on": "✦ Sternentrichter: aktiv",
   "guide.cosmiccore.page.11": "§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.",
   "guide.cosmiccore.page.12": "§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nGroße bringen 1 Mio. RF, kleine 50.000 RF.",
-  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie verschmelzen zu einem Geschütz, das Asteroiden selbst abschießt.",
+  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie werden zu einem Traktorstrahl, der Asteroiden einfängt und als Energie in den Reaktor zieht.",
   "item.cosmiccore.overdrive_particle": "Overdrive-Partikel",
   "gui.cosmiccore.with_lasers": "+ Laser",
   "gui.cosmiccore.overdrive": "Overdrive",
@@ -85,10 +85,10 @@
   "gui.cosmiccore.overdrive_down": "Entfernen",
   "gui.cosmiccore.overdrive.confirm_up": "⚠ Overdrive aktivieren?",
   "gui.cosmiccore.overdrive.confirm_down": "Overdrive-Stufe entfernen?",
-  "gui.cosmiccore.overdrive.warning_up": "Pro Stufe: RF-Erzeugung x2, Instabilität x3! Ein Overdrive-Partikel aus deinem Inventar wird verbraucht und beim Deaktivieren NICHT zurückgegeben.",
+  "gui.cosmiccore.overdrive.warning_up": "Pro Stufe: RF-Erzeugung x2, Instabilität x3! Ein Overdrive-Partikel aus deinem Inventar wird verbraucht und beim Deaktivieren oder Abbau des Reaktors NICHT zurückgegeben.",
   "gui.cosmiccore.overdrive.warning_down": "Die Stufe wird deaktiviert. Das Overdrive-Partikel ist dabei verloren.",
   "message.cosmiccore.overdrive.missing": "Du brauchst ein Overdrive-Partikel im Inventar",
-  "tooltip.cosmiccore.overdrive.effect": "Im Controller installieren: RF x2, Instabilität x3",
+  "tooltip.cosmiccore.overdrive.effect": "Im Controller des gebildeten Reaktors installieren: RF x2, Instabilität x3",
   "tooltip.cosmiccore.overdrive.limit": "Max. 1 / 2 / 3 Stufen (5x5x5 / 7x7x7 / 9x9x9)",
-  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 Stufen.\nEntfernte Partikel sind verloren."
+  "guide.cosmiccore.page.14": "§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 Stufen.\nNur am gebildeten Reaktor. Zerfällt er, ist der Overdrive weg."
 }

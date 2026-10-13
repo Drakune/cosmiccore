@@ -23,8 +23,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ControllerMenu extends AbstractContainerMenu {
     // Knopf-IDs
-    /** Groessenwahl: Index = Groesse (0..2) + 3 * Trichter + 6 * Laser, also 0..11. */
-    public static final int BTN_SIZE_FIRST = 0;
+    /** Groessenwahl: 100 + Groesse (0..2) + 3 * Trichter + 6 * Laser (eigener Bereich, kollidiert nicht mit den anderen Knoepfen). */
+    public static final int BTN_SIZE_FIRST = 100;
     public static final int BTN_SCALE_DOWN = 10;
     public static final int BTN_SCALE_UP = 11;
     public static final int BTN_TOGGLE = 12;

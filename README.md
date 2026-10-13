@@ -27,11 +27,11 @@ Falls der Build Fehler meldet: komplette Ausgabe kopieren, dann lassen sie sich 
 - **Bauvorschau:** zeigt fehlende Blöcke als halbtransparente Geister, falsche Blöcke rot umrandet.
 - **Bauen (Kreativ):** setzt die komplette Struktur in Blickrichtung des Controllers (inkl. Energie- und Item-Port).
 
-| Größe | max. Stufe | Puffer | Instabilität/Stufe | Stabilisator-Wirkung |
-|-------|-----------:|-------:|-------------------:|---------------------:|
-| 5x5x5 | 3 | x0,5 | x1,0 | x1,0 |
-| 7x7x7 | 5 | x1,0 | x0,8 | x1,25 |
-| 9x9x9 | 8 | x2,5 | x0,6 | x1,6 |
+| Größe | Stufen | Leistung/Stufe | Puffer | Instabilität/Stufe | Stabilisator-Wirkung | Overdrive |
+|-------|-------:|---------------:|-------:|-------------------:|---------------------:|----------:|
+| 5x5x5 | 1–10 | x0,6 | x0,5 | x1,0 | x1,0 | 1 |
+| 7x7x7 | 1–10 | x1,0 | x1,0 | x0,8 | x1,25 | 2 |
+| 9x9x9 | 1–10 | x1,6 | x2,5 | x0,6 | x1,6 | 3 |
 
 Stufe s: Leistung x s^1,3, Brennstoffverbrauch x s, Instabilität x s^1,35 (Exponenten in der Config).
 Der Kern wird mit der Stufe sichtbar größer und färbt sich mit steigender Instabilität von Blau über Orange nach Rot.
@@ -69,17 +69,18 @@ den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stell
   (`asteroids`, `asteroidChance` in der Config). Energie: 50k / 250k / 1M RF.
 - **Kosmos-Laser** (Block: Fokuskristall, Sternenstaub, Eisen, Leerengehäuse): 4 Stück auf die Decke setzen - je einer
   nördlich, östlich, südlich und westlich der Deckenmitte (der Sternentrichter darf in der Mitte sitzen).
-  Bei gebildeter Struktur verschmelzen sie zu einem Geschütz, das Asteroiden selbst anvisiert, abschießt und die
-  Energie direkt in den Puffer speist.
+  Bei gebildeter Struktur werden sie zu einer Traktorstrahl-Anlage (Ring über dem Trichter), die Asteroiden
+  einfängt, heranzieht und als Energie direkt in den Puffer speist.
 - **Phantom-Blöcke:** Hüllenblöcke außerhalb der sichtbaren Kugel haben bei gebildeter Struktur keine Kollision und
   sind nicht anwählbar. Ports bleiben sichtbar, damit Rohre/Kabel anderer Mods sauber andocken.
 ## Overdrive
 
 - **Overdrive-Partikel** (4 Endkristalle um einen Netherstern): in der GUI mit „Overdrive +“ installieren (Warnung vorab).
   Pro Stufe: RF x2, Instabilität x3. Maximal 1 / 2 / 3 Stufen bei 5x5x5 / 7x7x7 / 9x9x9.
-- „Entfernen“ deaktiviert eine Stufe - das Partikel ist dabei verloren.
-- Jede Stufe verwandelt das Loch: Überladung (blau, zweite Scheibe, Blitze), Supernova (Gold/Magenta, Ringgalaxie,
-  Sternstrahlen), Quasar (Weiß/Violett, riesige Jets, Spiralarme und Gravitationswellen weit über die Struktur hinaus).
+- Nur am gebildeten Reaktor einstellbar. „Entfernen“ oder Abbau/Zerfall des Reaktors setzt Overdrive zurück - die
+  Partikel sind dabei verloren.
+- Jede Stufe steigert das Bild: Überladung (blau, zweite Scheibe, Korona), Supernova (Gold, Ringstruktur,
+  Strahlenkranz), Quasar (Weiß/Violett, atmende Aura).
 
 ## Spielmechanik
 

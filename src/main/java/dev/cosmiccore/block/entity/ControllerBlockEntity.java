@@ -231,7 +231,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             case ControllerMenu.BTN_TOGGLE -> enabled = !enabled;
             case ControllerMenu.BTN_PREVIEW -> preview = !preview;
             case ControllerMenu.BTN_OVERDRIVE_UP -> {
-                if (overdrive >= size.maxOverdrive()) return false;
+                if (!formed || overdrive >= size.maxOverdrive()) return false;
                 if (!player.getAbilities().instabuild && !consumeParticle(player)) {
                     player.displayClientMessage(Component.translatable("message.cosmiccore.overdrive.missing")
                             .withStyle(ChatFormatting.RED), true);
@@ -298,7 +298,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private double outputScale() {
-        return Math.pow(scale, CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * Math.pow(2.0, overdrive);
+        double sizeFactor = size == null ? 1.0 : size.outputFactor();
+        return Math.pow(scale, CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * sizeFactor * Math.pow(2.0, overdrive);
     }
 
     private double instabilityScale() {
@@ -485,11 +486,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Sucht Asteroiden, zielt und baut sie ab. Die Energie fliesst direkt in den Puffer. */
+    /** Erfasst Asteroiden mit dem Traktorstrahl und zieht sie heran. Die Energie fliesst direkt in den Puffer. */
     private void tickLasers(ServerLevel level) {
         CorePattern p = pattern();
         if (p == null) return;
-        Vec3 muzzle = Vec3.atCenterOf(center(level).above(p.half() + 3));
+        // Mitte des Traktorrings ueber dem Trichter (muss zu TractorFx.RING_HEIGHT passen)
+        Vec3 muzzle = Vec3.atCenterOf(center(level)).add(0, p.half() + 3.5, 0);
         CosmicAsteroid target = laserTarget >= 0 && level.getEntity(laserTarget) instanceof CosmicAsteroid a && a.isAlive()
                 && a.position().distanceTo(muzzle) < LASER_RANGE ? a : null;
         if (target == null) {
@@ -515,7 +517,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (level.getGameTime() % 10 == 0) {
             level.playSound(null, muzzle.x, muzzle.y, muzzle.z, SoundEvents.BEACON_AMBIENT, SoundSource.BLOCKS, 1.0F, 1.8F);
         }
-        int gained = target.harvestTick();
+        int gained = target.tractorTick(muzzle);
         if (gained > 0) {
             receiveCosmicEnergy(gained);
             laserTarget = -1;
@@ -663,6 +665,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     private void onUnformed(ServerLevel level) {
         formed = false;
+        overdrive = 0; // Overdrive gilt nur fuer den gebildeten Reaktor - die Partikel sind verbraucht
         phase = CorePhase.DORMANT;
         resonance = 0;
         lastOutput = 0;
