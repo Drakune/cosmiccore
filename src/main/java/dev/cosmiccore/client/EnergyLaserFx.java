@@ -37,9 +37,9 @@ public final class EnergyLaserFx {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
     public static void render(Matrix4f m, VertexConsumer vc, int half, float t, Vec3 target, float targetSize, float charge,
-                              float harvest, float energy, float deliver) {
+                              float harvest, float energy, float deliver, Vec3 source) {
         float cy = half + HEIGHT;
-        if (deliver >= 0.0F) delivery(m, vc, cy, t, deliver, energy);
+        if (deliver >= 0.0F) delivery(m, vc, cy, t, deliver, energy, source);
         Vector3f center = new Vector3f(0, cy, 0);
         boolean locked = target != null;
         float fire = locked ? Mth.clamp((charge - 0.95F) / 0.05F, 0.0F, 1.0F) : 0.0F;
@@ -147,25 +147,33 @@ public final class EnergyLaserFx {
     }
 
     /**
-     * Uebergabe nach einem Abschuss: ein grosses Energiepartikel sammelt sich in der Mitte (Funken stroemen hinein),
-     * sinkt dann mit Lichtschweif in den Kern und geht dort in einem Lichtblitz auf.
+     * Uebergabe nach einem Abschuss: die Bruchstuecke des Asteroiden fliegen zum Laser und verschmelzen dort zu einem
+     * grossen Energiepartikel, das danach mit Lichtschweif in den Kern sinkt und dort in einem Lichtblitz aufgeht.
      */
-    private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float t, float ph, float energy) {
-        if (ph < 0.45F) {
-            float g = ph / 0.45F;
+    private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float t, float ph, float energy, Vec3 source) {
+        if (ph < 0.5F) {
+            float g = ph / 0.5F;
             Matrix4f om = new Matrix4f(m).translate(0, cy, 0);
-            RenderUtil.glowSphere(vc, om, 0.08F + 0.32F * g, 10, 14, GOLD, 0.45F * energy);
-            RenderUtil.glowSphere(vc, om, 0.05F + 0.16F * g, 8, 12, WHITE, 0.7F * energy);
-            for (int k = 0; k < 14; k++) {
-                float s = Mth.frac(t * 0.05F + k / 14.0F); // 0 = aussen, 1 = im Partikel
-                float ang = k * 2.4F + t * 0.02F;
-                float r = (1.0F - s) * 2.2F;
-                float y = cy + hash(k * 7) * (1.0F - s) * 1.2F;
-                cube(vc, m, Mth.cos(ang) * r, y, Mth.sin(ang) * r, 0.03F, GOLD[0], GOLD[1], GOLD[2], energy * s);
+            RenderUtil.glowSphere(vc, om, 0.06F + 0.34F * g, 10, 14, GOLD, 0.45F * energy);
+            RenderUtil.glowSphere(vc, om, 0.04F + 0.17F * g, 8, 12, WHITE, 0.7F * energy);
+            Vector3f src = source != null ? new Vector3f((float) source.x, (float) source.y, (float) source.z)
+                    : new Vector3f(0, cy + 6.0F, 0);
+            Vector3f mid = new Vector3f(0, cy, 0);
+            int fragments = 24;
+            for (int k = 0; k < fragments; k++) {
+                float delay = k / (float) fragments * 0.35F;
+                float local = Mth.clamp((g - delay) / 0.65F, 0.0F, 1.0F);
+                if (local <= 0.0F || local >= 1.0F) continue;
+                Vector3f scatter = new Vector3f(hash(k * 7), hash(k * 13), hash(k * 19)).mul(2.0F);
+                Vector3f p = fragmentPos(src, mid, scatter, local);
+                Vector3f q = fragmentPos(src, mid, scatter, Math.max(0.0F, local - 0.06F));
+                float[] c = lerp(GOLD, BEAM, hash(k * 3) * 0.5F + 0.5F);
+                cube(vc, m, p.x, p.y, p.z, 0.05F + 0.06F * (1.0F - local), c[0], c[1], c[2], energy);
+                segment(vc, m, q.x, q.y, q.z, p.x, p.y, p.z, 0.03F, c[0], c[1], c[2], 0.0F, 0.7F * energy);
             }
             return;
         }
-        float d = (ph - 0.45F) / 0.55F;
+        float d = (ph - 0.5F) / 0.5F;
         float fall = d * d;
         float y = Mth.lerp(fall, cy, 0.0F);
         float r = 0.4F * (1.0F - 0.55F * d);
@@ -181,6 +189,15 @@ public final class EnergyLaserFx {
             RenderUtil.glowSphere(vc, m, 0.3F + 1.2F * f, 10, 14, WHITE, 0.6F * energy * (1.0F - f));
             flatCircle(vc, m, 0.5F + 2.2F * f, 0.04F, 64, GOLD, energy * (1.0F - f));
         }
+    }
+
+    /** Flugbahn eines Bruchstuecks: vom (aufgesprengten) Asteroiden in einem Bogen zum Laser. */
+    private static Vector3f fragmentPos(Vector3f src, Vector3f mid, Vector3f scatter, float f) {
+        float e = f * f * (3.0F - 2.0F * f);
+        Vector3f p = new Vector3f(src).add(new Vector3f(scatter).mul(Mth.sin(Math.min(1.0F, f * 2.0F) * Mth.HALF_PI)));
+        p.lerp(mid, e);
+        p.y += Mth.sin(f * Mth.PI) * 1.5F;
+        return p;
     }
 
     /** Position eines Partikels: Kreisbahn um die Bahnmitte, beim Aufladen hin zum Brennpunkt gezogen. */

@@ -41,7 +41,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private long formStart = Long.MIN_VALUE;
     /** Spielzeit, zu der ein abgeschossener Asteroid sein Energiepartikel abgegeben hat (Uebergabe-Animation). */
     private long deliverStart = Long.MIN_VALUE;
-    public static final int DELIVER_TICKS = 70;
+    public static final int DELIVER_TICKS = 80;
+    /** nur clientseitig: letzte Position des Laserziels relativ zum Kern (Quelle der Bruchstuecke). */
+    @org.jetbrains.annotations.Nullable
+    public net.minecraft.world.phys.Vec3 lastLaserTarget;
 
     public SingularityCoreBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CORE.get(), pos, state);

@@ -134,13 +134,15 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                     .subtract(Vec3.atCenterOf(be.getBlockPos()));
             targetSize = target.getBbWidth();
             harvest = target.getHarvest();
+            be.lastLaserTarget = laserTarget;
         }
 
         // Groessen
-        float rh = (active ? Mth.lerp(growth, 0.22F, Math.max(0.27F, reach * 0.25F)) : 0.2F) * Math.max(0.05F, coreFade);
+        // Kern skaliert mit der Kammergroesse und waechst mit jeder Leistungsstufe
+        float rh = reach * (active ? 0.2F + 0.22F * growth : 0.14F) * Math.max(0.05F, coreFade);
         rh *= 1.0F + 0.03F * Mth.sin(t * 0.1F) + 0.12F * beat + 0.15F * od;
         float inner = rh * 1.5F;
-        float outer = Math.max(inner + 0.25F, reach - 0.35F);
+        float outer = Math.max(inner + 0.25F, reach - 0.15F);
         outer = inner + (outer - inner) * (active ? 0.7F + 0.3F * growth : 0.5F);
 
         pose.pushPose();
@@ -191,12 +193,15 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         FieldFx.render(pose.last().pose(), glow, reach + 0.5F, reach, t, e, heat, be.getShield(), unstable, od);
         pose.popPose(); // Zittern
 
+        // Energieleitung vom Sternentrichter durch die Decke zum Fokuskristall
+        if (be.hasFunnel() && form >= 1.0F) funnelLink(pose.last().pose(), glow, reach + 0.5F, half, t, Math.max(0.4F, energy), heat);
+
         // 4) Licht der Kammer und des Geschuetzes
         ReactorShellRenderer.glow(pose.last().pose(), glow, shell);
         if (lasers) {
             EnergyLaserFx.render(pose.last().pose(), glow, half, t, laserTarget, targetSize,
                     laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy),
-                    be.getDeliverPhase(partialTick));
+                    be.getDeliverPhase(partialTick), be.lastLaserTarget);
         }
         pose.popPose();
     }
@@ -322,6 +327,32 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                     ca * len, sa * len, 0, ca * len, sa * len, 0, ringCol[0], ringCol[1], ringCol[2], 0.35F * energy, 0.0F);
         }
         pose.popPose();
+    }
+
+    /** Leitung vom Sternentrichter (ueber der Decke) zum oberen Fokuskristall: Pulse stroemen hinab, eine Helix windet sich. */
+    private static void funnelLink(Matrix4f m, VertexConsumer vc, float focus, int half, float t, float energy, float heat) {
+        float[] col = lerp(lerp(pJet, pCool, 0.4F), CRITICAL, heat * heat * 0.6F);
+        float yTop = half + 0.75F, yBottom = focus + 0.3F;
+        if (yTop - yBottom < 0.1F) yBottom = yTop - 0.4F; // 5x5x5: Kristall sitzt direkt unter dem Trichter
+        segment(vc, m, 0, yTop, 0, 0, yBottom, 0, 0.022F, 1.0F, 1.0F, 1.0F, 0.8F * energy, 0.8F * energy);
+        segment(vc, m, 0, yTop, 0, 0, yBottom, 0, 0.08F, col[0], col[1], col[2], 0.35F * energy, 0.35F * energy);
+        float len = yTop - yBottom;
+        for (int strand = 0; strand < 2; strand++) {
+            float px = 0, py = yTop, pz = 0;
+            for (int i = 0; i <= 14; i++) {
+                float f = i / 14.0F;
+                float ang = f * len * 6.0F + t * 0.15F + strand * Mth.PI;
+                float x = Mth.cos(ang) * 0.09F, y = Mth.lerp(f, yTop, yBottom), z = Mth.sin(ang) * 0.09F;
+                if (i > 0) segment(vc, m, px, py, pz, x, y, z, 0.008F, col[0], col[1], col[2], 0.7F * energy, 0.7F * energy);
+                px = x;
+                py = y;
+                pz = z;
+            }
+        }
+        for (int k = 0; k < 3; k++) {
+            float f = Mth.frac(t * 0.04F + k / 3.0F);
+            cube(vc, m, 0, Mth.lerp(f, yTop, yBottom), 0, 0.05F, 1.0F, 1.0F, 1.0F, energy * Mth.sin(f * Mth.PI));
+        }
     }
 
     /** Relativistische Jets entlang der Pole. */

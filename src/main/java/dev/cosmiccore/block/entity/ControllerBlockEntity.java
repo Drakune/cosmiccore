@@ -118,6 +118,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private int laserTarget = -1;
     /** Aufladezeit nach der Zielerfassung (Partikel buendeln sich, erst dann feuert der Strahl). */
     private int laserCharge;
+    /** Ticks seit dem letzten Abschuss (Uebergabe-Animation mit Klaengen), -1 = keine. */
+    private int deliverTicks = -1;
     public static final int LASER_CHARGE_TICKS = 20;
     private double lastCosmic = 1.0;
     @Nullable
@@ -308,6 +310,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
         simulate(level);
         if (laserArray) tickLasers(level);
+        tickDelivery(level);
         if (level.getGameTime() % 10 == 0) pushVisuals(level);
     }
 
@@ -560,8 +563,30 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             receiveCosmicEnergy(gained);
             // grosses Energiepartikel sammelt sich ueber dem Trichter und wird an den Kern uebergeben
             if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime());
+            deliverTicks = 0;
             laserTarget = -1;
             pushVisuals(level);
+        }
+    }
+
+    /** Klaenge passend zur Uebergabe-Animation: Sammeln ueber dem Trichter, dann Aufnahme im Kern. */
+    private void tickDelivery(ServerLevel level) {
+        if (deliverTicks < 0) return;
+        deliverTicks++;
+        CorePattern p = pattern();
+        if (p == null) {
+            deliverTicks = -1;
+            return;
+        }
+        Vec3 c = Vec3.atCenterOf(center(level));
+        int collect = SingularityCoreBlockEntity.DELIVER_TICKS / 2;
+        if (deliverTicks == collect) {
+            Vec3 mid = c.add(0, p.half() + 2.2, 0);
+            level.playSound(null, mid.x, mid.y, mid.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.9F, 1.5F);
+        } else if (deliverTicks >= SingularityCoreBlockEntity.DELIVER_TICKS) {
+            level.playSound(null, c.x, c.y, c.z, SoundEvents.CONDUIT_ACTIVATE, SoundSource.BLOCKS, 1.2F, 1.3F);
+            level.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 30, 0.3, 0.3, 0.3, 0.15);
+            deliverTicks = -1;
         }
     }
 
