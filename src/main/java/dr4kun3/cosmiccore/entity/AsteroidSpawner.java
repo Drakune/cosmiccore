@@ -46,17 +46,27 @@ public final class AsteroidSpawner {
         // Flugbahn quer ueber den Spieler hinweg (leicht versetzt)
         Vec3 target = new Vec3(player.getX() + (r.nextDouble() - 0.5) * 50, y + (r.nextDouble() - 0.5) * 10,
                 player.getZ() + (r.nextDouble() - 0.5) * 50);
-        double roll = r.nextDouble();
-        int variant = roll < 0.6 ? CosmicAsteroid.SMALL : roll < 0.9 ? CosmicAsteroid.MEDIUM : CosmicAsteroid.LARGE;
-        double speed = new double[]{0.32, 0.22, 0.14}[variant];
-        Vec3 vel = target.subtract(start).normalize().scale(speed);
+        CosmicAsteroid.Kind kind = pick(r);
+        Vec3 vel = target.subtract(start).normalize().scale(kind.speed);
 
-        CosmicAsteroid a = ModEntities.ASTEROID.get().create(level);
+        CosmicAsteroid a = ModEntities.ASTEROIDS.get(kind).get().create(level);
         if (a == null || !level.isLoaded(BlockPos.containing(start))) return;
-        a.setVariant(variant);
+        a.markNatural();
         a.moveTo(start.x, start.y, start.z, r.nextFloat() * 360, 0);
         a.setDeltaMovement(vel);
         level.addFreshEntity(a);
+    }
+
+    /** Zufaellige Art nach spawnWeight (klein haeufig, sehr gross selten). */
+    private static CosmicAsteroid.Kind pick(RandomSource r) {
+        int total = 0;
+        for (CosmicAsteroid.Kind k : CosmicAsteroid.Kind.values()) total += k.spawnWeight;
+        int roll = r.nextInt(total);
+        for (CosmicAsteroid.Kind k : CosmicAsteroid.Kind.values()) {
+            roll -= k.spawnWeight;
+            if (roll < 0) return k;
+        }
+        return CosmicAsteroid.Kind.SMALL;
     }
 
     private AsteroidSpawner() {}

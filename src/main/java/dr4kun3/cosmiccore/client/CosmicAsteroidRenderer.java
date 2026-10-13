@@ -27,15 +27,17 @@ import org.joml.Vector3f;
  * und Splitter platzen ab.
  */
 public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
-    private static final float[][] ROCK = {{0.46F, 0.41F, 0.37F}, {0.36F, 0.35F, 0.41F}, {0.30F, 0.26F, 0.36F}};
+    private static final float[][] ROCK = {{0.46F, 0.41F, 0.37F}, {0.36F, 0.35F, 0.41F}, {0.30F, 0.26F, 0.36F},
+            {0.27F, 0.21F, 0.25F}};
     private static final float[][] CRYSTAL = {{0.45F, 0.85F, 1.0F}, {0.75F, 0.5F, 1.0F}, {1.0F, 0.8F, 0.4F}};
-    private static final int[] CLUSTERS = {2, 4, 7};
+    private static final int[] CLUSTERS = {2, 4, 7, 14};
+    /** Gitterfeinheit je Art: der sehr grosse Brocken braucht mehr Flaechen. */
+    private static final int[][] GRID = {{10, 16}, {10, 16}, {12, 18}, {16, 26}};
     private static final float[] TRAIL = {0.6F, 0.75F, 1.0F};
     private static final float[] HOT = {1.0F, 0.45F, 0.12F};
     private static final float[] EMBER = {1.0F, 0.7F, 0.3F};
     private static final float[] WHITE_HOT = {1.0F, 0.93F, 0.78F};
     private static final Vector3f MOON = new Vector3f(0.35F, 0.85F, 0.4F).normalize();
-    private static final int LAT = 10, LON = 16;
 
     public CosmicAsteroidRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
@@ -73,9 +75,9 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         pose.mulPose(Axis.XP.rotationDegrees(t * 0.5F + (seed & 63)));
         Matrix4f m = new Matrix4f(pose.last().pose());
         Matrix3f nm = new Matrix3f(pose.last().normal());
-        float[][][] pts = surface(r, seed);
+        float[][][] pts = surface(r, seed, GRID[variant][0], GRID[variant][1]);
         VertexConsumer solid = buffers.getBuffer(RenderType.debugQuads());
-        rock(solid, m, nm, pts, ROCK[variant], harvest, overload, seed);
+        rock(solid, m, nm, pts, ROCK[variant], harvest, overload, seed, GRID[variant][0], GRID[variant][1]);
         // abplatzende Splitter (in Weltrichtung nach unten, dem Strahl entgegen)
         int chips = harvest > 0.2F ? 6 : 0;
         for (int k = 0; k < chips; k++) {
@@ -92,7 +94,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         float pulse = 0.75F + 0.25F * Mth.sin(t * (0.12F + 0.6F * overload) + seed);
         for (int cl = 0; cl < CLUSTERS[variant]; cl++) {
             Vector3f d = new Vector3f(hash(seed + cl * 41), hash(seed + cl * 43) * 0.8F, hash(seed + cl * 47)).normalize();
-            float[] col = CRYSTAL[(variant == 2 && cl % 3 == 2) ? 2 : (cl % 2)];
+            float[] col = CRYSTAL[(variant >= 2 && cl % 3 == 2) ? 2 : (cl % 2)];
             float base = radiusAt(d, r, seed) * 0.92F;
             for (int s = 0; s < 3; s++) {
                 Vector3f dir = new Vector3f(d).add(hash(seed + cl * 7 + s * 3) * 0.4F, hash(seed + cl * 11 + s * 5) * 0.4F,
@@ -214,7 +216,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         return r * s;
     }
 
-    private static float[][][] surface(float r, int seed) {
+    private static float[][][] surface(float r, int seed, int LAT, int LON) {
         float[][][] pts = new float[LAT + 1][LON][];
         for (int i = 0; i <= LAT; i++) {
             float phi = (float) (Math.PI * i / LAT - Math.PI / 2);
@@ -231,7 +233,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
 
     /** Flach schattierte Gesteinsflaechen: Mondlicht von oben, violettes Reaktorlicht und Laserglut von unten. */
     private static void rock(VertexConsumer vc, Matrix4f m, Matrix3f nm, float[][][] pts, float[] base, float harvest,
-                             float overload, int seed) {
+                             float overload, int seed, int LAT, int LON) {
         for (int i = 0; i < LAT; i++) {
             for (int j = 0; j < LON; j++) {
                 float[] a = pts[i][j], b = pts[i + 1][j], c = pts[i + 1][(j + 1) % LON], d = pts[i][(j + 1) % LON];

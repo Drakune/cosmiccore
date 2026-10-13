@@ -575,12 +575,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      * Asteroiden-Beute: wuerfelt die Loot-Tabelle cosmiccore:asteroid/small|medium|large (per Datapack anpassbar)
      * und legt sie in die Beute-Slots. Was nicht passt, faellt am Controller heraus.
      */
-    private void collectLoot(ServerLevel level, int variant) {
-        String name = switch (variant) {
-            case CosmicAsteroid.LARGE -> "large";
-            case CosmicAsteroid.MEDIUM -> "medium";
-            default -> "small";
-        };
+    private void collectLoot(ServerLevel level, CosmicAsteroid.Kind kind) {
+        String name = kind.id;
         var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE,
                 dr4kun3.cosmiccore.CosmicCore.id("asteroid/" + name));
         var table = level.getServer().reloadableRegistries().getLootTable(key);
@@ -643,7 +639,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
             return;
         }
-        int variant = target.getVariant();
+        CosmicAsteroid.Kind variant = target.getKind();
+        float burstSize = target.getSizeBlocks() * target.getPullScale();
         // mit Sternen-Trichter: am oberen Rand des Trichters zerbrechen, sonst knapp ueber den Lasern
         Vec3 hold = funnel ? Vec3.atCenterOf(center(level)).add(0, p.half() + 1.35 + SingularityCoreBlockEntity.FUNNEL_HEIGHT, 0)
                 : muzzle.add(0, HOLD_ABOVE + target.getSizeBlocks() * 0.35, 0);
@@ -652,7 +649,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             receiveCosmicEnergy(gained);
             collectLoot(level, variant);
             // grosses Energiepartikel sammelt sich ueber dem Trichter und wird an den Kern uebergeben
-            if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime(), hold);
+            if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime(), hold, burstSize);
             deliverTicks = 0;
             laserTarget = -1;
             pushVisuals(level);

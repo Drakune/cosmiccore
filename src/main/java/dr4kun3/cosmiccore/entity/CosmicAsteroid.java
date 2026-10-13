@@ -18,44 +18,80 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Kosmischer Asteroid: zieht nachts (im End jederzeit) hoch am Himmel vorbei. Mit dem Kosmos-Laser kann man ihn
  * anvisieren und abbauen - je groesser, desto laenger dauert es und desto mehr Energie bringt er.
- * Wird nicht gespeichert und verschwindet nach einer Weile oder bei Tagesanbruch.
+ * Wird nicht gespeichert; natuerlich erschienene verschwinden nach einer Weile oder bei Tagesanbruch.
  */
 public class CosmicAsteroid extends Entity {
-    public static final int SMALL = 0, MEDIUM = 1, LARGE = 2;
-    private static final float[] SIZE = {2.0F, 3.6F, 5.6F};
-    private static final int[] ENERGY = {50_000, 250_000, 1_000_000};
-    private static final int[] HARVEST_TICKS = {70, 110, 160}; // Heranziehen
-    private static final int[] OVERLOAD_TICKS = {50, 60, 75};  // Ueberladen am Haltepunkt
+    /**
+     * Die vier Asteroiden-Arten - jede ist ein eigener Entity-Typ (z. B. {@code /summon cosmiccore:huge_asteroid}).
+     *
+     * @param size          Durchmesser in Bloecken
+     * @param energy        gewonnene RF beim Zerbrechen
+     * @param pullTicks     Dauer des Heranziehens durch den Traktorstrahl
+     * @param overloadTicks Dauer der Ueberladung am Haltepunkt
+     * @param speed         Fluggeschwindigkeit am Himmel (Bloecke pro Tick)
+     * @param spawnWeight   Haeufigkeit beim natuerlichen Erscheinen
+     */
+    public enum Kind {
+        SMALL("small", 2.0F, 50_000, 70, 50, 0.32, 55),
+        MEDIUM("medium", 3.6F, 250_000, 110, 60, 0.22, 27),
+        LARGE("large", 5.6F, 1_000_000, 160, 75, 0.14, 15),
+        HUGE("huge", 11.0F, 4_000_000, 240, 110, 0.08, 3);
+
+        public final String id;
+        public final float size;
+        public final int energy, pullTicks, overloadTicks, spawnWeight;
+        public final double speed;
+
+        Kind(String id, float size, int energy, int pullTicks, int overloadTicks, double speed, int spawnWeight) {
+            this.id = id;
+            this.size = size;
+            this.energy = energy;
+            this.pullTicks = pullTicks;
+            this.overloadTicks = overloadTicks;
+            this.speed = speed;
+            this.spawnWeight = spawnWeight;
+        }
+
+        /** Registry-Name des Entity-Typs, z. B. "huge_asteroid". */
+        public String entityName() {
+            return id + "_asteroid";
+        }
+    }
     /** Anteil des Fortschritts (von 1000), der aufs Heranziehen entfaellt; der Rest ist die Ueberladung. */
     private static final int PULL_PART = 700;
     public static final int MAX_LIFE = 1200;
 
-    private static final EntityDataAccessor<Integer> DATA_SIZE = SynchedEntityData.defineId(CosmicAsteroid.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_HARVEST = SynchedEntityData.defineId(CosmicAsteroid.class, EntityDataSerializers.INT);
 
+    private final Kind kind;
     private int life;
+    private boolean natural; // vom Spawner erzeugt: verschwindet bei Tagesanbruch
     private int lastHit = -100;
     private Vec3 pullStart; // Server: Position beim Erfassen durch den Traktorstrahl
 
-    public CosmicAsteroid(EntityType<? extends CosmicAsteroid> type, Level level) {
+    public CosmicAsteroid(EntityType<? extends CosmicAsteroid> type, Level level, Kind kind) {
         super(type, level);
+        this.kind = kind;
         noPhysics = true;
         setNoGravity(true);
     }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(DATA_SIZE, SMALL);
         builder.define(DATA_HARVEST, 0);
     }
 
-    public int getVariant() {
-        return Math.max(SMALL, Math.min(LARGE, entityData.get(DATA_SIZE)));
+    public Kind getKind() {
+        return kind;
     }
 
-    public void setVariant(int variant) {
-        entityData.set(DATA_SIZE, variant);
-        refreshDimensions();
+    /** Index der Art (0 = klein ... 3 = sehr gross), z. B. fuer Farbtabellen im Renderer. */
+    public int getVariant() {
+        return kind.ordinal();
+    }
+
+    public void markNatural() {
+        natural = true;
     }
 
     /** Abbaufortschritt 0..1. */
@@ -80,23 +116,16 @@ public class CosmicAsteroid extends Entity {
     }
 
     public float getSizeBlocks() {
-        return SIZE[getVariant()];
+        return kind.size;
     }
 
     public int getEnergy() {
-        return ENERGY[getVariant()];
-    }
-
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
-        super.onSyncedDataUpdated(key);
-        if (DATA_SIZE.equals(key)) refreshDimensions();
+        return kind.energy;
     }
 
     @Override
     public EntityDimensions getDimensions(Pose pose) {
-        float s = SIZE[getVariant()];
-        return EntityDimensions.scalable(s, s);
+        return EntityDimensions.scalable(kind.size, kind.size);
     }
 
     @Override
@@ -128,7 +157,8 @@ public class CosmicAsteroid extends Entity {
             entityData.set(DATA_HARVEST, Math.max(0, entityData.get(DATA_HARVEST) - 5));
         }
         boolean day = level().dimension() == Level.OVERWORLD && level().isDay();
-        if (life > MAX_LIFE || (day && life > 40)) discard();
+        // beschworene Asteroiden bleiben, bis sie abgeschossen (oder entladen) werden
+        if (natural && (life > MAX_LIFE || (day && life > 40))) discard();
     }
 
     /**
@@ -140,8 +170,8 @@ public class CosmicAsteroid extends Entity {
         lastHit = tickCount;
         if (pullStart == null) pullStart = position();
         int before = entityData.get(DATA_HARVEST);
-        int step = before < PULL_PART ? Math.max(1, PULL_PART / HARVEST_TICKS[getVariant()])
-                : Math.max(1, (1000 - PULL_PART) / OVERLOAD_TICKS[getVariant()]);
+        int step = before < PULL_PART ? Math.max(1, PULL_PART / kind.pullTicks)
+                : Math.max(1, (1000 - PULL_PART) / kind.overloadTicks);
         int progress = Math.min(1000, before + step);
         entityData.set(DATA_HARVEST, progress);
         float f = Math.min(1.0F, progress / (float) PULL_PART);
@@ -206,11 +236,11 @@ public class CosmicAsteroid extends Entity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
-        setVariant(tag.getInt("variant"));
+        natural = tag.getBoolean("natural");
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putInt("variant", getVariant());
+        tag.putBoolean("natural", natural);
     }
 }

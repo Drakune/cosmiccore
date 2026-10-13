@@ -19,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
  * und Info-Seiten. Jeder Viewer zeichnet daraus nur noch Slots und Textzeilen.
  */
 public final class ViewerEntries {
-    public static final int WIDTH = 150;
+    public static final int WIDTH = 160;
     public static final int TEXT_COLOR = 0xFF404040;
 
     public enum Kind { FUEL, STABILIZER, LOOT }

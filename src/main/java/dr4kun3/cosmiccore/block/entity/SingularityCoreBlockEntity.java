@@ -43,6 +43,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private long deliverStart = Long.MIN_VALUE;
     /** Explosionsort der laufenden Uebergabe relativ zur Kernmitte (vom Server festgehalten). */
     private net.minecraft.world.phys.Vec3 deliverSource;
+    private float deliverSize = 2.0F; // sichtbarer Durchmesser des zerbrochenen Asteroiden
     public static final int DELIVER_TICKS = 110;
     /** Sternen-Trichter am Himmel: Hoehe ueber der Oeffnung und Radius am oberen Rand (Trompetenform). */
     public static final float FUNNEL_HEIGHT = 34.0F;
@@ -122,8 +123,9 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /** Vom Controller aufgerufen, wenn der Laser einen Asteroiden zerstoert hat. */
-    public void markDelivery(long gameTime, net.minecraft.world.phys.Vec3 source) {
+    public void markDelivery(long gameTime, net.minecraft.world.phys.Vec3 source, float size) {
         deliverStart = gameTime;
+        deliverSize = size;
         deliverSource = source.subtract(net.minecraft.world.phys.Vec3.atCenterOf(worldPosition));
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -132,6 +134,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /** Explosionsort der Uebergabe relativ zur Kernmitte (null, falls unbekannt). */
+    public float getDeliverSize() {
+        return deliverSize;
+    }
+
     public net.minecraft.world.phys.Vec3 getDeliverSource() {
         return deliverSource;
     }
@@ -338,6 +344,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         laserTarget = target;
         formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
         deliverStart = tag.contains("deliverStart") ? tag.getLong("deliverStart") : Long.MIN_VALUE;
+        if (tag.contains("deliverSize")) deliverSize = tag.getFloat("deliverSize");
         deliverSource = tag.contains("deliverX")
                 ? new net.minecraft.world.phys.Vec3(tag.getDouble("deliverX"), tag.getDouble("deliverY"), tag.getDouble("deliverZ")) : null;
     }
@@ -359,6 +366,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         tag.putInt("laserTarget", laserTarget);
         tag.putLong("formStart", formStart);
         tag.putLong("deliverStart", deliverStart);
+        tag.putFloat("deliverSize", deliverSize);
         if (deliverSource != null) {
             tag.putDouble("deliverX", deliverSource.x);
             tag.putDouble("deliverY", deliverSource.y);

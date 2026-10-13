@@ -38,9 +38,9 @@ public final class EnergyLaserFx {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
     public static void render(Matrix4f m, VertexConsumer vc, int half, float t, Vec3 target, float targetSize, float charge,
-                              float harvest, float energy, float deliver, Vec3 source, float mouthY) {
+                              float harvest, float energy, float deliver, Vec3 source, float mouthY, float burstSize) {
         float cy = half + HEIGHT;
-        if (deliver >= 0.0F) delivery(m, vc, cy, mouthY, t, deliver, energy, source);
+        if (deliver >= 0.0F) delivery(m, vc, cy, mouthY, t, deliver, energy, source, burstSize);
         Vector3f center = new Vector3f(0, cy, 0);
         boolean locked = target != null;
         float fire = locked ? Mth.clamp((charge - 0.95F) / 0.05F, 0.0F, 1.0F) : 0.0F;
@@ -197,12 +197,14 @@ public final class EnergyLaserFx {
      *   <li>Ab SINK_START faellt die gesammelte Energie als Lichtpuls in den Kern und geht dort mit Ringwellen auf.</li>
      * </ol>
      */
-    private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float mouthY, float t, float ph, float energy, Vec3 source) {
+    private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float mouthY, float t, float ph, float energy, Vec3 source,
+                                 float burstSize) {
         Vector3f src = source != null ? new Vector3f((float) source.x, (float) source.y, (float) source.z)
                 : new Vector3f(0, cy + 1.6F, 0);
         boolean funnel = src.y - mouthY > 10.0F; // am oberen Trichterrand explodiert
         Matrix4f sm = new Matrix4f(m).translate(src.x, src.y, src.z);
-        if (funnel) sm.scale(3.0F);
+        // Explosionsgroesse passend zum Brocken (der sehr grosse platzt gewaltig)
+        sm.scale((float) Math.pow(Math.max(1.0F, burstSize / 1.4F), 0.7) * (funnel ? 2.6F : 1.0F));
         Matrix4f mouth = new Matrix4f(m).translate(0, mouthY, 0);
         // Explosion am Haltepunkt
         if (ph < 0.12F) {

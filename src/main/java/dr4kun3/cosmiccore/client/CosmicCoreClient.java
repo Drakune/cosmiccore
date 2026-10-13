@@ -31,7 +31,7 @@ public final class CosmicCoreClient {
         event.registerBlockEntityRenderer(ModBlockEntities.RESONATOR.get(), ResonatorRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.CONTROLLER.get(), ControllerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.STAR_FUNNEL.get(), StarFunnelRenderer::new);
-        event.registerEntityRenderer(ModEntities.ASTEROID.get(), CosmicAsteroidRenderer::new);
+        for (var type : ModEntities.ASTEROIDS.values()) event.registerEntityRenderer(type.get(), CosmicAsteroidRenderer::new);
     }
 
     private static CosmicItemRenderer itemRenderer;
