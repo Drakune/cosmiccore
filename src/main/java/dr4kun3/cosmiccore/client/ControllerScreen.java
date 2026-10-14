@@ -156,6 +156,24 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // Schalter unter dem Anti-Asteroiden-Slot
     private static final int ANTI_SW_X = ControllerMenu.MOD_X + 36, ANTI_SW_Y = ControllerMenu.MOD_Y + 19, ANTI_SW_W = 16, ANTI_SW_H = 7;
 
+    // Farbfeld unter dem Farb-Modul-Slot: zeigt das gewaehlte Schema, Klick = naechstes, Rechtsklick = vorheriges
+    private static final int COLOR_SW_X = ControllerMenu.MOD_X + 54;
+    private static final int[] SCHEME_RGB = {0xA060FF, 0xFF3A28, 0x40E070, 0x4AA0FF, 0xFFB030, 0xFF70B8, 0xC8F0FF, 0x6A30C0};
+
+    private void drawColorSwatch(GuiGraphics g, int sx, int sy, float t) {
+        boolean installed = menu.flag(ControllerMenu.F_COLOR_INSTALLED);
+        g.fill(sx - 1, sy - 1, sx + ANTI_SW_W + 1, sy + ANTI_SW_H + 1, 0xFF120A20);
+        if (!installed) {
+            g.fill(sx, sy, sx + ANTI_SW_W, sy + ANTI_SW_H, 0xFF3A3448);
+            return;
+        }
+        int scheme = Math.floorMod(menu.colorScheme(), SCHEME_RGB.length);
+        g.fill(sx, sy, sx + ANTI_SW_W, sy + ANTI_SW_H, 0xFF000000 | SCHEME_RGB[scheme]);
+        // feiner Glanz, der ueber das Feld wandert
+        int gx = sx + Math.floorMod((int) (t * 0.5F), ANTI_SW_W + 6) - 3;
+        if (gx >= sx && gx < sx + ANTI_SW_W) g.fill(gx, sy, Math.min(gx + 2, sx + ANTI_SW_W), sy + ANTI_SW_H, 0x60FFFFFF);
+    }
+
     private void drawAntiSwitch(GuiGraphics g, int sx, int sy) {
         boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
         int track = !installed ? 0xFF3A3448 : on ? 0xFF2FB872 : 0xFF6A2E3A;
@@ -167,6 +185,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (menu.sizeChosen() && (button == 0 || button == 1) && menu.flag(ControllerMenu.F_COLOR_INSTALLED)
+                && in((int) mouseX - leftPos, (int) mouseY - topPos, COLOR_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
+            press(button == 0 ? ControllerMenu.BTN_COLOR_NEXT : ControllerMenu.BTN_COLOR_PREV);
+            if (minecraft != null) {
+                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+            return true;
+        }
         if (!menu.sizeChosen() && button == 0 && in((int) mouseX - leftPos, (int) mouseY - topPos, BLOCKS_IN_X0, SCROLL_Y - 2, BLOCKS_IN_X1 - BLOCKS_IN_X0, 7)
                 && blocksMaxScroll(requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers).size()) > 0) {
             draggingScroll = true;
@@ -260,11 +287,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         // Modul-Slots (Gold) und Beute-Slots (Violett) hervorgehoben, Rest = Spielerinventar
         for (Slot s : menu.slots) {
             if (s.index < 2 || !s.isActive()) continue;
-            int border = s.index < ControllerBlockEntity.SLOT_LOOT_FIRST || s.index == ControllerBlockEntity.SLOT_ANTI ? 0xFFB08A30
+            int border = s.index < ControllerBlockEntity.SLOT_LOOT_FIRST
+                    || (s.index >= ControllerBlockEntity.SLOT_ANTI && s.index < ControllerBlockEntity.INVENTORY_SIZE) ? 0xFFB08A30
                     : s.index < ControllerBlockEntity.INVENTORY_SIZE ? 0xFF7A4AC0 : 0xFF2E2050;
             drawSlotBox(g, x + s.x, y + s.y, border);
         }
-        if (menu.sizeChosen()) drawAntiSwitch(g, x + ANTI_SW_X, y + ANTI_SW_Y);
+        if (menu.sizeChosen()) {
+            drawAntiSwitch(g, x + ANTI_SW_X, y + ANTI_SW_Y);
+            drawColorSwatch(g, x + COLOR_SW_X, y + ANTI_SW_Y, t);
+        }
 
         // Balken
         float energy = menu.capacity() <= 0 ? 0 : menu.energy() / (float) menu.capacity();
@@ -632,6 +663,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             tip.add(Component.translatable("item.cosmiccore.anti_asteroid_module"));
             tip.add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module", dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get())
                     .withStyle(ChatFormatting.GRAY));
+        } else if (in(mx, my, ControllerMenu.MOD_X + 54, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_COLOR).hasItem()) {
+            tip.add(Component.translatable("item.cosmiccore.color_module"));
+            tip.add(Component.translatable("tooltip.cosmiccore.color_module").withStyle(ChatFormatting.GRAY));
+        } else if (in(mx, my, COLOR_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
+            boolean installed = menu.flag(ControllerMenu.F_COLOR_INSTALLED);
+            tip.add(Component.translatable("gui.cosmiccore.color.title"));
+            tip.add(Component.translatable("gui.cosmiccore.color." + Math.floorMod(menu.colorScheme(), SCHEME_RGB.length))
+                    .withStyle(s -> s.withColor(SCHEME_RGB[Math.floorMod(menu.colorScheme(), SCHEME_RGB.length)])));
+            tip.add(Component.translatable(installed ? "gui.cosmiccore.color.hint" : "gui.cosmiccore.color.missing").withStyle(ChatFormatting.GRAY));
         } else if (in(mx, my, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
             tip.add(Component.translatable("gui.cosmiccore.anti.title"));

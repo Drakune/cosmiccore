@@ -71,7 +71,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public static final int LOOT_END = SLOT_LOOT_FIRST + LOOT_SLOTS;
     /** Anti-Asteroiden-Modul (hinten angehaengt, damit aeltere Speicherstaende ihre Beute-Slots behalten). */
     public static final int SLOT_ANTI = LOOT_END;
-    public static final int INVENTORY_SIZE = SLOT_ANTI + 1;
+    /** Farb-Modul (ebenfalls hinten angehaengt). */
+    public static final int SLOT_COLOR = SLOT_ANTI + 1;
+    public static final int INVENTORY_SIZE = SLOT_COLOR + 1;
+    /** Anzahl der Farbschemata (0 = Standard). */
+    public static final int COLOR_SCHEMES = 8;
     public static final int MAX_MODULES = 4;
 
     public static final float UNSTABLE_ON = 70f;
@@ -100,6 +104,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean withFunnel;
     /** Schalter fuer das Anti-Asteroiden-Modul - ohne eingesetztes Modul immer aus. */
     private boolean antiAsteroid;
+    /** Gewaehltes Farbschema (0 = Standard) - wirkt nur mit eingesetztem Farb-Modul. */
+    private int colorScheme;
     /** Dauerhaft freigeschaltete Leistungsstufen (1 ist immer frei; jede weitere kostet einmalig ein Item). */
     private int unlockedScale = 1;
     /** Bei der Groessenwahl angehakt: vier Kosmos-Laser gehoeren zur Bauvorschau und zum Kreativ-Aufbau. */
@@ -162,6 +168,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Freie Sicht zum Himmel ueber dem Kern (bzw. dem Trichter). */
     public boolean hasSkyLink() {
         return skyLink;
+    }
+
+    public boolean hasColorModule() {
+        return inventory.getStackInSlot(SLOT_COLOR).is(ModItems.COLOR_MODULE.get());
     }
 
     public boolean hasAntiAsteroidModule() {
@@ -291,6 +301,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return true;
         }
         if (size == null) return false;
+        if (id == ControllerMenu.BTN_COLOR_NEXT || id == ControllerMenu.BTN_COLOR_PREV) {
+            if (!hasColorModule()) return false;
+            colorScheme = Math.floorMod(colorScheme + (id == ControllerMenu.BTN_COLOR_NEXT ? 1 : -1), COLOR_SCHEMES);
+            setChanged();
+            pushVisuals(sl);
+            sl.playSound(null, worldPosition, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.6F, 0.8F + 0.1F * colorScheme);
+            return true;
+        }
         if (id == ControllerMenu.BTN_ANTI_ASTEROID) {
             if (!hasAntiAsteroidModule()) return false; // Schalter ist ohne Modul gesperrt
             antiAsteroid = !antiAsteroid;
@@ -849,6 +867,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (!formed || size == null) return;
         BlockPos core = center(level);
         if (level.hasChunkAt(core) && level.getBlockEntity(core) instanceof SingularityCoreBlockEntity be) {
+            be.setColorScheme(hasColorModule() ? colorScheme : 0);
             boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
             ItemStack stab = inventory.getStackInSlot(SLOT_STAB);
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
@@ -1227,6 +1246,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putBoolean("withFunnel", withFunnel);
         tag.putBoolean("withLasers", withLasers);
         tag.putBoolean("antiAsteroid", antiAsteroid);
+        tag.putInt("colorScheme", colorScheme);
         tag.putInt("overdrive", overdrive);
         tag.putBoolean("formed", formed);
         tag.putLong("energy", energy);
@@ -1257,6 +1277,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
         preview = tag.getBoolean("preview");
         antiAsteroid = tag.getBoolean("antiAsteroid");
+        colorScheme = Math.floorMod(tag.getInt("colorScheme"), COLOR_SCHEMES);
         withFunnel = tag.getBoolean("withFunnel");
         withLasers = tag.getBoolean("withLasers");
         overdrive = Math.max(0, tag.getInt("overdrive"));
@@ -1333,13 +1354,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case SLOT_EFFICIENCY -> stack.is(ModItems.EFFICIENCY_MODULE.get());
                 case SLOT_STABILITY -> stack.is(ModItems.STABILITY_MODULE.get());
                 case SLOT_ANTI -> stack.is(ModItems.ANTI_ASTEROID_MODULE.get());
+                case SLOT_COLOR -> stack.is(ModItems.COLOR_MODULE.get());
                 default -> true; // Beute wird nur intern eingefuegt; GUI und Rohre sperren das Einfuegen
             };
         }
 
         @Override
         public int getSlotLimit(int slot) {
-            if (slot == SLOT_ANTI) return 1;
+            if (slot == SLOT_ANTI || slot == SLOT_COLOR) return 1;
             return slot == SLOT_EFFICIENCY || slot == SLOT_STABILITY ? MAX_MODULES : super.getSlotLimit(slot);
         }
 
@@ -1374,6 +1396,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case ControllerMenu.D_SCALE -> scale;
                 case ControllerMenu.D_MAX_SCALE -> size == null ? 0 : size.maxScale();
                 case ControllerMenu.D_UNLOCKED -> unlockedScale;
+                case ControllerMenu.D_COLOR -> colorScheme;
                 case ControllerMenu.D_SIZE -> size == null ? 0 : size.size();
                 case ControllerMenu.D_FLAGS -> (formed ? ControllerMenu.F_FORMED : 0)
                         | (enabled ? ControllerMenu.F_ENABLED : 0)
@@ -1386,7 +1409,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (energy >= getCapacity() ? ControllerMenu.F_FULL : 0)
                         | (burnTime > 0 || !inventory.getStackInSlot(SLOT_FUEL).isEmpty() ? ControllerMenu.F_HAS_FUEL : 0)
                         | (hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_INSTALLED : 0)
-                        | (antiAsteroid && hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_ON : 0);
+                        | (antiAsteroid && hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_ON : 0)
+                        | (hasColorModule() ? ControllerMenu.F_COLOR_INSTALLED : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));
@@ -1421,7 +1445,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            return slot < SLOT_LOOT_FIRST || slot == SLOT_ANTI ? inventory.insertItem(slot, stack, simulate) : stack;
+            return slot < SLOT_LOOT_FIRST || slot >= SLOT_ANTI ? inventory.insertItem(slot, stack, simulate) : stack;
         }
 
         @Override
@@ -1436,7 +1460,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return (slot < SLOT_LOOT_FIRST || slot == SLOT_ANTI) && inventory.isItemValid(slot, stack);
+            return (slot < SLOT_LOOT_FIRST || slot >= SLOT_ANTI) && inventory.isItemValid(slot, stack);
         }
     }
 

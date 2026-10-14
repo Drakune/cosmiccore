@@ -36,6 +36,7 @@ public final class ModCreativeTabs {
                 out.accept(ModItems.EFFICIENCY_MODULE.get());
                 out.accept(ModItems.STABILITY_MODULE.get());
                 out.accept(ModItems.ANTI_ASTEROID_MODULE.get());
+                out.accept(ModItems.COLOR_MODULE.get());
             }).build());
 
     private ModCreativeTabs() {}

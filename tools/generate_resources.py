@@ -585,6 +585,25 @@ STAB_SYMBOL = [(7, 4), (8, 4), (6, 5), (9, 5), (5, 6), (10, 6), (5, 7), (10, 7),
 # durchgestrichener Asteroid (Ring mit Schraegstrich)
 ANTI_SYMBOL = [(7, 4), (8, 4), (5, 5), (6, 5), (9, 5), (10, 5), (4, 6), (11, 6), (4, 7), (11, 7), (4, 8), (11, 8), (4, 9), (11, 9),
                (5, 10), (6, 10), (9, 10), (10, 10), (7, 11), (8, 11), (10, 6), (9, 7), (8, 8), (7, 8), (6, 9)]
+# Farbrad (Ring) fuer das Farb-Modul
+COLOR_SYMBOL = [(7, 4), (8, 4), (5, 5), (6, 5), (9, 5), (10, 5), (4, 6), (11, 6), (4, 7), (11, 7), (4, 8), (11, 8), (4, 9), (11, 9),
+                (5, 10), (6, 10), (9, 10), (10, 10), (7, 11), (8, 11), (7, 7), (8, 7), (7, 8), (8, 8)]
+
+
+def hue_rgb(h):
+    import colorsys
+    r, g, b = colorsys.hsv_to_rgb(h % 1.0, 0.7, 1.0)
+    return (int(r * 255), int(g * 255), int(b * 255))
+
+
+def draw_color_module(f, nf):
+    """Farb-Modul: Platine wie die anderen Module, das Farbrad durchlaeuft den Farbkreis."""
+    img = draw_module(f, nf, hue_rgb(f / nf), COLOR_SYMBOL)
+    px = img.load()
+    for (x, y) in COLOR_SYMBOL:  # jedes Ringsegment in seinem eigenen Farbton
+        ang = math.atan2(y - 7.5, x - 7.5) / (2 * math.pi)
+        put(px, x, y, hue_rgb(ang + f / nf))
+    return img
 
 
 def draw_guide_book():
@@ -646,6 +665,7 @@ def textures():
     save_strip('efficiency_module', [draw_module(f, 8, (255, 190, 60), EFF_SYMBOL) for f in range(8)], 3, folder='item')
     save_strip('stability_module', [draw_module(f, 8, (90, 220, 255), STAB_SYMBOL) for f in range(8)], 3, folder='item')
     save_strip('anti_asteroid_module', [draw_module(f, 8, (255, 90, 140), ANTI_SYMBOL) for f in range(8)], 3, folder='item')
+    save_strip('color_module', [draw_color_module(f, 8) for f in range(8)], 3, folder='item')
     save_strip('compressed_star_dust', [draw_compressed_star_dust(f, 8) for f in range(8)], 3, folder='item')
     save_strip('neutron_fragment', [draw_neutron_fragment(f, 8) for f in range(8)], 3, folder='item')
     save_strip('quasar_essence', [draw_quasar_essence(f, 8) for f in range(8)], 2, folder='item')
@@ -800,7 +820,7 @@ def models():
         'firstperson_righthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]},
         'firstperson_lefthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]}}
     for it in ('overdrive_particle', 'star_dust', 'compressed_star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module',
-               'stability_module', 'anti_asteroid_module'):
+               'stability_module', 'anti_asteroid_module', 'color_module'):
         wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
                                                   'textures': {'particle': f'{MOD}:item/{it}'}, 'display': floating})
     # Quasar-Overdrive-Partikel: ebenfalls 3D (CosmicItemRenderer), Bruchpartikel von der Quasar-Essenz
@@ -971,7 +991,7 @@ DE = {
     'guide.cosmiccore.stabilizers': 'Stabilisatoren',
     'guide.cosmiccore.cooling': 'kühlt %s Instabilität',
     'guide.cosmiccore.stabilizer_note': 'Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.',
-    'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.\n\n§dAnti-Asteroiden-Modul:§r hält Asteroiden vom Reaktor fern, per Schalter an/aus. Asteroiden erscheinen nur in der Nähe gebildeter Reaktoren.',
+    'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot im Controller.\n\n§dAnti-Asteroiden-Modul:§r hält Asteroiden fern (Schalter).\n§bFarb-Modul:§r eigenes Farbschema für den Kern. Asteroiden erscheinen nur in der Nähe gebildeter Reaktoren.',
     'guide.cosmiccore.loot': '§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern. Quasar-Essenz ist eine echte Rarität: nur große (1 %) und sehr große Asteroiden (5 %) tragen sie.\n\nSie landet in den Beute-Slots des Controllers und kann per Rohr am Item-Port entnommen werden.',
     'jei.cosmiccore.category.fuel': 'Kern-Brennstoffe',
     'jei.cosmiccore.category.stabilizer': 'Kern-Stabilisatoren',
@@ -1030,6 +1050,20 @@ DE = {
     'gui.cosmiccore.ultimate_mode.warning_down': 'Die %s Quasar-Overdrive-Partikel sind verbraucht und kommen nicht zurück.',
     'message.cosmiccore.ultimate.missing': 'Du brauchst %s Quasar-Overdrive-Partikel im Inventar',
     'jei.cosmiccore.info.quasar_overdrive_particle': 'Nur craftbar: ein Overdrive-Partikel in der Mitte, umgeben von vier Quasar-Essenzen. Vier davon entfesseln beim ultimativen Kern nach Overdrive 3 den Ultimate-Modus.',
+    'item.cosmiccore.color_module': 'Farb-Modul',
+    'tooltip.cosmiccore.color_module': 'Färbt Scheibe, Jets und Licht des Kerns – Farbschema im Controller wählen',
+    'gui.cosmiccore.color.title': 'Farbschema',
+    'gui.cosmiccore.color.hint': 'Klick: nächstes · Rechtsklick: vorheriges',
+    'gui.cosmiccore.color.missing': 'Gesperrt – erst das Farb-Modul einsetzen',
+    'jei.cosmiccore.info.color_module': 'Im Controller einsetzen und mit dem Farbfeld darunter ein Farbschema wählen: Standard, Karmesin, Smaragd, Azur, Gold, Rosé, Frost oder Leere. Färbt Scheibe, Jets, Licht und die Nähte der Kammer.',
+    'gui.cosmiccore.color.0': 'Standard',
+    'gui.cosmiccore.color.1': 'Karmesin',
+    'gui.cosmiccore.color.2': 'Smaragd',
+    'gui.cosmiccore.color.3': 'Azur',
+    'gui.cosmiccore.color.4': 'Gold',
+    'gui.cosmiccore.color.5': 'Rosé',
+    'gui.cosmiccore.color.6': 'Frost',
+    'gui.cosmiccore.color.7': 'Leere',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1170,7 +1204,7 @@ EN = {
     'guide.cosmiccore.stabilizers': 'Stabilizers',
     'guide.cosmiccore.cooling': 'cools %s instability',
     'guide.cosmiccore.stabilizer_note': 'From 20 % the field holds instability and uses stabilizers for it.',
-    'guide.cosmiccore.modules': '§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot in the controller.\n\n§dAnti-Asteroid Module:§r keeps asteroids away from the reactor, toggled by a switch. Asteroids only appear near formed reactors.',
+    'guide.cosmiccore.modules': '§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot in the controller.\n\n§dAnti-Asteroid Module:§r keeps asteroids away (switch).\n§bColor Module:§r a custom color scheme for the core. Asteroids only appear near formed reactors.',
     'guide.cosmiccore.loot': '§5§lAsteroid Loot§r\n\nThe laser pulls asteroids down to the top of the star funnel, where they burst. Their fragments spiral down into the funnel: star dust, ores, diamonds - large ones even neutron star fragments. The rare huge asteroids (11 blocks!) carry plenty of them and, with luck, a nether star. Quasar essence is a true rarity: only large (1 %) and huge asteroids (5 %) carry it.\n\nThe loot goes into the controller loot slots and can be piped out of the item port.',
     'jei.cosmiccore.category.fuel': 'Core Fuels',
     'jei.cosmiccore.category.stabilizer': 'Core Stabilizers',
@@ -1229,6 +1263,20 @@ EN = {
     'gui.cosmiccore.ultimate_mode.warning_down': 'The %s Quasar Overdrive Particles are consumed and will not come back.',
     'message.cosmiccore.ultimate.missing': 'You need %s Quasar Overdrive Particles in your inventory',
     'jei.cosmiccore.info.quasar_overdrive_particle': 'Craft only: an Overdrive Particle in the center surrounded by four Quasar Essences. Four of them unleash Ultimate mode on the ultimate core after overdrive 3.',
+    'item.cosmiccore.color_module': 'Color Module',
+    'tooltip.cosmiccore.color_module': 'Recolors the core disk, jets and light – pick a scheme in the controller',
+    'gui.cosmiccore.color.title': 'Color scheme',
+    'gui.cosmiccore.color.hint': 'Click: next · Right-click: previous',
+    'gui.cosmiccore.color.missing': 'Locked – insert a Color Module first',
+    'jei.cosmiccore.info.color_module': 'Insert it into the controller and pick a color scheme with the swatch below: Standard, Crimson, Emerald, Azure, Gold, Rose, Frost or Void. Recolors the disk, jets, light and the chamber seams.',
+    'gui.cosmiccore.color.0': 'Standard',
+    'gui.cosmiccore.color.1': 'Crimson',
+    'gui.cosmiccore.color.2': 'Emerald',
+    'gui.cosmiccore.color.3': 'Azure',
+    'gui.cosmiccore.color.4': 'Gold',
+    'gui.cosmiccore.color.5': 'Rose',
+    'gui.cosmiccore.color.6': 'Frost',
+    'gui.cosmiccore.color.7': 'Void',
 }
 
 

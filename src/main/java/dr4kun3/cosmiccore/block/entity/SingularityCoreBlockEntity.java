@@ -26,6 +26,21 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private boolean primary;
     /** Verschmolzener Mittelkern des ultimativen Kerns: vom Controller gesetzt, droppt nichts. */
     private boolean fused;
+    /** Farbschema vom Farb-Modul des Controllers (0 = Standard). */
+    private int colorScheme;
+
+    public int getColorScheme() {
+        return colorScheme;
+    }
+
+    public void setColorScheme(int scheme) {
+        if (scheme == colorScheme) return;
+        colorScheme = scheme;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
 
     public boolean isFused() {
         return fused;
@@ -362,6 +377,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         primary = tag.getBoolean("primary");
         fused = tag.getBoolean("fused");
+        colorScheme = tag.getInt("colorScheme");
         if (tag.contains("structureSize")) structureSize = tag.getInt("structureSize");
         scale = Math.max(1, tag.getInt("scale"));
         maxScale = Math.max(1, tag.getInt("maxScale"));
@@ -388,6 +404,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private void writeVisuals(CompoundTag tag) {
         tag.putBoolean("primary", primary);
         tag.putBoolean("fused", fused);
+        tag.putInt("colorScheme", colorScheme);
         tag.putInt("structureSize", structureSize);
         tag.putInt("scale", scale);
         tag.putInt("maxScale", maxScale);

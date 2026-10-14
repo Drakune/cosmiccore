@@ -33,22 +33,23 @@ public class ControllerMenu extends AbstractContainerMenu {
     public static final int BTN_OVERDRIVE_UP = 15;
     public static final int BTN_OVERDRIVE_DOWN = 16;
     public static final int BTN_ANTI_ASTEROID = 17;
+    public static final int BTN_COLOR_NEXT = 18, BTN_COLOR_PREV = 19;
 
     // Datenfelder
     public static final int D_ENERGY_LO = 0, D_ENERGY_HI = 1, D_CAPACITY_LO = 2, D_CAPACITY_HI = 3, D_OUTPUT_LO = 4, D_OUTPUT_HI = 5,
             D_INSTABILITY = 6, D_RESONANCE = 7, D_SCALE = 8, D_MAX_SCALE = 9, D_SIZE = 10, D_FLAGS = 11, D_COSMIC = 12,
-            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17, D_MELTDOWN = 18, D_UNLOCKED = 19;
-    public static final int DATA_COUNT = 20;
+            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17, D_MELTDOWN = 18, D_UNLOCKED = 19, D_COLOR = 20;
+    public static final int DATA_COUNT = 21;
 
     public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16, F_FUNNEL = 32, F_LASER = 64, F_RUNNING = 128, F_FULL = 256, F_HAS_FUEL = 512,
-            F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048;
+            F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048, F_COLOR_INSTALLED = 4096;
 
     // Layout (auch vom Screen benutzt)
     // 5-px-Raster: Karten 5 px vom Rand und voneinander, 5 px Innenabstand (Slot-Rahmen = Slot - 1)
     public static final int FUEL_X = 12, FUEL_Y = 32, STAB_X = 12, STAB_Y = 67;
     public static final int INV_X = 77, INV_Y = 243;
     /** Beute-Reihe (6 Slots) und Modul-Slots (Effizienz, Stabilitaet, Anti-Asteroiden mit Schalter darunter). */
-    public static final int LOOT_X = 12, LOOT_Y = 193, MOD_X = 252, MOD_Y = 193;
+    public static final int LOOT_X = 12, LOOT_Y = 193, MOD_X = 234, MOD_Y = 193;
 
     private final BlockPos pos;
     private final ContainerLevelAccess access;
@@ -83,6 +84,7 @@ public class ControllerMenu extends AbstractContainerMenu {
             addSlot(new LootSlot(machine, ControllerBlockEntity.SLOT_LOOT_FIRST + i, LOOT_X + i * 18, LOOT_Y));
         }
         addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_ANTI, MOD_X + 36, MOD_Y));
+        addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_COLOR, MOD_X + 54, MOD_Y));
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new PlayerSlot(playerInv, col + row * 9 + 9, INV_X + col * 18, INV_Y + row * 18));
@@ -175,6 +177,11 @@ public class ControllerMenu extends AbstractContainerMenu {
         return Math.max(1, data.get(D_UNLOCKED));
     }
 
+    /** Gewaehltes Farbschema (0 = Standard). */
+    public int colorScheme() {
+        return data.get(D_COLOR);
+    }
+
     public int overdrive() {
         return data.get(D_OVERDRIVE);
     }
@@ -204,7 +211,7 @@ public class ControllerMenu extends AbstractContainerMenu {
         } else {
             // erst in den passenden Maschinenslot, sonst zwischen Inventar und Hotbar wechseln
             if (!moveItemStackTo(stack, 0, ControllerBlockEntity.SLOT_LOOT_FIRST, false)
-                    && !moveItemStackTo(stack, ControllerBlockEntity.SLOT_ANTI, ControllerBlockEntity.SLOT_ANTI + 1, false)) {
+                    && !moveItemStackTo(stack, ControllerBlockEntity.SLOT_ANTI, ControllerBlockEntity.SLOT_COLOR + 1, false)) {
                 int hotbarStart = invEnd - 9;
                 if (index < hotbarStart) {
                     if (!moveItemStackTo(stack, hotbarStart, invEnd, false)) return ItemStack.EMPTY;

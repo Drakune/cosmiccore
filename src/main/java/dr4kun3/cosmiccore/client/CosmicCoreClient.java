@@ -59,7 +59,7 @@ public final class CosmicCoreClient {
             }
         }, ModItems.STAR_DUST.get(), ModItems.COMPRESSED_STAR_DUST.get(), ModItems.OVERDRIVE_PARTICLE.get(), ModItems.NEUTRON_FRAGMENT.get(),
                 ModItems.QUASAR_ESSENCE.get(), ModItems.QUASAR_OVERDRIVE_PARTICLE.get(), ModItems.EFFICIENCY_MODULE.get(), ModItems.STABILITY_MODULE.get(),
-                ModItems.ANTI_ASTEROID_MODULE.get());
+                ModItems.ANTI_ASTEROID_MODULE.get(), ModItems.COLOR_MODULE.get());
     }
 
     @SubscribeEvent
@@ -83,6 +83,8 @@ public final class CosmicCoreClient {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.efficiency_module").withStyle(ChatFormatting.GOLD));
         } else if (stack.is(ModItems.STABILITY_MODULE.get())) {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.AQUA));
+        } else if (stack.is(ModItems.COLOR_MODULE.get())) {
+            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.color_module").withStyle(ChatFormatting.LIGHT_PURPLE));
         } else if (stack.is(ModItems.ANTI_ASTEROID_MODULE.get())) {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module",
                     dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get()).withStyle(ChatFormatting.LIGHT_PURPLE));

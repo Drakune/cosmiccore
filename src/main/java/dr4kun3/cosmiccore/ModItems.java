@@ -42,6 +42,9 @@ public final class ModItems {
     public static final DeferredItem<Item> STABILITY_MODULE = ITEMS.registerItem("stability_module", Item::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
     /** Haelt Asteroiden im Umkreis des Reaktors fern (im Controller per Schalter an/aus). */
+    /** Faerbt Scheibe, Jets und Licht des Kerns um (Farbschema wird im Controller gewaehlt). */
+    public static final DeferredItem<Item> COLOR_MODULE = ITEMS.registerItem("color_module", Item::new,
+            new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<Item> ANTI_ASTEROID_MODULE = ITEMS.registerItem("anti_asteroid_module", Item::new,
             new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
 

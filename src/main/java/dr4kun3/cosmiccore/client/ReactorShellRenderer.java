@@ -392,6 +392,12 @@ public final class ReactorShellRenderer {
         float r = p.radius();
         float[] seam = lerp(SEAM, SEAM_HOT, p.active() ? 0.45F : 0.0F);
         if (p.overdrive() > 0) seam = lerp(seam, OVERDRIVE_SEAM[Math.min(4, p.overdrive()) - 1], 0.8F);
+        int scheme = p.core().getColorScheme();
+        if (scheme > 0 && scheme <= SingularityCoreRenderer.SCHEMES.length) {
+            // Farb-Modul: Naehte der Kammer in der Schemafarbe
+            float[][] sc = SingularityCoreRenderer.SCHEMES[scheme - 1];
+            seam = lerp(sc[2], sc[1], p.active() ? 0.5F : 0.2F);
+        }
         seam = lerp(seam, CRITICAL, p.heat() * p.heat());
         float base = p.energy();
         float pulse = 0.65F + 0.35F * Mth.sin(p.t() * 0.11F * p.spin());

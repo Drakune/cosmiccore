@@ -72,6 +72,11 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             renderModule(pose, buffers, t, CYAN, 1);
         } else if (stack.is(ModItems.ANTI_ASTEROID_MODULE.get())) {
             renderModule(pose, buffers, t, PINK, 2);
+        } else if (stack.is(ModItems.COLOR_MODULE.get())) {
+            // Akzentfarbe wandert durch den Farbkreis
+            float h = (t * 0.004F) % 1.0F;
+            int rgb = java.awt.Color.HSBtoRGB(h, 0.65F, 1.0F);
+            renderModule(pose, buffers, t, new float[]{((rgb >> 16) & 255) / 255.0F, ((rgb >> 8) & 255) / 255.0F, (rgb & 255) / 255.0F}, 3);
         }
         pose.popPose();
     }
@@ -376,6 +381,16 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
                             Mth.sin(a1) * 0.18F, 0.01F, accent[0], accent[1], accent[2], a, a);
                 }
                 RenderUtil.flatCircle(glow, hm, 0.09F + 0.02F * pulse, 0.01F, 24, WHITE, a * 0.7F);
+            }
+            case 3 -> { // Farbe: Farbrad aus sechs Segmenten in Regenbogenfarben
+                for (int k = 0; k < 6; k++) {
+                    int rgb = java.awt.Color.HSBtoRGB(k / 6.0F, 0.75F, 1.0F);
+                    float[] c = {((rgb >> 16) & 255) / 255.0F, ((rgb >> 8) & 255) / 255.0F, (rgb & 255) / 255.0F};
+                    float a0 = k * Mth.TWO_PI / 6 + 0.08F, a1 = (k + 1) * Mth.TWO_PI / 6 - 0.08F;
+                    RenderUtil.segment(glow, hm, Mth.cos(a0) * 0.16F, 0, Mth.sin(a0) * 0.16F, Mth.cos(a1) * 0.16F, 0,
+                            Mth.sin(a1) * 0.16F, 0.022F, c[0], c[1], c[2], a, a);
+                }
+                RenderUtil.flatCircle(glow, hm, 0.07F, 0.01F, 20, WHITE, a * 0.8F);
             }
             default -> { // Anti-Asteroid: Ring mit Schraegstrich, darin ein kleiner Brocken
                 RenderUtil.flatCircle(glow, hm, 0.17F, 0.014F, 32, accent, a);
