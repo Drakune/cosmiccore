@@ -36,7 +36,7 @@ public final class CosmicCoreClient {
 
     private static CosmicItemRenderer itemRenderer;
 
-    /** Animierte 3D-Items (Sternenstaub, Overdrive-Partikel, Neutronenstern, Quasar-Essenz, Module). */
+    /** Animierte 3D-Items (Sternenstaub, verdichteter Sternenstaub, Overdrive-Partikel, Neutronenstern, Quasar-Essenz, Module). */
     @SubscribeEvent
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new IClientItemExtensions() {
@@ -45,7 +45,7 @@ public final class CosmicCoreClient {
                 if (itemRenderer == null) itemRenderer = new CosmicItemRenderer();
                 return itemRenderer;
             }
-        }, ModItems.STAR_DUST.get(), ModItems.OVERDRIVE_PARTICLE.get(), ModItems.NEUTRON_FRAGMENT.get(),
+        }, ModItems.STAR_DUST.get(), ModItems.COMPRESSED_STAR_DUST.get(), ModItems.OVERDRIVE_PARTICLE.get(), ModItems.NEUTRON_FRAGMENT.get(),
                 ModItems.QUASAR_ESSENCE.get(), ModItems.EFFICIENCY_MODULE.get(), ModItems.STABILITY_MODULE.get(),
                 ModItems.ANTI_ASTEROID_MODULE.get());
     }

@@ -787,8 +787,6 @@ def models():
         'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
         'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
     wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
-    for it in ('compressed_star_dust',):
-        wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:item/generated', 'textures': {'layer0': f'{MOD}:item/{it}'}})
     # animierte 3D-Items (gezeichnet von CosmicItemRenderer)
     floating = {
         'gui': {'rotation': [20, 30, 0], 'translation': [0, 0, 0], 'scale': [1.0, 1.0, 1.0]},
@@ -799,7 +797,7 @@ def models():
         'thirdperson_lefthand': {'rotation': [0, 0, 0], 'translation': [0, 2.5, 1], 'scale': [0.5, 0.5, 0.5]},
         'firstperson_righthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]},
         'firstperson_lefthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]}}
-    for it in ('overdrive_particle', 'star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module',
+    for it in ('overdrive_particle', 'star_dust', 'compressed_star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module',
                'stability_module', 'anti_asteroid_module'):
         wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
                                                   'textures': {'particle': f'{MOD}:item/{it}'}, 'display': floating})

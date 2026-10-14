@@ -21,6 +21,8 @@ import org.joml.Matrix4f;
  * <ul>
  *   <li>Sternenstaub: kleine schwebende Sternenfeld-Kristalle, die umeinander kreisen, mit Funkeln.</li>
  *   <li>Overdrive-Partikel: gleissender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold und Violett.</li>
+ *   <li>Verdichteter Sternenstaub: dichter Sternenfeld-Kristall, um den sich Pressringe zusammenziehen, waehrend
+ *       Staubkoernchen spiralfoermig hineingezogen werden.</li>
  *   <li>Neutronenstern-Fragment: winziger Pulsar - rasend schnell drehend, mit Leuchtturm-Strahlen und Magnetfeldboegen.</li>
  *   <li>Quasar-Essenz: Mini-Quasar - schwarzer Kern, gluehende Akkretionsscheibe und pulsierende Jets.</li>
  *   <li>Module: schwebende Platine mit wandernden Lichtimpulsen und einem Hologramm-Symbol darueber.</li>
@@ -54,6 +56,8 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             renderParticle(pose, buffers, t);
         } else if (stack.is(ModItems.STAR_DUST.get())) {
             renderStarDust(pose, buffers, t);
+        } else if (stack.is(ModItems.COMPRESSED_STAR_DUST.get())) {
+            renderCompressedDust(pose, buffers, t);
         } else if (stack.is(ModItems.NEUTRON_FRAGMENT.get())) {
             renderPulsar(pose, buffers, t);
         } else if (stack.is(ModItems.QUASAR_ESSENCE.get())) {
@@ -120,6 +124,51 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             float a = i * 0.785F + t * 0.02F;
             cube(glow, m, Mth.cos(a) * 0.32F, -0.2F + (i % 4) * 0.12F, Mth.sin(a) * 0.32F, 0.012F + 0.02F * tw, 1.0F, 1.0F, 1.0F, tw);
         }
+    }
+
+    // ------------------------------------------------------------------ Verdichteter Sternenstaub
+
+    private static void renderCompressedDust(PoseStack pose, MultiBufferSource buffers, float t) {
+        // Pressen im Takt: die Ringe ziehen sich zusammen, der Kristall leuchtet beim Zusammendruecken auf
+        float press = 0.5F + 0.5F * Mth.sin(t * 0.12F);
+        float squeeze = press * press;
+        pose.pushPose();
+        pose.mulPose(Axis.YP.rotationDegrees(t * 1.6F));
+        pose.mulPose(Axis.ZP.rotationDegrees(12.0F));
+        float w = 0.17F - 0.015F * squeeze, h = 0.27F - 0.03F * squeeze;
+        RenderUtil.starOctahedron(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), w, h);
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
+        Matrix4f m = pose.last().pose();
+        RenderUtil.octahedron(glow, m, w * 1.04F, h * 1.04F, 0.008F, VIOLET, 0.9F);
+        RenderUtil.octahedron(glow, m, w * 1.1F, h * 1.1F, 0.004F, WHITE, 0.4F + 0.5F * squeeze);
+        // drei kleine Begleitkristalle, eng angepresst
+        for (int i = 0; i < 3; i++) {
+            float a = i * Mth.TWO_PI / 3;
+            float r = 0.17F - 0.03F * squeeze;
+            Matrix4f sm = new Matrix4f(m).translate(Mth.cos(a) * r, -0.08F + 0.05F * i, Mth.sin(a) * r).rotateY(a).rotateZ(0.5F);
+            RenderUtil.octahedron(glow, sm, 0.045F, 0.08F, 0.005F, i % 2 == 0 ? CYAN : VIOLET, 0.8F);
+        }
+        pose.popPose();
+        Matrix4f wm = pose.last().pose();
+        RenderUtil.glowSphere(glow, wm, 0.24F, 8, 12, VIOLET, 0.1F + 0.15F * squeeze);
+        RenderUtil.glowSphere(glow, wm, 0.15F, 8, 12, WHITE, 0.08F + 0.2F * squeeze);
+        // Pressringe
+        for (int i = 0; i < 3; i++) {
+            float r = 0.42F - 0.14F * squeeze - i * 0.03F;
+            ring(pose, glow, r, 0.012F, t * (3.0F - i), 60.0F * i - 20.0F, 35.0F * i, t + i * 15.0F, i == 1 ? CYAN : VIOLET, 0.55F + 0.35F * squeeze);
+        }
+        // Staubkoernchen werden spiralfoermig hineingezogen
+        for (int i = 0; i < 10; i++) {
+            float s = Mth.frac(t * 0.02F + i * 0.1F); // 0 = aussen, 1 = im Kristall
+            float a = i * 2.39996F + s * 6.0F;
+            float r = 0.46F * (1.0F - s);
+            float y = (hashY(i) - 0.5F) * 0.5F * (1.0F - s);
+            cube(glow, wm, Mth.cos(a) * r, y, Mth.sin(a) * r, 0.006F + 0.012F * (1.0F - s), 1.0F, 1.0F, 1.0F, Mth.sin(s * Mth.PI));
+        }
+    }
+
+    private static float hashY(int i) {
+        return Mth.frac(Mth.sin(i * 12.9898F) * 43758.547F);
     }
 
     // ------------------------------------------------------------------ Neutronenstern (Pulsar)
