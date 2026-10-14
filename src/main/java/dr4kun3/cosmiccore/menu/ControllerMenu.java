@@ -37,8 +37,8 @@ public class ControllerMenu extends AbstractContainerMenu {
     // Datenfelder
     public static final int D_ENERGY_LO = 0, D_ENERGY_HI = 1, D_CAPACITY_LO = 2, D_CAPACITY_HI = 3, D_OUTPUT_LO = 4, D_OUTPUT_HI = 5,
             D_INSTABILITY = 6, D_RESONANCE = 7, D_SCALE = 8, D_MAX_SCALE = 9, D_SIZE = 10, D_FLAGS = 11, D_COSMIC = 12,
-            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17, D_MELTDOWN = 18;
-    public static final int DATA_COUNT = 19;
+            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17, D_MELTDOWN = 18, D_UNLOCKED = 19;
+    public static final int DATA_COUNT = 20;
 
     public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16, F_FUNNEL = 32, F_LASER = 64, F_RUNNING = 128, F_FULL = 256, F_HAS_FUEL = 512,
             F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048;
@@ -167,6 +167,11 @@ public class ControllerMenu extends AbstractContainerMenu {
     /** Sekunden bis zum Kollaps (0 = kein Countdown). */
     public int meltdown() {
         return data.get(D_MELTDOWN);
+    }
+
+    /** Hoechste dauerhaft freigeschaltete Leistungsstufe. */
+    public int unlocked() {
+        return Math.max(1, data.get(D_UNLOCKED));
     }
 
     public int overdrive() {

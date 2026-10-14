@@ -100,6 +100,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean withFunnel;
     /** Schalter fuer das Anti-Asteroiden-Modul (wirkt nur, wenn es eingesetzt ist). */
     private boolean antiAsteroid = true;
+    /** Dauerhaft freigeschaltete Leistungsstufen (1 ist immer frei; jede weitere kostet einmalig ein Item). */
+    private int unlockedScale = 1;
     /** Bei der Groessenwahl angehakt: vier Kosmos-Laser gehoeren zur Bauvorschau und zum Kreativ-Aufbau. */
     private boolean withLasers;
     /** Installierte Overdrive-Partikel: je Stufe Leistung x2, Instabilitaet x3. */
@@ -300,7 +302,26 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
         switch (id) {
             case ControllerMenu.BTN_SCALE_DOWN -> scale = Math.max(1, scale - 1);
-            case ControllerMenu.BTN_SCALE_UP -> scale = Math.min(size.maxScale(), scale + 1);
+            case ControllerMenu.BTN_SCALE_UP -> {
+                if (scale >= size.maxScale()) return false;
+                if (scale + 1 > unlockedScale) {
+                    // naechste Stufe dauerhaft freischalten: kostet einmalig das Item der Baugroesse
+                    ItemStack key = new ItemStack(size.unlockItem());
+                    if (!player.getAbilities().instabuild && !consumeOne(player, size.unlockItem())) {
+                        player.displayClientMessage(Component.translatable("message.cosmiccore.unlock.missing",
+                                key.getHoverName(), scale + 1).withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                    unlockedScale = scale + 1;
+                    player.displayClientMessage(Component.translatable("message.cosmiccore.unlock.done", unlockedScale)
+                            .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+                    Vec3 uc = Vec3.atCenterOf(center(sl));
+                    sl.playSound(null, uc.x, uc.y, uc.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1.5F, 0.8F + 0.08F * unlockedScale);
+                    sl.playSound(null, uc.x, uc.y, uc.z, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.6F, 1.4F);
+                    sl.sendParticles(ParticleTypes.END_ROD, uc.x, uc.y, uc.z, 30, 0.5, 0.5, 0.5, 0.08);
+                }
+                scale++;
+            }
             case ControllerMenu.BTN_TOGGLE -> enabled = !enabled;
             case ControllerMenu.BTN_PREVIEW -> preview = !preview;
             case ControllerMenu.BTN_OVERDRIVE_UP -> {
@@ -337,6 +358,18 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /** Nimmt ein Overdrive-Partikel aus dem Inventar des Spielers. */
+    private static boolean consumeOne(Player player, net.minecraft.world.item.Item item) {
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack st = inv.getItem(i);
+            if (st.is(item)) {
+                st.shrink(1);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean consumeParticle(Player player) {
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -1137,6 +1170,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         super.saveAdditional(tag, registries);
         tag.putInt("size", size == null ? 0 : size.size());
         tag.putInt("scale", scale);
+        tag.putInt("unlockedScale", unlockedScale);
         tag.putBoolean("enabled", enabled);
         tag.putBoolean("preview", preview);
         tag.putBoolean("withFunnel", withFunnel);
@@ -1166,6 +1200,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         // Controller aus aelteren Versionen (ohne Groessenwahl) waren immer 7x7x7
         size = tag.contains("size") ? ReactorSize.bySize(tag.getInt("size")) : ReactorSize.MEDIUM;
         scale = Math.max(1, tag.getInt("scale"));
+        // aeltere Speicherstaende: bereits erreichte Stufen gelten als freigeschaltet
+        unlockedScale = tag.contains("unlockedScale") ? Math.max(1, tag.getInt("unlockedScale")) : scale;
         if (size != null) scale = Math.min(scale, size.maxScale());
         enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
         preview = tag.getBoolean("preview");
@@ -1286,6 +1322,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case ControllerMenu.D_RESONANCE -> Math.round(100f * resonance / CoreConfig.RAMP_UP_TICKS.get());
                 case ControllerMenu.D_SCALE -> scale;
                 case ControllerMenu.D_MAX_SCALE -> size == null ? 0 : size.maxScale();
+                case ControllerMenu.D_UNLOCKED -> unlockedScale;
                 case ControllerMenu.D_SIZE -> size == null ? 0 : size.size();
                 case ControllerMenu.D_FLAGS -> (formed ? ControllerMenu.F_FORMED : 0)
                         | (enabled ? ControllerMenu.F_ENABLED : 0)

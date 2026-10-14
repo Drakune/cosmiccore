@@ -898,7 +898,7 @@ DE = {
     'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an.',
     'guide.cosmiccore.page.5': '§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...',
     'guide.cosmiccore.page.6': '§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.',
-    'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen 1 bis 10.\n\nGroße Reaktoren liefern mehr pro Stufe und sind stabiler.',
+    'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen 1 bis 10 (ultimativ 12). Jede neue Stufe einmalig freischalten: §e5er§r Sternenstaub, §e7er§r verd. Sternenstaub, §e9er§r Neutronenstern, §eUltimativ§r Quasar-Essenz.',
     'guide.cosmiccore.page.8': '§5§lInstabilität§r\n\nBrennstoff erhitzt den Kern. Ab 20 % hält das Feld ihn dort und verbraucht dafür Stabilisatoren - je höher die Stufe, desto mehr.\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: 10 s Countdown - unter 95 % gerettet, sonst §lKollaps§r!',
     'guide.cosmiccore.page.9': '§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.',
     'guide.cosmiccore.page.10': '§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r',
@@ -997,6 +997,12 @@ DE = {
     'gui.cosmiccore.ultimate_title': 'ULTIMATE CORE',
     'gui.cosmiccore.ultimate_cost': 'benötigt 4 Singularitätskerne',
     'message.cosmiccore.expected_satellite': 'Singularitätskern (Satellit)',
+    'gui.cosmiccore.unlock.title': 'Stufe %s freischalten',
+    'gui.cosmiccore.unlock.cost': 'Kostet einmalig 1× %s – danach dauerhaft frei',
+    'gui.cosmiccore.unlock.free': 'Stufe %s ist bereits freigeschaltet',
+    'gui.cosmiccore.unlock.status': 'Freigeschaltet: Stufe 1–%s von %s',
+    'message.cosmiccore.unlock.missing': 'Dir fehlt 1× %s, um Stufe %s freizuschalten',
+    'message.cosmiccore.unlock.done': 'Stufe %s dauerhaft freigeschaltet!',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1070,7 +1076,7 @@ EN = {
     'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts can replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes.',
     'guide.cosmiccore.page.5': '§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...',
     'guide.cosmiccore.page.6': '§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.',
-    'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels 1 to 10.\n\nBigger reactors give more per level and are more stable.',
+    'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels 1 to 10 (ultimate 12). Unlock each new level once: §e5x§r star dust, §e7x§r compressed star dust, §e9x§r neutron star, §eUltimate§r quasar essence.',
     'guide.cosmiccore.page.8': '§5§lInstability§r\n\nFuel heats the core. From 20 % the field holds it there, using stabilizers - the higher the level, the more.\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: 10 s countdown - below 95 % saved, else §lcollapse§r!',
     'guide.cosmiccore.page.9': '§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output, with a Star Funnel §b+50 %§r.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.',
     'guide.cosmiccore.page.10': '§5§lTips§r\n\n- Test on level 1 first.\n- Never run out of stabilizers.\n- On alarm, lower the level or press Stop.\n- In creative, §dBuild§r places the structure instantly.\n\n§8Good luck, starsmith.§r',
@@ -1169,6 +1175,12 @@ EN = {
     'gui.cosmiccore.ultimate_title': 'ULTIMATE CORE',
     'gui.cosmiccore.ultimate_cost': 'requires 4 singularity cores',
     'message.cosmiccore.expected_satellite': 'Singularity Core (satellite)',
+    'gui.cosmiccore.unlock.title': 'Unlock level %s',
+    'gui.cosmiccore.unlock.cost': 'Costs 1× %s once – unlocked permanently',
+    'gui.cosmiccore.unlock.free': 'Level %s is already unlocked',
+    'gui.cosmiccore.unlock.status': 'Unlocked: level 1–%s of %s',
+    'message.cosmiccore.unlock.missing': 'You need 1× %s to unlock level %s',
+    'message.cosmiccore.unlock.done': 'Level %s unlocked permanently!',
 }
 
 

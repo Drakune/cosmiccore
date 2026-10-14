@@ -34,6 +34,16 @@ public enum ReactorSize {
         this.pattern = new CorePattern(size);
     }
 
+    /** Item, das je Leistungsstufe einmalig verbraucht wird, um sie dauerhaft freizuschalten. */
+    public net.minecraft.world.item.Item unlockItem() {
+        return switch (this) {
+            case SMALL -> dr4kun3.cosmiccore.ModItems.STAR_DUST.get();
+            case MEDIUM -> dr4kun3.cosmiccore.ModItems.COMPRESSED_STAR_DUST.get();
+            case LARGE -> dr4kun3.cosmiccore.ModItems.NEUTRON_FRAGMENT.get();
+            case ULTIMATE -> dr4kun3.cosmiccore.ModItems.QUASAR_ESSENCE.get();
+        };
+    }
+
     /** Kantenlaenge in Bloecken (5, 7 oder 9). */
     public int size() {
         return size;

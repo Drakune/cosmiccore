@@ -249,6 +249,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fill(x + 26, y + ROW_Y + 1, x + 66, y + ROW_Y + 15, 0xFF0E0820);
         float growth = menu.maxScale() <= 1 ? 0 : (menu.scale() - 1) / (float) (menu.maxScale() - 1);
         int fillW = Math.round(40 * growth);
+        // freigeschalteter Bereich (gedimmt), darueber die aktuelle Stufe
+        float unl = menu.maxScale() <= 1 ? 0 : (Math.min(menu.unlocked(), menu.maxScale()) - 1) / (float) (menu.maxScale() - 1);
+        int unlW = Math.round(40 * unl);
+        if (unlW > 0) g.fill(x + 26, y + ROW_Y + 12, x + 26 + unlW, y + ROW_Y + 15, 0xFF4A2A70);
         if (fillW > 0) g.fillGradient(x + 26, y + ROW_Y + 12, x + 26 + fillW, y + ROW_Y + 15, 0xFFFF60C0, 0xFF8030FF);
         g.drawCenteredString(font, menu.scale() + "/" + menu.maxScale(), x + 46, y + ROW_Y + 3, 0xFFFFFFFF);
     }
@@ -482,6 +486,17 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             tip.add(Component.translatable(on ? "gui.cosmiccore.anti.on" : "gui.cosmiccore.anti.off")
                     .withStyle(on ? ChatFormatting.GREEN : ChatFormatting.RED));
             if (!installed) tip.add(Component.translatable("gui.cosmiccore.anti.missing").withStyle(ChatFormatting.GRAY));
+        } else if (in(mx, my, 68, ROW_Y, 16, 16) && menu.sizeChosen() && menu.scale() < menu.maxScale()) {
+            ReactorSize rs = ReactorSize.bySize(menu.size());
+            int next = menu.scale() + 1;
+            if (rs != null && next > menu.unlocked()) {
+                tip.add(Component.translatable("gui.cosmiccore.unlock.title", next).withStyle(ChatFormatting.LIGHT_PURPLE));
+                tip.add(Component.translatable("gui.cosmiccore.unlock.cost", new ItemStack(rs.unlockItem()).getHoverName())
+                        .withStyle(ChatFormatting.GRAY));
+            } else {
+                tip.add(Component.translatable("gui.cosmiccore.unlock.free", next).withStyle(ChatFormatting.GRAY));
+            }
+            tip.add(Component.translatable("gui.cosmiccore.unlock.status", menu.unlocked(), menu.maxScale()).withStyle(ChatFormatting.DARK_GRAY));
         } else if (in(mx, my, BAR_ENERGY_X, BAR_Y, BAR_W, BAR_H)) {
             tip.add(Component.translatable("gui.cosmiccore.tip.energy"));
             tip.add(Component.literal(fmt(menu.energy()) + " / " + fmt(menu.capacity()) + " RF").withStyle(ChatFormatting.GRAY));

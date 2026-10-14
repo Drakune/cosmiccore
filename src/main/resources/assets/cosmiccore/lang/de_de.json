@@ -70,7 +70,7 @@
   "guide.cosmiccore.page.4": "§5§lPorts§r\n\nPorts ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an.",
   "guide.cosmiccore.page.5": "§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...",
   "guide.cosmiccore.page.6": "§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.",
-  "guide.cosmiccore.page.7": "§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen 1 bis 10.\n\nGroße Reaktoren liefern mehr pro Stufe und sind stabiler.",
+  "guide.cosmiccore.page.7": "§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen 1 bis 10 (ultimativ 12). Jede neue Stufe einmalig freischalten: §e5er§r Sternenstaub, §e7er§r verd. Sternenstaub, §e9er§r Neutronenstern, §eUltimativ§r Quasar-Essenz.",
   "guide.cosmiccore.page.8": "§5§lInstabilität§r\n\nBrennstoff erhitzt den Kern. Ab 20 % hält das Feld ihn dort und verbraucht dafür Stabilisatoren - je höher die Stufe, desto mehr.\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: 10 s Countdown - unter 95 % gerettet, sonst §lKollaps§r!",
   "guide.cosmiccore.page.9": "§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.",
   "guide.cosmiccore.page.10": "§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r",
@@ -168,5 +168,11 @@
   "jei.cosmiccore.info.anti_asteroid_module": "Im Controller einsetzen und mit dem Schalter darunter aktivieren: Im Umkreis des Reaktors erscheinen keine Asteroiden mehr. Ausgeschaltet bleibt das Modul eingesetzt.",
   "gui.cosmiccore.ultimate_title": "ULTIMATE CORE",
   "gui.cosmiccore.ultimate_cost": "benötigt 4 Singularitätskerne",
-  "message.cosmiccore.expected_satellite": "Singularitätskern (Satellit)"
+  "message.cosmiccore.expected_satellite": "Singularitätskern (Satellit)",
+  "gui.cosmiccore.unlock.title": "Stufe %s freischalten",
+  "gui.cosmiccore.unlock.cost": "Kostet einmalig 1× %s – danach dauerhaft frei",
+  "gui.cosmiccore.unlock.free": "Stufe %s ist bereits freigeschaltet",
+  "gui.cosmiccore.unlock.status": "Freigeschaltet: Stufe 1–%s von %s",
+  "message.cosmiccore.unlock.missing": "Dir fehlt 1× %s, um Stufe %s freizuschalten",
+  "message.cosmiccore.unlock.done": "Stufe %s dauerhaft freigeschaltet!"
 }
