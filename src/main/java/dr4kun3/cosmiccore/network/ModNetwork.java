@@ -11,5 +11,6 @@ public final class ModNetwork {
         // Der Handler laeuft nur auf dem Client; die Client-Klasse wird erst beim Aufruf geladen.
         registrar.playToClient(AwakeningPayload.TYPE, AwakeningPayload.CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() -> dr4kun3.cosmiccore.client.AwakeningEffect.start(payload.pos(), payload.size())));
+        registrar.playToServer(SetCoreColorsPayload.TYPE, SetCoreColorsPayload.CODEC, SetCoreColorsPayload::handle);
     }
 }

@@ -23,13 +23,20 @@ import org.joml.Matrix4f;
 public final class UltimateFx {
     private UltimateFx() {}
 
-    private static final float[] GOLD = {1.0F, 0.82F, 0.4F};
-    private static final float[] ROSE = {1.0F, 0.45F, 0.8F};
-    private static final float[] CYAN = {0.4F, 0.9F, 1.0F};
+    private static final float[] GOLD_DEF = {1.0F, 0.82F, 0.4F};
+    private static float[] GOLD = GOLD_DEF;
+    private static final float[] ROSE_DEF = {1.0F, 0.45F, 0.8F};
+    private static float[] ROSE = ROSE_DEF;
+    private static final float[] CYAN_DEF = {0.4F, 0.9F, 1.0F};
+    private static float[] CYAN = CYAN_DEF;
     private static final float[] VIOLET = {0.6F, 0.35F, 1.0F};
 
     public static void render(PoseStack pose, VertexConsumer vc, float rh, float inner, float outer, float reach, float t,
                               float spin, float energy, float tilt) {
+        int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;
+        GOLD = ColorOverride.get(ch, GOLD_DEF);
+        CYAN = ColorOverride.light(ch, CYAN_DEF, 0.45F);
+        ROSE = ColorOverride.dark(ch, ROSE_DEF, 0.3F);
         if (energy <= 0.01F) return;
         Matrix4f m = pose.last().pose();
 

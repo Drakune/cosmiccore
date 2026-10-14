@@ -23,8 +23,10 @@ import org.joml.Matrix4f;
 public final class FieldFx {
     private FieldFx() {}
 
-    private static final float[] BLUE = {0.35F, 0.75F, 1.0F};
-    private static final float[] VIOLET = {0.6F, 0.4F, 1.0F};
+    private static final float[] BLUE_DEF = {0.35F, 0.75F, 1.0F};
+    private static float[] BLUE = BLUE_DEF;
+    private static final float[] VIOLET_DEF = {0.6F, 0.4F, 1.0F};
+    private static float[] VIOLET = VIOLET_DEF;
     private static final float[] CRITICAL = {1.0F, 0.12F, 0.12F};
     private static final float[][] OVERDRIVE = {{0.4F, 0.85F, 1.0F}, {1.0F, 0.75F, 0.2F}, {0.95F, 0.6F, 1.0F}};
     private static final int FULL_LINES = 12, FULL_STEPS = 28;
@@ -35,6 +37,8 @@ public final class FieldFx {
      */
     public static void render(Matrix4f m, VertexConsumer vc, float focus, float reach, float t, float energy, float heat,
                               float shield, boolean unstable, int overdrive) {
+        BLUE = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.FIELD, BLUE_DEF);
+        VIOLET = ColorOverride.dark(dr4kun3.cosmiccore.color.CoreColors.FIELD, VIOLET_DEF, 0.3F);
         if (energy <= 0.01F) return;
         final int LINES = RenderQuality.scale(FULL_LINES, 6), STEPS = RenderQuality.scale(FULL_STEPS, 14);
         float strength = 0.3F + 0.7F * shield;

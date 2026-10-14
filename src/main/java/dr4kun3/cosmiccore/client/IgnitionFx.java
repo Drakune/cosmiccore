@@ -19,11 +19,22 @@ public final class IgnitionFx {
     private IgnitionFx() {}
 
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
-    private static final float[] CYAN = {0.45F, 0.9F, 1.0F};
-    private static final float[] GOLD = {1.0F, 0.82F, 0.4F};
-    private static final float[] VIOLET = {0.7F, 0.45F, 1.0F};
+
+    private static void particleColors() {
+        int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;
+        GOLD = ColorOverride.get(ch, GOLD_DEF);
+        CYAN = ColorOverride.light(ch, CYAN_DEF, 0.45F);
+        VIOLET = ColorOverride.dark(ch, VIOLET_DEF, 0.3F);
+    }
+    private static final float[] CYAN_DEF = {0.45F, 0.9F, 1.0F};
+    private static float[] CYAN = CYAN_DEF;
+    private static final float[] GOLD_DEF = {1.0F, 0.82F, 0.4F};
+    private static float[] GOLD = GOLD_DEF;
+    private static final float[] VIOLET_DEF = {0.7F, 0.45F, 1.0F};
+    private static float[] VIOLET = VIOLET_DEF;
 
     public static void render(Matrix4f m, VertexConsumer vc, int size, float ph, float energy) {
+        particleColors();
         if (ph < 0.0F) return;
         int stars = RenderQuality.scale(24 + size * 2, 10);
         float spread = 5.0F + size * 1.2F; // nah am Reaktor, damit man es gut erkennt
@@ -58,6 +69,7 @@ public final class IgnitionFx {
      * @param mouthY Hoehe des Ziels relativ zur Kernmitte
      */
     public static void ambient(Matrix4f m, VertexConsumer vc, int size, float mouthY, float t, float energy) {
+        particleColors();
         int stars = RenderQuality.scale(8 + size, 3);
         for (int k = 0; k < stars; k++) {
             float period = 60.0F + 25.0F * (0.5F + 0.5F * hash(k * 53));

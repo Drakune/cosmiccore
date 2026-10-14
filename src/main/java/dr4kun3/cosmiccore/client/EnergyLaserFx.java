@@ -32,13 +32,17 @@ public final class EnergyLaserFx {
     /** Hoehe der Bahnmitte ueber der Kernmitte (zusaetzlich zur halben Baugroesse) - passt zur Server-Logik. */
     public static final float HEIGHT = 2.2F;
     private static final float ORBIT = 0.9F;
-    private static final float[] BEAM = {0.4F, 0.85F, 1.0F};
-    private static final float[] VIOLET = {0.7F, 0.45F, 1.0F};
+    private static final float[] BEAM_DEF = {0.4F, 0.85F, 1.0F};
+    private static float[] BEAM = BEAM_DEF;
+    private static final float[] VIOLET_DEF = {0.7F, 0.45F, 1.0F};
+    private static float[] VIOLET = VIOLET_DEF;
     private static final float[] GOLD = {1.0F, 0.8F, 0.35F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
     public static void render(Matrix4f m, VertexConsumer vc, int half, float t, Vec3 target, float targetSize, float charge,
                               float harvest, float energy, float deliver, Vec3 source, float mouthY, float burstSize) {
+        BEAM = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.LASER, BEAM_DEF);
+        VIOLET = ColorOverride.dark(dr4kun3.cosmiccore.color.CoreColors.LASER, VIOLET_DEF, 0.35F);
         float cy = half + HEIGHT;
         if (deliver >= 0.0F) delivery(m, vc, cy, mouthY, t, deliver, energy, source, burstSize);
         Vector3f center = new Vector3f(0, cy, 0);

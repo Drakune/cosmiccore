@@ -18,13 +18,27 @@ import org.joml.Matrix4f;
 public final class BlackHoleFx {
     private BlackHoleFx() {}
 
-    private static final float[] COOL = {0.55F, 0.35F, 1.0F};
-    private static final float[] WARM = {1.0F, 0.6F, 0.2F};
-    private static final float[] HOT = {1.0F, 0.95F, 0.85F};
-    private static final float[] DUST = {0.75F, 0.8F, 1.0F};
+    private static final float[] COOL_DEF = {0.55F, 0.35F, 1.0F};
+    private static float[] COOL = COOL_DEF;
+    private static final float[] WARM_DEF = {1.0F, 0.6F, 0.2F};
+    private static float[] WARM = WARM_DEF;
+    private static final float[] HOT_DEF = {1.0F, 0.95F, 0.85F};
+    private static float[] HOT = HOT_DEF;
+    private static final float[] DUST_DEF = {0.75F, 0.8F, 1.0F};
+    private static float[] DUST = DUST_DEF;
+
+    /** Kanalfarbe "Partikel" uebernehmen (sonst die eigene Farbwelt). */
+    private static void colors() {
+        int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;
+        COOL = ColorOverride.dark(ch, COOL_DEF, 0.35F);
+        WARM = ColorOverride.get(ch, WARM_DEF);
+        HOT = ColorOverride.light(ch, HOT_DEF, 0.7F);
+        DUST = ColorOverride.light(ch, DUST_DEF, 0.4F);
+    }
 
     /** Einfallende Materie in der Scheibenebene (m = gekippte Scheibenebene, y = Scheibennormale). */
     public static void infall(Matrix4f m, VertexConsumer vc, float rh, float inner, float outer, float t, float energy) {
+        colors();
         int n = RenderQuality.scale(42, 14);
         for (int k = 0; k < n; k++) {
             float life = 160.0F + 120.0F * (hash(k * 7) * 0.5F + 0.5F);  // Ticks bis in den Horizont
@@ -51,6 +65,7 @@ public final class BlackHoleFx {
 
     /** Staub auf geneigten Kepler-Bahnen um das Loch (Weltrahmen). */
     public static void orbiters(Matrix4f m, VertexConsumer vc, float rh, float reach, float t, float energy) {
+        colors();
         int n = RenderQuality.scale(28, 10);
         for (int k = 0; k < n; k++) {
             float f = (k + 0.5F) / n; // Radien gleichmaessig verteilt - keine zwei Teilchen auf derselben Bahn
@@ -70,6 +85,7 @@ public final class BlackHoleFx {
 
     /** Gezeitenstrom: etwa alle 10 s wird ein Klumpen zu einem langen Faden gestreckt und spiralt hinein. */
     public static void tidalStream(Matrix4f m, VertexConsumer vc, float rh, float inner, float outer, float t, float energy) {
+        colors();
         final float period = 200.0F;
         int cycle = (int) Math.floor(t / period);
         float s = (t - cycle * period) / period;

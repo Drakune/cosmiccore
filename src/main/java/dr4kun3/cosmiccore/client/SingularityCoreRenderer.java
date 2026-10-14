@@ -54,15 +54,6 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             {{1.0F, 0.95F, 0.7F}, {1.0F, 0.72F, 0.15F}, {1.0F, 0.2F, 0.75F}, {1.0F, 0.85F, 0.4F}},    // Supernova
             {{1.0F, 1.0F, 1.0F}, {0.85F, 0.55F, 1.0F}, {0.5F, 0.25F, 1.0F}, {0.9F, 0.75F, 1.0F}},     // Quasar
             {{0.95F, 0.85F, 0.55F}, {0.85F, 0.5F, 0.08F}, {0.05F, 0.55F, 0.6F}, {0.85F, 0.7F, 0.3F}}}; // Ultimate-Modus (satt, nicht weiss)
-    /** Farbschemata des Farb-Moduls (Index = Schema - 1): {heiss, warm, kuehl, Jet}. */
-    public static final float[][][] SCHEMES = {
-            {{1.0F, 0.9F, 0.85F}, {1.0F, 0.28F, 0.15F}, {0.6F, 0.05F, 0.2F}, {1.0F, 0.4F, 0.3F}},     // Karmesin
-            {{0.9F, 1.0F, 0.9F}, {0.3F, 1.0F, 0.5F}, {0.05F, 0.5F, 0.35F}, {0.5F, 1.0F, 0.7F}},       // Smaragd
-            {{0.9F, 0.97F, 1.0F}, {0.3F, 0.7F, 1.0F}, {0.1F, 0.2F, 0.8F}, {0.5F, 0.85F, 1.0F}},       // Azur
-            {{1.0F, 0.97F, 0.8F}, {1.0F, 0.75F, 0.2F}, {0.7F, 0.35F, 0.05F}, {1.0F, 0.85F, 0.45F}},   // Gold
-            {{1.0F, 0.92F, 0.97F}, {1.0F, 0.45F, 0.75F}, {0.6F, 0.2F, 0.75F}, {1.0F, 0.6F, 0.85F}},   // Rose
-            {{1.0F, 1.0F, 1.0F}, {0.75F, 0.95F, 1.0F}, {0.45F, 0.6F, 0.85F}, {0.85F, 0.95F, 1.0F}},   // Frost
-            {{0.85F, 0.7F, 1.0F}, {0.45F, 0.2F, 0.8F}, {0.15F, 0.05F, 0.35F}, {0.6F, 0.4F, 1.0F}}};   // Leere
     // pro Frame gesetzt (Rendering laeuft nur im Render-Thread)
     private static float[] pHot = HOT, pWarm = WARM, pCool = COOL, pJet = JET;
     private static final float[] CRITICAL = {1.0F, 0.1F, 0.1F};
@@ -98,13 +89,14 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         final boolean active = phase == CorePhase.ACTIVE || unstable;
         final float growth = be.getGrowth();
         final int od = Math.max(0, Math.min(4, be.getOverdrive()));
-        // Farb-Modul: eigenes Schema ersetzt die Farbwelt (Overdrive-Effekte bleiben, nur in den gewaehlten Farben)
-        int scheme = be.getColorScheme();
-        float[][] pal = scheme > 0 && scheme <= SCHEMES.length ? SCHEMES[scheme - 1] : PALETTES[od];
-        pHot = pal[0];
-        pWarm = pal[1];
-        pCool = pal[2];
-        pJet = pal[3];
+        // Farb-Modul: jeder Kanal mit eigener Farbe ersetzt die Farbwelt, sonst gilt die normale (inkl. Overdrive)
+        ColorOverride.begin(be.getColors());
+        float[][] base = PALETTES[od];
+        pHot = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.DISK_INNER, base[0]);
+        pWarm = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.DISK_MID, base[1]);
+        pCool = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.DISK_OUTER, base[2]);
+        pJet = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.JETS, base[3]);
+        float[][] pal = {pHot, pWarm, pCool, pJet};
         final float reach = be.getReach();
         final int half = be.getStructureSize() / 2;
         final float heat = active ? Mth.clamp(be.getInstability() / 100.0F, 0.0F, 1.0F) : 0.0F;
@@ -248,6 +240,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         //    alles im Inneren (auch spaeter gezeichnete Effekte) liegt davor und bleibt sichtbar
         if (form > 0.0F) depthBackSphere(buffers.getBuffer(CosmicRenderTypes.depthBack()), pose.last().pose(), half + 0.2F);
         pose.popPose();
+        ColorOverride.end();
     }
 
     /** Kugel nur aus nach innen gewandten Flaechen (mit Culling sieht man von aussen genau die Rueckseite). */

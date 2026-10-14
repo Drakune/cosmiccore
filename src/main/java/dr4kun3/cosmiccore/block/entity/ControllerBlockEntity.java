@@ -74,8 +74,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Farb-Modul (ebenfalls hinten angehaengt). */
     public static final int SLOT_COLOR = SLOT_ANTI + 1;
     public static final int INVENTORY_SIZE = SLOT_COLOR + 1;
-    /** Anzahl der Farbschemata (0 = Standard). */
-    public static final int COLOR_SCHEMES = 8;
+
     public static final int MAX_MODULES = 4;
 
     public static final float UNSTABLE_ON = 70f;
@@ -104,8 +103,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean withFunnel;
     /** Schalter fuer das Anti-Asteroiden-Modul - ohne eingesetztes Modul immer aus. */
     private boolean antiAsteroid;
-    /** Gewaehltes Farbschema (0 = Standard) - wirkt nur mit eingesetztem Farb-Modul. */
-    private int colorScheme;
+    /** Farbsatz des Farb-Moduls (je Effekt eine Farbe) - wirkt nur mit eingesetztem Modul. */
+    private dr4kun3.cosmiccore.color.CoreColors.Config colors = dr4kun3.cosmiccore.color.CoreColors.DEFAULT;
+
+    public dr4kun3.cosmiccore.color.CoreColors.Config getColors() {
+        return colors;
+    }
+
+    /** Vom Farbmenue (ueber das Netzwerk) gesetzt. */
+    public void setColors(dr4kun3.cosmiccore.color.CoreColors.Config c) {
+        colors = c;
+        setChanged();
+        if (level instanceof ServerLevel sl) {
+            pushVisuals(sl);
+            sl.playSound(null, worldPosition, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.5F, 1.2F);
+        }
+    }
     /** Dauerhaft freigeschaltete Leistungsstufen (1 ist immer frei; jede weitere kostet einmalig ein Item). */
     private int unlockedScale = 1;
     /** Bei der Groessenwahl angehakt: vier Kosmos-Laser gehoeren zur Bauvorschau und zum Kreativ-Aufbau. */
@@ -301,14 +314,6 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return true;
         }
         if (size == null) return false;
-        if (id == ControllerMenu.BTN_COLOR_NEXT || id == ControllerMenu.BTN_COLOR_PREV) {
-            if (!hasColorModule()) return false;
-            colorScheme = Math.floorMod(colorScheme + (id == ControllerMenu.BTN_COLOR_NEXT ? 1 : -1), COLOR_SCHEMES);
-            setChanged();
-            pushVisuals(sl);
-            sl.playSound(null, worldPosition, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.6F, 0.8F + 0.1F * colorScheme);
-            return true;
-        }
         if (id == ControllerMenu.BTN_ANTI_ASTEROID) {
             if (!hasAntiAsteroidModule()) return false; // Schalter ist ohne Modul gesperrt
             antiAsteroid = !antiAsteroid;
@@ -867,7 +872,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (!formed || size == null) return;
         BlockPos core = center(level);
         if (level.hasChunkAt(core) && level.getBlockEntity(core) instanceof SingularityCoreBlockEntity be) {
-            be.setColorScheme(hasColorModule() ? colorScheme : 0);
+            be.setColors(hasColorModule() ? colors : dr4kun3.cosmiccore.color.CoreColors.DEFAULT);
             boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
             ItemStack stab = inventory.getStackInSlot(SLOT_STAB);
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);
@@ -1246,7 +1251,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putBoolean("withFunnel", withFunnel);
         tag.putBoolean("withLasers", withLasers);
         tag.putBoolean("antiAsteroid", antiAsteroid);
-        tag.putInt("colorScheme", colorScheme);
+        tag.putInt("colorMask", colors.mask());
+        tag.putIntArray("colors", colors.colors());
         tag.putInt("overdrive", overdrive);
         tag.putBoolean("formed", formed);
         tag.putLong("energy", energy);
@@ -1277,7 +1283,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
         preview = tag.getBoolean("preview");
         antiAsteroid = tag.getBoolean("antiAsteroid");
-        colorScheme = Math.floorMod(tag.getInt("colorScheme"), COLOR_SCHEMES);
+        if (tag.contains("colors")) {
+            colors = new dr4kun3.cosmiccore.color.CoreColors.Config(tag.getInt("colorMask"), tag.getIntArray("colors"));
+        } else if (tag.contains("colorScheme")) {
+            // aelterer Stand: ein Schema-Index -> passende Vorgabe uebernehmen
+            var presets = dr4kun3.cosmiccore.color.CoreColors.PRESETS;
+            colors = presets.get(Math.floorMod(tag.getInt("colorScheme"), presets.size())).config();
+        }
         withFunnel = tag.getBoolean("withFunnel");
         withLasers = tag.getBoolean("withLasers");
         overdrive = Math.max(0, tag.getInt("overdrive"));
@@ -1396,7 +1408,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case ControllerMenu.D_SCALE -> scale;
                 case ControllerMenu.D_MAX_SCALE -> size == null ? 0 : size.maxScale();
                 case ControllerMenu.D_UNLOCKED -> unlockedScale;
-                case ControllerMenu.D_COLOR -> colorScheme;
+                case ControllerMenu.D_COLOR_MASK -> colors.mask();
+                case ControllerMenu.D_COLOR_FIRST, ControllerMenu.D_COLOR_FIRST + 1, ControllerMenu.D_COLOR_FIRST + 2,
+                     ControllerMenu.D_COLOR_FIRST + 3, ControllerMenu.D_COLOR_FIRST + 4, ControllerMenu.D_COLOR_FIRST + 5,
+                     ControllerMenu.D_COLOR_FIRST + 6, ControllerMenu.D_COLOR_FIRST + 7 -> colors.colors()[index - ControllerMenu.D_COLOR_FIRST];
                 case ControllerMenu.D_SIZE -> size == null ? 0 : size.size();
                 case ControllerMenu.D_FLAGS -> (formed ? ControllerMenu.F_FORMED : 0)
                         | (enabled ? ControllerMenu.F_ENABLED : 0)

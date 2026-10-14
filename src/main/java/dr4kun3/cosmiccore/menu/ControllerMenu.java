@@ -33,13 +33,13 @@ public class ControllerMenu extends AbstractContainerMenu {
     public static final int BTN_OVERDRIVE_UP = 15;
     public static final int BTN_OVERDRIVE_DOWN = 16;
     public static final int BTN_ANTI_ASTEROID = 17;
-    public static final int BTN_COLOR_NEXT = 18, BTN_COLOR_PREV = 19;
 
     // Datenfelder
     public static final int D_ENERGY_LO = 0, D_ENERGY_HI = 1, D_CAPACITY_LO = 2, D_CAPACITY_HI = 3, D_OUTPUT_LO = 4, D_OUTPUT_HI = 5,
             D_INSTABILITY = 6, D_RESONANCE = 7, D_SCALE = 8, D_MAX_SCALE = 9, D_SIZE = 10, D_FLAGS = 11, D_COSMIC = 12,
-            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17, D_MELTDOWN = 18, D_UNLOCKED = 19, D_COLOR = 20;
-    public static final int DATA_COUNT = 21;
+            D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17, D_MELTDOWN = 18, D_UNLOCKED = 19,
+            D_COLOR_MASK = 20, D_COLOR_FIRST = 21; // Farbsatz: Maske + 8 Farben (RGB555 passt in ein Datenfeld)
+    public static final int DATA_COUNT = 29;
 
     public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16, F_FUNNEL = 32, F_LASER = 64, F_RUNNING = 128, F_FULL = 256, F_HAS_FUEL = 512,
             F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048, F_COLOR_INSTALLED = 4096;
@@ -177,9 +177,11 @@ public class ControllerMenu extends AbstractContainerMenu {
         return Math.max(1, data.get(D_UNLOCKED));
     }
 
-    /** Gewaehltes Farbschema (0 = Standard). */
-    public int colorScheme() {
-        return data.get(D_COLOR);
+    /** Aktueller Farbsatz des Controllers. */
+    public dr4kun3.cosmiccore.color.CoreColors.Config colorConfig() {
+        int[] c = new int[dr4kun3.cosmiccore.color.CoreColors.CHANNELS];
+        for (int i = 0; i < c.length; i++) c[i] = data.get(D_COLOR_FIRST + i);
+        return new dr4kun3.cosmiccore.color.CoreColors.Config(data.get(D_COLOR_MASK), c);
     }
 
     public int overdrive() {
