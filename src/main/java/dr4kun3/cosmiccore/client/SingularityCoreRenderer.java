@@ -187,7 +187,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             pose.pushPose();
             pose.mulPose(Axis.ZP.rotationDegrees(62.0F));
             pose.mulPose(Axis.YP.rotationDegrees(t * 0.3F));
-            accretionDisk(pose.last().pose(), glow, inner * 1.1F, outer * 0.8F, t, -spin * 1.3F, e * 0.35F, heat, camYaw, 0, 0);
+            // inneres Band (radial getrennt von der dritten Scheibe)
+            accretionDisk(pose.last().pose(), glow, inner * 1.1F, Mth.lerp(0.45F, inner, outer), t, -spin * 1.3F, e * 0.35F, heat, camYaw, 0, 0);
             pose.popPose();
         }
         if (od >= 4) {
@@ -195,7 +196,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             pose.pushPose();
             pose.mulPose(Axis.XP.rotationDegrees(-62.0F));
             pose.mulPose(Axis.YP.rotationDegrees(-t * 0.45F));
-            accretionDisk(pose.last().pose(), glow, inner * 1.2F, outer * 0.7F, t, spin * 1.6F, e * 0.22F, heat, camYaw, 0, 0);
+            // aeusseres Band - schneidet die zweite Scheibe nicht im selben Radius
+            accretionDisk(pose.last().pose(), glow, Mth.lerp(0.55F, inner, outer), outer * 0.95F, t, spin * 1.6F, e * 0.22F, heat, camYaw, 0, 0);
             pose.popPose();
         }
         OverdriveFx.render(pose, glow, od, rh, t, e, camYaw, camPitch, pal);

@@ -127,6 +127,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Ultimativer Kern: das einmalige Erwachen (globaler Himmelseffekt) wurde bereits ausgeloest. */
     private boolean awakened;
     private CorePhase phase = CorePhase.DORMANT;
+    /** Ticks ohne Erzeugung - erst nach einer Nachlaufzeit wird "bereit" angezeigt (kein Flackern beim Brennstoffwechsel). */
+    private int idleTicks;
+    private static final int IDLE_GRACE = 40;
 
     // nicht gespeichert
     private int checkTimer;
@@ -581,7 +584,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         // Phase bestimmen (mit Hysterese, damit die Bloecke nicht flackern)
         // voller Puffer: der Reaktor pausiert (kein Verbrauch) und wird auch so dargestellt
-        boolean active = enabled && burnTime > 0 && collapseCooldown <= 0 && energy < capacity;
+        // Nachlaufzeit: Brennstoffwechsel und ein Puffer, der um "voll" pendelt, wechseln sonst jeden Tick die Phase -
+        // das schaltet alle Bloecke und den Kern um und laesst die Animation flackern bzw. neu starten
+        boolean generating = enabled && burnTime > 0 && collapseCooldown <= 0 && energy < capacity;
+        idleTicks = generating ? 0 : idleTicks + 1;
+        boolean active = enabled && collapseCooldown <= 0 && (generating || idleTicks <= IDLE_GRACE);
         CorePhase target = CorePhase.FORMED;
         if (active) {
             boolean unstable = instability >= UNSTABLE_ON || (phase == CorePhase.UNSTABLE && instability >= UNSTABLE_OFF);

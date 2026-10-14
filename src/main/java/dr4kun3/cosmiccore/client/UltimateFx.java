@@ -43,7 +43,8 @@ public final class UltimateFx {
             float[] prev = null;
             for (int i = 0; i < stars; i++) {
                 float f = i / (float) stars;
-                float r = Mth.lerp(f, inner * 1.05F, outer * 1.15F);
+                // ausserhalb der Akkretionsscheibe, bis kurz vor die Kammerwand - eigene Zone, keine Ueberlagerung
+                float r = Mth.lerp(f, Math.max(outer * 1.02F, inner * 1.6F), Math.max(outer * 1.05F, reach * 0.96F));
                 float ang = rot + a * Mth.TWO_PI / arms + (float) Math.log(1.0F + 5.0F * f) * 2.2F;
                 float jitter = 0.08F * hash(a * 101 + i * 7) * r;
                 float x = Mth.cos(ang) * (r + jitter), z = Mth.sin(ang) * (r + jitter);
@@ -63,25 +64,27 @@ public final class UltimateFx {
 
         // Sonnensystem: drei Sterne auf geneigten Bahnen
         for (int k = 0; k < 3; k++) {
-            float orbit = reach * (0.62F + 0.13F * k);
-            float speed = 0.012F / (1.0F + 0.5F * k);
-            float incl = 25.0F + 30.0F * k, node = k * 110.0F;
-            float ang = t * speed * spin + k * 2.0F;
+            // deutlich verschiedene Bahnen (Radius, Neigung, Richtung) und zeitlich versetztes Aufleuchten
+            float orbit = reach * (0.58F + 0.17F * k);
+            float speed = (k == 1 ? -0.011F : 0.013F) / (1.0F + 0.6F * k);
+            float incl = 20.0F + 35.0F * k, node = k * 125.0F;
+            float ang = t * speed * spin + k * 2.1F;
+            float vis = 0.35F + 0.65F * (0.5F + 0.5F * Mth.sin(t * 0.017F + k * 2.1F));
             float[] p = RenderUtil.orbitPoint(orbit, ang, incl, node);
             float[] c = k == 0 ? GOLD : k == 1 ? CYAN : ROSE;
-            RenderUtil.glowSphere(vc, new Matrix4f(m).translate(p[0], p[1], p[2]), 0.12F, 8, 12, c, 0.5F * energy);
-            cube(vc, m, p[0], p[1], p[2], 0.05F, 1.0F, 1.0F, 1.0F, energy);
+            RenderUtil.glowSphere(vc, new Matrix4f(m).translate(p[0], p[1], p[2]), 0.1F, 8, 12, c, 0.45F * energy * vis);
+            cube(vc, m, p[0], p[1], p[2], 0.045F, 1.0F, 1.0F, 1.0F, energy * vis);
             float[] prev = p;
-            for (int s = 1; s <= 14; s++) {
-                float[] q = RenderUtil.orbitPoint(orbit, ang - s * 0.05F, incl, node);
-                float a = energy * (1.0F - s / 15.0F) * 0.6F;
+            for (int s = 1; s <= 9; s++) {
+                float[] q = RenderUtil.orbitPoint(orbit, ang - Math.signum(speed) * s * 0.05F, incl, node);
+                float a = energy * vis * (1.0F - s / 10.0F) * 0.5F;
                 segment(vc, m, prev[0], prev[1], prev[2], q[0], q[1], q[2], 0.025F * (1.0F - s / 16.0F), c[0], c[1], c[2], a, a);
                 prev = q;
             }
         }
 
         // Krone: zwei senkrechte Lichtringe um den Horizont
-        ring(pose, vc, rh * 2.2F, 0.012F, t * 0.6F * spin, 90.0F, 0.0F, t, GOLD, 0.7F * energy);
-        ring(pose, vc, rh * 2.35F, 0.01F, -t * 0.45F * spin, 90.0F, 90.0F, t + 40.0F, GOLD, 0.55F * energy);
+        // Krone: ein einzelner senkrechter Ring dicht am Horizont (innerhalb der Scheibe, ueber den anderen Effekten)
+        ring(pose, vc, rh * 1.3F, 0.01F, t * 0.6F * spin, 90.0F, 0.0F, t, GOLD, 0.6F * energy);
     }
 }

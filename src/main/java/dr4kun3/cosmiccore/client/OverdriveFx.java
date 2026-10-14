@@ -33,7 +33,7 @@ public final class OverdriveFx {
 
         // Korona: feine Entladungen am Horizont, dichter mit jeder Stufe
         int seed = (int) (t * 0.35F);
-        int arcs = 2 + od * 2;
+        int arcs = 2 + od;
         for (int k = 0; k < arcs; k++) {
             float a0 = hash(seed * 13 + k) * Mth.PI;
             float r0 = rh * 1.12F;
@@ -53,8 +53,9 @@ public final class OverdriveFx {
             int spikes = 8;
             for (int k = 0; k < spikes; k++) {
                 float ang = k * Mth.TWO_PI / spikes + t * 0.002F;
-                float len = rh * (2.4F + 0.5F * od + 0.4F * Mth.sin(t * 0.04F + k));
-                float w = rh * 0.06F;
+                // kuerzer und schmaler, jede Spitze mit eigener Phase - nicht alle gleichzeitig lang
+                float len = rh * (1.7F + 0.25F * od + 0.35F * Mth.sin(t * 0.04F + k * 1.7F));
+                float w = rh * 0.04F;
                 float ca = Mth.cos(ang), sa = Mth.sin(ang);
                 quadFade(vc, m, ca * rh - sa * w, sa * rh + ca * w, 0, ca * rh + sa * w, sa * rh - ca * w, 0,
                         ca * len, sa * len, 0, ca * len, sa * len, 0, warm[0], warm[1], warm[2], 0.35F * energy, 0.0F);
@@ -65,7 +66,7 @@ public final class OverdriveFx {
         if (od >= 3) {
             for (int s = 0; s < 64; s++) {
                 float a0 = Mth.TWO_PI * s / 64, a1 = Mth.TWO_PI * (s + 1) / 64;
-                annulusXY(vc, m, rh * 1.15F, rh * (1.8F + 0.4F * breath), a0, a1, cool, 0.35F * energy, 0.0F);
+                annulusXY(vc, m, rh * 1.15F, rh * (1.45F + 0.2F * breath), a0, a1, cool, 0.3F * energy, 0.0F);
             }
         }
         pose.popPose();
