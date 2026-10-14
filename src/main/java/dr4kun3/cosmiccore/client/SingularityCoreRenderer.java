@@ -53,7 +53,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             {{0.9F, 0.97F, 1.0F}, {0.3F, 0.65F, 1.0F}, {0.25F, 0.2F, 1.0F}, {0.5F, 0.9F, 1.0F}},      // Ueberladung
             {{1.0F, 0.95F, 0.7F}, {1.0F, 0.72F, 0.15F}, {1.0F, 0.2F, 0.75F}, {1.0F, 0.85F, 0.4F}},    // Supernova
             {{1.0F, 1.0F, 1.0F}, {0.85F, 0.55F, 1.0F}, {0.5F, 0.25F, 1.0F}, {0.9F, 0.75F, 1.0F}},     // Quasar
-            {{1.0F, 1.0F, 0.95F}, {1.0F, 0.82F, 0.3F}, {0.3F, 1.0F, 0.9F}, {1.0F, 0.95F, 0.65F}}};   // Ultimate-Modus
+            {{0.95F, 0.85F, 0.55F}, {0.85F, 0.5F, 0.08F}, {0.05F, 0.55F, 0.6F}, {0.85F, 0.7F, 0.3F}}}; // Ultimate-Modus (satt, nicht weiss)
     // pro Frame gesetzt (Rendering laeuft nur im Render-Thread)
     private static float[] pHot = HOT, pWarm = WARM, pCool = COOL, pJet = JET;
     private static final float[] CRITICAL = {1.0F, 0.1F, 0.1F};
@@ -164,7 +164,9 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         double dx = cam.x - center.x, dy = cam.y - center.y, dz = cam.z - center.z;
         float camYaw = (float) Math.atan2(dx, dz);
         float camPitch = (float) Math.atan2(dy, Math.sqrt(dx * dx + dz * dz));
-        float e = energy * coreFade;
+        // die Overdrive-Effekte addieren viel Licht - je Stufe gedaempft, damit Details erkennbar bleiben
+        float odDim = od >= 4 ? 0.55F : od == 3 ? 0.7F : od == 2 ? 0.82F : od == 1 ? 0.92F : 1.0F;
+        float e = energy * coreFade * odDim;
 
         float tilt = 8.0F + (heat > 0.5F ? (heat - 0.5F) * 18.0F * Mth.sin(t * 0.21F) : 0.0F);
         pose.pushPose();
@@ -193,7 +195,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             pose.pushPose();
             pose.mulPose(Axis.XP.rotationDegrees(-62.0F));
             pose.mulPose(Axis.YP.rotationDegrees(-t * 0.45F));
-            accretionDisk(pose.last().pose(), glow, inner * 1.2F, outer * 0.7F, t, spin * 1.6F, e * 0.3F, heat, camYaw, 0, 0);
+            accretionDisk(pose.last().pose(), glow, inner * 1.2F, outer * 0.7F, t, spin * 1.6F, e * 0.22F, heat, camYaw, 0, 0);
             pose.popPose();
         }
         OverdriveFx.render(pose, glow, od, rh, t, e, camYaw, camPitch, pal);
@@ -201,7 +203,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         tendrils(pose.last().pose(), glow, reach, inner, t, e, heat, active);
         lensing(pose, glow, rh, inner, t, e, heat, camYaw, camPitch, beat);
         if (active) jets(pose.last().pose(), glow, rh, reach, t, e, heat, growth + 0.25F * od);
-        if (be.getStructureSize() >= 11) UltimateFx.render(pose, glow, rh, inner, outer, reach, t, spin, e, tilt);
+        if (be.getStructureSize() >= 11) UltimateFx.render(pose, glow, rh, inner, outer, reach, t, spin, e * (od >= 3 ? 0.75F : 1.0F), tilt);
         FieldFx.render(pose.last().pose(), glow, reach + 0.5F, reach, t, e, heat, be.getShield(), unstable, od);
         pose.popPose(); // Zittern
 
@@ -223,7 +225,31 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                     laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy),
                     be.getDeliverPhase(partialTick), be.getDeliverSource() != null ? be.getDeliverSource() : be.lastLaserTarget, be.hasFunnel() ? half + 1.35F : half + 0.6F, be.getDeliverSize());
         }
+        // 5) zuletzt: Rueckwand der Kammerkugel als reiner Tiefen-Abschluss - Wolken und Regen dahinter verschwinden,
+        //    alles im Inneren (auch spaeter gezeichnete Effekte) liegt davor und bleibt sichtbar
+        if (form > 0.0F) depthBackSphere(buffers.getBuffer(CosmicRenderTypes.depthBack()), pose.last().pose(), half + 0.2F);
         pose.popPose();
+    }
+
+    /** Kugel nur aus nach innen gewandten Flaechen (mit Culling sieht man von aussen genau die Rueckseite). */
+    private static void depthBackSphere(VertexConsumer vc, Matrix4f m, float r) {
+        final int lat = 16, lon = 24;
+        for (int i = 0; i < lat; i++) {
+            float p0 = (float) (Math.PI * i / lat - Math.PI / 2), p1 = (float) (Math.PI * (i + 1) / lat - Math.PI / 2);
+            for (int j = 0; j < lon; j++) {
+                float l0 = Mth.TWO_PI * j / lon, l1 = Mth.TWO_PI * (j + 1) / lon;
+                // Reihenfolge a, d, c, b = Vorderseite zeigt nach innen
+                sphereVertex(vc, m, r, p0, l0);
+                sphereVertex(vc, m, r, p0, l1);
+                sphereVertex(vc, m, r, p1, l1);
+                sphereVertex(vc, m, r, p1, l0);
+            }
+        }
+    }
+
+    private static void sphereVertex(VertexConsumer vc, Matrix4f m, float r, float phi, float lam) {
+        float c = Mth.cos(phi);
+        vc.addVertex(m, r * c * Mth.cos(lam), r * Mth.sin(phi), r * c * Mth.sin(lam));
     }
 
     private static float[] diskColor(float f, float heat) {

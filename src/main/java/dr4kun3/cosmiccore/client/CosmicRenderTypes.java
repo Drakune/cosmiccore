@@ -28,4 +28,20 @@ public final class CosmicRenderTypes {
     public static RenderType glow() {
         return GLOW;
     }
+
+    /**
+     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten (Culling). Die leuchtenden Effekte schreiben
+     * keine Tiefe - ohne diesen Abschluss wuerden spaeter gezeichnete Wolken/Regen hinter der Kammer davor erscheinen.
+     */
+    private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", DefaultVertexFormat.POSITION,
+            VertexFormat.Mode.QUADS, 1536, false, false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RenderStateShard.POSITION_SHADER)
+                    .setWriteMaskState(RenderStateShard.DEPTH_WRITE)
+                    .setCullState(RenderStateShard.CULL)
+                    .createCompositeState(false));
+
+    public static RenderType depthBack() {
+        return DEPTH_BACK;
+    }
 }

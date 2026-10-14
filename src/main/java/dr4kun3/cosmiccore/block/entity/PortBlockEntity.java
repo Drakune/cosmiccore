@@ -47,7 +47,29 @@ public abstract class PortBlockEntity extends BlockEntity {
         if (!Objects.equals(controllerPos, pos)) {
             controllerPos = pos;
             setChanged();
+            // der Client braucht den Controller fuer das Timing der Einblend-Animation
+            if (level != null && !level.isClientSide) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+            }
         }
+    }
+
+    /** Client: Position des Controllers, zu dem der Port gehoert (oder null). */
+    @Nullable
+    public BlockPos getControllerPos() {
+        return controllerPos;
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        if (controllerPos != null) tag.putLong("controller", controllerPos.asLong());
+        return tag;
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
 
     /** Oeffentlicher Zugriff auf den angeschlossenen Controller (nur bei gebildeter Struktur). */

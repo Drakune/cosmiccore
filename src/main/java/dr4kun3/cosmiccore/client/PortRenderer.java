@@ -7,7 +7,10 @@ import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.ModProperties;
+import dr4kun3.cosmiccore.block.ControllerBlock;
+import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
 import dr4kun3.cosmiccore.block.entity.PortBlockEntity;
+import net.minecraft.core.BlockPos;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -37,6 +40,24 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
                 + phase.getSerializedName()));
     }
 
+    /** Materialisieren 0..1 aus dem Kern des zugehoerigen Reaktors; unbekannt = eigener Zeitpunkt des Formens. */
+    private static float settle(PortBlockEntity be, Level level, float partialTick) {
+        // eigener Zeitpunkt (Zustandswechsel am Port) - faengt Pakete ab, die einen Tick versetzt ankommen
+        float own = 1.0F;
+        if (be.clientAppear != Long.MIN_VALUE) {
+            own = (level.getGameTime() - be.clientAppear + partialTick - SingularityCoreBlockEntity.FORM_TICKS)
+                    / (float) SingularityCoreBlockEntity.SETTLE_TICKS;
+        }
+        float core = 1.0F;
+        BlockPos cpos = be.getControllerPos();
+        if (cpos != null && level.getBlockEntity(cpos) instanceof ControllerBlockEntity c && c.getSize() != null
+                && level.getBlockState(cpos).hasProperty(ControllerBlock.FACING)) {
+            BlockPos center = c.getSize().pattern().center(cpos, level.getBlockState(cpos).getValue(ControllerBlock.FACING));
+            if (level.getBlockEntity(center) instanceof SingularityCoreBlockEntity sc) core = sc.getSettle(partialTick);
+        }
+        return Math.min(1.0F, Math.max(0.0F, Math.min(own, core)));
+    }
+
     @Override
     public void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         Level level = be.getLevel();
@@ -45,13 +66,8 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         if (!state.hasProperty(ModProperties.PHASE)) return;
         CorePhase phase = state.getValue(ModProperties.PHASE);
         if (phase == CorePhase.DORMANT) return;
-        long now = level.getGameTime();
-        // Zeitpunkt des Formens setzt der Port selbst beim Zustandswechsel; ohne Wechsel (geladen) = schon fertig
-        if (be.clientAppear == Long.MIN_VALUE) be.clientAppear = now - 100_000L;
-        // die Dose erscheint erst, wenn das Einsaugen und Entstehen der Kammer vorbei ist
-        float st = (now - be.clientAppear + partialTick - SingularityCoreBlockEntity.FORM_TICKS)
-                / (float) SingularityCoreBlockEntity.SETTLE_TICKS;
-        st = Math.min(1.0F, Math.max(0.0F, st));
+        // dasselbe Timing wie die Konsole: der Kern kennt den Start der Verwandlung
+        float st = settle(be, level, partialTick);
         if (st <= 0.0F) return;
 
         boolean energy = state.is(ModBlocks.ENERGY_PORT.get());

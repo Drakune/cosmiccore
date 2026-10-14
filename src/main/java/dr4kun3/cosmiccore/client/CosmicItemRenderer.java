@@ -21,8 +21,8 @@ import org.joml.Matrix4f;
  * <ul>
  *   <li>Sternenstaub: kleine schwebende Sternenfeld-Kristalle, die umeinander kreisen, mit Funkeln.</li>
  *   <li>Overdrive-Partikel: gleissender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold und Violett.</li>
- *   <li>Quasar-Overdrive-Partikel: ein Overdrive-Partikel in der Mitte, umkreist von vier Mini-Quasaren, verbunden
- *       durch goldene Energiebruecken - alles in einer goldenen Krone.</li>
+ *   <li>Quasar-Overdrive-Partikel: Sternkristall mit goldenen Kanten ueber einer Spiralgalaxie, Polarjets und eine
+ *       goldene Druckwelle.</li>
  *   <li>Verdichteter Sternenstaub: dichter Sternenfeld-Kristall, um den sich Pressringe zusammenziehen, waehrend
  *       Staubkoernchen spiralfoermig hineingezogen werden.</li>
  *   <li>Neutronenstern-Fragment: winziger Pulsar - rasend schnell drehend, mit Leuchtturm-Strahlen und Magnetfeldboegen.</li>
@@ -224,39 +224,67 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     // ------------------------------------------------------------------ Quasar-Overdrive-Partikel
 
-    private static final float TILT_SIN = Mth.sin(20.0F * Mth.DEG_TO_RAD), TILT_COS = Mth.cos(20.0F * Mth.DEG_TO_RAD);
+    private static final float[] DEEP_GOLD = {1.0F, 0.62F, 0.12F};
 
+    /**
+     * Quasar-Overdrive-Partikel - eigene Gestalt: ein Sternkristall (zwei verdrehte Sternenfeld-Doppelpyramiden) mit
+     * goldenen Kanten ueber einer kleinen Spiralgalaxie, schmale Polarjets mit wandernden Knoten und eine goldene
+     * Druckwelle, die in ruhigem Takt nach aussen laeuft.
+     */
     private static void renderQuasarParticle(PoseStack pose, MultiBufferSource buffers, float t) {
-        // Mitte: verkleinertes Overdrive-Partikel
-        pose.pushPose();
-        pose.scale(0.62F, 0.62F, 0.62F);
-        renderParticle(pose, buffers, t);
-        pose.popPose();
-        // vier Mini-Quasare auf einer geneigten Bahn
-        float[][] pos = new float[4][];
-        for (int i = 0; i < 4; i++) {
-            float a = t * 0.04F + i * Mth.HALF_PI;
-            // Bahn um 20 Grad gekippt (passt genau zum Ring darunter)
-            pos[i] = new float[]{Mth.cos(a) * 0.36F, Mth.sin(a) * 0.36F * TILT_SIN, Mth.sin(a) * 0.36F * TILT_COS};
+        float pulse = 0.5F + 0.5F * Mth.sin(t * 0.1F);
+        // Sternkristall aus Sternenfeld
+        VertexConsumer gateway = buffers.getBuffer(RenderType.endGateway());
+        for (int k = 0; k < 2; k++) {
             pose.pushPose();
-            pose.translate(pos[i][0], pos[i][1], pos[i][2]);
-            pose.scale(0.28F, 0.28F, 0.28F);
-            renderQuasar(pose, buffers, t + i * 20.0F);
+            pose.mulPose(Axis.YP.rotationDegrees(t * (k == 0 ? 1.4F : -1.0F) + k * 45.0F));
+            pose.mulPose(Axis.XP.rotationDegrees(k * 90.0F));
+            RenderUtil.starOctahedron(gateway, pose.last().pose(), 0.11F, 0.2F);
             pose.popPose();
         }
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
-        Matrix4f m = pose.last().pose();
-        float pulse = 0.5F + 0.5F * Mth.sin(t * 0.15F);
-        // goldene Energiebruecken von jedem Quasar zur Mitte, mit Lichtpunkten, die hineinlaufen
-        for (int i = 0; i < 4; i++) {
-            float[] p = pos[i];
-            RenderUtil.segment(glow, m, p[0], p[1], p[2], 0, 0, 0, 0.012F, GOLD[0], GOLD[1], GOLD[2], 0.8F, 0.3F);
-            float s = Mth.frac(t * 0.05F + i * 0.25F);
-            cube(glow, m, p[0] * (1.0F - s), p[1] * (1.0F - s), p[2] * (1.0F - s), 0.014F, 1.0F, 1.0F, 1.0F, Mth.sin(s * Mth.PI));
+        for (int k = 0; k < 2; k++) {
+            pose.pushPose();
+            pose.mulPose(Axis.YP.rotationDegrees(t * (k == 0 ? 1.4F : -1.0F) + k * 45.0F));
+            pose.mulPose(Axis.XP.rotationDegrees(k * 90.0F));
+            RenderUtil.octahedron(glow, pose.last().pose(), 0.115F, 0.21F, 0.006F, k == 0 ? GOLD : WHITE, 0.85F);
+            pose.popPose();
         }
-        // goldene Krone: Bahnring und aeusserer Schimmer
-        ring(pose, glow, 0.36F, 0.008F, t * 2.0F, -20.0F, 0.0F, t, GOLD, 0.6F + 0.3F * pulse);
-        RenderUtil.glowSphere(glow, m, 0.46F, 8, 12, GOLD, 0.05F + 0.05F * pulse);
+        Matrix4f m = pose.last().pose();
+        RenderUtil.glowSphere(glow, m, 0.09F + 0.02F * pulse, 8, 12, WHITE, 0.35F + 0.2F * pulse);
+        RenderUtil.glowSphere(glow, m, 0.2F, 8, 12, DEEP_GOLD, 0.12F);
+
+        // Spiralgalaxie: zwei Arme aus Lichtpunkten, leicht gekippt, langsam drehend
+        pose.pushPose();
+        pose.translate(0.0F, -0.04F, 0.0F);
+        pose.mulPose(Axis.XP.rotationDegrees(18.0F));
+        pose.mulPose(Axis.YP.rotationDegrees(t * 0.9F));
+        Matrix4f gm = pose.last().pose();
+        for (int arm = 0; arm < 2; arm++) {
+            for (int i = 0; i < 22; i++) {
+                float f = i / 22.0F;
+                float r = 0.13F + 0.3F * f;
+                float a = arm * Mth.PI + f * 4.2F;
+                float[] c = RenderUtil.lerp(GOLD, VIOLET, f);
+                float tw = 0.55F + 0.45F * Mth.sin(t * 0.2F + i * 1.3F + arm);
+                cube(glow, gm, Mth.cos(a) * r, 0.0F, Mth.sin(a) * r, 0.012F * (1.0F - 0.5F * f), c[0], c[1], c[2], tw * (1.0F - 0.5F * f));
+            }
+        }
+        RenderUtil.flatCircle(glow, gm, 0.44F, 0.004F, 48, VIOLET, 0.35F);
+        pose.popPose();
+
+        // Polarjets mit Knoten
+        for (int dir = -1; dir <= 1; dir += 2) {
+            RenderUtil.segment(glow, m, 0, 0.18F * dir, 0, 0, 0.5F * dir, 0, 0.018F, CYAN[0], CYAN[1], CYAN[2], 0.6F, 0.0F);
+            for (int k = 0; k < 2; k++) {
+                float s = Mth.frac(t * 0.035F + k * 0.5F);
+                cube(glow, m, 0, (0.2F + 0.3F * s) * dir, 0, 0.018F * (1.0F - s) + 0.006F, 1.0F, 0.9F, 0.6F, 1.0F - s);
+            }
+        }
+
+        // ruhige goldene Druckwelle
+        float wave = Mth.frac(t * 0.012F);
+        RenderUtil.flatCircle(glow, new Matrix4f(m).rotateX(0.31F), 0.12F + 0.38F * wave, 0.01F, 48, DEEP_GOLD, 0.8F * (1.0F - wave));
     }
 
     // ------------------------------------------------------------------ Quasar
