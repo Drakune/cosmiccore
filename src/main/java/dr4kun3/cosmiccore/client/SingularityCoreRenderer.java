@@ -238,9 +238,17 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
         // Strahl des Void-Titanen: nach dem Erwachen dauerhaft aus dem Riss am Himmel in den Kern
         // (waehrend der Cutscene zeichnet diese ihn selbst, bis er einschlaegt)
-        if (be.isAwakened() && active && !TitanCutscene.hidesPermanentBeam(be.getBlockPos())) {
-            TitanBeam.beam(pose.last().pose(), glow, TitanBeam.RIFT, new org.joml.Vector3f(0, 0, 0), t, 1.0F, 0.75F * Math.max(0.5F, energy));
-            TitanBeam.rift(pose.last().pose(), glow, TitanBeam.RIFT, t, 0.35F, new org.joml.Vector3f((float) dx, (float) dy, (float) dz));
+        if (be.isAwakened() && !TitanCutscene.hidesPermanentBeam(be.getBlockPos())) {
+            // seit dem Erwachen: Planet am Himmel und sein Strahl senkrecht von oben in den Trichter
+            org.joml.Vector3f camRel = new org.joml.Vector3f((float) dx, (float) dy, (float) dz);
+            float mouthY = be.hasFunnel() ? half + 1.35F : half + 0.6F;
+            float ps = TitanBeam.skyScale(TitanBeam.PLANET, camRel);
+            TitanBeam.planet(buffers, TitanBeam.skyFrame(pose.last().pose(), camRel, ps), t, 0.0F, 0.8F);
+            glow = buffers.getBuffer(CosmicRenderTypes.glow());
+            org.joml.Vector3f from = TitanBeam.skyPoint(TitanBeam.ORB, camRel, TitanBeam.skyScale(TitanBeam.ORB, camRel));
+            float bi = active ? 0.8F : 0.45F;
+            TitanBeam.beam(pose.last().pose(), glow, from, new org.joml.Vector3f(0, mouthY, 0), t, 1.0F, bi);
+            TitanBeam.inlet(pose.last().pose(), glow, mouthY, t, bi);
         }
         // 5) zuletzt: Rueckwand der Kammerkugel als reiner Tiefen-Abschluss - Wolken und Regen dahinter verschwinden,
         //    alles im Inneren (auch spaeter gezeichnete Effekte) liegt davor und bleibt sichtbar

@@ -34,12 +34,12 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Kurzfilm zum Erwachen des ultimativen Kerns: Ueber dem Reaktor oeffnet sich ein Riss, ein gewaltiger Void-Titan
- * steigt daraus empor, sammelt die Energie des Kosmos und schiesst sie auf die Erde - seither faellt sein Strahl
- * dauerhaft in den Kern.
+ * Kurzfilm beim ersten Ultimate-Modus: Hoch ueber dem Reaktor kreist ein ferner Planet. Seine Kruste bricht auf, ein
+ * gewaltiger Void-Titan steigt kopfueber daraus hervor, bruellt, sammelt die Energie des Kosmos ueber seinem Kopf und
+ * schleudert sie hinab zur Erde - seither faellt sein Strahl dauerhaft senkrecht in den Sternentrichter.
  * <p>
- * Den Titanen zeichnet GeckoLib (optional). Ist GeckoLib nicht installiert, gibt es keine Cutscene - der Strahl kommt
- * trotzdem. Die Kamera fuehrt ein clientseitiges Marker-Objekt, Spieler und Welt laufen normal weiter.
+ * Den Titanen zeichnet GeckoLib (optional). Fehlt es, gibt es keine Cutscene - Planet und Strahl kommen trotzdem.
+ * Die Kamera fuehrt ein clientseitiges Marker-Objekt, Spieler und Welt laufen normal weiter.
  */
 @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
 public final class TitanCutscene {
@@ -53,10 +53,12 @@ public final class TitanCutscene {
     }
 
     // Drehbuch (Ticks)
-    private static final int RIFT_OPEN = 45, TITAN_START = 90, CHARGE_SHOT = 170, FIRE = 240, IMPACT = 250, AFTER = 262;
-    private static final int TITAN_END = TITAN_START + 240, LENGTH = 380;
-    /** Massstab des Titanen (Modell ~4 Bloecke -> ~54 Bloecke gross). */
-    public static final float TITAN_SCALE = 13.0F;
+    private static final int ASCENT = 50, EMERGE = 110, ROAR = 200, CHARGE = 230, FIRE = 290, ARRIVE = 310, IMPACT = 320,
+            AFTER = 335, LENGTH = 420;
+    /** Der Titan erscheint mit EMERGE (seine Animation beginnt dort bei 0). */
+    private static final int TITAN_START = EMERGE, TITAN_END = EMERGE + 280;
+    /** Massstab fuer den GeckoLib-Renderer. */
+    public static final float TITAN_SCALE = TitanBeam.TITAN_SCALE;
     private static final float[] VOID = {0.55F, 0.25F, 1.0F};
     private static final float[] CYAN = {0.45F, 0.95F, 1.0F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
@@ -109,24 +111,16 @@ public final class TitanCutscene {
 
     // ------------------------------------------------------------------ Geometrie (relativ zur Kernmitte)
 
-    private static Vector3f titanFeet() {
-        return new Vector3f(TitanBeam.RIFT).add(0.0F, -30.0F, 0.0F);
+    /** Kopf des Titanen (kopfueber unter dem Planeten). */
+    private static Vector3f head() {
+        return new Vector3f(TitanBeam.TITAN_FEET).sub(0.0F, 70.0F / 16.0F * TITAN_SCALE, 0.0F);
     }
 
-    /** Drehung des Titanen, damit er zum Kern blickt (Modellvorderseite = -Z). */
-    private static float titanYaw() {
-        Vector3f f = titanFeet();
-        return (float) Math.atan2(f.x, f.z);
-    }
-
-    private static Vector3f titanCenter() {
-        return titanFeet().add(0.0F, 27.0F, 0.0F);
-    }
-
-    /** Energiekugel zwischen den Haenden (Knochen "orb" im Modell). */
-    private static Vector3f orb() {
-        Vector3f local = new Vector3f(0.0F, 30.0F / 16.0F * TITAN_SCALE, -16.0F / 16.0F * TITAN_SCALE).rotateY(titanYaw());
-        return titanFeet().add(local);
+    private static float mouthY() {
+        Minecraft mc = Minecraft.getInstance();
+        boolean funnel = mc.level != null && mc.level.getBlockEntity(core)
+                instanceof dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity sc && sc.hasFunnel();
+        return funnel ? 6.35F : 5.6F; // ultimativ: halbe Kantenlaenge 5
     }
 
     private static float ease(float x) {
@@ -142,44 +136,52 @@ public final class TitanCutscene {
 
     private static void placeCamera(float t) {
         Vector3f pos, look;
-        if (t < RIFT_OPEN) {
-            // A: weite Fahrt um den erwachenden Kern
-            float a = 0.6F + t * 0.012F;
-            pos = new Vector3f(Mth.cos(a) * 30.0F, 20.0F - t * 0.08F, Mth.sin(a) * 30.0F);
-            look = new Vector3f(0, 0, 0);
-        } else if (t < TITAN_START) {
-            // B: am Reaktor, der Blick wandert hinauf zum Riss
-            float f = ease(span(t, RIFT_OPEN, TITAN_START - 10));
-            pos = new Vector3f(-12.0F, 5.0F, 16.0F);
-            look = new Vector3f(0, 4, 0).lerp(TitanBeam.RIFT, f);
-        } else if (t < CHARGE_SHOT) {
-            // C: der Titan steigt empor - langsame Fahrt auf ihn zu, leicht von unten
-            float f = ease(span(t, TITAN_START, CHARGE_SHOT));
-            Vector3f from = new Vector3f(-16.0F, 10.0F, 22.0F);
-            Vector3f to = new Vector3f(titanCenter()).mul(0.45F).add(-24.0F, -10.0F, 12.0F);
-            pos = from.lerp(to, f);
-            look = titanCenter();
+        Vector3f planetLow = new Vector3f(TitanBeam.PLANET).sub(0, TitanBeam.PLANET_R, 0);
+        if (t < ASCENT) {
+            // A: am Reaktor, der Blick wandert senkrecht hinauf - dort oben kreist ein ferner Planet
+            float f = ease(span(t, 0, ASCENT - 5));
+            pos = new Vector3f(10.0F, 6.0F, 14.0F);
+            look = new Vector3f(0, 6, 0).lerp(TitanBeam.PLANET, f);
+        } else if (t < EMERGE) {
+            // B: Aufstieg durch die Wolken zum Planeten
+            float f = ease(span(t, ASCENT, EMERGE));
+            pos = new Vector3f(10.0F, 6.0F, 14.0F).lerp(new Vector3f(60.0F, 520.0F, 110.0F), f);
+            look = new Vector3f(TitanBeam.PLANET);
+        } else if (t < ROAR) {
+            // C: die Kruste bricht auf, der Titan steigt kopfueber aus dem Planeten
+            float f = ease(span(t, EMERGE, ROAR));
+            pos = new Vector3f(60.0F, 520.0F, 110.0F).lerp(new Vector3f(36.0F, 560.0F, 70.0F), f);
+            look = new Vector3f(planetLow).lerp(head(), f);
+        } else if (t < CHARGE) {
+            // D: Nahaufnahme - der Titan bruellt
+            float f = ease(span(t, ROAR, CHARGE));
+            pos = new Vector3f(head()).add(10.0F - 4.0F * f, -10.0F, 30.0F - 8.0F * f);
+            look = head();
         } else if (t < FIRE) {
-            // D: Nahaufnahme - die Kugel laedt sich zwischen den Haenden auf
-            float f = ease(span(t, CHARGE_SHOT, FIRE));
-            Vector3f toCore = new Vector3f(titanCenter()).negate().normalize();
-            Vector3f side = new Vector3f(toCore).cross(0, 1, 0).normalize();
-            pos = new Vector3f(orb()).add(new Vector3f(toCore).mul(30.0F - 8.0F * f)).add(side.mul(14.0F)).add(0, 4.0F, 0);
-            look = orb();
+            // E: die Energie sammelt sich ueber seinem Kopf (Richtung Erde)
+            float f = ease(span(t, CHARGE, FIRE));
+            pos = new Vector3f(TitanBeam.ORB).add(Mth.lerp(f, 40.0F, 28.0F), -24.0F, Mth.lerp(f, 55.0F, 40.0F));
+            look = new Vector3f(TitanBeam.ORB).lerp(head(), 0.3F);
+        } else if (t < ARRIVE) {
+            // F: der Schuss - am Strahl entlang hinab zur Erde
+            float f = ease(span(t, FIRE, ARRIVE));
+            pos = new Vector3f(TitanBeam.ORB).add(14.0F, -20.0F - 120.0F * f, 14.0F);
+            look = new Vector3f(0, 0, 0);
         } else if (t < AFTER) {
-            // E: am Kern - der Strahl kommt herab und schlaegt ein
-            pos = new Vector3f(9.0F, 5.0F, 11.0F);
-            look = new Vector3f(0, 0, 0).lerp(orb(), 0.5F * (1.0F - span(t, IMPACT - 4, IMPACT + 6)));
+            // G: am Reaktor - der Strahl schlaegt in den Trichter ein
+            pos = new Vector3f(11.0F, 8.0F, 15.0F);
+            look = new Vector3f(0, mouthY(), 0).lerp(new Vector3f(0, 80, 0), 1.0F - span(t, IMPACT - 6, IMPACT + 4));
         } else {
-            // F: Ausklang - die Kamera zieht sich zurueck, der Strahl bleibt
+            // H: Ausklang - weite Fahrt um den Reaktor, der Strahl bleibt
             float f = ease(span(t, AFTER, LENGTH));
-            float a = 2.2F + f * 0.6F;
-            float d = Mth.lerp(f, 22.0F, 48.0F);
-            pos = new Vector3f(Mth.cos(a) * d, Mth.lerp(f, 10.0F, 26.0F), Mth.sin(a) * d);
-            look = new Vector3f(TitanBeam.RIFT).mul(0.25F);
+            float a = 0.9F + f * 0.8F;
+            float d = Mth.lerp(f, 20.0F, 46.0F);
+            pos = new Vector3f(Mth.cos(a) * d, Mth.lerp(f, 8.0F, 24.0F), Mth.sin(a) * d);
+            look = new Vector3f(0, Mth.lerp(f, 4.0F, 30.0F), 0);
         }
         // Erschuetterung beim Einschlag
-        float shake = t > IMPACT && t < IMPACT + 18 ? (1.0F - (t - IMPACT) / 18.0F) * 0.6F : 0.0F;
+        float shake = t > IMPACT && t < IMPACT + 18 ? (1.0F - (t - IMPACT) / 18.0F) * 0.6F
+                : t > ROAR + 4 && t < ROAR + 26 ? 0.35F * (1.0F - (t - ROAR - 4) / 22.0F) : 0.0F;
         if (shake > 0) {
             pos.add(RenderUtil.hash((int) (t * 7)) * shake, RenderUtil.hash((int) (t * 7) + 3) * shake, RenderUtil.hash((int) (t * 7) + 5) * shake);
         }
@@ -220,12 +222,14 @@ public final class TitanCutscene {
             return;
         }
         if (tick == 2) sound(SoundEvents.WARDEN_HEARTBEAT, 0.6F, 1.0F);
-        if (tick == 24) sound(SoundEvents.WARDEN_HEARTBEAT, 0.55F, 1.0F);
-        if (tick == RIFT_OPEN + 5) sound(SoundEvents.END_PORTAL_SPAWN, 0.6F, 0.8F);
-        if (tick == TITAN_START) sound(SoundEvents.ENDER_DRAGON_GROWL, 0.45F, 0.9F);
-        if (tick == TITAN_START + 30) sound(SoundEvents.WITHER_SPAWN, 0.5F, 0.6F);
-        if (tick == CHARGE_SHOT) sound(SoundEvents.BEACON_ACTIVATE, 0.5F, 1.0F);
-        if (tick == CHARGE_SHOT + 30) sound(SoundEvents.RESPAWN_ANCHOR_CHARGE, 0.7F, 1.0F);
+        if (tick == 26) sound(SoundEvents.WARDEN_HEARTBEAT, 0.55F, 1.0F);
+        if (tick == ASCENT) sound(SoundEvents.ELYTRA_FLYING, 0.8F, 0.6F);
+        if (tick == EMERGE) sound(SoundEvents.END_PORTAL_SPAWN, 0.5F, 0.8F);
+        if (tick == EMERGE + 30) sound(SoundEvents.WITHER_SPAWN, 0.5F, 0.55F);
+        if (tick == ROAR + 4) sound(SoundEvents.ENDER_DRAGON_GROWL, 0.45F, 1.0F);
+        if (tick == ROAR + 6) sound(SoundEvents.RAVAGER_ROAR, 0.4F, 1.0F);
+        if (tick == CHARGE) sound(SoundEvents.BEACON_ACTIVATE, 0.5F, 1.0F);
+        if (tick == CHARGE + 30) sound(SoundEvents.RESPAWN_ANCHOR_CHARGE, 0.7F, 1.0F);
         if (tick == FIRE) sound(SoundEvents.WARDEN_SONIC_BOOM, 0.6F, 1.0F);
         if (tick == IMPACT) {
             sound(SoundEvents.GENERIC_EXPLODE.value(), 0.5F, 1.0F);
@@ -252,55 +256,61 @@ public final class TitanCutscene {
         pose.pushPose();
         pose.translate(core.getX() + 0.5 - cam.x, core.getY() + 0.5 - cam.y, core.getZ() + 0.5 - cam.z);
         Vector3f camRel = new Vector3f((float) (cam.x - core.getX() - 0.5), (float) (cam.y - core.getY() - 0.5), (float) (cam.z - core.getZ() - 0.5));
+        Matrix4f m = pose.last().pose();
+        // ferne Objekte maszstabsgetreu naeher an die Kamera (sonst hinter der Sichtweite abgeschnitten)
+        float ps = TitanBeam.skyScale(TitanBeam.PLANET, camRel);
+        Matrix4f sky = TitanBeam.skyFrame(m, camRel, ps);
 
-        // Titan (GeckoLib)
+        // Planet mit aufbrechender Kruste
+        float crack = span(t, EMERGE - 10, EMERGE + 30) * (1.0F - span(t, EMERGE + 100, EMERGE + 160));
+        TitanBeam.planet(buffers, sky, t, crack, 1.0F);
+        buffers.endBatch();
+
+        // Titan (GeckoLib): kopfueber an der Unterseite des Planeten
         if (t >= TITAN_START && t < TITAN_END && titanRenderer != null) {
-            Vector3f feet = titanFeet();
             pose.pushPose();
-            pose.translate(feet.x, feet.y, feet.z);
-            pose.mulPose(com.mojang.math.Axis.YP.rotation(titanYaw()));
+            pose.translate(camRel.x, camRel.y, camRel.z);
+            pose.scale(ps, ps, ps);
+            pose.translate(-camRel.x + TitanBeam.TITAN_FEET.x, -camRel.y + TitanBeam.TITAN_FEET.y, -camRel.z + TitanBeam.TITAN_FEET.z);
+            pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(180.0F));
             titanRenderer.render(pose, buffers, t - TITAN_START, partial);
             pose.popPose();
             buffers.endBatch();
         }
 
-        Matrix4f m = pose.last().pose();
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
-        // Riss: oeffnet sich, bleibt offen und schrumpft am Ende auf den dauerhaften Spalt
-        float open = t < RIFT_OPEN ? 0.0F : t < TITAN_START ? ease(span(t, RIFT_OPEN, TITAN_START)) : 1.0F - 0.65F * ease(span(t, 300, 340));
-        TitanBeam.rift(m, glow, TitanBeam.RIFT, t, open, camRel);
-        // Energiekugel zwischen den Haenden
-        float charge = span(t, TITAN_START + 96, FIRE);
+        // Energiekugel ueber seinem Kopf
+        float charge = span(t, CHARGE, FIRE);
         if (charge > 0 && t < FIRE + 6) {
-            Matrix4f om = new Matrix4f(m).translate(orb().x, orb().y, orb().z);
-            float r = 1.0F + 7.0F * charge * charge;
+            Matrix4f om = new Matrix4f(sky).translate(TitanBeam.ORB.x, TitanBeam.ORB.y, TitanBeam.ORB.z);
+            float r = 1.5F + 9.0F * charge * charge;
             float pulse = 0.85F + 0.15F * Mth.sin(t * 0.9F);
             RenderUtil.glowSphere(glow, om, r * pulse, 12, 16, WHITE, 0.45F);
             RenderUtil.glowSphere(glow, om, r * 1.6F, 12, 16, CYAN, 0.2F);
             RenderUtil.glowSphere(glow, om, r * 2.5F, 10, 14, VOID, 0.1F);
-            // Energie stroemt aus dem All in die Kugel
-            for (int k = 0; k < 18; k++) {
-                float s = Mth.frac(t * 0.025F + k / 18.0F);
+            for (int k = 0; k < 20; k++) { // Energie stroemt aus dem All in die Kugel
+                float s = Mth.frac(t * 0.025F + k / 20.0F);
                 Vector3f dir = new Vector3f(RenderUtil.hash(k * 7), RenderUtil.hash(k * 11), RenderUtil.hash(k * 13)).normalize();
-                Vector3f p = new Vector3f(dir).mul(40.0F * (1.0F - s));
-                Vector3f q = new Vector3f(dir).mul(40.0F * (1.0F - s) + 4.0F);
-                RenderUtil.segment(glow, om, q.x, q.y, q.z, p.x, p.y, p.z, 0.2F, CYAN[0], CYAN[1], CYAN[2], 0.0F, 0.8F * s);
+                Vector3f p = new Vector3f(dir).mul(50.0F * (1.0F - s));
+                Vector3f q = new Vector3f(dir).mul(50.0F * (1.0F - s) + 5.0F);
+                RenderUtil.segment(glow, om, q.x, q.y, q.z, p.x, p.y, p.z, 0.25F, CYAN[0], CYAN[1], CYAN[2], 0.0F, 0.8F * s);
             }
         }
-        // Schuss: von der Kugel in den Kern, danach dauerhaft aus dem Riss
+        // Schuss: senkrecht hinab in den Trichter - danach bleibt er
         if (t >= FIRE) {
             float reach = span(t, FIRE, IMPACT);
-            float fade = 1.0F - span(t, 300, 330);
-            TitanBeam.beam(m, glow, orb(), new Vector3f(0, 0, 0), t, reach, (1.6F - 0.85F * span(t, IMPACT, AFTER + 20)) * fade);
-            float handover = span(t, 300, 340);
-            TitanBeam.beam(m, glow, TitanBeam.RIFT, new Vector3f(0, 0, 0), t, 1.0F, 0.75F * handover);
+            Vector3f from = TitanBeam.skyPoint(TitanBeam.ORB, camRel, TitanBeam.skyScale(TitanBeam.ORB, camRel));
+            float glare = 1.6F - 0.8F * span(t, IMPACT, AFTER + 30);
+            TitanBeam.beam(m, glow, from, new Vector3f(0, mouthY(), 0), t, reach, glare);
+            if (t >= IMPACT) TitanBeam.inlet(m, glow, mouthY(), t, 0.8F);
         }
-        // Einschlag: Lichtblitz und Schockwellen am Kern
+        // Einschlag in den Trichter: Lichtblitz und Schockwellen
         if (t >= IMPACT && t < IMPACT + 40) {
             float f = (t - IMPACT) / 40.0F;
-            RenderUtil.glowSphere(glow, m, 2.0F + 14.0F * f, 14, 20, WHITE, 0.6F * (1.0F - f));
-            RenderUtil.flatCircle(glow, m, 3.0F + 30.0F * f, 0.4F, 96, CYAN, 1.0F - f);
-            RenderUtil.flatCircle(glow, new Matrix4f(m).rotateX(Mth.HALF_PI), 2.0F + 20.0F * f, 0.3F, 96, VOID, 1.0F - f);
+            Matrix4f im = new Matrix4f(m).translate(0, mouthY(), 0);
+            RenderUtil.glowSphere(glow, im, 2.0F + 12.0F * f, 14, 20, WHITE, 0.6F * (1.0F - f));
+            RenderUtil.flatCircle(glow, im, 3.0F + 30.0F * f, 0.4F, 96, CYAN, 1.0F - f);
+            RenderUtil.flatCircle(glow, new Matrix4f(im).rotateX(Mth.HALF_PI), 2.0F + 18.0F * f, 0.3F, 96, VOID, 1.0F - f);
         }
         buffers.endBatch(CosmicRenderTypes.glow());
         pose.popPose();
@@ -310,8 +320,8 @@ public final class TitanCutscene {
     @SubscribeEvent
     public static void onFog(ViewportEvent.RenderFog event) {
         if (!active) return;
-        event.setNearPlaneDistance(Math.max(event.getNearPlaneDistance(), 250.0F));
-        event.setFarPlaneDistance(Math.max(event.getFarPlaneDistance(), 500.0F));
+        event.setNearPlaneDistance(Math.max(event.getNearPlaneDistance(), 400.0F));
+        event.setFarPlaneDistance(Math.max(event.getFarPlaneDistance(), 900.0F));
         event.setCanceled(true);
     }
 
@@ -345,11 +355,11 @@ public final class TitanCutscene {
             g.fill(0, 0, w, h, (a << 24) | 0xFFFFFF);
         }
         // Untertitel
-        subtitle(g, mc, t, 6, RIFT_OPEN - 2, "cutscene.cosmiccore.line1", w, h, bh);
-        subtitle(g, mc, t, RIFT_OPEN + 4, TITAN_START + 4, "cutscene.cosmiccore.line2", w, h, bh);
-        subtitle(g, mc, t, TITAN_START + 30, CHARGE_SHOT, "cutscene.cosmiccore.line3", w, h, bh);
-        subtitle(g, mc, t, CHARGE_SHOT + 10, FIRE - 4, "cutscene.cosmiccore.line4", w, h, bh);
-        subtitle(g, mc, t, AFTER + 18, LENGTH - 14, "cutscene.cosmiccore.line5", w, h, bh);
+        subtitle(g, mc, t, 6, ASCENT - 2, "cutscene.cosmiccore.line1", w, h, bh);
+        subtitle(g, mc, t, ASCENT + 4, EMERGE + 4, "cutscene.cosmiccore.line2", w, h, bh);
+        subtitle(g, mc, t, EMERGE + 40, ROAR, "cutscene.cosmiccore.line3", w, h, bh);
+        subtitle(g, mc, t, CHARGE + 6, FIRE - 4, "cutscene.cosmiccore.line4", w, h, bh);
+        subtitle(g, mc, t, AFTER + 16, LENGTH - 14, "cutscene.cosmiccore.line5", w, h, bh);
         // Hinweis zum Ueberspringen
         Component skip = Component.translatable("cutscene.cosmiccore.skip");
         g.drawString(mc.font, skip, w - mc.font.width(skip) - 6, Math.max(4, bh / 2 - 4), 0x80B8A8D8, false);

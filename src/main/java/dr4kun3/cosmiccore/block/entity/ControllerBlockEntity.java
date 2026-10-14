@@ -372,6 +372,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         return false;
                     }
                     overdrive++;
+                    // beim ersten Ultimate-Modus erwacht der Void-Titan auf seinem fernen Planeten (Cutscene)
+                    if (!awakened) awaken(sl);
                     Vec3 c = Vec3.atCenterOf(center(sl));
                     sl.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 3.0F, 0.5F);
                     sl.playSound(null, c.x, c.y, c.z, SoundEvents.ENDER_DRAGON_GROWL, SoundSource.BLOCKS, 1.5F, 1.4F);
@@ -631,7 +633,6 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             phase = target;
             applyPhase(level);
             setChanged();
-            if (size.isUltimate() && !awakened && phase == CorePhase.ACTIVE) awaken(level);
         }
 
         // Atmosphaere
