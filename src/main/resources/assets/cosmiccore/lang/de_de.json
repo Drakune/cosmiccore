@@ -183,5 +183,7 @@
   "gui.cosmiccore.info_overdrive": "Overdrive",
   "gui.cosmiccore.info_unlock": "Je Stufe",
   "gui.cosmiccore.info_unlock_tip": "Wird je neuer Leistungsstufe einmalig verbraucht",
-  "gui.cosmiccore.controls": "Steuerung"
+  "gui.cosmiccore.controls": "Steuerung",
+  "gui.cosmiccore.size_head": "Größe",
+  "gui.cosmiccore.options_head": "Optionen"
 }

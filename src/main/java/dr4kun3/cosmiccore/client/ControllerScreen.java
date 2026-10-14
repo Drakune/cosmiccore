@@ -42,7 +42,7 @@ import net.minecraft.world.inventory.Slot;
  */
 public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // Einheitliches Raster: 5 px Aussenabstand (Rand und zwischen Karten), 5 px Innenabstand in jeder Karte
-    private static final int W = 256, H = 325;
+    private static final int W = 316, H = 325;
     private static final int M = 5, PAD = 5;
     private static final int PANEL_BORDER = 0xFF3A2468, PANEL_FILL = 0xCC0E0820, PANEL_ACCENT = 0xFF6A44B8;
     private static final int HEAD = 0xFFB8A8D8;
@@ -58,17 +58,23 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int CTRL_Y = TOP_Y + TOP_H + M, CTRL_H = 61;
     private static final int ROW_Y = CTRL_Y + 18;
     private static final int OD_Y = ROW_Y + 21;
-    private static final int COL_A = M + 1 + PAD + 1, COL_B = 106;
+    private static final int COL_A = M + 1 + PAD + 1, COL_B = 106, COL_B_END = W - M - 1 - PAD;
+    private static final int BTN_W = (COL_B_END - COL_B - 2 * M) / 3;
     private static final int SCALE_MINUS_X = COL_A, SCALE_PLUS_X = 85;
     private static final int SLOTS_Y = CTRL_Y + CTRL_H + M, SLOTS_H = 52;
 
     // Groessenwahl: Reiter links, darunter Info-Karte, 3D-Vorschau rechts, Optionen, Blockliste, Bestaetigung
-    private static final int TAB_X = M, TAB_Y = 18, TAB_W = 76, TAB_H = 20, TAB_STEP = TAB_H + M;
-    private static final int VIEW_X = TAB_X + TAB_W + M, VIEW_Y = 18, VIEW_W = W - M - VIEW_X, VIEW_H = 197;
-    private static final int SIZE_INFO_Y = TAB_Y + 4 * TAB_STEP;
-    private static final int OPT_Y = VIEW_Y + VIEW_H + M, OPT_H = 1 + PAD + 17 + PAD + 1;
-    private static final int BLOCKS_Y = OPT_Y + OPT_H + M, BLOCKS_H = 1 + PAD + 8 + 4 + 18 + PAD;
-    private static final int ICON_Y = BLOCKS_Y + 1 + PAD + 8 + 4 + 1;
+    // linke Spalte: Karten "Groesse" (Reiter), "Kennwerte", "Optionen"; rechte Spalte: 3D-Vorschau und Blockliste
+    private static final int LEFT_W = 96, HEAD_H = 8 + 4; // Ueberschrift + Abstand darunter
+    private static final int SIZE_CARD_Y = M, TAB_X = M + 1 + PAD, TAB_W = LEFT_W - 2 - 2 * PAD;
+    private static final int TAB_Y = SIZE_CARD_Y + 1 + PAD + HEAD_H, TAB_H = 20, TAB_STEP = TAB_H + M;
+    private static final int SIZE_CARD_H = TAB_Y + 3 * TAB_STEP + TAB_H + PAD + 1 - SIZE_CARD_Y;
+    private static final int SIZE_INFO_Y = SIZE_CARD_Y + SIZE_CARD_H + M, SIZE_INFO_H = 93;
+    private static final int OPT_Y = SIZE_INFO_Y + SIZE_INFO_H + M, OPT_H = 1 + PAD + HEAD_H + 17 + M + 17 + PAD + 1;
+    private static final int VIEW_X = M + LEFT_W + M, VIEW_Y = M, VIEW_W = W - M - VIEW_X;
+    private static final int BLOCKS_H = 1 + PAD + HEAD_H + 18 + PAD + 1, BLOCKS_Y = OPT_Y + OPT_H - BLOCKS_H;
+    private static final int VIEW_H = BLOCKS_Y - M - VIEW_Y;
+    private static final int ICON_Y = BLOCKS_Y + 1 + PAD + HEAD_H + 1;
 
     private final List<Button> sizeButtons = new ArrayList<>();
     private Button scaleDown, scaleUp, toggle, preview, build, confirm;
@@ -106,29 +112,29 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                         b -> press(ControllerMenu.BTN_SIZE_FIRST + selected + (withFunnel ? sizeCount : 0) + (withLasers ? 2 * sizeCount : 0)))
                 .bounds(leftPos + 40, topPos + H - M - 20, W - 80, 20).build());
         funnelBox = addRenderableWidget(Checkbox.builder(Component.translatable("gui.cosmiccore.with_funnel"), font)
-                .pos(leftPos + M + 1 + PAD, topPos + OPT_Y + 1 + PAD)
+                .pos(leftPos + M + 1 + PAD, topPos + OPT_Y + 1 + PAD + HEAD_H)
                 .selected(withFunnel)
                 .onValueChange((box, value) -> withFunnel = value)
                 .build());
         laserBox = addRenderableWidget(Checkbox.builder(Component.translatable("gui.cosmiccore.with_lasers"), font)
-                .pos(leftPos + W / 2 + 4, topPos + OPT_Y + 1 + PAD)
+                .pos(leftPos + M + 1 + PAD, topPos + OPT_Y + 1 + PAD + HEAD_H + 17 + M)
                 .selected(withLasers)
                 .onValueChange((box, value) -> withLasers = value)
                 .build());
         overdriveUp = addRenderableWidget(Button.builder(Component.translatable("gui.cosmiccore.overdrive_up"), b -> confirmOverdrive(true))
-                .bounds(leftPos + COL_B, topPos + OD_Y, 80, 16).build());
+                .bounds(leftPos + COL_B, topPos + OD_Y, 2 * BTN_W + M, 16).build());
         overdriveDown = addRenderableWidget(Button.builder(Component.translatable("gui.cosmiccore.overdrive_down"), b -> confirmOverdrive(false))
-                .bounds(leftPos + COL_B + 85, topPos + OD_Y, 54, 16).build());
+                .bounds(leftPos + COL_B + 2 * (BTN_W + M), topPos + OD_Y, BTN_W, 16).build());
         scaleDown = addRenderableWidget(Button.builder(Component.literal("-"), b -> press(ControllerMenu.BTN_SCALE_DOWN))
                 .bounds(leftPos + SCALE_MINUS_X, topPos + ROW_Y, 16, 16).build());
         scaleUp = addRenderableWidget(Button.builder(Component.literal("+"), b -> press(ControllerMenu.BTN_SCALE_UP))
                 .bounds(leftPos + SCALE_PLUS_X, topPos + ROW_Y, 16, 16).build());
         toggle = addRenderableWidget(Button.builder(Component.empty(), b -> press(ControllerMenu.BTN_TOGGLE))
-                .bounds(leftPos + COL_B, topPos + ROW_Y, 44, 16).build());
+                .bounds(leftPos + COL_B, topPos + ROW_Y, BTN_W, 16).build());
         preview = addRenderableWidget(Button.builder(Component.empty(), b -> press(ControllerMenu.BTN_PREVIEW))
-                .bounds(leftPos + COL_B + 49, topPos + ROW_Y, 46, 16).build());
+                .bounds(leftPos + COL_B + BTN_W + M, topPos + ROW_Y, BTN_W, 16).build());
         build = addRenderableWidget(Button.builder(Component.translatable("gui.cosmiccore.build"), b -> press(ControllerMenu.BTN_BUILD))
-                .bounds(leftPos + COL_B + 100, topPos + ROW_Y, 39, 16).build());
+                .bounds(leftPos + COL_B + 2 * (BTN_W + M), topPos + ROW_Y, BTN_W, 16).build());
         updateWidgets();
     }
 
@@ -321,14 +327,16 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(font, menu.sizeChosen() ? title : Component.translatable("gui.cosmiccore.choose_size"),
-                titleLabelX, titleLabelY, 0xFFE0B0FF, false);
+        // in der Groessenwahl tragen die Karten eigene Ueberschriften - kein Fenstertitel
+        if (menu.sizeChosen()) g.drawString(font, title, titleLabelX, titleLabelY, 0xFFE0B0FF, false);
         if (!menu.sizeChosen()) {
             ReactorSize sel = ReactorSize.values()[selected];
             // Info-Karte unter den Reitern: verlaessliche Kennwerte der Baugroesse
-            int ix = TAB_X + 1 + PAD, iy = SIZE_INFO_Y + 1 + PAD;
+            g.drawString(font, Component.translatable("gui.cosmiccore.size_head"), TAB_X, SIZE_CARD_Y + 1 + PAD, HEAD, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.options_head"), TAB_X, OPT_Y + 1 + PAD, HEAD, false);
+            int ix = TAB_X, iy = SIZE_INFO_Y + 1 + PAD;
             g.drawString(font, Component.translatable("gui.cosmiccore.info_head"), ix, iy, HEAD, false);
-            g.fill(ix, iy + 11, TAB_X + TAB_W - 1 - PAD, iy + 12, 0x663A2468);
+            g.fill(ix, iy + 11, TAB_X + TAB_W, iy + 12, 0x663A2468);
             // je Kennwert eine eigene Zeile mit Luft dazwischen: Bezeichnung links, Wert rechtsbuendig
             spec(g, ix, iy + 17, "gui.cosmiccore.info_levels", String.valueOf(sel.maxScale()), 0xFFE0A8FF);
             spec(g, ix, iy + 33, "gui.cosmiccore.info_buffer", bufferText(sel.buffer()), 0xFF9AE8FF);
@@ -402,12 +410,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         }
 
         // Karten: Info unter den Reitern, Optionen, benoetigte Bloecke
-        drawPanel(g, x + TAB_X, y + SIZE_INFO_Y, TAB_W, VIEW_Y + VIEW_H - SIZE_INFO_Y);
-        drawPanel(g, x + M, y + OPT_Y, W - 2 * M, OPT_H);
-        drawPanel(g, x + M, y + BLOCKS_Y, W - 2 * M, BLOCKS_H);
+        drawPanel(g, x + M, y + SIZE_CARD_Y, LEFT_W, SIZE_CARD_H);
+        drawPanel(g, x + M, y + SIZE_INFO_Y, LEFT_W, SIZE_INFO_H);
+        drawPanel(g, x + M, y + OPT_Y, LEFT_W, OPT_H);
+        drawPanel(g, x + VIEW_X, y + BLOCKS_Y, VIEW_W, BLOCKS_H);
         // Freischalt-Item der gewaehlten Groesse in der Info-Karte
         ItemStack key = new ItemStack(ReactorSize.values()[selected].unlockItem());
-        g.renderItem(key, x + TAB_X + TAB_W - 1 - PAD - 16, y + SIZE_INFO_Y + SPEC_KEY_Y - 4);
+        g.renderItem(key, x + TAB_X + specTab(), y + SIZE_INFO_Y + SPEC_KEY_Y - 4);
         // Vorschaufenster
         g.fill(x + VIEW_X - 1, y + VIEW_Y - 1, x + VIEW_X + VIEW_W + 1, y + VIEW_Y + VIEW_H + 1, PANEL_BORDER);
         g.fillGradient(x + VIEW_X, y + VIEW_Y, x + VIEW_X + VIEW_W, y + VIEW_Y + VIEW_H, 0xFF120A26, 0xFF05030C);
@@ -428,7 +437,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return ICON_LEFT + i * 24;
     }
 
-    private static final int ICON_LEFT = M + 1 + PAD + 1;
+    private static final int ICON_LEFT = VIEW_X + 1 + PAD + 1;
 
     private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         return StructurePreview.requiredBlocks(size, funnel, lasers);
@@ -460,10 +469,20 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     /** Freischalt-Zeile der Kennwerte-Karte (Text, Item rechts daneben). */
     private static final int SPEC_KEY_Y = 1 + PAD + 17 + 3 * 16 + 4;
 
-    /** Kennwert-Zeile: Bezeichnung gedimmt links, Wert rechtsbuendig (Innenabstand 5 px). */
+    private static final String[] SPEC_KEYS = {"gui.cosmiccore.info_levels", "gui.cosmiccore.info_buffer",
+            "gui.cosmiccore.info_overdrive", "gui.cosmiccore.info_unlock"};
+
+    /** Tabulatorkante der Kennwerte: hinter der laengsten Bezeichnung, damit alle Werte genau untereinander stehen. */
+    private int specTab() {
+        int w = 0;
+        for (String k : SPEC_KEYS) w = Math.max(w, font.width(Component.translatable(k)));
+        return w + 8;
+    }
+
+    /** Kennwert-Zeile: Bezeichnung gedimmt links, Wert an der Tabulatorkante. */
     private void spec(GuiGraphics g, int ix, int iy, String key, String value, int color) {
         g.drawString(font, Component.translatable(key), ix, iy, 0xFF908AA8, false);
-        g.drawString(font, value, TAB_X + TAB_W - 1 - PAD - font.width(value), iy, color, false);
+        g.drawString(font, value, ix + specTab(), iy, color, false);
     }
 
     private Component statusLine() {
@@ -514,7 +533,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                     g.renderTooltip(font, icons.get(i).getHoverName(), mouseX, mouseY);
                 }
             }
-            int kx = leftPos + TAB_X + TAB_W - 1 - PAD - 16, ky = topPos + SIZE_INFO_Y + SPEC_KEY_Y - 4;
+            int kx = leftPos + TAB_X + specTab(), ky = topPos + SIZE_INFO_Y + SPEC_KEY_Y - 4;
             if (mouseX >= kx && mouseX < kx + 16 && mouseY >= ky && mouseY < ky + 16) {
                 ItemStack key = new ItemStack(ReactorSize.values()[selected].unlockItem());
                 g.renderComponentTooltip(font, List.of(key.getHoverName(),

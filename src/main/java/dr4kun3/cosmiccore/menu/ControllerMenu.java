@@ -46,9 +46,9 @@ public class ControllerMenu extends AbstractContainerMenu {
     // Layout (auch vom Screen benutzt)
     // 5-px-Raster: Karten 5 px vom Rand und voneinander, 5 px Innenabstand (Slot-Rahmen = Slot - 1)
     public static final int FUEL_X = 12, FUEL_Y = 32, STAB_X = 12, STAB_Y = 67;
-    public static final int INV_X = 47, INV_Y = 243;
+    public static final int INV_X = 77, INV_Y = 243;
     /** Beute-Reihe (6 Slots) und Modul-Slots (Effizienz, Stabilitaet, Anti-Asteroiden mit Schalter darunter). */
-    public static final int LOOT_X = 12, LOOT_Y = 193, MOD_X = 192, MOD_Y = 193;
+    public static final int LOOT_X = 12, LOOT_Y = 193, MOD_X = 252, MOD_Y = 193;
 
     private final BlockPos pos;
     private final ContainerLevelAccess access;

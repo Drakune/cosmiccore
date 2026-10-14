@@ -1014,6 +1014,8 @@ DE = {
     'gui.cosmiccore.info_unlock': 'Je Stufe',
     'gui.cosmiccore.info_unlock_tip': 'Wird je neuer Leistungsstufe einmalig verbraucht',
     'gui.cosmiccore.controls': 'Steuerung',
+    'gui.cosmiccore.size_head': 'Größe',
+    'gui.cosmiccore.options_head': 'Optionen',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1201,6 +1203,8 @@ EN = {
     'gui.cosmiccore.info_unlock': 'Per level',
     'gui.cosmiccore.info_unlock_tip': 'Consumed once for each new power level',
     'gui.cosmiccore.controls': 'Controls',
+    'gui.cosmiccore.size_head': 'Size',
+    'gui.cosmiccore.options_head': 'Options',
 }
 
 

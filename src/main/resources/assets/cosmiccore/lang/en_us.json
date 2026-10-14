@@ -183,5 +183,7 @@
   "gui.cosmiccore.info_overdrive": "Overdrive",
   "gui.cosmiccore.info_unlock": "Per level",
   "gui.cosmiccore.info_unlock_tip": "Consumed once for each new power level",
-  "gui.cosmiccore.controls": "Controls"
+  "gui.cosmiccore.controls": "Controls",
+  "gui.cosmiccore.size_head": "Size",
+  "gui.cosmiccore.options_head": "Options"
 }
