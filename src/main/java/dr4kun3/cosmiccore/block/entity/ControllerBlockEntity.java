@@ -98,8 +98,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean preview;
     /** Bei der Groessenwahl angehakt: Sternentrichter gehoert zur Bauvorschau und zum Kreativ-Aufbau. */
     private boolean withFunnel;
-    /** Schalter fuer das Anti-Asteroiden-Modul (wirkt nur, wenn es eingesetzt ist). */
-    private boolean antiAsteroid = true;
+    /** Schalter fuer das Anti-Asteroiden-Modul - ohne eingesetztes Modul immer aus. */
+    private boolean antiAsteroid;
     /** Dauerhaft freigeschaltete Leistungsstufen (1 ist immer frei; jede weitere kostet einmalig ein Item). */
     private int unlockedScale = 1;
     /** Bei der Groessenwahl angehakt: vier Kosmos-Laser gehoeren zur Bauvorschau und zum Kreativ-Aufbau. */
@@ -288,6 +288,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
         if (size == null) return false;
         if (id == ControllerMenu.BTN_ANTI_ASTEROID) {
+            if (!hasAntiAsteroidModule()) return false; // Schalter ist ohne Modul gesperrt
             antiAsteroid = !antiAsteroid;
             setChanged();
             sl.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.3F, antiAsteroid ? 1.4F : 0.9F);
@@ -391,6 +392,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private void tick(ServerLevel level) {
         if (size == null) return; // wartet auf die Wahl der Baugroesse
         energy = Math.min(energy, getCapacity()); // Puffer haengt an der Baustufe (z. B. nach Config-Aenderung)
+        if (antiAsteroid && !hasAntiAsteroidModule()) {
+            antiAsteroid = false; // Modul entnommen: Abwehr aus, Asteroiden erscheinen wieder
+            setChanged();
+        }
         if (--checkTimer <= 0) {
             checkTimer = CoreConfig.VALIDATION_INTERVAL.get();
             revalidate(level);
@@ -1206,7 +1211,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (size != null) scale = Math.min(scale, size.maxScale());
         enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
         preview = tag.getBoolean("preview");
-        antiAsteroid = !tag.contains("antiAsteroid") || tag.getBoolean("antiAsteroid");
+        antiAsteroid = tag.getBoolean("antiAsteroid");
         withFunnel = tag.getBoolean("withFunnel");
         withLasers = tag.getBoolean("withLasers");
         overdrive = Math.max(0, tag.getInt("overdrive"));
@@ -1336,7 +1341,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (energy >= getCapacity() ? ControllerMenu.F_FULL : 0)
                         | (burnTime > 0 || !inventory.getStackInSlot(SLOT_FUEL).isEmpty() ? ControllerMenu.F_HAS_FUEL : 0)
                         | (hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_INSTALLED : 0)
-                        | (antiAsteroid ? ControllerMenu.F_ANTI_ON : 0);
+                        | (antiAsteroid && hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_ON : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));
