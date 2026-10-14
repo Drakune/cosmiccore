@@ -34,6 +34,17 @@ public class SingularityCoreBlock extends Block implements EntityBlock {
         return SHAPE;
     }
 
+    /** Der verschmolzene Mittelkern des ultimativen Kerns besteht aus den vier Satelliten und droppt nichts. */
+    @Override
+    protected java.util.List<net.minecraft.world.item.ItemStack> getDrops(BlockState state,
+            net.minecraft.world.level.storage.loot.LootParams.Builder params) {
+        if (params.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY)
+                instanceof SingularityCoreBlockEntity core && core.isFused()) {
+            return java.util.List.of();
+        }
+        return super.getDrops(state, params);
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

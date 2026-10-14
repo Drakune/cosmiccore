@@ -24,6 +24,17 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private int structureSize = 7;
     /** Nur der zentrale Kern zeichnet den Reaktor; Satellitenkerne des ultimativen Kerns bleiben unsichtbar. */
     private boolean primary;
+    /** Verschmolzener Mittelkern des ultimativen Kerns: vom Controller gesetzt, droppt nichts. */
+    private boolean fused;
+
+    public boolean isFused() {
+        return fused;
+    }
+
+    public void setFused(boolean fused) {
+        this.fused = fused;
+        setChanged();
+    }
     private int scale = 1;
     private int maxScale = 1;
     private int instability;      // 0..100 (gerundet, damit nicht jeder Tick ein Paket ausloest)
@@ -335,6 +346,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         primary = tag.getBoolean("primary");
+        fused = tag.getBoolean("fused");
         if (tag.contains("structureSize")) structureSize = tag.getInt("structureSize");
         scale = Math.max(1, tag.getInt("scale"));
         maxScale = Math.max(1, tag.getInt("maxScale"));
@@ -360,6 +372,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
 
     private void writeVisuals(CompoundTag tag) {
         tag.putBoolean("primary", primary);
+        tag.putBoolean("fused", fused);
         tag.putInt("structureSize", structureSize);
         tag.putInt("scale", scale);
         tag.putInt("maxScale", maxScale);

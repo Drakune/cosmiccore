@@ -112,7 +112,7 @@
   "console.cosmiccore.overdrive": "Overdrive",
   "console.cosmiccore.field": "Containment field",
   "gui.cosmiccore.ultimate": "✦ ULTIMATE CORE ✦",
-  "guide.cosmiccore.page.15": "§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 4 cores§r: main core + 3 satellites (left, right, back).\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.",
+  "guide.cosmiccore.page.15": "§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.",
   "item.cosmiccore.compressed_star_dust": "Compressed Star Dust",
   "item.cosmiccore.neutron_fragment": "Neutron Star Fragment",
   "item.cosmiccore.quasar_essence": "Quasar Essence",

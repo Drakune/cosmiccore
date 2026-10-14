@@ -27,20 +27,17 @@ import org.jetbrains.annotations.Nullable;
  *  R = Resonanzschild-Emitter (unterer Pol)     X = Fokuskristall (oberer Pol)
  *  K = Singularitaetskern (Mitte)   a = Luft (Kammer muss frei sein)   . = egal (offene Seiten)
  * </pre>
- * 11x11x11 (ultimativ): zusaetzlich S = drei Satellitenkerne auf Kernhoehe, je 2 Bloecke vom Zentrum links, rechts
- * und hinten (die Seite zum Controller bleibt frei) - sie verschmelzen beim Formen mit dem Kern. Weil sie von der
- * Ausrichtung abhaengen, stehen sie nicht im Zellraster, sondern kommen ueber forEach(center, facing, ...) dazu.
+ * 11x11x11 (ultimativ): statt K vier Satellitenkerne S auf Kernhoehe, je 2 Bloecke von der Mitte in alle vier
+ * Richtungen; die Mitte selbst bleibt frei (FUSED_CORE). Beim Formen verschmelzen die vier zum Kern in der Mitte,
+ * den der Controller dort setzt und beim Zerfall wieder entfernt.
  * 5x5x5: die Kammer ist zu eng, Emitter und Kristall sitzen deshalb in der Mitte von Boden bzw. Decke.
  * Alle Muster sind 4-fach drehsymmetrisch; deshalb muss nur der Mittelpunkt aus der Controller-Ausrichtung
  * berechnet werden, nicht das Muster gedreht.
  */
 public final class CorePattern {
-    public enum Cell { ANY, AIR, HULL, SLOT, FRAME, GLASS, COIL, CRYSTAL, CORE, SATELLITE }
+    public enum Cell { ANY, AIR, HULL, SLOT, FRAME, GLASS, COIL, CRYSTAL, CORE, SATELLITE, FUSED_CORE }
 
-    /**
-     * Abstand der drei Satellitenkerne des ultimativen Kerns vom Zentrum. Sie sitzen auf Kernhoehe links, rechts und
-     * hinter dem Kern (vom Controller aus gesehen) - zusammen mit dem Hauptkern also 4 Kerne.
-     */
+    /** Abstand der vier Satellitenkerne des ultimativen Kerns von der Mitte (auf Kernhoehe, in alle vier Richtungen). */
     public static final int SATELLITE_DISTANCE = 2;
 
     private final int size;
@@ -85,7 +82,10 @@ public final class CorePattern {
             return Cell.ANY;
         }
         // Kammer: Kern in der Mitte, Fokuskristall darueber, Resonanzschild-Emitter darunter
-        if (dx == 0 && dy == 0 && dz == 0) return Cell.CORE;
+        if (dx == 0 && dy == 0 && dz == 0) return size >= 11 ? Cell.FUSED_CORE : Cell.CORE;
+        if (size >= 11 && dy == 0 && ((ax == SATELLITE_DISTANCE && dz == 0) || (az == SATELLITE_DISTANCE && dx == 0))) {
+            return Cell.SATELLITE;
+        }
         if (dx == 0 && dz == 0 && ay == focus) return dy < 0 ? Cell.COIL : Cell.CRYSTAL;
         return Cell.AIR;
     }
@@ -129,23 +129,28 @@ public final class CorePattern {
         return controller.relative(facing.getOpposite(), half).above(half);
     }
 
-    /** Anzahl der Satellitenkerne (nur beim ultimativen Kern). */
+    /** Anzahl der Satellitenkerne (nur beim ultimativen Kern: 4 rund um die Mitte). */
     public int satelliteCount() {
-        return size >= 11 ? 3 : 0;
+        return count(Cell.SATELLITE);
     }
 
-    /** Positionen der Satellitenkerne; facing = Blickrichtung des Controllers (zeigt aus der Struktur heraus). */
-    public java.util.List<BlockPos> satellites(BlockPos center, Direction facing) {
-        if (satelliteCount() == 0) return java.util.List.of();
-        return java.util.List.of(center.relative(facing.getOpposite(), SATELLITE_DISTANCE),
-                center.relative(facing.getClockWise(), SATELLITE_DISTANCE),
-                center.relative(facing.getCounterClockWise(), SATELLITE_DISTANCE));
+    /** Hat dieses Muster einen verschmolzenen Mittelkern (ultimativ: die Mitte bleibt beim Bauen frei)? */
+    public boolean hasFusedCore() {
+        return cells[half][half][half] == Cell.FUSED_CORE;
     }
 
-    /** Wie forEach(center, visitor), meldet aber an den Satellitenplaetzen Cell.SATELLITE statt Luft. */
+    /** Positionen der vier Satellitenkerne. */
+    public java.util.List<BlockPos> satellites(BlockPos center) {
+        java.util.List<BlockPos> out = new java.util.ArrayList<>();
+        forEach(center, (pos, cell) -> {
+            if (cell == Cell.SATELLITE) out.add(pos.immutable());
+        });
+        return out;
+    }
+
+    /** Die Satelliten liegen symmetrisch - die Ausrichtung spielt keine Rolle (fuer bestehende Aufrufer). */
     public void forEach(BlockPos center, Direction facing, Visitor visitor) {
-        java.util.List<BlockPos> sats = satellites(center, facing);
-        forEach(center, (pos, cell) -> visitor.visit(pos, sats.contains(pos) ? Cell.SATELLITE : cell));
+        forEach(center, visitor);
     }
 
     public void forEach(BlockPos center, Visitor visitor) {
@@ -205,6 +210,7 @@ public final class CorePattern {
             case COIL -> s.is(ModBlocks.RESONANCE_COIL.get());
             case CRYSTAL -> s.is(ModBlocks.FOCUS_CRYSTAL.get());
             case CORE, SATELLITE -> s.is(ModBlocks.SINGULARITY_CORE.get());
+            case FUSED_CORE -> s.isAir() || s.is(ModBlocks.SINGULARITY_CORE.get());
         };
     }
 
@@ -212,7 +218,7 @@ public final class CorePattern {
     @Nullable
     public static BlockState blockFor(Cell cell) {
         return switch (cell) {
-            case ANY, AIR -> null;
+            case ANY, AIR, FUSED_CORE -> null;
             case HULL, SLOT -> ModBlocks.VOID_CASING.get().defaultBlockState();
             case FRAME -> ModBlocks.RUNE_FRAME.get().defaultBlockState();
             case GLASS -> ModBlocks.FOCUS_GLASS.get().defaultBlockState();
@@ -234,6 +240,7 @@ public final class CorePattern {
             case CRYSTAL -> ModBlocks.FOCUS_CRYSTAL.get().getName();
             case CORE -> ModBlocks.SINGULARITY_CORE.get().getName();
             case SATELLITE -> Component.translatable("message.cosmiccore.expected_satellite");
+            case FUSED_CORE -> Component.translatable("message.cosmiccore.expected_air");
         };
     }
 }

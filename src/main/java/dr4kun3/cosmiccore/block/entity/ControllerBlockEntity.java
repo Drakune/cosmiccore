@@ -576,6 +576,16 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (CoreConfig.COLLAPSE_DESTROYS_CORE.get() && level.getBlockState(core).is(ModBlocks.SINGULARITY_CORE.get())) {
             level.levelEvent(2001, core, Block.getId(level.getBlockState(core)));
             level.setBlock(core, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            // ultimativ: der Kern bestand aus den vier Satelliten - sie zerbrechen mit
+            CorePattern cp = pattern();
+            if (cp != null) {
+                for (BlockPos sat : cp.satellites(core)) {
+                    if (level.getBlockState(sat).is(ModBlocks.SINGULARITY_CORE.get())) {
+                        level.levelEvent(2001, sat, Block.getId(level.getBlockState(sat)));
+                        level.setBlock(sat, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                    }
+                }
+            }
         }
         if (CoreConfig.COLLAPSE_DESTROYS_BLOCKS.get()) {
             level.explode(null, c.x, c.y, c.z, 3.0F + structure * 0.5F + scale * 0.25F, Level.ExplosionInteraction.BLOCK);
@@ -863,6 +873,17 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 onFormed(level);
             } else {
                 linkPorts(level, true);
+                // verschmolzener Mittelkern abgebaut, die vier Satelliten stehen aber noch: er bildet sich neu
+                BlockPos mid = pattern.center(worldPosition, bestDir);
+                if (pattern.hasFusedCore() && level.getBlockState(mid).isAir()) {
+                    level.setBlock(mid, ModBlocks.SINGULARITY_CORE.get().defaultBlockState(), Block.UPDATE_ALL);
+                    if (level.getBlockEntity(mid) instanceof SingularityCoreBlockEntity fused) {
+                        fused.setFused(true);
+                        fused.markFormed(level.getGameTime());
+                    }
+                    applyPhase(level);
+                    pushVisuals(level);
+                }
             }
         } else {
             skyLink = false;
@@ -879,6 +900,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     private void onFormed(ServerLevel level) {
         formed = true;
+        // ultimativ: die vier Satellitenkerne verschmelzen zum Kern in der Mitte
+        CorePattern fp = pattern();
+        if (fp != null && fp.hasFusedCore()) {
+            BlockPos mid = center(level);
+            if (level.getBlockState(mid).isAir()) {
+                level.setBlock(mid, ModBlocks.SINGULARITY_CORE.get().defaultBlockState(), Block.UPDATE_ALL);
+            }
+            if (level.getBlockEntity(mid) instanceof SingularityCoreBlockEntity fused) fused.setFused(true);
+        }
         phase = CorePhase.FORMED;
         applyPhase(level);
         linkPorts(level, true);
@@ -901,9 +931,17 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         lastOutput = 0;
         applyPhase(level);
         linkPorts(level, false);
+        removeFusedCore(level, center(level));
         Vec3 c = Vec3.atCenterOf(center(level));
         level.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 1.5F, 0.6F);
         changedAndSync();
+    }
+
+    /** Der verschmolzene Mittelkern des ultimativen Kerns existiert nur, solange die Struktur steht (kein Drop). */
+    private static void removeFusedCore(ServerLevel level, BlockPos mid) {
+        if (level.hasChunkAt(mid) && level.getBlockEntity(mid) instanceof SingularityCoreBlockEntity core && core.isFused()) {
+            level.setBlock(mid, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        }
     }
 
     /** Spiegelt die aktuelle Phase auf alle Strukturbloecke (Textur-Variante, Licht, Animation). */
@@ -1023,6 +1061,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             });
         }
         if (p != null && oldState.hasProperty(ControllerBlock.FACING)) {
+            removeFusedCore(level, p.center(worldPosition, oldState.getValue(ControllerBlock.FACING)));
             BlockPos top = p.center(worldPosition, oldState.getValue(ControllerBlock.FACING)).above(p.half() + 1);
             setLasersLinked(level, top, false);
             setFunnelLinked(level, top, false);
