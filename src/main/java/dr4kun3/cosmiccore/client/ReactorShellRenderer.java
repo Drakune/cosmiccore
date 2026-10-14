@@ -171,7 +171,7 @@ public final class ReactorShellRenderer {
         for (int i = 0; i < maxOd; i++) od.append(i < core.getOverdrive() ? "\u25A0 " : "\u25A1 ");
         int inst = Math.round(core.getInstability());
         int instColor = inst < 40 ? 0x80FF90 : inst < 70 ? 0xFFE060 : 0xFF5060;
-        long cap = ReactorSizeCapacity.capacity(core.getScale());
+        long cap = ReactorSizeCapacity.capacity(core.getStructureSize());
         long stored = Math.round(cap * core.getEnergyPct() / 100.0);
 
         String status;
@@ -219,10 +219,11 @@ public final class ReactorShellRenderer {
                 Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
     }
 
-    /** Puffer-Kapazitaet je Stufe (wie im Controller: Stufe x energyPerLevel). */
+    /** Puffer-Kapazitaet je Baustufe (wie im Controller: ReactorSize.buffer()). */
     private static final class ReactorSizeCapacity {
-        static long capacity(int scale) {
-            return dr4kun3.cosmiccore.CoreConfig.ENERGY_PER_LEVEL.get() * Math.max(1, scale);
+        static long capacity(int structureSize) {
+            ReactorSize rs = ReactorSize.bySize(structureSize);
+            return rs == null ? dr4kun3.cosmiccore.CoreConfig.BUFFER_PER_TIER.get() : rs.buffer();
         }
     }
 

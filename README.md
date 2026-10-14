@@ -131,7 +131,7 @@ Stabilisatoren halten dank `stabilizerMultiplier` (Standard x3) dreimal so lange
 
 ## Balancing ohne Neukompilieren
 
-- `config/cosmiccore-common.toml` (Puffer pro Stufe, Port-Rate, globaler `outputMultiplier`, Instabilitätsrate, Kollaps ...)
+- `config/cosmiccore-common.toml` (Puffer je Baustufe: 1G/2G/3G, ultimativ 5G, Port-Rate, globaler `outputMultiplier`, Instabilitätsrate, Kollaps ...)
 - Data Maps (auch per Datapack überschreibbar):
   `data/cosmiccore/data_maps/item/core_fuel.json` und `core_stabilizer.json`. Fuel-Tooltips zeigen die Werte im Spiel an.
 - Asteroiden-Beute: `data/cosmiccore/loot_table/asteroid/small|medium|large.json`.

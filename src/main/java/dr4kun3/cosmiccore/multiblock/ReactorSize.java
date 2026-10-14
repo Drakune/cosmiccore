@@ -9,10 +9,10 @@ import org.jetbrains.annotations.Nullable;
 public enum ReactorSize {
     // Leistungsstufe immer 1..10; groessere Reaktoren liefern mehr pro Stufe und sind stabiler
     SMALL(5, 10, 0.6, 0.5, 1.0, 1.0, 1),
-    MEDIUM(7, 10, 1.0, 1.0, 0.8, 1.25, 2),
-    LARGE(9, 10, 1.6, 2.5, 0.6, 1.6, 3),
+    MEDIUM(7, 10, 0.85, 1.0, 0.8, 1.25, 2),
+    LARGE(9, 10, 1.1, 2.5, 0.6, 1.6, 3),
     /** Ultimativer Kern: Stufen 1-12, staerkster und stabilster Reaktor, erzeugt zusaetzlich Vakuum-Energie. */
-    ULTIMATE(11, 12, 2.6, 4.0, 0.45, 2.0, 3);
+    ULTIMATE(11, 12, 1.3, 4.0, 0.45, 2.0, 3);
 
     private final int size;
     private final int maxScale;
@@ -32,6 +32,12 @@ public enum ReactorSize {
         this.stabilizerFactor = stabilizerFactor;
         this.maxOverdrive = maxOverdrive;
         this.pattern = new CorePattern(size);
+    }
+
+    /** RF-Puffer dieser Baustufe: 1G je Stufe (5er 1G, 7er 2G, 9er 3G), der ultimative Kern 5G - unabhaengig vom Power-Level. */
+    public long buffer() {
+        if (this == ULTIMATE) return dr4kun3.cosmiccore.CoreConfig.ULTIMATE_BUFFER.get();
+        return dr4kun3.cosmiccore.CoreConfig.BUFFER_PER_TIER.get() * (ordinal() + 1);
     }
 
     /** Item, das je Leistungsstufe einmalig verbraucht wird, um sie dauerhaft freizuschalten. */

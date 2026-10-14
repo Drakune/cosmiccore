@@ -211,7 +211,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Kapazitaet waechst mit der Leistungsstufe: Stufe x energyPerLevel (Standard 250 Mio. RF). */
     public long getCapacity() {
-        return CoreConfig.ENERGY_PER_LEVEL.get() * Math.max(1, scale);
+        return size == null ? CoreConfig.BUFFER_PER_TIER.get() : size.buffer();
     }
 
     public ItemStackHandler getInventory() {
@@ -390,6 +390,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     private void tick(ServerLevel level) {
         if (size == null) return; // wartet auf die Wahl der Baugroesse
+        energy = Math.min(energy, getCapacity()); // Puffer haengt an der Baustufe (z. B. nach Config-Aenderung)
         if (--checkTimer <= 0) {
             checkTimer = CoreConfig.VALIDATION_INTERVAL.get();
             revalidate(level);

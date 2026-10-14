@@ -5,9 +5,12 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class CoreConfig {
     private static final ModConfigSpec.Builder B = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.LongValue ENERGY_PER_LEVEL = B
-            .comment("RF-Puffer pro Leistungsstufe (Stufe 10 = das Zehnfache)")
-            .defineInRange("energyPerLevel", 250_000_000L, 1_000L, 1_000_000_000_000L);
+    public static final ModConfigSpec.LongValue BUFFER_PER_TIER = B
+            .comment("RF-Puffer je Baustufe (5x5x5 = 1x, 7x7x7 = 2x, 9x9x9 = 3x) - unabhaengig von der Leistungsstufe")
+            .defineInRange("bufferPerTier", 1_000_000_000L, 1_000L, 1_000_000_000_000L);
+    public static final ModConfigSpec.LongValue ULTIMATE_BUFFER = B
+            .comment("RF-Puffer des ultimativen Kerns (11x11x11)")
+            .defineInRange("ultimateBuffer", 5_000_000_000L, 1_000L, 1_000_000_000_000L);
     public static final ModConfigSpec.IntValue PORT_TRANSFER = B
             .comment("Maximale RF pro Tick, die ein Energie-Port abgibt (pro Port)")
             .defineInRange("portTransferPerTick", 50_000, 1, Integer.MAX_VALUE);
@@ -28,13 +31,13 @@ public final class CoreConfig {
             .defineInRange("skyLinkBonus", 0.25, 0.0, 10.0);
     public static final ModConfigSpec.DoubleValue SCALE_OUTPUT_EXPONENT = B
             .comment("Leistung waechst mit Stufe^x. Der Brennstoffverbrauch waechst linear mit der Stufe.")
-            .defineInRange("scaleOutputExponent", 1.3, 0.0, 5.0);
+            .defineInRange("scaleOutputExponent", 1.15, 0.0, 5.0);
     public static final ModConfigSpec.DoubleValue SCALE_INSTABILITY_EXPONENT = B
             .comment("Instabilitaet waechst mit Stufe^x (vor dem Stabilitaetsfaktor der Baugroesse)")
             .defineInRange("scaleInstabilityExponent", 1.35, 0.0, 5.0);
     public static final ModConfigSpec.IntValue VACUUM_ENERGY = B
             .comment("Ultimativer Kern: Vakuum-Energie in RF/t pro Leistungsstufe (mit Himmelssicht, ohne Brennstoff)")
-            .defineInRange("vacuumEnergyPerLevel", 2000, 0, 1_000_000);
+            .defineInRange("vacuumEnergyPerLevel", 800, 0, 1_000_000);
     public static final ModConfigSpec.DoubleValue STABILIZER_MULTIPLIER = B
             .comment("Faktor auf die Kuehlpunkte aller Stabilisatoren (hoeher = halten laenger)")
             .defineInRange("stabilizerMultiplier", 3.0, 0.1, 100.0);
