@@ -34,6 +34,12 @@ public final class CosmicCoreClient {
         event.registerBlockEntityRenderer(ModBlockEntities.ENERGY_PORT.get(), PortRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ITEM_PORT.get(), PortRenderer::new);
         for (var type : ModEntities.ASTEROIDS.values()) event.registerEntityRenderer(type.get(), CosmicAsteroidRenderer::new);
+        // Void-Titan: mit GeckoLib gezeichnet; ohne GeckoLib unsichtbar (er erscheint dann ohnehin nie)
+        if (net.neoforged.fml.ModList.get().isLoaded("geckolib")) {
+            event.registerEntityRenderer(ModEntities.VOID_TITAN.get(), TitanRenderers::create);
+        } else {
+            event.registerEntityRenderer(ModEntities.VOID_TITAN.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        }
     }
 
     /** Plug-Modelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen. */

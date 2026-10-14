@@ -236,16 +236,14 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                     laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy),
                     be.getDeliverPhase(partialTick), be.getDeliverSource() != null ? be.getDeliverSource() : be.lastLaserTarget, be.hasFunnel() ? half + 1.35F : half + 0.6F, be.getDeliverSize());
         }
-        // Strahl des Void-Titanen: nach dem Erwachen dauerhaft aus dem Riss am Himmel in den Kern
-        // (waehrend der Cutscene zeichnet diese ihn selbst, bis er einschlaegt)
-        if (be.isAwakened() && !TitanCutscene.hidesPermanentBeam(be.getBlockPos())) {
-            // seit dem Erwachen: Planet am Himmel und sein Strahl senkrecht von oben in den Trichter
+        // Strahl des Void-Titanen: seit dem Erwachen faellt er senkrecht vom Tor am Himmel in den Trichter -
+        // aber nur, solange der Ultimate-Modus aktiv ist (waehrend der Cutscene zeichnet diese ihn selbst)
+        if (be.isAwakened() && be.getOverdrive() >= 4 && !TitanCutscene.hidesPermanentBeam(be.getBlockPos())) {
             org.joml.Vector3f camRel = new org.joml.Vector3f((float) dx, (float) dy, (float) dz);
             float mouthY = be.hasFunnel() ? half + 1.35F : half + 0.6F;
-            float ps = TitanBeam.skyScale(TitanBeam.PLANET, camRel);
-            TitanBeam.planet(buffers, TitanBeam.skyFrame(pose.last().pose(), camRel, ps), t, 0.0F, 0.8F);
-            glow = buffers.getBuffer(CosmicRenderTypes.glow());
-            org.joml.Vector3f from = TitanBeam.skyPoint(TitanBeam.ORB, camRel, TitanBeam.skyScale(TitanBeam.ORB, camRel));
+            float gs = TitanBeam.skyScale(TitanBeam.SKY_TOP, camRel);
+            TitanBeam.skyGate(TitanBeam.skyFrame(pose.last().pose(), camRel, gs), glow, t, 0.8F, camRel);
+            org.joml.Vector3f from = TitanBeam.skyPoint(TitanBeam.SKY_TOP, camRel, gs);
             float bi = active ? 0.8F : 0.45F;
             TitanBeam.beam(pose.last().pose(), glow, from, new org.joml.Vector3f(0, mouthY, 0), t, 1.0F, bi);
             TitanBeam.inlet(pose.last().pose(), glow, mouthY, t, bi);

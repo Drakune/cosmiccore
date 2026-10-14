@@ -3,30 +3,21 @@ package dr4kun3.cosmiccore.client;
 import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Der ferne Planet des Void-Titanen und sein Strahl: Hoch ueber dem Reaktor kreist der Planet; seit der Titan im
- * Ultimate-Modus erwacht ist, faellt aus ihm dauerhaft ein Strahl senkrecht in den Sternentrichter.
- * Alle Koordinaten relativ zur Kernmitte. Ferne Objekte werden maszstabsgetreu naeher an die Kamera gezeichnet
+ * Der Strahl des Void-Titanen: Seit er im Ultimate-Modus erwacht ist, faellt aus einem gleissenden Lichtpunkt hoch
+ * am Himmel ein Strahl senkrecht in den Sternentrichter - solange der Ultimate-Modus aktiv ist.
+ * Alle Koordinaten relativ zur Kernmitte. Ferne Punkte werden maszstabsgetreu naeher an die Kamera gezeichnet
  * (wie eine Himmelskulisse), damit sie nicht hinter der Sichtweite abgeschnitten werden.
  */
 public final class TitanBeam {
     private TitanBeam() {}
 
-    /** Planet hoch ueber dem Reaktor. */
-    public static final Vector3f PLANET = new Vector3f(0.0F, 700.0F, 0.0F);
-    public static final float PLANET_R = 70.0F;
-    /** Fuesse des Titanen an der Unterseite des Planeten (er haengt kopfueber, Kopf Richtung Erde). */
-    public static final Vector3f TITAN_FEET = new Vector3f(0.0F, 700.0F - PLANET_R, 0.0F);
-    /** Massstab des Titanen (Modell ~6 Bloecke -> ~57 Bloecke gross). */
-    public static final float TITAN_SCALE = 10.0F;
-    /** Energiekugel ueber seinem Kopf (Knochen "orb", 92 px) - hier beginnt der Strahl. */
-    public static final Vector3f ORB = new Vector3f(TITAN_FEET).sub(0.0F, 92.0F / 16.0F * TITAN_SCALE, 0.0F);
+    /** Austrittspunkt des Strahls hoch ueber dem Reaktor (das Tor in das andere Universum). */
+    public static final Vector3f SKY_TOP = new Vector3f(0.0F, 420.0F, 0.0F);
     /** Groesste Zeichendistanz fuer ferne Objekte. */
     public static final float SKY_DIST = 280.0F;
 
@@ -85,32 +76,20 @@ public final class TitanBeam {
         }
     }
 
-    /**
-     * Der Planet: Oberflaeche aus Sternenfeld, violette Atmosphaere, ein geneigtes Ringsystem. crack 0..1 = aufbrechende
-     * Kruste an der Unterseite (dort steigt der Titan empor). m muss bereits der Himmelskulissen-Rahmen sein.
-     */
-    public static void planet(MultiBufferSource buffers, Matrix4f m, float t, float crack, float alpha) {
-        Matrix4f pm = new Matrix4f(m).translate(PLANET.x, PLANET.y, PLANET.z).rotateY(t * 0.0008F);
-        RenderUtil.sphere(buffers.getBuffer(RenderType.endGateway()), pm, PLANET_R, 20, 32);
-        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
-        RenderUtil.glowSphere(glow, pm, PLANET_R * 1.03F, 16, 24, VOID, 0.22F * alpha);
-        RenderUtil.glowSphere(glow, pm, PLANET_R * 1.1F, 16, 24, CYAN, 0.07F * alpha);
-        // Ringsystem
-        Matrix4f rm = new Matrix4f(pm).rotateX(0.35F).rotateZ(0.2F);
-        for (int i = 0; i < 6; i++) {
-            float rr = PLANET_R * (1.45F + i * 0.13F);
-            RenderUtil.flatCircle(glow, rm, rr, 0.6F + 0.4F * (i % 2), 96, i % 2 == 0 ? VOID : CYAN, (0.35F - i * 0.04F) * alpha);
-        }
-        // aufbrechende Kruste: gleissender Spalt an der Unterseite
-        if (crack > 0.0F) {
-            Matrix4f cm = new Matrix4f(m).translate(PLANET.x, PLANET.y - PLANET_R, PLANET.z);
-            RenderUtil.glowSphere(glow, cm, 6.0F + 14.0F * crack, 12, 16, VOID, 0.5F * crack);
-            RenderUtil.glowSphere(glow, cm, 3.0F + 6.0F * crack, 10, 14, WHITE, 0.6F * crack);
-            for (int k = 0; k < 10; k++) {
-                float a = k * Mth.TWO_PI / 10 + RenderUtil.hash(k) * 0.3F;
-                float len = (14.0F + 10.0F * RenderUtil.hash(k * 3)) * crack;
-                segment(glow, cm, 0, 0.5F, 0, Mth.cos(a) * len, 0.5F, Mth.sin(a) * len, 0.5F, CYAN[0], CYAN[1], CYAN[2], 0.8F * crack, 0.0F);
-            }
+    /** Das Tor am Himmel: ein gleissender Stern mit kreuzfoermigem Lichtschein (m = Himmelskulissen-Rahmen). */
+    public static void skyGate(Matrix4f m, VertexConsumer vc, float t, float alpha, Vector3f camRel) {
+        Matrix4f gm = new Matrix4f(m).translate(SKY_TOP.x, SKY_TOP.y, SKY_TOP.z);
+        float pulse = 0.85F + 0.15F * Mth.sin(t * 0.08F);
+        RenderUtil.glowSphere(vc, gm, 4.0F * pulse, 10, 14, WHITE, 0.7F * alpha);
+        RenderUtil.glowSphere(vc, gm, 10.0F, 10, 14, CYAN, 0.2F * alpha);
+        RenderUtil.glowSphere(vc, gm, 22.0F, 10, 14, VOID, 0.08F * alpha);
+        // Lichtkreuz zur Kamera ausgerichtet
+        float dx = camRel.x - SKY_TOP.x, dy = camRel.y - SKY_TOP.y, dz = camRel.z - SKY_TOP.z;
+        Matrix4f bm = new Matrix4f(gm).rotateY((float) Math.atan2(dx, dz)).rotateX((float) -Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+        for (int k = 0; k < 4; k++) {
+            float a = k * Mth.HALF_PI + t * 0.002F;
+            float len = (k % 2 == 0 ? 40.0F : 26.0F) * pulse;
+            segment(vc, bm, 0, 0, 0, Mth.cos(a) * len, Mth.sin(a) * len, 0, 0.8F, CYAN[0], CYAN[1], CYAN[2], 0.6F * alpha, 0.0F);
         }
     }
 }

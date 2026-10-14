@@ -7,19 +7,18 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-/**
- * Der Void-Titan der Erwachen-Cutscene - kein Entity, nur ein animiertes Objekt (keine Registrierung, damit Server
- * und Clients auch ohne GeckoLib zusammenpassen). Die Zeit gibt die Cutscene vor.
- */
+/** Animationszustand des Oberkoerpers einer Void-Titan-Entity (je Entity eine Instanz, nur clientseitig). */
 public class VoidTitan implements GeoAnimatable {
     private static final RawAnimation CINEMATIC = RawAnimation.begin().thenPlayAndHold("animation.void_titan.cinematic");
+    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.void_titan.idle");
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    /** Zeit seit dem Erscheinen in Ticks (inkl. Teil-Tick), von der Cutscene gesetzt. */
+    /** Zeit in Ticks (inkl. Teil-Tick), von der Entity vorgegeben. */
     double ticks;
+    boolean cinematic;
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "cinematic", 0, state -> state.setAndContinue(CINEMATIC)));
+        controllers.add(new AnimationController<>(this, "main", 0, state -> state.setAndContinue(cinematic ? CINEMATIC : IDLE)));
     }
 
     @Override

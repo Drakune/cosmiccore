@@ -17,6 +17,15 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>> LARGE_ASTEROID = asteroid(CosmicAsteroid.Kind.LARGE);
     public static final DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>> HUGE_ASTEROID = asteroid(CosmicAsteroid.Kind.HUGE);
 
+    /** Void-Titan der Ultimate-Cutscene (mehrteilig, wird nur clientseitig erzeugt, nie gespeichert). */
+    public static final DeferredHolder<EntityType<?>, EntityType<VoidTitanEntity>> VOID_TITAN = ENTITIES.register("void_titan",
+            () -> EntityType.Builder.<VoidTitanEntity>of(VoidTitanEntity::new, MobCategory.MISC)
+                    .sized(8.0F, 12.0F)
+                    .clientTrackingRange(32)
+                    .fireImmune()
+                    .noSummon()
+                    .build("void_titan"));
+
     /** Entity-Typ je Asteroiden-Art. */
     public static final Map<CosmicAsteroid.Kind, DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>>> ASTEROIDS = new EnumMap<>(Map.of(
             CosmicAsteroid.Kind.SMALL, SMALL_ASTEROID, CosmicAsteroid.Kind.MEDIUM, MEDIUM_ASTEROID,

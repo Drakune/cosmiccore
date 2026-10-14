@@ -44,4 +44,36 @@ public final class CosmicRenderTypes {
     public static RenderType depthBack() {
         return DEPTH_BACK;
     }
+
+    /** Sternenfeld-Kuppel eines fremden Universums: End-Sternenfeld ohne Tiefentest (liegt hinter allem, Himmels-Phase). */
+    private static final RenderType SPACE_DOME = RenderType.create("cosmiccore_space_dome", DefaultVertexFormat.POSITION,
+            VertexFormat.Mode.QUADS, 1536, false, false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RenderStateShard.RENDERTYPE_END_GATEWAY_SHADER)
+                    .setTextureState(RenderStateShard.MultiTextureStateShard.builder()
+                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_SKY_LOCATION, false, false)
+                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_PORTAL_LOCATION, false, false)
+                            .build())
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false));
+
+    public static RenderType spaceDome() {
+        return SPACE_DOME;
+    }
+
+    /** Deckende Farbkuppel ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel). */
+    private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS, 1536, false, false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false));
+
+    public static RenderType spaceSolid() {
+        return SPACE_SOLID;
+    }
 }
