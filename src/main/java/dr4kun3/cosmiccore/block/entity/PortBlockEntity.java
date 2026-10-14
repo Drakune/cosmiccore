@@ -13,6 +13,10 @@ import org.jetbrains.annotations.Nullable;
 public abstract class PortBlockEntity extends BlockEntity {
     @Nullable
     private BlockPos controllerPos;
+    /** Nur Client: Zeitpunkt, an dem die Struktur als gebildet gesehen wurde (fuer die Einblend-Animation). */
+    public long clientAppear = Long.MIN_VALUE;
+    @Nullable
+    public dr4kun3.cosmiccore.block.CorePhase clientSeenPhase;
 
     protected PortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);

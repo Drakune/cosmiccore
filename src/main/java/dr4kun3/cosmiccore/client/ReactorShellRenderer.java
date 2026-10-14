@@ -117,7 +117,8 @@ public final class ReactorShellRenderer {
     }
 
     public record Params(Level level, BlockPos corePos, int size, float t, float form, float energy, float heat,
-                         boolean active, boolean unstable, float growth, int overdrive, SingularityCoreBlockEntity core) {
+                         boolean active, boolean unstable, float growth, int overdrive, SingularityCoreBlockEntity core,
+                         float settle) {
         /** muss zu CorePattern.shellRadius() passen (Phantom-Bloecke). */
         float radius() {
             return size / 2 + 0.2F;
@@ -308,7 +309,14 @@ public final class ReactorShellRenderer {
             for (ShellCell c : cells(p.size())) {
                 if (c.cell() != CorePattern.Cell.SLOT) continue;
                 if (!p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz())).is(ModBlocks.CONTROLLER.get())) continue;
-                Matrix4f cm = consoleFrame(m, c);
+                // nach dem Formen waechst die Konsole federnd aus ihrem Sockel heraus
+                if (p.settle() <= 0.0F) continue;
+                float sc = SingularityCoreBlockEntity.easeOutBack(p.settle());
+                pose.pushPose();
+                pose.translate(c.dx(), c.dy() - 0.5F, c.dz());
+                pose.scale(sc, sc, sc);
+                pose.translate(-c.dx(), -(c.dy() - 0.5F), -c.dz());
+                Matrix4f cm = consoleFrame(pose.last().pose(), c);
                 // Sockel: echte Gehaeuse-Saeule auf einer dunklen Bodenplatte (verdeckt die ausgeblendeten Bloecke darunter)
                 pose.pushPose();
                 pose.translate(c.dx(), c.dy(), c.dz());
@@ -324,7 +332,8 @@ public final class ReactorShellRenderer {
                 float[] b0 = screen(-1.03F, -0.03F), b1 = screen(1.03F, -0.03F), b2 = screen(1.03F, 1.03F), b3 = screen(-1.03F, 1.03F);
                 RenderUtil.quad2(dq, cm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], b2[0], b2[1], b2[2], b3[0], b3[1], b3[2],
                         PANEL[0], PANEL[1], PANEL[2], 1.0F);
-                consoleText(cm, buffers, p);
+                if (p.settle() > 0.6F) consoleText(cm, buffers, p);
+                pose.popPose();
             }
         }
 
@@ -491,17 +500,32 @@ public final class ReactorShellRenderer {
             Vector3f east = new Vector3f(-Mth.sin(lon), 0, Mth.cos(lon));
             Vector3f north = new Vector3f(normal).cross(east).normalize().negate();
             float pulse = 0.6F + 0.4F * Mth.sin(p.t() * 0.12F + c.dx() + c.dz());
-            // Lichtbruecke vom Block (Knoten bzw. Port) zur Kugel - mit Pulsen, die zur Kammer laufen
+            float st = p.settle();
             float[] bridgeCol = controller ? new float[]{0.8F, 0.6F, 1.0F} : energy ? ENERGY_GLYPH : ITEM_GLYPH;
-            segment(vc, m, c.dx(), c.dy(), c.dz(), cpos[0], cpos[1], cpos[2], 0.05F, bridgeCol[0], bridgeCol[1], bridgeCol[2],
+            if (st < 1.0F) {
+                // Materialisieren: Lichtblitz und aufsteigender Scanring am Block
+                Matrix4f bm = new Matrix4f(m).translate(c.dx(), c.dy(), c.dz());
+                RenderUtil.glowSphere(vc, bm, 0.25F + 0.55F * st, 8, 12, bridgeCol, 0.7F * (1.0F - st));
+                RenderUtil.glowSphere(vc, bm, 0.12F + 0.2F * st, 6, 10, new float[]{1, 1, 1}, 0.9F * (1.0F - st));
+                RenderUtil.flatCircle(vc, new Matrix4f(bm).translate(0, -0.5F + st, 0), 0.55F, 0.03F, 32, bridgeCol, 1.0F - st);
+                if (st <= 0.0F) continue;
+            }
+            // Lichtbruecke vom Block (Knoten bzw. Port) zur Kugel - waechst beim Materialisieren heraus
+            float[] end = {Mth.lerp(st, c.dx(), cpos[0]), Mth.lerp(st, c.dy(), cpos[1]), Mth.lerp(st, c.dz(), cpos[2])};
+            segment(vc, m, c.dx(), c.dy(), c.dz(), end[0], end[1], end[2], 0.05F, bridgeCol[0], bridgeCol[1], bridgeCol[2],
                     p.energy() * 0.8F, p.energy() * 0.4F);
-            segment(vc, m, c.dx(), c.dy(), c.dz(), cpos[0], cpos[1], cpos[2], 0.015F, 1.0F, 1.0F, 1.0F, p.energy(), p.energy() * 0.6F);
+            segment(vc, m, c.dx(), c.dy(), c.dz(), end[0], end[1], end[2], 0.015F, 1.0F, 1.0F, 1.0F, p.energy(), p.energy() * 0.6F);
+            if (st < 1.0F && !controller) continue; // Port-Symbole erst, wenn die Bruecke steht
             float bs = Mth.frac(p.t() * 0.04F + c.dx() * 0.3F);
             cube(vc, m, Mth.lerp(bs, c.dx(), cpos[0]), Mth.lerp(bs, c.dy(), cpos[1]), Mth.lerp(bs, c.dz(), cpos[2]),
                     0.05F, 1.0F, 1.0F, 1.0F, p.energy() * Mth.sin(bs * Mth.PI));
             if (controller) {
-                circle(m, vc, cpos, east, north, 0.32F, new float[]{0.8F, 0.6F, 1.0F}, p.energy() * pulse);
-                console(m, vc, c, p, bridgeCol);
+                if (st >= 1.0F) circle(m, vc, cpos, east, north, 0.32F, new float[]{0.8F, 0.6F, 1.0F}, p.energy() * pulse);
+                // Konsolenrahmen waechst mit der Konsole (gleiche Skalierung wie im deckenden Pass)
+                float sc = SingularityCoreBlockEntity.easeOutBack(st);
+                Matrix4f km = new Matrix4f(m).translate(c.dx(), c.dy() - 0.5F, c.dz()).scale(sc)
+                        .translate(-c.dx(), -(c.dy() - 0.5F), -c.dz());
+                console(km, vc, c, p, bridgeCol);
             } else if (energy) {
                 float[] g = ENERGY_GLYPH;
                 gl(m, vc, cpos, east, north, 0.08F, 0.3F, -0.1F, 0.0F, g, p.energy());

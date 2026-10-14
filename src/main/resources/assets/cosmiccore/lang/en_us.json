@@ -112,7 +112,7 @@
   "console.cosmiccore.overdrive": "Overdrive",
   "console.cosmiccore.field": "Containment field",
   "gui.cosmiccore.ultimate": "✦ ULTIMATE CORE ✦",
-  "guide.cosmiccore.page.15": "§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.",
+  "guide.cosmiccore.page.15": "§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first ignition shakes the sky of the whole world.",
   "item.cosmiccore.compressed_star_dust": "Compressed Star Dust",
   "item.cosmiccore.neutron_fragment": "Neutron Star Fragment",
   "item.cosmiccore.quasar_essence": "Quasar Essence",
@@ -174,5 +174,7 @@
   "gui.cosmiccore.unlock.free": "Level %s is already unlocked",
   "gui.cosmiccore.unlock.status": "Unlocked: level 1–%s of %s",
   "message.cosmiccore.unlock.missing": "You need 1× %s to unlock level %s",
-  "message.cosmiccore.unlock.done": "Level %s unlocked permanently!"
+  "message.cosmiccore.unlock.done": "Level %s unlocked permanently!",
+  "gui.cosmiccore.base_output": "Base output",
+  "gui.cosmiccore.max_output": "Max output"
 }

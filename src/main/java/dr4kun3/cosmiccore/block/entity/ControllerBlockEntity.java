@@ -238,7 +238,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Nimmt Energie von aussen auf (z. B. aus dem Kosmos-Laser). Liefert die tatsaechlich aufgenommene Menge. */
     public int receiveCosmicEnergy(int amount) {
-        if (!formed || amount <= 0) return 0;
+        // ohne Brennstoff im Kern laeuft nichts - auch keine kosmische Energie
+        if (!formed || amount <= 0 || burnTime <= 0) return 0;
         int accepted = (int) Math.max(0, Math.min(amount, getCapacity() - energy));
         if (accepted > 0) {
             energy += accepted;
@@ -496,8 +497,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             resonance = Math.max(0, resonance - 2);
         }
 
-        // Ultimativer Kern: Vakuum-Energie aus dem All - auch ohne Brennstoff, ohne Instabilitaet
-        if (size.isUltimate() && enabled && skyLink && collapseCooldown <= 0 && energy < capacity) {
+        // Ultimativer Kern: Vakuum-Energie aus dem All - nur solange Brennstoff brennt, ohne zusaetzliche Instabilitaet
+        if (size.isUltimate() && enabled && skyLink && burnTime > 0 && collapseCooldown <= 0 && energy < capacity) {
             int vacuum = (int) Math.round(CoreConfig.VACUUM_ENERGY.get() * scale * lastCosmic * CoreConfig.OUTPUT_MULTIPLIER.get());
             energy = Math.min(capacity, energy + vacuum);
             lastOutput += vacuum;

@@ -710,8 +710,10 @@ def models():
     for b in ('energy_port', 'item_port'):
         for p in PHASES[1:]:
             wjson(f'{ASSETS}/models/block/{b}_plug_{p}.json', plug(f'{MOD}:block/{b}_{p}'))
+        # gebildet: Blockmodell leer, die Dose zeichnet der PortRenderer (mit Einblend-Animation)
+        wjson(f'{ASSETS}/models/block/{b}_hidden.json', {'textures': {'particle': f'{MOD}:block/{b}_formed'}})
         wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': {
-            f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "plug_" + p}'} for p in PHASES}})
+            f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'} for p in PHASES}})
 
     # Glas (transluzent)
     for p in PHASES:
@@ -940,7 +942,7 @@ DE = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Eindämmungsfeld',
     'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er auch ohne Brennstoff Strom.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
+    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
     'item.cosmiccore.compressed_star_dust': 'Verdichteter Sternenstaub',
     'item.cosmiccore.neutron_fragment': 'Neutronenstern-Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar-Essenz',
@@ -1003,6 +1005,8 @@ DE = {
     'gui.cosmiccore.unlock.status': 'Freigeschaltet: Stufe 1–%s von %s',
     'message.cosmiccore.unlock.missing': 'Dir fehlt 1× %s, um Stufe %s freizuschalten',
     'message.cosmiccore.unlock.done': 'Stufe %s dauerhaft freigeschaltet!',
+    'gui.cosmiccore.base_output': 'Basis-Leistung',
+    'gui.cosmiccore.max_output': 'Max-Leistung',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1118,7 +1122,7 @@ EN = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Containment field',
     'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates power even without fuel.\n\nIts first ignition shakes the sky of the whole world.',
+    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first ignition shakes the sky of the whole world.',
     'item.cosmiccore.compressed_star_dust': 'Compressed Star Dust',
     'item.cosmiccore.neutron_fragment': 'Neutron Star Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar Essence',
@@ -1181,6 +1185,8 @@ EN = {
     'gui.cosmiccore.unlock.status': 'Unlocked: level 1–%s of %s',
     'message.cosmiccore.unlock.missing': 'You need 1× %s to unlock level %s',
     'message.cosmiccore.unlock.done': 'Level %s unlocked permanently!',
+    'gui.cosmiccore.base_output': 'Base output',
+    'gui.cosmiccore.max_output': 'Max output',
 }
 
 

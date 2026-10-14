@@ -300,11 +300,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                     * CoreConfig.OUTPUT_MULTIPLIER.get());
             // Infoblock unter den Reitern - endet oberhalb von "Benoetigte Bloecke" (ICON_Y - 9)
             int ix = TAB_X, iy = TAB_Y + ReactorSize.values().length * TAB_STEP + 2;
-            g.drawString(font, Component.translatable("gui.cosmiccore.output_label"), ix, iy, 0xFFB8A8D8, false);
-            g.drawString(font, fmt(min) + " -", ix, iy + 10, 0xFF9AE8FF, false);
-            g.drawString(font, fmt(max) + " RF/t", ix, iy + 19, 0xFF9AE8FF, false);
-            g.drawString(font, Component.translatable("gui.cosmiccore.max_level"), ix, iy + 32, 0xFFB8A8D8, false);
-            g.drawString(font, String.valueOf(sel.maxScale()), ix, iy + 42, 0xFFE0A8FF, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.base_output"), ix, iy, 0xFFB8A8D8, false);
+            g.drawString(font, fmt(min) + " RF/t", ix, iy + 10, 0xFF9AE8FF, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.max_output"), ix, iy + 22, 0xFFB8A8D8, false);
+            g.drawString(font, fmt(max) + " RF/t", ix, iy + 32, 0xFFFFB0E0, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.max_level").append(": ")
+                    .append(Component.literal(String.valueOf(sel.maxScale())).withStyle(s -> s.withColor(0xE0A8FF))), ix, iy + 45, 0xFFB8A8D8, false);
             if (sel.isUltimate()) {
                 // goldener, sanft pulsierender Schriftzug mittig ueber der Struktur
                 float tt = (System.currentTimeMillis() % 100000L) / 50.0F;
@@ -319,7 +320,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                 Component sub = Component.translatable("gui.cosmiccore.ultimate_cost");
                 g.drawString(font, sub, VIEW_X + (VIEW_W - font.width(sub)) / 2, VIEW_Y + 22, 0xFFE0C080, true);
             }
-            g.drawString(font, Component.translatable("gui.cosmiccore.blocks_label"), 8, ICON_Y - 9 + 0, 0xFFB8A8D8, false);
+            g.drawString(font, Component.translatable("gui.cosmiccore.blocks_label"), ICON_LEFT, ICON_Y - 10, 0xFFB8A8D8, false);
             return;
         }
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xFFB8A8D8, false);
@@ -386,10 +387,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         }
     }
 
+    /** Icons der benoetigten Bloecke: buendig unter der Ueberschrift "Benoetigte Bloecke" (x = 8). */
     private static int iconX(int i, int count) {
-        int step = 26;
-        return W / 2 - (count * step - 10) / 2 + i * step;
+        return ICON_LEFT + i * 26;
     }
+
+    private static final int ICON_LEFT = 8;
 
     private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         return StructurePreview.requiredBlocks(size, funnel, lasers);

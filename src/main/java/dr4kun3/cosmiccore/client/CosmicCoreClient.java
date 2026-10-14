@@ -31,7 +31,19 @@ public final class CosmicCoreClient {
         event.registerBlockEntityRenderer(ModBlockEntities.RESONATOR.get(), ResonatorRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.CONTROLLER.get(), ControllerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.STAR_FUNNEL.get(), StarFunnelRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.ENERGY_PORT.get(), PortRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.ITEM_PORT.get(), PortRenderer::new);
         for (var type : ModEntities.ASTEROIDS.values()) event.registerEntityRenderer(type.get(), CosmicAsteroidRenderer::new);
+    }
+
+    /** Plug-Modelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen. */
+    @SubscribeEvent
+    public static void registerModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
+        for (dr4kun3.cosmiccore.block.CorePhase phase : dr4kun3.cosmiccore.block.CorePhase.values()) {
+            if (phase == dr4kun3.cosmiccore.block.CorePhase.DORMANT) continue;
+            event.register(PortRenderer.plugModel(true, phase));
+            event.register(PortRenderer.plugModel(false, phase));
+        }
     }
 
     private static CosmicItemRenderer itemRenderer;

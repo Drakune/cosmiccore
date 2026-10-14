@@ -262,6 +262,21 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     public static final int FORM_TICKS = 110;
+    /** Nach dem Formen: so lange materialisieren sich Konsole und Ports (Ticks). */
+    public static final int SETTLE_TICKS = 30;
+
+    /** Materialisieren von Konsole und Ports nach dem Formen 0..1 (1 = fertig bzw. beim Laden schon gebildet). */
+    public float getSettle(float partialTick) {
+        if (level == null || formStart == Long.MIN_VALUE) return 1.0F;
+        float s = (level.getGameTime() - formStart + partialTick - FORM_TICKS) / (float) SETTLE_TICKS;
+        return Math.min(1.0F, Math.max(0.0F, s));
+    }
+
+    /** Ueberschwingende Einblendung (waechst kurz ueber 1 hinaus und federt zurueck). */
+    public static float easeOutBack(float x) {
+        float c1 = 1.70158F, c3 = c1 + 1.0F, d = x - 1.0F;
+        return 1.0F + c3 * d * d * d + c1 * d * d;
+    }
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, SingularityCoreBlockEntity be) {
         CorePhase phase = state.getValue(ModProperties.PHASE);

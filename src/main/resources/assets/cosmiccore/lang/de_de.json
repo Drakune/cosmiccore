@@ -112,7 +112,7 @@
   "console.cosmiccore.overdrive": "Overdrive",
   "console.cosmiccore.field": "Eindämmungsfeld",
   "gui.cosmiccore.ultimate": "✦ ULTIMATIVER KERN ✦",
-  "guide.cosmiccore.page.15": "§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er auch ohne Brennstoff Strom.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.",
+  "guide.cosmiccore.page.15": "§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.",
   "item.cosmiccore.compressed_star_dust": "Verdichteter Sternenstaub",
   "item.cosmiccore.neutron_fragment": "Neutronenstern-Fragment",
   "item.cosmiccore.quasar_essence": "Quasar-Essenz",
@@ -174,5 +174,7 @@
   "gui.cosmiccore.unlock.free": "Stufe %s ist bereits freigeschaltet",
   "gui.cosmiccore.unlock.status": "Freigeschaltet: Stufe 1–%s von %s",
   "message.cosmiccore.unlock.missing": "Dir fehlt 1× %s, um Stufe %s freizuschalten",
-  "message.cosmiccore.unlock.done": "Stufe %s dauerhaft freigeschaltet!"
+  "message.cosmiccore.unlock.done": "Stufe %s dauerhaft freigeschaltet!",
+  "gui.cosmiccore.base_output": "Basis-Leistung",
+  "gui.cosmiccore.max_output": "Max-Leistung"
 }

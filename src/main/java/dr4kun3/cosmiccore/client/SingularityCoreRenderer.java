@@ -122,7 +122,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
         // 1) Kammer (Sternenfeld-Platten)
         ReactorShellRenderer.Params shell = new ReactorShellRenderer.Params(level, be.getBlockPos(), be.getStructureSize(), t,
-                form, Math.max(0.4F, energy), heat, active, unstable, growth, od, be);
+                form, Math.max(0.4F, energy), heat, active, unstable, growth, od, be, be.getSettle(partialTick));
         ReactorShellRenderer.solid(pose, buffers, shell);
 
         // Kosmos-Laser: Energiepartikel ueber der Decke
