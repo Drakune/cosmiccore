@@ -26,6 +26,22 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private boolean primary;
     /** Verschmolzener Mittelkern des ultimativen Kerns: vom Controller gesetzt, droppt nichts. */
     private boolean fused;
+    /** Ultimativer Kern: ist der Void-Titan erwacht, faellt sein Strahl dauerhaft in den Kern. */
+    private boolean awakened;
+
+    public boolean isAwakened() {
+        return awakened;
+    }
+
+    public void setAwakened(boolean awakened) {
+        if (awakened == this.awakened) return;
+        this.awakened = awakened;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
     /** Farbsatz vom Farb-Modul des Controllers. */
     private dr4kun3.cosmiccore.color.CoreColors.Config colors = dr4kun3.cosmiccore.color.CoreColors.DEFAULT;
 
@@ -377,6 +393,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         primary = tag.getBoolean("primary");
         fused = tag.getBoolean("fused");
+        awakened = tag.getBoolean("awakened");
         colors = tag.contains("colors")
                 ? new dr4kun3.cosmiccore.color.CoreColors.Config(tag.getInt("colorMask"), tag.getIntArray("colors"))
                 : dr4kun3.cosmiccore.color.CoreColors.DEFAULT;
@@ -406,6 +423,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private void writeVisuals(CompoundTag tag) {
         tag.putBoolean("primary", primary);
         tag.putBoolean("fused", fused);
+        tag.putBoolean("awakened", awakened);
         tag.putInt("colorMask", colors.mask());
         tag.putIntArray("colors", colors.colors());
         tag.putInt("structureSize", structureSize);

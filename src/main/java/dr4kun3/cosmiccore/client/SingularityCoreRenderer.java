@@ -236,6 +236,12 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
                     laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy),
                     be.getDeliverPhase(partialTick), be.getDeliverSource() != null ? be.getDeliverSource() : be.lastLaserTarget, be.hasFunnel() ? half + 1.35F : half + 0.6F, be.getDeliverSize());
         }
+        // Strahl des Void-Titanen: nach dem Erwachen dauerhaft aus dem Riss am Himmel in den Kern
+        // (waehrend der Cutscene zeichnet diese ihn selbst, bis er einschlaegt)
+        if (be.isAwakened() && active && !TitanCutscene.hidesPermanentBeam(be.getBlockPos())) {
+            TitanBeam.beam(pose.last().pose(), glow, TitanBeam.RIFT, new org.joml.Vector3f(0, 0, 0), t, 1.0F, 0.75F * Math.max(0.5F, energy));
+            TitanBeam.rift(pose.last().pose(), glow, TitanBeam.RIFT, t, 0.35F, new org.joml.Vector3f((float) dx, (float) dy, (float) dz));
+        }
         // 5) zuletzt: Rueckwand der Kammerkugel als reiner Tiefen-Abschluss - Wolken und Regen dahinter verschwinden,
         //    alles im Inneren (auch spaeter gezeichnete Effekte) liegt davor und bleibt sichtbar
         if (form > 0.0F) depthBackSphere(buffers.getBuffer(CosmicRenderTypes.depthBack()), pose.last().pose(), half + 0.2F);

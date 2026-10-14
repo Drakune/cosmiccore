@@ -183,6 +183,16 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return skyLink;
     }
 
+    /** Ultimativer Kern: ist der Void-Titan schon erwacht? */
+    public boolean isAwakened() {
+        return awakened && size != null && size.isUltimate();
+    }
+
+    /** Position der Kernmitte (nur bei gewaehlter Groesse sinnvoll). */
+    public BlockPos corePos() {
+        return size == null || level == null ? worldPosition : size.pattern().center(worldPosition, facing());
+    }
+
     public boolean hasColorModule() {
         return inventory.getStackInSlot(SLOT_COLOR).is(ModItems.COLOR_MODULE.get());
     }
@@ -862,6 +872,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private void awaken(ServerLevel level) {
         awakened = true;
         setChanged();
+        pushVisuals(level);
         BlockPos c = center(level);
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayersInDimension(level,
                 new dr4kun3.cosmiccore.network.AwakeningPayload(c, size.size()));
@@ -873,6 +884,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         BlockPos core = center(level);
         if (level.hasChunkAt(core) && level.getBlockEntity(core) instanceof SingularityCoreBlockEntity be) {
             be.setColors(hasColorModule() ? colors : dr4kun3.cosmiccore.color.CoreColors.DEFAULT);
+            be.setAwakened(awakened && size.isUltimate());
             boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
             ItemStack stab = inventory.getStackInSlot(SLOT_STAB);
             int shield = (ModDataMaps.stabilizer(stab) != null ? Math.min(75, stab.getCount() * 75 / 16) : 0) + (field > 0 ? 25 : 0);

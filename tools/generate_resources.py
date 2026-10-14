@@ -966,7 +966,7 @@ DE = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Eindämmungsfeld',
     'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-10, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
+    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-10, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Start weckt den Void-Titanen - sein Strahl fällt seither in den Kern.',
     'item.cosmiccore.compressed_star_dust': 'Verdichteter Sternenstaub',
     'item.cosmiccore.neutron_fragment': 'Neutronenstern-Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar-Essenz',
@@ -1086,6 +1086,13 @@ DE = {
     'gui.cosmiccore.channel.field': 'Haltefeld',
     'gui.cosmiccore.channel.laser': 'Laser',
     'gui.cosmiccore.channel.particles': 'Partikel',
+    'cutscene.cosmiccore.line1': 'Tief im Kern erwacht eine Kraft, älter als die Sterne ...',
+    'cutscene.cosmiccore.line2': 'Jenseits des Himmels reißt das Gefüge des Kosmos auf.',
+    'cutscene.cosmiccore.line3': 'Der Void-Titan erwacht.',
+    'cutscene.cosmiccore.line4': 'Er sammelt die Energie des ganzen Kosmos ...',
+    'cutscene.cosmiccore.line5': 'Seine Kraft fließt nun für immer in den Kern.',
+    'cutscene.cosmiccore.skip': '[Schleichen halten] Überspringen',
+    'message.cosmiccore.cutscene.none': 'Kein erwachter ultimativer Kern in der Nähe (64 Blöcke)',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1201,7 +1208,7 @@ EN = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Containment field',
     'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-10, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first ignition shakes the sky of the whole world.',
+    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-10, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first ignition awakens the Void Titan - its beam has fed the core ever since.',
     'item.cosmiccore.compressed_star_dust': 'Compressed Star Dust',
     'item.cosmiccore.neutron_fragment': 'Neutron Star Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar Essence',
@@ -1321,6 +1328,13 @@ EN = {
     'gui.cosmiccore.channel.field': 'Holding field',
     'gui.cosmiccore.channel.laser': 'Laser',
     'gui.cosmiccore.channel.particles': 'Particles',
+    'cutscene.cosmiccore.line1': 'Deep within the core, a power older than the stars awakens ...',
+    'cutscene.cosmiccore.line2': 'Beyond the sky, the fabric of the cosmos tears open.',
+    'cutscene.cosmiccore.line3': 'The Void Titan awakens.',
+    'cutscene.cosmiccore.line4': 'It gathers the energy of the entire cosmos ...',
+    'cutscene.cosmiccore.line5': 'Its power now flows into the core forever.',
+    'cutscene.cosmiccore.skip': '[Hold sneak] Skip',
+    'message.cosmiccore.cutscene.none': 'No awakened ultimate core nearby (64 blocks)',
 }
 
 
@@ -1388,6 +1402,8 @@ if __name__ == '__main__':
     models()
     lang()
     draw_logo()
+    import generate_titan  # Void-Titan der Erwachen-Cutscene (GeckoLib-Assets)
+    generate_titan.main()
     if '--preview' in sys.argv:
         preview(sheets)
     print('Resources generated.')

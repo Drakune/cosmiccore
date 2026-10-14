@@ -31,3 +31,11 @@ harvest asteroids with a laser array and awaken the Ultimate Core.
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+# GeckoLib ist optional: nur fuer die Void-Titan-Cutscene beim Erwachen des ultimativen Kerns
+[[dependencies.${mod_id}]]
+    modId="geckolib"
+    type="optional"
+    versionRange="[4.9,)"
+    ordering="NONE"
+    side="CLIENT"
