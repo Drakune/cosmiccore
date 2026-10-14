@@ -44,10 +44,10 @@ public class ControllerMenu extends AbstractContainerMenu {
             F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048;
 
     // Layout (auch vom Screen benutzt)
-    public static final int FUEL_X = 15, FUEL_Y = 26, STAB_X = 15, STAB_Y = 66;
-    public static final int INV_X = 36, INV_Y = 188;
+    public static final int FUEL_X = 17, FUEL_Y = 28, STAB_X = 17, STAB_Y = 64;
+    public static final int INV_X = 47, INV_Y = 216;
     /** Beute-Reihe (6 Slots) und Modul-Slots (Effizienz, Stabilitaet, Anti-Asteroiden mit Schalter darunter). */
-    public static final int LOOT_X = 36, LOOT_Y = 153, MOD_X = 170, MOD_Y = 153;
+    public static final int LOOT_X = 15, LOOT_Y = 173, MOD_X = 177, MOD_Y = 173;
 
     private final BlockPos pos;
     private final ContainerLevelAccess access;

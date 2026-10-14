@@ -84,8 +84,8 @@
   "jei.cosmiccore.loot.huge": "Huge Asteroid",
   "gui.cosmiccore.funnel_on": "✦ Star funnel: active",
   "guide.cosmiccore.page.11": "§5§lStar Funnel§r\n\nPlace it right on the center of the ceiling.\n\nWith a clear sky it draws cosmic energy from space and §bdoubles§r the sky bonus.",
-  "guide.cosmiccore.page.12": "§5§lAsteroids§r\n\nAt night asteroids drift across the sky - small, medium or large.\n\nLarge ones give 1M RF, small ones 50,000 RF.",
-  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become orbiting energy particles that shoot asteroids and collect their energy.",
+  "guide.cosmiccore.page.12": "§5§lAsteroids§r\n\nAt night asteroids drift over reactors - small, medium, large and rarely huge.\n\nThey give no energy but loot: resources and fuels for the controller.",
+  "guide.cosmiccore.page.13": "§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become orbiting energy particles that pull in asteroids and collect their loot - even without fuel.",
   "item.cosmiccore.overdrive_particle": "Cosmic Core Overdrive Particle",
   "gui.cosmiccore.with_lasers": "+ Lasers",
   "message.cosmiccore.not_running": "Ignite the generator first - level and overdrive can only be changed while running",
@@ -176,5 +176,12 @@
   "message.cosmiccore.unlock.missing": "You need 1× %s to unlock level %s",
   "message.cosmiccore.unlock.done": "Level %s unlocked permanently!",
   "gui.cosmiccore.base_output": "Base output",
-  "gui.cosmiccore.max_output": "Max output"
+  "gui.cosmiccore.max_output": "Max output",
+  "gui.cosmiccore.info_head": "Specs",
+  "gui.cosmiccore.info_levels": "Levels",
+  "gui.cosmiccore.info_buffer": "Buffer",
+  "gui.cosmiccore.info_overdrive": "Overdrive",
+  "gui.cosmiccore.info_unlock": "Per level",
+  "gui.cosmiccore.info_unlock_tip": "Consumed once for each new power level",
+  "gui.cosmiccore.controls": "Controls"
 }

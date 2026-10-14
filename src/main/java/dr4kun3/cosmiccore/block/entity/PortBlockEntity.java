@@ -15,11 +15,32 @@ public abstract class PortBlockEntity extends BlockEntity {
     private BlockPos controllerPos;
     /** Nur Client: Zeitpunkt, an dem die Struktur als gebildet gesehen wurde (fuer die Einblend-Animation). */
     public long clientAppear = Long.MIN_VALUE;
-    @Nullable
-    public dr4kun3.cosmiccore.block.CorePhase clientSeenPhase;
+
 
     protected PortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+
+    /**
+     * Client: Wechsel inaktiv -> gebildet merken (beim Laden einer fertigen Struktur gibt es keinen Wechsel,
+     * dann ist die Dose sofort da). Unabhaengig davon, ob der Port gerade gezeichnet wurde.
+     */
+    @Override
+    @SuppressWarnings("deprecation")
+    public void setBlockState(BlockState state) {
+        BlockState old = getBlockState();
+        super.setBlockState(state);
+        if (level == null || !level.isClientSide || !old.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)
+                || !state.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)) {
+            return;
+        }
+        dr4kun3.cosmiccore.block.CorePhase before = old.getValue(dr4kun3.cosmiccore.block.ModProperties.PHASE);
+        dr4kun3.cosmiccore.block.CorePhase now = state.getValue(dr4kun3.cosmiccore.block.ModProperties.PHASE);
+        if (before == dr4kun3.cosmiccore.block.CorePhase.DORMANT && now != dr4kun3.cosmiccore.block.CorePhase.DORMANT) {
+            clientAppear = level.getGameTime();
+        } else if (now == dr4kun3.cosmiccore.block.CorePhase.DORMANT) {
+            clientAppear = Long.MIN_VALUE;
+        }
     }
 
     public void link(@Nullable BlockPos pos) {

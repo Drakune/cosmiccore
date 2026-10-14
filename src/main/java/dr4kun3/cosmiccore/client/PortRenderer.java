@@ -44,17 +44,10 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         BlockState state = be.getBlockState();
         if (!state.hasProperty(ModProperties.PHASE)) return;
         CorePhase phase = state.getValue(ModProperties.PHASE);
-        if (phase == CorePhase.DORMANT) {
-            be.clientSeenPhase = CorePhase.DORMANT;
-            be.clientAppear = Long.MIN_VALUE;
-            return;
-        }
+        if (phase == CorePhase.DORMANT) return;
         long now = level.getGameTime();
-        if (be.clientAppear == Long.MIN_VALUE) {
-            // gerade gebildet (vorher als inaktiv gesehen) -> animieren; beim Laden einer fertigen Struktur sofort da
-            be.clientAppear = be.clientSeenPhase == CorePhase.DORMANT ? now : now - 100_000L;
-        }
-        be.clientSeenPhase = phase;
+        // Zeitpunkt des Formens setzt der Port selbst beim Zustandswechsel; ohne Wechsel (geladen) = schon fertig
+        if (be.clientAppear == Long.MIN_VALUE) be.clientAppear = now - 100_000L;
         // die Dose erscheint erst, wenn das Einsaugen und Entstehen der Kammer vorbei ist
         float st = (now - be.clientAppear + partialTick - SingularityCoreBlockEntity.FORM_TICKS)
                 / (float) SingularityCoreBlockEntity.SETTLE_TICKS;

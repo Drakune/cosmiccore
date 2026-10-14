@@ -84,8 +84,8 @@
   "jei.cosmiccore.loot.huge": "Sehr großer Asteroid",
   "gui.cosmiccore.funnel_on": "✦ Sternentrichter: aktiv",
   "guide.cosmiccore.page.11": "§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.",
-  "guide.cosmiccore.page.12": "§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über den Himmel - klein, mittel oder groß.\n\nGroße bringen 1 Mio. RF, kleine 50.000 RF.",
-  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie werden zu kreisenden Energiepartikeln, die Asteroiden abschießen und ihre Energie sammeln.",
+  "guide.cosmiccore.page.12": "§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über Reaktoren hinweg - klein, mittel, groß und selten sehr groß.\n\nSie liefern keine Energie, sondern Beute: Rohstoffe und Brennstoffe für den Controller.",
+  "guide.cosmiccore.page.13": "§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie werden zu kreisenden Energiepartikeln, die Asteroiden heranziehen und ihre Beute sammeln - auch ohne Brennstoff.",
   "item.cosmiccore.overdrive_particle": "Overdrive-Partikel",
   "gui.cosmiccore.with_lasers": "+ Laser",
   "message.cosmiccore.not_running": "Erst den Generator zünden - Stufe und Overdrive sind nur im Betrieb einstellbar",
@@ -176,5 +176,12 @@
   "message.cosmiccore.unlock.missing": "Dir fehlt 1× %s, um Stufe %s freizuschalten",
   "message.cosmiccore.unlock.done": "Stufe %s dauerhaft freigeschaltet!",
   "gui.cosmiccore.base_output": "Basis-Leistung",
-  "gui.cosmiccore.max_output": "Max-Leistung"
+  "gui.cosmiccore.max_output": "Max-Leistung",
+  "gui.cosmiccore.info_head": "Kennwerte",
+  "gui.cosmiccore.info_levels": "Stufen",
+  "gui.cosmiccore.info_buffer": "Puffer",
+  "gui.cosmiccore.info_overdrive": "Overdrive",
+  "gui.cosmiccore.info_unlock": "Je Stufe",
+  "gui.cosmiccore.info_unlock_tip": "Wird je neuer Leistungsstufe einmalig verbraucht",
+  "gui.cosmiccore.controls": "Steuerung"
 }

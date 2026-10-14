@@ -740,7 +740,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 : muzzle.add(0, HOLD_ABOVE + target.getSizeBlocks() * 0.35, 0);
         int gained = target.harvestTick(hold, funnel);
         if (gained > 0) {
-            receiveCosmicEnergy(gained);
+            // der Laser sammelt nur Beute - sie wird nicht automatisch verwertet (keine direkte Energie)
             collectLoot(level, variant);
             // grosses Energiepartikel sammelt sich ueber dem Trichter und wird an den Kern uebergeben
             if (level.getBlockEntity(center(level)) instanceof SingularityCoreBlockEntity core) core.markDelivery(level.getGameTime(), hold, burstSize);
