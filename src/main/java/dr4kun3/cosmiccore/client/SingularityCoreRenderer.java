@@ -154,8 +154,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             pose.translate(hash(s) * amp, hash(s + 17) * amp, hash(s + 31) * amp);
         }
 
-        // 2) Ereignishorizont
-        RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), rh, 16, 24, 0.0F, 0.0F, 0.0F);
+        // 2) Ereignishorizont: animiertes End-Sternenfeld statt reinem Schwarz
+        RenderUtil.sphere(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), rh, 16, 24);
 
         // 3) Licht
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
@@ -181,6 +181,11 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
         haze(dm, glow, outer, e, heat);
         hotspots(dm, glow, inner, t, spin, e, heat);
+        if (be.getStructureSize() >= 11) {
+            // ultimativ: einfallende Materie und gelegentlich ein Gezeitenstrom in der Scheibenebene
+            BlackHoleFx.infall(dm, glow, rh, inner, outer, t, e);
+            BlackHoleFx.tidalStream(dm, glow, rh, inner, outer, t, e);
+        }
         pose.popPose();
         if (od >= 1) {
             // Ueberladung: zweite, steil gekippte Scheibe im Gegenlauf
@@ -205,6 +210,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         tendrils(pose.last().pose(), glow, reach, inner, t, e, heat, active);
         lensing(pose, glow, rh, inner, t, e, heat, camYaw, camPitch, beat);
         if (active) jets(pose.last().pose(), glow, rh, reach, t, e, heat, growth + 0.25F * od);
+        if (be.getStructureSize() >= 11) BlackHoleFx.orbiters(pose.last().pose(), glow, rh, reach, t, e);
         if (be.getStructureSize() >= 11) UltimateFx.render(pose, glow, rh, inner, outer, reach, t, spin, e * (od >= 3 ? 0.75F : 1.0F), tilt);
         FieldFx.render(pose.last().pose(), glow, reach + 0.5F, reach, t, e, heat, be.getShield(), unstable, od);
         pose.popPose(); // Zittern
