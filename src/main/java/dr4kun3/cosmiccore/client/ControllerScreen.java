@@ -72,7 +72,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int SIZE_INFO_Y = SIZE_CARD_Y + SIZE_CARD_H + M, SIZE_INFO_H = 93;
     private static final int OPT_Y = SIZE_INFO_Y + SIZE_INFO_H + M, OPT_H = 1 + PAD + HEAD_H + 17 + M + 17 + PAD + 1;
     private static final int VIEW_X = M + LEFT_W + M, VIEW_Y = M, VIEW_W = W - M - VIEW_X;
-    private static final int BLOCKS_H = 1 + PAD + HEAD_H + 18 + PAD + 1, BLOCKS_Y = OPT_Y + OPT_H - BLOCKS_H;
+    private static final int SCROLL_H = 3 + 3; // Abstand + Scrollbalken unter den Icons
+    private static final int BLOCKS_H = 1 + PAD + HEAD_H + 18 + SCROLL_H + PAD + 1, BLOCKS_Y = OPT_Y + OPT_H - BLOCKS_H;
     private static final int VIEW_H = BLOCKS_Y - M - VIEW_Y;
     private static final int ICON_Y = BLOCKS_Y + 1 + PAD + HEAD_H + 1;
 
@@ -141,9 +142,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     /** Warnung vor dem Aktivieren bzw. Entfernen einer Overdrive-Stufe. */
     private void confirmOverdrive(boolean up) {
         if (minecraft == null) return;
-        Component title = Component.translatable(up ? "gui.cosmiccore.overdrive.confirm_up" : "gui.cosmiccore.overdrive.confirm_down")
-                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
-        Component message = Component.translatable(up ? "gui.cosmiccore.overdrive.warning_up" : "gui.cosmiccore.overdrive.warning_down");
+        ReactorSize current = ReactorSize.bySize(menu.size());
+        boolean ultimateStep = current != null && (up ? menu.overdrive() >= current.maxOverdrive() : menu.overdrive() > current.maxOverdrive());
+        String k = ultimateStep ? "gui.cosmiccore.ultimate_mode" : "gui.cosmiccore.overdrive";
+        Component title = Component.translatable(k + (up ? ".confirm_up" : ".confirm_down")).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+        Component message = Component.translatable(k + (up ? ".warning_up" : ".warning_down"), ControllerBlockEntity.ULTIMATE_COST);
         minecraft.setScreen(new ConfirmScreen(ok -> {
             minecraft.setScreen(this);
             if (ok) press(up ? ControllerMenu.BTN_OVERDRIVE_UP : ControllerMenu.BTN_OVERDRIVE_DOWN);
@@ -164,6 +167,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!menu.sizeChosen() && button == 0 && in((int) mouseX - leftPos, (int) mouseY - topPos, BLOCKS_IN_X0, SCROLL_Y - 2, BLOCKS_IN_X1 - BLOCKS_IN_X0, 7)
+                && blocksMaxScroll(requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers).size()) > 0) {
+            draggingScroll = true;
+            scrollTo(mouseX);
+            return true;
+        }
         if (menu.sizeChosen() && button == 0 && menu.flag(ControllerMenu.F_ANTI_INSTALLED)
                 && in((int) mouseX - leftPos, (int) mouseY - topPos, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             press(ControllerMenu.BTN_ANTI_ASTEROID);
@@ -198,8 +207,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         laserBox.visible = !chosen;
         ReactorSize current = ReactorSize.bySize(menu.size());
         int maxOd = current == null ? 0 : current.maxOverdrive();
+        int maxTotal = current == null ? 0 : current.maxOverdriveTotal();
         overdriveUp.visible = overdriveDown.visible = chosen;
-        overdriveUp.active = running && menu.overdrive() < maxOd;
+        overdriveUp.active = running && menu.overdrive() < maxTotal;
+        // nach Overdrive 3 wird der Knopf beim ultimativen Kern zum Ultimate-Modus
+        boolean ultimateNext = maxTotal > maxOd && menu.overdrive() >= maxOd;
+        overdriveUp.setMessage(Component.translatable(ultimateNext ? "gui.cosmiccore.ultimate_mode_btn" : "gui.cosmiccore.overdrive_up")
+                .withStyle(ultimateNext ? ChatFormatting.GOLD : ChatFormatting.RESET));
         overdriveDown.active = running && menu.overdrive() > 0;
         ReactorSize sel = ReactorSize.values()[selected];
         confirm.setMessage(Component.translatable("gui.cosmiccore.confirm", sel.size(), sel.size(), sel.size()));
@@ -273,6 +287,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             g.fill(bx, by, bx + 8, by + 8, on ? 0xFFFFB040 : 0xFF3A2468);
             g.fill(bx + 1, by + 1, bx + 7, by + 7, on ? (((int) (t / 3) + i) % 2 == 0 ? 0xFFFFE080 : 0xFFFF8020) : 0xFF0E0820);
         }
+        if (current != null && current.maxOverdriveTotal() > maxOd) {
+            // Ultimate-Feld: golden umrandet, aktiv in schimmernden Regenbogen-Goldtoenen
+            int bx = x + COL_A + 54 + maxOd * 10, by = y + OD_Y + 4;
+            boolean on = menu.overdrive() > maxOd;
+            int pulse = (int) (150 + 100 * Mth.sin(t * 0.2F));
+            g.fill(bx, by, bx + 8, by + 8, on ? 0xFFFFFFFF : (pulse << 24) | 0xFFC040);
+            int[] cols = {0xFFFFE080, 0xFF60FFE0, 0xFFFF80E0, 0xFFFFC040};
+            g.fill(bx + 1, by + 1, bx + 7, by + 7, on ? cols[(int) (t / 4) % cols.length] : 0xFF0E0820);
+        }
 
         // Stufenanzeige zwischen - und +
         int sx0 = SCALE_MINUS_X + 16 + M, sx1 = SCALE_PLUS_X - M, sw = sx1 - sx0 - 2;
@@ -339,9 +362,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             g.fill(ix, iy + 11, TAB_X + TAB_W, iy + 12, 0x663A2468);
             // je Kennwert eine eigene Zeile mit Luft dazwischen: Bezeichnung links, Wert rechtsbuendig
             spec(g, ix, iy + 17, "gui.cosmiccore.info_levels", String.valueOf(sel.maxScale()), 0xFFE0A8FF);
-            spec(g, ix, iy + 33, "gui.cosmiccore.info_buffer", bufferText(sel.buffer()), 0xFF9AE8FF);
-            spec(g, ix, iy + 49, "gui.cosmiccore.info_overdrive", String.valueOf(sel.maxOverdrive()), 0xFFFFB040);
             g.drawString(font, Component.translatable("gui.cosmiccore.info_unlock"), ix, SIZE_INFO_Y + SPEC_KEY_Y, 0xFF908AA8, false);
+            spec(g, ix, iy + 53, "gui.cosmiccore.info_buffer", bufferText(sel.buffer()), 0xFF9AE8FF);
+            spec(g, ix, iy + 69, "gui.cosmiccore.info_overdrive",
+                    sel.maxOverdrive() + (sel.maxOverdriveTotal() > sel.maxOverdrive() ? " + \u2605" : ""), 0xFFFFB040);
             if (sel.isUltimate()) {
                 // goldener, sanft pulsierender Schriftzug mittig ueber der Struktur
                 float tt = (System.currentTimeMillis() % 100000L) / 50.0F;
@@ -424,12 +448,61 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
         // benoetigte Bloecke
         List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers);
+        int maxScroll = blocksMaxScroll(icons.size());
+        blocksScroll = Mth.clamp(blocksScroll, 0, maxScroll);
+        // Icons innerhalb der Karte beschneiden; laengere Listen lassen sich horizontal scrollen
+        g.enableScissor(x + BLOCKS_IN_X0, y + ICON_Y - 1, x + BLOCKS_IN_X1, y + ICON_Y + 17);
         for (int i = 0; i < icons.size(); i++) {
-            int ix = x + iconX(i, icons.size()), iy = y + ICON_Y;
+            int ix = x + iconX(i, icons.size()) - blocksScroll, iy = y + ICON_Y;
             drawSlotBox(g, ix, iy, 0xFF2E2050);
             g.renderItem(icons.get(i), ix, iy);
             g.renderItemDecorations(font, icons.get(i), ix, iy);
         }
+        g.disableScissor();
+        if (maxScroll > 0) {
+            int tx0 = x + BLOCKS_IN_X0, tx1 = x + BLOCKS_IN_X1, sy = y + SCROLL_Y;
+            int trackW = tx1 - tx0, contentW = blocksContentW(icons.size());
+            int thumbW = Math.max(12, trackW * trackW / contentW);
+            int thumbX = tx0 + Math.round((trackW - thumbW) * (blocksScroll / (float) maxScroll));
+            g.fill(tx0, sy, tx1, sy + 3, 0xFF1A1030);
+            g.fill(thumbX, sy, thumbX + thumbW, sy + 3, 0xFF8A5AD8);
+        }
+    }
+
+    // Blockliste: sichtbarer Innenbereich der Karte und Scrollzustand
+    private static final int BLOCKS_IN_X0 = VIEW_X + 1 + PAD, BLOCKS_IN_X1 = VIEW_X + VIEW_W - 1 - PAD;
+    private static final int SCROLL_Y = ICON_Y + 17 + 3;
+    private int blocksScroll;
+    private boolean draggingScroll;
+
+    private static int blocksContentW(int count) {
+        return count * 24 - 6;
+    }
+
+    private static int blocksMaxScroll(int count) {
+        return Math.max(0, blocksContentW(count) - (BLOCKS_IN_X1 - BLOCKS_IN_X0));
+    }
+
+    private void scrollTo(double mouseX) {
+        int count = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers).size();
+        int maxScroll = blocksMaxScroll(count);
+        float f = (float) ((mouseX - leftPos - BLOCKS_IN_X0) / (BLOCKS_IN_X1 - BLOCKS_IN_X0));
+        blocksScroll = Math.round(Mth.clamp(f, 0.0F, 1.0F) * maxScroll);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (!menu.sizeChosen() && in((int) mouseX - leftPos, (int) mouseY - topPos, VIEW_X, BLOCKS_Y, VIEW_W, BLOCKS_H)) {
+            blocksScroll -= (int) Math.round((scrollY != 0 ? scrollY : scrollX) * 24);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        draggingScroll = false;
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     /** Icons der benoetigten Bloecke: buendig unter der Ueberschrift "Benoetigte Bloecke" (x = 8). */
@@ -452,6 +525,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (draggingScroll) {
+            scrollTo(mouseX);
+            return true;
+        }
         if (!menu.sizeChosen() && in((int) mouseX - leftPos, (int) mouseY - topPos, VIEW_X, VIEW_Y, VIEW_W, VIEW_H)) {
             dragYaw += (float) dragX * 1.5F;
             dragPitch = Mth.clamp(dragPitch + (float) dragY, -40.0F, 50.0F);
@@ -467,7 +544,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /** Freischalt-Zeile der Kennwerte-Karte (Text, Item rechts daneben). */
-    private static final int SPEC_KEY_Y = 1 + PAD + 17 + 3 * 16 + 4;
+    private static final int SPEC_KEY_Y = 1 + PAD + 17 + 16 + 4;
 
     private static final String[] SPEC_KEYS = {"gui.cosmiccore.info_levels", "gui.cosmiccore.info_buffer",
             "gui.cosmiccore.info_overdrive", "gui.cosmiccore.info_unlock"};
@@ -528,7 +605,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (!menu.sizeChosen()) {
             List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers);
             for (int i = 0; i < icons.size(); i++) {
-                int ix = leftPos + iconX(i, icons.size()), iy = topPos + ICON_Y;
+                int ix = leftPos + iconX(i, icons.size()) - blocksScroll, iy = topPos + ICON_Y;
+                if (mouseX < leftPos + BLOCKS_IN_X0 || mouseX >= leftPos + BLOCKS_IN_X1) break; // ausserhalb des sichtbaren Bereichs
                 if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {
                     g.renderTooltip(font, icons.get(i).getHoverName(), mouseX, mouseY);
                 }

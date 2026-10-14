@@ -803,6 +803,10 @@ def models():
                'stability_module', 'anti_asteroid_module'):
         wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
                                                   'textures': {'particle': f'{MOD}:item/{it}'}, 'display': floating})
+    # Quasar-Overdrive-Partikel: ebenfalls 3D (CosmicItemRenderer), Bruchpartikel von der Quasar-Essenz
+    wjson(f'{ASSETS}/models/item/quasar_overdrive_particle.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
+                                                                  'textures': {'particle': f'{MOD}:item/quasar_essence'},
+                                                                  'display': floating})
     # 3D-Handbuch: Buchdeckel, Seitenblock, Ruecken und Sternen-Juwel
     cover, pages, spine = f'{MOD}:item/book_cover', f'{MOD}:item/book_pages', f'{MOD}:item/book_spine'
     def el(a, b, faces):
@@ -900,7 +904,7 @@ DE = {
     'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an.',
     'guide.cosmiccore.page.5': '§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...',
     'guide.cosmiccore.page.6': '§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.',
-    'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen 1 bis 10 (ultimativ 12). Jede neue Stufe einmalig freischalten: §e5er§r Sternenstaub, §e7er§r verd. Sternenstaub, §e9er§r Neutronenstern, §eUltimativ§r Quasar-Essenz.',
+    'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen: 5er 4, 7er 6, 9er 8, ultimativ 10. Jede neue Stufe einmalig freischalten: §e5er§r Sternenstaub, §e7er§r verd. Sternenstaub, §e9er§r Neutronenstern, §eUltimativ§r Quasar-Essenz.',
     'guide.cosmiccore.page.8': '§5§lInstabilität§r\n\nBrennstoff erhitzt den Kern. Ab 20 % hält das Feld ihn dort und verbraucht dafür Stabilisatoren - je höher die Stufe, desto mehr.\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: 10 s Countdown - unter 95 % gerettet, sonst §lKollaps§r!',
     'guide.cosmiccore.page.9': '§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.',
     'guide.cosmiccore.page.10': '§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r',
@@ -929,7 +933,7 @@ DE = {
     'message.cosmiccore.overdrive.missing': 'Du brauchst ein Overdrive-Partikel im Inventar',
     'tooltip.cosmiccore.overdrive.effect': 'Im Controller des gebildeten Reaktors installieren: RF x2, Instabilität x3',
     'tooltip.cosmiccore.overdrive.limit': 'Max. 1 / 2 / 3 Stufen (5x5x5 / 7x7x7 / 9x9x9)',
-    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 Stufen.\nNur am gebildeten Reaktor. Zerfällt er, ist der Overdrive weg.',
+    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9 und ultimativ: 3 Stufen.\n§6★ Ultimate-Modus:§r ultimativ nach Stufe 3 mit 4 Quasar-Overdrive-Partikeln.\nNur am gebildeten Reaktor. Zerfällt er, ist der Overdrive weg.',
     'console.cosmiccore.title': 'KOSMISCHER KERN',
     'console.cosmiccore.meltdown': 'KOLLAPS IN %s s',
     'console.cosmiccore.full': 'PUFFER VOLL',
@@ -942,7 +946,7 @@ DE = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Eindämmungsfeld',
     'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-12, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
+    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-10, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Start erschüttert den Himmel der ganzen Welt.',
     'item.cosmiccore.compressed_star_dust': 'Verdichteter Sternenstaub',
     'item.cosmiccore.neutron_fragment': 'Neutronenstern-Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar-Essenz',
@@ -1016,6 +1020,16 @@ DE = {
     'gui.cosmiccore.controls': 'Steuerung',
     'gui.cosmiccore.size_head': 'Größe',
     'gui.cosmiccore.options_head': 'Optionen',
+    'item.cosmiccore.quasar_overdrive_particle': 'Quasar-Overdrive-Partikel',
+    'tooltip.cosmiccore.quasar_overdrive.effect': 'Ultimativer Kern nach Overdrive 3: 4 Stück entfesseln den ★ Ultimate-Modus',
+    'tooltip.cosmiccore.quasar_overdrive.limit': 'Nur craftbar – extrem selten',
+    'gui.cosmiccore.ultimate_mode_btn': '★ Ultimate',
+    'gui.cosmiccore.ultimate_mode.confirm_up': '★ Ultimate-Modus entfesseln?',
+    'gui.cosmiccore.ultimate_mode.warning_up': 'Der ultimative Kern entfaltet seine volle Kraft: RF-Erzeugung nochmals x2, Instabilität x2. Es werden %s Quasar-Overdrive-Partikel verbraucht und NICHT zurückgegeben.',
+    'gui.cosmiccore.ultimate_mode.confirm_down': 'Ultimate-Modus beenden?',
+    'gui.cosmiccore.ultimate_mode.warning_down': 'Die %s Quasar-Overdrive-Partikel sind verbraucht und kommen nicht zurück.',
+    'message.cosmiccore.ultimate.missing': 'Du brauchst %s Quasar-Overdrive-Partikel im Inventar',
+    'jei.cosmiccore.info.quasar_overdrive_particle': 'Nur craftbar: ein Overdrive-Partikel in der Mitte, umgeben von vier Quasar-Essenzen. Vier davon entfesseln beim ultimativen Kern nach Overdrive 3 den Ultimate-Modus.',
 }
 EN = {
     'itemGroup.cosmiccore': 'Cosmic Core',
@@ -1089,7 +1103,7 @@ EN = {
     'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts can replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes.',
     'guide.cosmiccore.page.5': '§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...',
     'guide.cosmiccore.page.6': '§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.',
-    'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels 1 to 10 (ultimate 12). Unlock each new level once: §e5x§r star dust, §e7x§r compressed star dust, §e9x§r neutron star, §eUltimate§r quasar essence.',
+    'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels: 5x 4, 7x 6, 9x 8, ultimate 10. Unlock each new level once: §e5x§r star dust, §e7x§r compressed star dust, §e9x§r neutron star, §eUltimate§r quasar essence.',
     'guide.cosmiccore.page.8': '§5§lInstability§r\n\nFuel heats the core. From 20 % the field holds it there, using stabilizers - the higher the level, the more.\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: 10 s countdown - below 95 % saved, else §lcollapse§r!',
     'guide.cosmiccore.page.9': '§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output, with a Star Funnel §b+50 %§r.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.',
     'guide.cosmiccore.page.10': '§5§lTips§r\n\n- Test on level 1 first.\n- Never run out of stabilizers.\n- On alarm, lower the level or press Stop.\n- In creative, §dBuild§r places the structure instantly.\n\n§8Good luck, starsmith.§r',
@@ -1118,7 +1132,7 @@ EN = {
     'message.cosmiccore.overdrive.missing': 'You need an Overdrive Particle in your inventory',
     'tooltip.cosmiccore.overdrive.effect': 'Install in a formed reactor: RF x2, instability x3',
     'tooltip.cosmiccore.overdrive.limit': 'Max 1 / 2 / 3 levels (5x5x5 / 7x7x7 / 9x9x9)',
-    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9: 3 levels.\nOnly on a formed reactor. If it breaks, overdrive is lost.',
+    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9 and ultimate: 3 levels.\n§6★ Ultimate mode:§r ultimate core after level 3 with 4 Quasar Overdrive Particles.\nOnly on a formed reactor. If it breaks, overdrive is lost.',
     'console.cosmiccore.title': 'COSMIC CORE',
     'console.cosmiccore.meltdown': 'COLLAPSE IN %s s',
     'console.cosmiccore.full': 'BUFFER FULL',
@@ -1131,7 +1145,7 @@ EN = {
     'console.cosmiccore.overdrive': 'Overdrive',
     'console.cosmiccore.field': 'Containment field',
     'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
-    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-12, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first ignition shakes the sky of the whole world.',
+    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-10, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first ignition shakes the sky of the whole world.',
     'item.cosmiccore.compressed_star_dust': 'Compressed Star Dust',
     'item.cosmiccore.neutron_fragment': 'Neutron Star Fragment',
     'item.cosmiccore.quasar_essence': 'Quasar Essence',
@@ -1205,6 +1219,16 @@ EN = {
     'gui.cosmiccore.controls': 'Controls',
     'gui.cosmiccore.size_head': 'Size',
     'gui.cosmiccore.options_head': 'Options',
+    'item.cosmiccore.quasar_overdrive_particle': 'Quasar Overdrive Particle',
+    'tooltip.cosmiccore.quasar_overdrive.effect': 'Ultimate core after overdrive 3: 4 of them unleash ★ Ultimate mode',
+    'tooltip.cosmiccore.quasar_overdrive.limit': 'Craft only – extremely rare',
+    'gui.cosmiccore.ultimate_mode_btn': '★ Ultimate',
+    'gui.cosmiccore.ultimate_mode.confirm_up': '★ Unleash Ultimate mode?',
+    'gui.cosmiccore.ultimate_mode.warning_up': 'The ultimate core unleashes its full power: RF generation x2 again, instability x2. %s Quasar Overdrive Particles are consumed and NOT returned.',
+    'gui.cosmiccore.ultimate_mode.confirm_down': 'End Ultimate mode?',
+    'gui.cosmiccore.ultimate_mode.warning_down': 'The %s Quasar Overdrive Particles are consumed and will not come back.',
+    'message.cosmiccore.ultimate.missing': 'You need %s Quasar Overdrive Particles in your inventory',
+    'jei.cosmiccore.info.quasar_overdrive_particle': 'Craft only: an Overdrive Particle in the center surrounded by four Quasar Essences. Four of them unleash Ultimate mode on the ultimate core after overdrive 3.',
 }
 
 

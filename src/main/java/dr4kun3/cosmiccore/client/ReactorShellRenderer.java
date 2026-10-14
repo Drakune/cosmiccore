@@ -49,7 +49,8 @@ public final class ReactorShellRenderer {
     private static final float[] SEAM = {0.62F, 0.4F, 1.0F};
     private static final float[] SEAM_HOT = {1.0F, 0.72F, 0.4F};
     private static final float[] CRITICAL = {1.0F, 0.12F, 0.12F};
-    private static final float[][] OVERDRIVE_SEAM = {{0.45F, 0.85F, 1.0F}, {1.0F, 0.78F, 0.25F}, {1.0F, 0.9F, 1.0F}};
+    private static final float[][] OVERDRIVE_SEAM = {{0.45F, 0.85F, 1.0F}, {1.0F, 0.78F, 0.25F}, {1.0F, 0.9F, 1.0F},
+            {1.0F, 0.88F, 0.45F}};
     private static final float[] ENERGY_GLYPH = {0.35F, 0.95F, 1.0F};
     private static final float[] ITEM_GLYPH = {1.0F, 0.6F, 0.2F};
 
@@ -170,6 +171,7 @@ public final class ReactorShellRenderer {
         int maxOd = size == null ? 0 : size.maxOverdrive();
         StringBuilder od = new StringBuilder();
         for (int i = 0; i < maxOd; i++) od.append(i < core.getOverdrive() ? "\u25A0 " : "\u25A1 ");
+        if (core.getOverdrive() > maxOd) od.append("\u2605 "); // Ultimate-Modus
         int inst = Math.round(core.getInstability());
         int instColor = inst < 40 ? 0x80FF90 : inst < 70 ? 0xFFE060 : 0xFF5060;
         long cap = ReactorSizeCapacity.capacity(core.getStructureSize());
@@ -389,7 +391,7 @@ public final class ReactorShellRenderer {
     public static void glow(Matrix4f m, VertexConsumer vc, Params p) {
         float r = p.radius();
         float[] seam = lerp(SEAM, SEAM_HOT, p.active() ? 0.45F : 0.0F);
-        if (p.overdrive() > 0) seam = lerp(seam, OVERDRIVE_SEAM[Math.min(3, p.overdrive()) - 1], 0.8F);
+        if (p.overdrive() > 0) seam = lerp(seam, OVERDRIVE_SEAM[Math.min(4, p.overdrive()) - 1], 0.8F);
         seam = lerp(seam, CRITICAL, p.heat() * p.heat());
         float base = p.energy();
         float pulse = 0.65F + 0.35F * Mth.sin(p.t() * 0.11F * p.spin());

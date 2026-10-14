@@ -118,6 +118,7 @@ public final class ViewerEntries {
                 new Info(new ItemStack(ModItems.STABILITY_MODULE.get()), "stability_module"),
                 new Info(new ItemStack(ModItems.ANTI_ASTEROID_MODULE.get()), "anti_asteroid_module"),
                 new Info(new ItemStack(ModItems.OVERDRIVE_PARTICLE.get()), "overdrive_particle"),
+                new Info(new ItemStack(ModItems.QUASAR_OVERDRIVE_PARTICLE.get()), "quasar_overdrive_particle"),
                 new Info(new ItemStack(ModItems.ENERGY_PORT.get()), "energy_port"),
                 new Info(new ItemStack(ModItems.ITEM_PORT.get()), "item_port"));
     }

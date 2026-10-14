@@ -7,12 +7,12 @@ import org.jetbrains.annotations.Nullable;
  * stabiler (mehr Spulen verteilen die Last) und haben einen groesseren Energiepuffer.
  */
 public enum ReactorSize {
-    // Leistungsstufe immer 1..10; groessere Reaktoren liefern mehr pro Stufe und sind stabiler
-    SMALL(5, 10, 0.6, 0.5, 1.0, 1.0, 1),
-    MEDIUM(7, 10, 0.85, 1.0, 0.8, 1.25, 2),
-    LARGE(9, 10, 1.1, 2.5, 0.6, 1.6, 3),
-    /** Ultimativer Kern: Stufen 1-12, staerkster und stabilster Reaktor, erzeugt zusaetzlich Vakuum-Energie. */
-    ULTIMATE(11, 12, 1.3, 4.0, 0.45, 2.0, 3);
+    // Leistungsstufen 4 / 6 / 8 / 10; groessere Reaktoren liefern mehr pro Stufe und sind stabiler
+    SMALL(5, 4, 0.6, 0.5, 1.0, 1.0, 1),
+    MEDIUM(7, 6, 0.85, 1.0, 0.8, 1.25, 2),
+    LARGE(9, 8, 1.1, 2.5, 0.6, 1.6, 3),
+    /** Ultimativer Kern: Stufen 1-10, staerkster und stabilster Reaktor, erzeugt zusaetzlich Vakuum-Energie. */
+    ULTIMATE(11, 10, 1.3, 4.0, 0.45, 2.0, 3);
 
     private final int size;
     private final int maxScale;
@@ -82,6 +82,11 @@ public enum ReactorSize {
     }
 
     /** Wie viele Overdrive-Partikel diese Baugroesse aufnehmen kann. */
+    /** Hoechste Overdrive-Stufe inklusive Ultimate-Modus (nur der ultimative Kern hat Stufe 4). */
+    public int maxOverdriveTotal() {
+        return isUltimate() ? maxOverdrive() + 1 : maxOverdrive();
+    }
+
     public int maxOverdrive() {
         return maxOverdrive;
     }

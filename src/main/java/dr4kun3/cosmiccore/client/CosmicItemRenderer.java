@@ -21,6 +21,8 @@ import org.joml.Matrix4f;
  * <ul>
  *   <li>Sternenstaub: kleine schwebende Sternenfeld-Kristalle, die umeinander kreisen, mit Funkeln.</li>
  *   <li>Overdrive-Partikel: gleissender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold und Violett.</li>
+ *   <li>Quasar-Overdrive-Partikel: ein Overdrive-Partikel in der Mitte, umkreist von vier Mini-Quasaren, verbunden
+ *       durch goldene Energiebruecken - alles in einer goldenen Krone.</li>
  *   <li>Verdichteter Sternenstaub: dichter Sternenfeld-Kristall, um den sich Pressringe zusammenziehen, waehrend
  *       Staubkoernchen spiralfoermig hineingezogen werden.</li>
  *   <li>Neutronenstern-Fragment: winziger Pulsar - rasend schnell drehend, mit Leuchtturm-Strahlen und Magnetfeldboegen.</li>
@@ -54,6 +56,8 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.translate(0.5, 0.5, 0.5);
         if (stack.is(ModItems.OVERDRIVE_PARTICLE.get())) {
             renderParticle(pose, buffers, t);
+        } else if (stack.is(ModItems.QUASAR_OVERDRIVE_PARTICLE.get())) {
+            renderQuasarParticle(pose, buffers, t);
         } else if (stack.is(ModItems.STAR_DUST.get())) {
             renderStarDust(pose, buffers, t);
         } else if (stack.is(ModItems.COMPRESSED_STAR_DUST.get())) {
@@ -174,8 +178,9 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     // ------------------------------------------------------------------ Neutronenstern (Pulsar)
 
     private static void renderPulsar(PoseStack pose, MultiBufferSource buffers, float t) {
-        float spin = t * 0.9F; // Bogenmass pro Tick: sehr schnell
-        float flash = (float) Math.pow(Math.max(0.0F, Mth.cos(spin)), 12);
+        float spin = t * 0.08F; // ruhige Drehung (kein Flackern)
+        float flash = 0.5F + 0.5F * Mth.sin(t * 0.06F); // weicher, langsamer Puls statt Stroboskop
+        flash *= 0.5F;
         pose.pushPose();
         pose.mulPose(Axis.ZP.rotationDegrees(18.0F));
         RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), 0.1F, 8, 12, 0.82F, 0.92F, 1.0F);
@@ -215,6 +220,43 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             float[] p = RenderUtil.orbitPoint(0.34F, t * 0.06F + i * 1.57F, 20.0F + i * 15.0F, i * 45.0F);
             cube(glow, wm, p[0], p[1], p[2], 0.016F, 0.8F, 0.9F, 1.0F, 0.9F);
         }
+    }
+
+    // ------------------------------------------------------------------ Quasar-Overdrive-Partikel
+
+    private static final float TILT_SIN = Mth.sin(20.0F * Mth.DEG_TO_RAD), TILT_COS = Mth.cos(20.0F * Mth.DEG_TO_RAD);
+
+    private static void renderQuasarParticle(PoseStack pose, MultiBufferSource buffers, float t) {
+        // Mitte: verkleinertes Overdrive-Partikel
+        pose.pushPose();
+        pose.scale(0.62F, 0.62F, 0.62F);
+        renderParticle(pose, buffers, t);
+        pose.popPose();
+        // vier Mini-Quasare auf einer geneigten Bahn
+        float[][] pos = new float[4][];
+        for (int i = 0; i < 4; i++) {
+            float a = t * 0.04F + i * Mth.HALF_PI;
+            // Bahn um 20 Grad gekippt (passt genau zum Ring darunter)
+            pos[i] = new float[]{Mth.cos(a) * 0.36F, Mth.sin(a) * 0.36F * TILT_SIN, Mth.sin(a) * 0.36F * TILT_COS};
+            pose.pushPose();
+            pose.translate(pos[i][0], pos[i][1], pos[i][2]);
+            pose.scale(0.28F, 0.28F, 0.28F);
+            renderQuasar(pose, buffers, t + i * 20.0F);
+            pose.popPose();
+        }
+        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
+        Matrix4f m = pose.last().pose();
+        float pulse = 0.5F + 0.5F * Mth.sin(t * 0.15F);
+        // goldene Energiebruecken von jedem Quasar zur Mitte, mit Lichtpunkten, die hineinlaufen
+        for (int i = 0; i < 4; i++) {
+            float[] p = pos[i];
+            RenderUtil.segment(glow, m, p[0], p[1], p[2], 0, 0, 0, 0.012F, GOLD[0], GOLD[1], GOLD[2], 0.8F, 0.3F);
+            float s = Mth.frac(t * 0.05F + i * 0.25F);
+            cube(glow, m, p[0] * (1.0F - s), p[1] * (1.0F - s), p[2] * (1.0F - s), 0.014F, 1.0F, 1.0F, 1.0F, Mth.sin(s * Mth.PI));
+        }
+        // goldene Krone: Bahnring und aeusserer Schimmer
+        ring(pose, glow, 0.36F, 0.008F, t * 2.0F, -20.0F, 0.0F, t, GOLD, 0.6F + 0.3F * pulse);
+        RenderUtil.glowSphere(glow, m, 0.46F, 8, 12, GOLD, 0.05F + 0.05F * pulse);
     }
 
     // ------------------------------------------------------------------ Quasar

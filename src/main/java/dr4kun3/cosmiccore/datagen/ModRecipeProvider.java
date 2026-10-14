@@ -47,6 +47,9 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('V', ModItems.VOID_CASING).save(out);
         shaped(ModItems.OVERDRIVE_PARTICLE, 1, Items.END_CRYSTAL, " E ", "ENE", " E ")
                 .define('E', Items.END_CRYSTAL).define('N', Items.NETHER_STAR).save(out);
+        // nur craftbar: Overdrive-Partikel in der Mitte, vier Quasar-Essenzen drumherum
+        shaped(ModItems.QUASAR_OVERDRIVE_PARTICLE, 1, ModItems.QUASAR_ESSENCE, " Q ", "QOQ", " Q ")
+                .define('Q', ModItems.QUASAR_ESSENCE).define('O', ModItems.OVERDRIVE_PARTICLE).save(out);
         shaped(ModItems.EFFICIENCY_MODULE, 1, ModItems.STAR_DUST, "GRG", "SVS", "GRG")
                 .define('G', Items.GOLD_INGOT).define('R', Items.REDSTONE).define('S', ModItems.STAR_DUST)
                 .define('V', ModItems.VOID_CASING).save(out);

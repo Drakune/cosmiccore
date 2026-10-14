@@ -52,7 +52,8 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             {{1.0F, 0.95F, 0.85F}, {1.0F, 0.55F, 0.2F}, {0.62F, 0.28F, 0.95F}, {0.6F, 0.8F, 1.0F}},
             {{0.9F, 0.97F, 1.0F}, {0.3F, 0.65F, 1.0F}, {0.25F, 0.2F, 1.0F}, {0.5F, 0.9F, 1.0F}},      // Ueberladung
             {{1.0F, 0.95F, 0.7F}, {1.0F, 0.72F, 0.15F}, {1.0F, 0.2F, 0.75F}, {1.0F, 0.85F, 0.4F}},    // Supernova
-            {{1.0F, 1.0F, 1.0F}, {0.85F, 0.55F, 1.0F}, {0.5F, 0.25F, 1.0F}, {0.9F, 0.75F, 1.0F}}};    // Quasar
+            {{1.0F, 1.0F, 1.0F}, {0.85F, 0.55F, 1.0F}, {0.5F, 0.25F, 1.0F}, {0.9F, 0.75F, 1.0F}},     // Quasar
+            {{1.0F, 1.0F, 0.95F}, {1.0F, 0.82F, 0.3F}, {0.3F, 1.0F, 0.9F}, {1.0F, 0.95F, 0.65F}}};   // Ultimate-Modus
     // pro Frame gesetzt (Rendering laeuft nur im Render-Thread)
     private static float[] pHot = HOT, pWarm = WARM, pCool = COOL, pJet = JET;
     private static final float[] CRITICAL = {1.0F, 0.1F, 0.1F};
@@ -87,7 +88,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         final boolean unstable = phase == CorePhase.UNSTABLE;
         final boolean active = phase == CorePhase.ACTIVE || unstable;
         final float growth = be.getGrowth();
-        final int od = Math.max(0, Math.min(3, be.getOverdrive()));
+        final int od = Math.max(0, Math.min(4, be.getOverdrive()));
         float[][] pal = PALETTES[od];
         pHot = pal[0];
         pWarm = pal[1];
@@ -185,6 +186,14 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             pose.mulPose(Axis.ZP.rotationDegrees(62.0F));
             pose.mulPose(Axis.YP.rotationDegrees(t * 0.3F));
             accretionDisk(pose.last().pose(), glow, inner * 1.1F, outer * 0.8F, t, -spin * 1.3F, e * 0.35F, heat, camYaw, 0, 0);
+            pose.popPose();
+        }
+        if (od >= 4) {
+            // Ultimate-Modus: dritte, goldene Scheibe quer zu den anderen beiden
+            pose.pushPose();
+            pose.mulPose(Axis.XP.rotationDegrees(-62.0F));
+            pose.mulPose(Axis.YP.rotationDegrees(-t * 0.45F));
+            accretionDisk(pose.last().pose(), glow, inner * 1.2F, outer * 0.7F, t, spin * 1.6F, e * 0.3F, heat, camYaw, 0, 0);
             pose.popPose();
         }
         OverdriveFx.render(pose, glow, od, rh, t, e, camYaw, camPitch, pal);

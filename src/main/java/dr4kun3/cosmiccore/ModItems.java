@@ -47,6 +47,10 @@ public final class ModItems {
 
     public static final DeferredItem<OverdriveParticleItem> OVERDRIVE_PARTICLE = ITEMS.registerItem("overdrive_particle",
             OverdriveParticleItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.EPIC));
+    /** Quasar-Overdrive-Partikel: 4 davon schalten beim ultimativen Kern nach Overdrive 3 den Ultimate-Modus frei. */
+    public static final DeferredItem<dr4kun3.cosmiccore.item.QuasarOverdriveItem> QUASAR_OVERDRIVE_PARTICLE = ITEMS.registerItem(
+            "quasar_overdrive_particle", dr4kun3.cosmiccore.item.QuasarOverdriveItem::new,
+            new Item.Properties().stacksTo(4).rarity(Rarity.EPIC));
 
     private ModItems() {}
 }

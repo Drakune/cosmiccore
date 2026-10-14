@@ -32,6 +32,7 @@ public final class ModCreativeTabs {
                 out.accept(ModItems.QUASAR_ESSENCE.get());
                 out.accept(ModItems.COSMIC_LASER.get());
                 out.accept(ModItems.OVERDRIVE_PARTICLE.get());
+                out.accept(ModItems.QUASAR_OVERDRIVE_PARTICLE.get());
                 out.accept(ModItems.EFFICIENCY_MODULE.get());
                 out.accept(ModItems.STABILITY_MODULE.get());
                 out.accept(ModItems.ANTI_ASTEROID_MODULE.get());

@@ -327,7 +327,23 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             case ControllerMenu.BTN_TOGGLE -> enabled = !enabled;
             case ControllerMenu.BTN_PREVIEW -> preview = !preview;
             case ControllerMenu.BTN_OVERDRIVE_UP -> {
-                if (!formed || overdrive >= size.maxOverdrive()) return false;
+                if (!formed || overdrive >= size.maxOverdriveTotal()) return false;
+                if (overdrive >= size.maxOverdrive()) {
+                    // Ultimate-Modus: nur der ultimative Kern nach Overdrive 3, kostet 4 Quasar-Overdrive-Partikel
+                    if (!player.getAbilities().instabuild && !consumeItems(player, ModItems.QUASAR_OVERDRIVE_PARTICLE.get(), ULTIMATE_COST)) {
+                        player.displayClientMessage(Component.translatable("message.cosmiccore.ultimate.missing", ULTIMATE_COST)
+                                .withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                    overdrive++;
+                    Vec3 c = Vec3.atCenterOf(center(sl));
+                    sl.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 3.0F, 0.5F);
+                    sl.playSound(null, c.x, c.y, c.z, SoundEvents.ENDER_DRAGON_GROWL, SoundSource.BLOCKS, 1.5F, 1.4F);
+                    sl.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 2.0F, 0.6F);
+                    sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 300, 2.0, 2.0, 2.0, 0.4);
+                    sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 300, 1.5, 1.5, 1.5, 1.0);
+                    break;
+                }
                 if (!player.getAbilities().instabuild && !consumeParticle(player)) {
                     player.displayClientMessage(Component.translatable("message.cosmiccore.overdrive.missing")
                             .withStyle(ChatFormatting.RED), true);
@@ -360,6 +376,26 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /** Nimmt ein Overdrive-Partikel aus dem Inventar des Spielers. */
+    /** Kosten des Ultimate-Modus in Quasar-Overdrive-Partikeln. */
+    public static final int ULTIMATE_COST = 4;
+
+    /** Verbraucht genau count Stueck - aber nur, wenn so viele im Inventar sind. */
+    private static boolean consumeItems(Player player, net.minecraft.world.item.Item item, int count) {
+        Inventory inv = player.getInventory();
+        int have = 0;
+        for (int i = 0; i < inv.getContainerSize(); i++) if (inv.getItem(i).is(item)) have += inv.getItem(i).getCount();
+        if (have < count) return false;
+        int left = count;
+        for (int i = 0; i < inv.getContainerSize() && left > 0; i++) {
+            ItemStack st = inv.getItem(i);
+            if (!st.is(item)) continue;
+            int take = Math.min(left, st.getCount());
+            st.shrink(take);
+            left -= take;
+        }
+        return true;
+    }
+
     private static boolean consumeOne(Player player, net.minecraft.world.item.Item item) {
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -438,7 +474,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     private double instabilityScale() {
         double sizeFactor = size == null ? 1.0 : size.instabilityFactor();
-        return Math.pow(scale, CoreConfig.SCALE_INSTABILITY_EXPONENT.get()) * sizeFactor * Math.pow(3.0, overdrive);
+        return Math.pow(scale, CoreConfig.SCALE_INSTABILITY_EXPONENT.get()) * sizeFactor
+                * (overdrive <= 3 ? Math.pow(3.0, overdrive) : 27.0 * 2.0); // Ultimate-Modus: x2 statt x3
     }
 
     private void simulate(ServerLevel level) {
@@ -1216,7 +1253,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         withFunnel = tag.getBoolean("withFunnel");
         withLasers = tag.getBoolean("withLasers");
         overdrive = Math.max(0, tag.getInt("overdrive"));
-        if (size != null) overdrive = Math.min(overdrive, size.maxOverdrive());
+        if (size != null) overdrive = Math.min(overdrive, size.maxOverdriveTotal());
         formed = tag.getBoolean("formed");
         energy = tag.getLong("energy");
         burnTime = tag.getInt("burnTime");
