@@ -297,50 +297,6 @@
       }
      }
     },
-    "orb": {
-     "scale": {
-      "0.00": {
-       "vector": [
-        0,
-        0,
-        0
-       ],
-       "easing": "easeInOutSine"
-      },
-      "6.50": {
-       "vector": [
-        0,
-        0,
-        0
-       ],
-       "easing": "easeInOutSine"
-      },
-      "9.50": {
-       "vector": [
-        6,
-        6,
-        6
-       ],
-       "easing": "easeInQuad"
-      },
-      "9.80": {
-       "vector": [
-        0.01,
-        0.01,
-        0.01
-       ],
-       "easing": "easeInOutSine"
-      },
-      "14.00": {
-       "vector": [
-        0.01,
-        0.01,
-        0.01
-       ],
-       "easing": "easeInOutSine"
-      }
-     }
-    },
     "arm_l": {
      "rotation": {
       "0.00": {

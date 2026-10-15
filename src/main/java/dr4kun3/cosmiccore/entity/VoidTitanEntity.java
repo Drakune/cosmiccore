@@ -30,6 +30,8 @@ public class VoidTitanEntity extends Entity {
     public final VoidTitanPart body, head, armLeft, armRight;
     public final VoidTitanPart[] tail = new VoidTitanPart[TAIL];
     private final VoidTitanPart[] parts;
+    /** Nur Client: Lage animierter Knochen relativ zur Entity (vom Renderer gesetzt, z. B. "eye_l", "orb"). */
+    public final java.util.Map<String, Vec3> bones = new java.util.HashMap<>();
     /** Zeit der Cutscene in Ticks (clientseitig gesetzt); negativ = freie Leerlauf-Bewegung. */
     public float scriptTime = -1.0F;
 

@@ -12,7 +12,9 @@ import software.bernie.geckolib.model.GeoModel;
  * Sekundaerbewegung: die Fluegelspeichen fachern leicht, Finger kruemmen sich beim Aufladen, die Kugel pulsiert.
  */
 public class VoidTitanModel extends GeoModel<VoidTitan> {
-    private static final int FINGERS = 3, FINGER_SEGS = 2; // muss zu tools/generate_titan.py passen
+    private static final int FINGERS = 4, FINGER_SEGS = 2;
+    /** Markierungs-Knochen, deren Lage die Cutscene fuer Leuchteffekte braucht. */
+    public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
     @Override
     public ResourceLocation getModelResource(VoidTitan animatable) {
@@ -32,9 +34,10 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     @Override
     public void setCustomAnimations(VoidTitan animatable, long instanceId, AnimationState<VoidTitan> state) {
         float t = (float) (animatable.ticks / 20.0);
+        for (String name : TRACKED) getBone(name).ifPresent(b -> b.setTrackingMatrices(true));
         for (String side : new String[]{"l", "r"}) {
             float sgn = side.equals("l") ? 1.0F : -1.0F;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 5; i++) {
                 final int k = i;
                 getBone("wing_" + side + i).ifPresent(b -> b.setRotZ(b.getInitialSnapshot().getRotZ()
                         + sgn * 0.08F * Mth.sin(t * 1.6F + k * 0.8F)));

@@ -183,6 +183,30 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return skyLink;
     }
 
+    /**
+     * Nur fuer den Entwicklungs-Test der Cutscene: setzt einen fertigen ultimativen Kern mit Trichter und Lasern,
+     * Brennstoff, Stufe 10 und Ultimate-Modus (ohne die Cutscene selbst auszuloesen). Liefert die Kernmitte.
+     */
+    public static BlockPos debugSetupUltimate(ServerLevel level, BlockPos controllerPos) {
+        level.setBlock(controllerPos, ModBlocks.CONTROLLER.get().defaultBlockState()
+                .setValue(dr4kun3.cosmiccore.block.ControllerBlock.FACING, Direction.NORTH), Block.UPDATE_ALL);
+        if (!(level.getBlockEntity(controllerPos) instanceof ControllerBlockEntity c)) return controllerPos;
+        c.size = ReactorSize.ULTIMATE;
+        c.withFunnel = true;
+        c.withLasers = true;
+        c.buildStructure(level);
+        c.enabled = true;
+        c.scale = c.size.maxScale();
+        c.unlockedScale = c.scale;
+        c.overdrive = c.size.maxOverdriveTotal();
+        c.awakened = true;
+        c.inventory.setStackInSlot(SLOT_FUEL, new ItemStack(ModItems.QUASAR_ESSENCE.get(), 64));
+        c.inventory.setStackInSlot(SLOT_STAB, new ItemStack(net.minecraft.world.item.Items.NETHERITE_SCRAP, 64));
+        c.checkTimer = 0;
+        c.setChanged();
+        return c.corePos();
+    }
+
     /** Ultimativer Kern: ist der Void-Titan schon erwacht? */
     public boolean isAwakened() {
         return awakened && size != null && size.isUltimate();

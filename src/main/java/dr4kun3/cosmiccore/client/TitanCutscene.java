@@ -88,6 +88,23 @@ public final class TitanCutscene {
         mc.setCameraEntity(camera);
     }
 
+    public static boolean isActive() {
+        return active;
+    }
+
+    static VoidTitanEntity titan() {
+        return titan;
+    }
+
+    public static int currentTick() {
+        return tick;
+    }
+
+    /** Nur fuer den Entwicklungs-Test: an eine Stelle des Drehbuchs springen. */
+    static void debugJumpTo(int t) {
+        if (active) tick = Math.max(0, Math.min(LENGTH - 1, t));
+    }
+
     /** Waehrend der Cutscene zeichnet sie den Strahl selbst; danach uebernimmt der Kern. */
     public static boolean hidesPermanentBeam(BlockPos pos) {
         return active && pos.equals(core);

@@ -21,7 +21,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, '..', 'src', 'main', 'resources', 'assets', 'cosmiccore')
 TEX = 512
-FINGERS, FINGER_SEGS = 3, 2  # muss zu VoidTitanModel.java passen
+FINGERS, FINGER_SEGS = 4, 2  # muss zu VoidTitanModel.java passen
 
 ARMOR, FLESH, HORN, GLOW, CLOTH = 'armor', 'flesh', 'horn', 'glow', 'cloth'
 
@@ -81,87 +81,106 @@ def geometry(identifier, bones, bounds):
 # ----------------------------------------------------------------- Oberkoerper
 
 def body_model():
+    """Gepanzerter Kriegsherr der Leere: breite Schultern, schmale Taille, langer Schweif (separates Modell)."""
     BONES.clear()
     bone('root', [0, 0, 0])
     bone('body', [0, 0, 0], parent='root', cubes=[
-        cube([-8, 0, -6], [16, 6, 12], ARMOR),       # Hueftpanzer
-        cube([-5, -4, -4], [10, 4, 8], ARMOR),       # Schweifansatz
-        cube([-6, 6, -5], [12, 6, 10], FLESH),       # Taille
-        cube([-9, 2, -7], [3, 3, 3], HORN),          # Hueftstacheln
-        cube([6, 2, -7], [3, 3, 3], HORN),
-    ])
+        cube([-9, 0, -6], [18, 5, 12], ARMOR),                                         # Guertel
+        cube([-7, -6, -7], [6, 7, 2], ARMOR, rotation=[10, 0, 0], pivot=[-4, 1, -6]),  # Schurzplatten vorn
+        cube([1, -6, -7], [6, 7, 2], ARMOR, rotation=[10, 0, 0], pivot=[4, 1, -6]),
+        cube([-11, -5, -4], [3, 6, 8], ARMOR), cube([8, -5, -4], [3, 6, 8], ARMOR),     # Seitenplatten
+        cube([-6, -14, 5], [12, 14, 1], CLOTH, rotation=[10, 0, 0], pivot=[0, 0, 5]),  # Lendentuch hinten
+        cube([-5, -5, -4], [10, 6, 8], FLESH),                                         # Schweifansatz
+        cube([-6, 5, -5], [12, 8, 10], FLESH),                                         # Taille
+    ] + [cube([-5 + c * 6, 6 + r * 2.5, -5.6], [4, 2, 1], ARMOR) for r in range(3) for c in range(2)])
     chest = [
-        cube([-10, 12, -7], [20, 16, 14], FLESH),    # Rumpf
-        cube([-11, 16, -8], [9, 12, 3], ARMOR),      # Brustplatten (links/rechts)
-        cube([2, 16, -8], [9, 12, 3], ARMOR),
-        cube([-2, 18, -9], [4, 8, 2], GLOW),         # Herzkern zwischen den Platten
-        cube([-8, 12, -8], [16, 4, 2], ARMOR),       # Bauchplatte
-        cube([-13, 28, -7], [26, 4, 14], ARMOR),     # Kragen
+        cube([-9, 13, -6], [18, 7, 12], FLESH),
+        cube([-11, 20, -7], [22, 9, 14], FLESH),
+        cube([-11, 19, -8.5], [10, 9, 3], ARMOR, rotation=[0, -8, 0], pivot=[-6, 23, -7]),   # Brustplatten
+        cube([1, 19, -8.5], [10, 9, 3], ARMOR, rotation=[0, 8, 0], pivot=[6, 23, -7]),
+        cube([-2, 21, -9.5], [4, 5, 2], GLOW),                                               # Herzkern
+        cube([-8, 29, -6], [16, 4, 12], ARMOR),                                              # Halsberge
+        cube([-12, 14, -4], [2, 10, 8], ARMOR), cube([10, 14, -4], [2, 10, 8], ARMOR),       # Flankenplatten
+        cube([-12.5, 16, -1], [1, 6, 2], GLOW), cube([11.5, 16, -1], [1, 6, 2], GLOW),       # Leuchtadern
     ]
-    for i in range(4):                               # Rueckenplatten mit Stacheln
-        chest.append(cube([-2, 14 + i * 4, 7], [4, 3, 3], ARMOR))
-        chest.append(cube([-1, 15 + i * 4, 10], [2, 2, 3 + i], HORN, rotation=[-30, 0, 0], pivot=[0, 16 + i * 4, 10]))
-    bone('chest', [0, 12, 0], parent='body', cubes=chest)
+    for i in range(5):  # Rueckengrat mit Stacheln
+        chest.append(cube([-2.5, 13 + i * 3.5, 6], [5, 3, 2], ARMOR))
+        chest.append(cube([-1, 14 + i * 3.5, 8], [2, 2, 3 + i], HORN, rotation=[-35, 0, 0], pivot=[0, 15 + i * 3.5, 8]))
+    bone('chest', [0, 13, 0], parent='body', cubes=chest)
+    bone('core', [0, 23.5, -10], parent='chest')  # Markierung: Herzkern (fuer das Leuchten)
 
     for side, s in (('l', 1), ('r', -1)):
         def X(x0, w):
             return x0 if s > 0 else -x0 - w
         bone(f'pauldron_{side}', [13 * s, 30, 0], parent='chest', cubes=[
-            cube([X(10, 10), 26, -8], [10, 8, 16], ARMOR),
-            cube([X(10, 10), 25, -8], [10, 1, 16], GLOW),
-            cube([X(16, 3), 34, -2], [3, 9, 3], HORN, rotation=[0, 0, -18 * s], pivot=[17.5 * s, 34, 0]),
-            cube([X(13, 2), 34, 2], [2, 6, 2], HORN, rotation=[-15, 0, -10 * s], pivot=[14 * s, 34, 3]),
+            cube([X(10, 11), 26, -8], [11, 6, 16], ARMOR, rotation=[0, 0, -12 * s], pivot=[13 * s, 29, 0]),
+            cube([X(11, 10), 23, -8.5], [10, 4, 17], ARMOR, rotation=[0, 0, -24 * s], pivot=[13 * s, 25, 0]),
+            cube([X(12, 9), 20.5, -9], [9, 3, 18], ARMOR, rotation=[0, 0, -36 * s], pivot=[13 * s, 22, 0]),
+            cube([X(10, 11), 25, -8], [11, 1, 16], GLOW, rotation=[0, 0, -12 * s], pivot=[13 * s, 29, 0]),
+            cube([X(14, 3), 32, -3], [3, 10, 3], HORN, rotation=[0, 0, -20 * s], pivot=[15.5 * s, 32, -1.5]),
+            cube([X(18, 2), 30, 1], [2, 7, 2], HORN, rotation=[0, 0, -35 * s], pivot=[19 * s, 30, 2]),
         ])
-        bone(f'arm_{side}', [14 * s, 28, 0], parent='chest', cubes=[
-            cube([X(11, 6), 14, -3], [6, 12, 6], FLESH),
-            cube([X(10, 8), 12, -4], [8, 4, 8], ARMOR),
+        bone(f'arm_{side}', [15 * s, 28, 0], parent='chest', cubes=[
+            cube([X(12.5, 6), 16, -3.5], [6, 11, 7], FLESH),
+            cube([X(12, 7), 13, -4.5], [7, 4, 9], ARMOR),
+            cube([X(14.5, 2), 13, 4], [2, 2, 5], HORN, rotation=[-30, 0, 0], pivot=[15.5 * s, 14, 4]),
         ])
-        bone(f'forearm_{side}', [14 * s, 14, 0], parent=f'arm_{side}', cubes=[
-            cube([X(10, 8), 2, -4], [8, 12, 8], ARMOR),
-            cube([X(18, 2), 2, -1], [2, 10, 2], GLOW),  # Klinge an der Armschiene
-        ])
-        bone(f'hand_{side}', [14 * s, 2, 0], parent=f'forearm_{side}', cubes=[cube([X(11, 6), -3, -3], [6, 5, 6], FLESH)])
+        bone(f'forearm_{side}', [15.5 * s, 14, 0], parent=f'arm_{side}', cubes=[
+            cube([X(11.5, 8), 1, -4], [8, 13, 8], ARMOR),
+            cube([X(19, 1), 3, -1], [1, 9, 2], GLOW),
+        ] + [cube([X(19.5, 2), 4 + i * 3.5, 1], [2, 2, 3], HORN, rotation=[0, 25 * s, 0], pivot=[20 * s, 5 + i * 3.5, 1])
+             for i in range(3)])
+        bone(f'hand_{side}', [15.5 * s, 1, 0], parent=f'forearm_{side}', cubes=[cube([X(12, 7), -4, -3.5], [7, 5, 7], ARMOR)])
         for j in range(FINGERS):
-            fx = 11 + j * 2
-            parent, y = f'hand_{side}', -3
+            fx = 12 + j * 2.4
+            parent, y = f'hand_{side}', -4
             for g in range(FINGER_SEGS):
-                h = 4 if g == 0 else 3
-                parent = bone(f'f{side}{j}_{g}', [X(fx, 2) + 1, y, -1], parent=parent,
-                              cubes=[cube([X(fx, 2), y - h, -2], [2, h, 2], HORN)])
-                y -= h
-        # Fluegel: drei Knochenspeichen mit Haeuten aus Leerenstoff
-        bone(f'wing_{side}', [7 * s, 28, 7], parent='chest')
-        for i, (length, ang) in enumerate(((30, 10), (26, 35), (20, 60))):
-            wx = 7 if s > 0 else -7 - length
-            bone(f'wing_{side}{i}', [7 * s, 28, 7], parent=f'wing_{side}', rotation=[0, 0, ang * s], cubes=[
+                parent = bone(f'f{side}{j}_{g}', [X(fx, 2) + 1, y, -2], parent=parent,
+                              cubes=[cube([X(fx, 2), y - 5, -3], [2, 5, 2], ARMOR if g == 0 else HORN)])
+                y -= 5
+        bone(f'thumb_{side}', [X(12, 2) + 1, -2, -3], parent=f'hand_{side}', rotation=[-25, 0, 30 * s],
+             cubes=[cube([X(12, 2), -7, -4], [2, 5, 2], HORN)])
+        # Fluegel: fuenf Knochenspeichen mit Haeuten
+        bone(f'wing_{side}', [6 * s, 28, 7], parent='chest')
+        for i, (length, ang) in enumerate(((34, 5), (30, 22), (26, 40), (22, 58), (16, 76))):
+            wx = 6 if s > 0 else -6 - length
+            bone(f'wing_{side}{i}', [6 * s, 28, 7], parent=f'wing_{side}', rotation=[0, 0, ang * s], cubes=[
                 cube([wx, 27, 7], [length, 2, 2], HORN),
-                cube([wx, 19, 8], [length, 8, 1], CLOTH),
+                cube([wx + (2 if s > 0 else 0), 21, 8], [length - 2, 6, 1], CLOTH),
             ])
 
-    bone('neck', [0, 32, 0], parent='chest', cubes=[cube([-3, 32, -3], [6, 5, 6], FLESH)])
-    bone('head', [0, 37, -1], parent='neck', cubes=[
-        cube([-6, 37, -8], [12, 10, 12], ARMOR),      # Helmschaedel
-        cube([-5, 41, -9], [4, 1, 1], GLOW),          # Augenschlitze
-        cube([1, 41, -9], [4, 1, 1], GLOW),
-        cube([-6, 44, -9], [12, 2, 2], ARMOR),        # Brauenwulst
-        cube([-4, 37, -10], [8, 4, 3], FLESH),        # Maul
-        cube([-1, 47, -6], [2, 4, 10], HORN),         # Kamm
+    bone('neck', [0, 32, -1], parent='chest', cubes=[cube([-3.5, 32, -4.5], [7, 5, 7], FLESH),
+                                                      cube([-4, 33, -5], [8, 2, 8], ARMOR)])
+    bone('head', [0, 36, -2], parent='neck', cubes=[
+        cube([-5, 36, -6], [10, 9, 10], ARMOR),        # Hinterkopf
+        cube([-4.5, 36, -9], [9, 8, 3], ARMOR),        # Gesichtsmaske
+        cube([-5.5, 42, -9.5], [11, 2, 3], ARMOR),     # Brauenwulst
+        cube([-6, 36, -7], [2, 5, 6], ARMOR), cube([4, 36, -7], [2, 5, 6], ARMOR),  # Wangen
+        cube([-4, 40, -9.6], [3, 1, 1], GLOW, rotation=[0, 0, 12], pivot=[-2.5, 40.5, -9.1]),   # Augen
+        cube([1, 40, -9.6], [3, 1, 1], GLOW, rotation=[0, 0, -12], pivot=[2.5, 40.5, -9.1]),
+        cube([-1, 45, -7], [2, 6, 2], GLOW), cube([-3.5, 44.5, -6], [1, 4, 1], GLOW), cube([2.5, 44.5, -6], [1, 4, 1], GLOW),
     ])
-    bone('jaw', [0, 38, -6], parent='head', cubes=[
-        cube([-4, 34, -10], [8, 3, 6], ARMOR),
-        cube([-3, 37, -10], [1, 1, 1], GLOW), cube([2, 37, -10], [1, 1, 1], GLOW),
+    bone('eye_l', [2.5, 40.5, -9.8], parent='head')   # Markierungen fuer das Augenleuchten
+    bone('eye_r', [-2.5, 40.5, -9.8], parent='head')
+    bone('jaw', [0, 37, -5], parent='head', cubes=[
+        cube([-3.5, 33, -9], [7, 3, 6], ARMOR),
+        cube([-2.5, 36, -9.2], [1, 2, 1], GLOW), cube([1.5, 36, -9.2], [1, 2, 1], GLOW),
     ])
-    for side, s in (('l', 1), ('r', -1)):
-        parent, px, py = 'head', 5 * s, 46
-        for i in range(4):
-            w = 3 - i * 0.5
-            length = 6 - i
-            parent = bone(f'horn_{side}{i}', [px, py, -2], parent=parent, rotation=[20, 0, -24 * s],
-                          cubes=[cube([px - w / 2, py, -2 - w / 2], [w, length, w], HORN)])
+    for side, s in (('l', 1), ('r', -1)):  # zurueckgeschwungene Hoerner
+        parent, px, py = 'head', 4.5 * s, 44
+        for i in range(5):
+            w = 3 - i * 0.45
+            length = 5 - i * 0.5
+            rot = [-35, 0, -25 * s] if i == 0 else [-15, 0, -6 * s]
+            parent = bone(f'horn_{side}{i}', [px, py, -4], parent=parent, rotation=rot,
+                          cubes=[cube([px - w / 2, py, -4 - w / 2], [w, length, w], GLOW if i == 4 else HORN)])
             py += length
-    # Energiekugel vor der Brust (vom Code bzw. der Animation skaliert)
-    bone('orb', [0, 30, -26], parent='root', cubes=[cube([-2, 28, -28], [4, 4, 4], GLOW)])
-    return geometry('geometry.void_titan', list(BONES), 12)
+    bone('halo', [0, 41, 6], parent='head', cubes=[
+        cube([math.cos(a) * 12 - 1, 41 + math.sin(a) * 12 - 1.5, 5.5], [2, 3, 1], GLOW,
+             rotation=[0, 0, math.degrees(a) - 90], pivot=[math.cos(a) * 12, 41 + math.sin(a) * 12, 6])
+        for a in [i * math.pi / 6 for i in range(12)]])
+    bone('orb', [0, 22, -30], parent='root')  # Markierung: Energiekugel zwischen den Haenden
+    return geometry('geometry.void_titan', list(BONES), 14)
 
 
 # ----------------------------------------------------------------- Schweifsegment (Laengsachse nach unten)
@@ -169,12 +188,13 @@ def body_model():
 def tail_model():
     BONES.clear()
     bone('segment', [0, 0, 0], cubes=[
-        cube([-4, -11, -4], [8, 11, 8], FLESH),      # Wirbelkoerper
-        cube([-5, -5, -5], [10, 4, 10], ARMOR),      # Panzerring
-        cube([-1, -8, 4], [2, 3, 5], HORN, rotation=[-25, 0, 0], pivot=[0, -7, 4]),  # Rueckenstachel
-        cube([-2, -12, -2], [4, 1, 4], GLOW),        # leuchtendes Gelenk
-        cube([-8, -8, -1], [3, 5, 1], CLOTH),        # Seitenflossen
-        cube([5, -8, -1], [3, 5, 1], CLOTH),
+        cube([-4, -11, -4], [8, 11, 8], FLESH),
+        cube([-5, -3, -5], [10, 3, 10], ARMOR),
+        cube([-4.5, -8, -4.5], [9, 2, 9], ARMOR),
+        cube([-1, -7, 4], [2, 3, 6], HORN, rotation=[-30, 0, 0], pivot=[0, -6, 4]),
+        cube([-2, -9, -4.6], [4, 6, 1], GLOW),
+        cube([-9, -9, -0.5], [4, 6, 1], CLOTH, rotation=[0, 0, 15], pivot=[-5, -6, 0]),
+        cube([5, -9, -0.5], [4, 6, 1], CLOTH, rotation=[0, 0, -15], pivot=[5, -6, 0]),
     ])
     return geometry('geometry.void_titan_tail', list(BONES), 4)
 
@@ -201,8 +221,6 @@ def animation():
                                  (9.4, [-5, 0, 0]), (9.8, [-20, 0, 0]), (11.0, [0, 0, 0])])},
         'jaw': {'rotation': kf([(0, [0, 0, 0]), (4.5, [0, 0, 0]), (4.8, [40, 0, 0], 'easeOutBack'), (5.6, [34, 0, 0]),
                                 (6.0, [4, 0, 0]), (9.6, [4, 0, 0]), (9.8, [42, 0, 0]), (10.6, [0, 0, 0])])},
-        'orb': {'scale': kf([(0, [0, 0, 0]), (6.5, [0, 0, 0]), (9.5, [6, 6, 6], 'easeInQuad'), (9.8, [0.01, 0.01, 0.01]),
-                             (L, [0.01, 0.01, 0.01])])},
     }
     for side, s in (('l', 1), ('r', -1)):
         b[f'arm_{side}'] = {'rotation': kf([

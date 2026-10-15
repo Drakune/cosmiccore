@@ -76,4 +76,34 @@ public final class CosmicRenderTypes {
     public static RenderType spaceSolid() {
         return SPACE_SOLID;
     }
+
+    /** Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */
+    private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS, 1536, false, false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
+                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false));
+
+    public static RenderType spaceTint() {
+        return SPACE_TINT;
+    }
+
+    /** Additives Licht ohne Tiefentest (Sterne, Nebel und Lichtreflexe der Kulissen - liegen immer vorn). */
+    private static final RenderType SPACE_GLOW = RenderType.create("cosmiccore_space_glow", DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS, 1536, false, false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RenderStateShard.RENDERTYPE_LIGHTNING_SHADER)
+                    .setTransparencyState(RenderStateShard.LIGHTNING_TRANSPARENCY)
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false));
+
+    public static RenderType spaceGlow() {
+        return SPACE_GLOW;
+    }
 }

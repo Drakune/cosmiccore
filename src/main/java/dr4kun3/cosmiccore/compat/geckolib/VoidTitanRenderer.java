@@ -54,6 +54,16 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity> {
         pose.translate(-0.5F * k, -0.51F * k, -0.5F * k);
         body.render(pose, state, buffers, null, null, full, partialTick);
         pose.popPose();
+        // Lage der Markierungs-Knochen fuer die Leuchteffekte der Cutscene (relativ zur Entity)
+        for (String name : VoidTitanModel.TRACKED) {
+            body.getGeoModel().getBone(name).ifPresent(b -> {
+                // Drehpunkt des Knochens durch seine (animierte) Matrix
+                org.joml.Vector3f v = b.getLocalSpaceMatrix().transformPosition(
+                        new org.joml.Vector3f(b.getPivotX() / 16.0F, b.getPivotY() / 16.0F, b.getPivotZ() / 16.0F));
+                v.add(-0.5F * k, -0.51F * k, -0.5F * k).rotateY(yawRad);
+                entity.bones.put(name, new Vec3(v.x, v.y, v.z));
+            });
+        }
         // Schweifsegmente an ihren Teilen
         Vec3 origin = entity.getPosition(partialTick);
         for (VoidTitanPart part : entity.tail) {

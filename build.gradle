@@ -61,6 +61,17 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
+        // Entwicklungs-Test: startet direkt in die Welt "CutsceneTest", spielt die Titan-Cutscene ab,
+        // speichert Screenshots nach run/screenshots und beendet sich (./gradlew runCutscene)
+        cutscene {
+            client()
+            systemProperty 'cosmiccore.cutsceneTest', 'true'
+            systemProperty 'cosmiccore.cutsceneFrom', project.findProperty('from') ?: '0'
+            systemProperty 'cosmiccore.cutsceneTo', project.findProperty('to') ?: '99999'
+            systemProperty 'cosmiccore.cutsceneEvery', project.findProperty('every') ?: '15'
+            programArguments.addAll '--quickPlaySingleplayer', 'CutsceneTest'
+        }
+
         server {
             server()
             programArgument '--nogui'
