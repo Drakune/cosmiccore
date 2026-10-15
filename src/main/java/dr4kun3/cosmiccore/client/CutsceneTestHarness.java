@@ -39,7 +39,7 @@ public final class CutsceneTestHarness {
         net.minecraft.core.BlockPos at = consoleAt;
         net.minecraft.core.BlockPos manual = at.offset(-16, 0, 0);
         // Kamera relativ zum Controller: x, y, z, Blickrichtung, Neigung
-        int[][] views = {{0, 1, -5, 0, 12}, {5, 1, -3, 60, 10}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
+        int[][] views = {{1, 2, -7, 0, 14}, {6, 1, -3, 60, 10}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
         if (worldTicks == 20) {
             server.execute(() -> {
                 var level = server.getLevel(mc.player.level().dimension());
@@ -51,7 +51,10 @@ public final class CutsceneTestHarness {
                 level.setBlock(south.west(), dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState(), 3);
                 level.setBlock(south.east(), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
                 level.setBlock(south.east().south(), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
-                level.setBlock(at.east(2), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
+                // Konsole mit Abstand: Item-Port zwei Felder weiter (Luecke dazwischen ist Gehaeuse), Trichter oben drauf
+                level.setBlock(at.east(), dr4kun3.cosmiccore.block.ModBlocks.VOID_CASING.get().defaultBlockState(), 3);
+                level.setBlock(at.east(3), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
+                level.setBlock(at.east(3).above(), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
                 // von Hand: erst der Controller, dann die Ports wie beim Platzieren durch einen Spieler
                 level.setBlock(manual, dr4kun3.cosmiccore.block.ModBlocks.CONTROLLER.get().defaultBlockState(), 3);
                 var right = manual.relative(dr4kun3.cosmiccore.block.Terminal.right(net.minecraft.core.Direction.NORTH));
