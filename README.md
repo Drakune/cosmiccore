@@ -1,145 +1,367 @@
-# Cosmic Core - Kerngenerator (NeoForge 1.21.1)
+<div align="center">
 
-Multiblock-Reaktor (5x5x5, 7x7x7, 9x9x9 oder ultimativ 11x11x11) mit animierter Singularität, der aus kosmischem Brennstoff RF erzeugt.
-Leistungsstufe hoch = mehr Strom, aber mehr Verbrauch und mehr Risiko.
+# Cosmic Core
 
-## Bauen
+**A multiblock reactor for Minecraft 1.21.1 (NeoForge) that turns starlight into power.**
 
-1. JDK 21 installieren.
-2. Im Projektordner: `./gradlew build` (Windows: `gradlew.bat build`)
-3. Die fertige Jar liegt danach unter `build/libs/cosmiccore-1.0.0.jar`.
-   Testen mit `./gradlew runClient`. Auf einen Server gehört die Jar in `mods/` (Client und Server brauchen sie).
+**[English](#english)** · **[Deutsch](#deutsch)**
 
-Rezept-Viewer im Dev-Client testen: `./gradlew runClient -Pviewer=jei` (oder `-Pviewer=emi`).
+</div>
 
-## Controller & GUI
+---
 
-- **Kosmisches Handbuch** (Buch + Sternenstaub): erklärt Aufbau, Stufen, Instabilität und Kosmos-Boni im Spiel.
+<a id="english"></a>
 
-- **Platzieren:** Direkt nach dem Platzieren öffnet sich die (einmalige) Wahl der Baugröße 5x5x5 / 7x7x7 / 9x9x9
-  (angezeigt wird die RF/t-Spanne mit Sternenstaub von Stufe 1 bis zur Maximalstufe).
-- **Gebildete Struktur:** Die Blöcke werden (als Animation) in den Kern gesaugt, daraus entsteht ein schwarzes Loch mit
-  Akkretionsscheibe, Photonenring und Jets, zusammengehalten von einem Netz aus Partikeln, die über leuchtende Fesseln
-  verbunden sind. Der Resonanzschild-Emitter unter dem
-  Kern projiziert ein Eindämmungsfeld um das Loch, dessen Stärke den Stabilisator-Vorrat zeigt.
-- **Rechtsklick:** GUI mit Brennstoff- und Stabilisator-Slot (frei befüllen und wieder herausnehmen), Balken für
-  Energie / Instabilität / Resonanz, Leistungsstufe (-/+), Zünden/Stopp, Bauvorschau und (nur Kreativ) **Bauen**.
-- **Schleichen + Rechtsklick:** Status im Chat inkl. erstem Baufehler (mit Partikel an der Stelle).
-- **Bauvorschau:** zeigt fehlende Blöcke als halbtransparente Geister, falsche Blöcke rot umrandet.
-- **Bauen (Kreativ):** setzt die komplette Struktur in Blickrichtung des Controllers (inkl. Energie- und Item-Port).
+## English
 
-| Größe | Stufen | Leistung/Stufe | Instabilität/Stufe | Stabilisator-Wirkung | Overdrive |
-|-------|-------:|---------------:|-------------------:|---------------------:|----------:|
-| 5x5x5 | 1–10 | x0,6 | x1,0 | x1,0 | 1 |
-| 7x7x7 | 1–10 | x1,0 | x0,8 | x1,25 | 2 |
-| 9x9x9 | 1–10 | x1,6 | x0,6 | x1,6 | 3 |
-| **11x11x11 (Ultimativ)** | 1–12 | x2,6 | x0,45 | x2,0 | 3 |
+Cosmic Core adds a reactor you build block by block. Once it's complete, the blocks get pulled into its center and a small black hole appears, held in place by a net of glowing particles. Feed it fuel and it makes RF. Push it harder and it makes a lot more RF, but it also gets more unstable. That trade-off is what the whole mod is about.
 
-**Energiepuffer:** 250 Mio. RF pro Leistungsstufe (Stufe 10 = 2,5 Mrd. RF, `energyPerLevel` in der Config).
-Ist der Puffer voll, pausiert der Reaktor (kein Brennstoffverbrauch), bis Energie abfließt.
+### Contents
 
-Stufe s: Leistung x s^1,3, Brennstoffverbrauch x s, Instabilität x s^1,35 (Exponenten in der Config).
-Der Kern wird mit der Stufe sichtbar größer und färbt sich mit steigender Instabilität von Blau über Orange nach Rot.
+- [What you get](#en-features)
+- [Requirements](#en-requirements)
+- [Installation](#en-install)
+- [Your first reactor](#en-first)
+- [Reactor sizes](#en-sizes)
+- [Fuel and stabilizers](#en-fuel)
+- [Ports, console and storage](#en-ports)
+- [Modules](#en-modules)
+- [Asteroids](#en-asteroids)
+- [Overdrive and Ultimate mode](#en-overdrive)
+- [Commands](#en-commands)
+- [Configuration](#en-config)
+- [Building from source](#en-build)
+- [License](#en-license)
 
-## Aufbau (Ansicht von unten nach oben, Reihe 1 = vorne)
+<a id="en-features"></a>
 
+### What you get
+
+- A reactor in four sizes, from a compact 5×5×5 up to the 11×11×11 Ultimate Core.
+- A living black hole in the middle, with an accretion disk, jets and a containment field you can actually watch working.
+- Power levels you unlock with rare materials, plus Overdrive for players who like living dangerously.
+- Asteroids that drift over your base at night. Lasers pull them down and their loot ends up in your storage.
+- A floating hologram console that shows output, buffer, fuel and how long your fuel and stabilizers will last.
+- The Cosmic Handbook, an in-game book with rotating 3D previews of every reactor size.
+- Optional support for JEI, EMI and REI, and an optional cutscene if GeckoLib is installed.
+
+<a id="en-requirements"></a>
+
+### Requirements
+
+| What | Version |
+|------|---------|
+| Minecraft | 1.21.1 |
+| NeoForge | 21.1.x |
+| Java | 21 |
+| GeckoLib *(optional)* | 4.9.x, only needed for the Void Titan cutscene |
+| JEI / EMI / REI *(optional)* | any version for 1.21.1 |
+
+<a id="en-install"></a>
+
+### Installation
+
+1. Install NeoForge for Minecraft 1.21.1.
+2. Drop the Cosmic Core `.jar` into your `mods` folder.
+3. On a server, both the server and every player need the mod.
+
+<a id="en-first"></a>
+
+### Your first reactor
+
+1. Craft the **Cosmic Handbook** (a book and star dust). It explains everything in the game, with pictures.
+2. Place the **Controller**. A menu opens right away and asks you to pick a size. Choose carefully, this is permanent.
+3. Turn on the **Preview**. Ghost blocks show you what goes where, and wrong blocks get a red outline.
+4. Build the structure. Every reactor needs at least **one Energy Port and one Item Port** in its casing.
+5. Put fuel in the controller, press **Start**, and watch it come to life.
+
+> **Tip:** In creative mode, the **Build** button places the whole structure for you, ports included.
+
+<a id="en-sizes"></a>
+
+### Reactor sizes
+
+| Size | Power levels | Output per level | Buffer per level | Overdrive levels |
+|------|:-----------:|:----------------:|:----------------:|:----------------:|
+| 5×5×5 | 1–4 | ×0.6 | 1 G RF | 1 |
+| 7×7×7 | 1–6 | ×0.85 | 2 G RF | 2 |
+| 9×9×9 | 1–8 | ×1.1 | 3 G RF | 3 |
+| **11×11×11 (Ultimate)** | 1–10 | ×1.3 | 5 G RF | 3 + Ultimate mode |
+
+Higher levels give you more power, but they also burn fuel faster and heat the core up quicker. You unlock each new level once with an item: star dust for 5×5×5, compressed star dust for 7×7×7, neutron fragments for 9×9×9 and quasar essence for the Ultimate Core.
+
+<a id="en-fuel"></a>
+
+### Fuel and stabilizers
+
+**Fuel** keeps the reaction going. Stronger fuels give much more RF per tick, and some of them run hotter.
+
+| Fuel | RF/t | Burn time |
+|------|-----:|----------:|
+| Ender Pearl | 400 | 60 s |
+| Sculk Catalyst | 600 | 120 s |
+| Eye of Ender | 700 | 90 s |
+| Echo Shard | 900 | 180 s |
+| Star Dust | 1,200 | 120 s |
+| Compressed Star Dust | 2,600 | 1,200 s |
+| Nether Star | 3,000 | 600 s |
+| Neutron Fragment | 8,000 | 300 s *(runs hot)* |
+| Quasar Essence | 20,000 | 150 s *(runs very hot)* |
+
+**Stabilizers** (Obsidian, Crying Obsidian, Netherite Scrap) feed a containment field that keeps instability in check. If instability hits 100 %, a 10-second countdown starts. Get it back under 95 % in time, or the core collapses.
+
+The controller shows how long your fuel and stabilizers will last at your current settings. The estimate is updated every second.
+
+<a id="en-ports"></a>
+
+### Ports, console and storage
+
+- **Energy Port:** pushes RF into any cable next to it.
+- **Item Port:** pipes and hoppers can feed fuel, stabilizers and modules through it. It also has its own **storage with 27 slots**, where all asteroid loot ends up. Right-click to open it, or pipe the loot out.
+- Put the ports **right next to the controller** and the three of them merge into one console with a single wide hologram screen.
+- A connector only appears on a port when something is actually plugged into it, like a pipe, cable or chest from any mod.
+
+<a id="en-modules"></a>
+
+### Modules
+
+Modules go into the fold-out tab on the right side of the controller menu.
+
+| Module | What it does |
+|--------|--------------|
+| Efficiency Module | 15 % less fuel use (up to 4) |
+| Stability Module | 12 % less instability (up to 4) |
+| Anti-Asteroid Module | keeps asteroids away, can be switched on and off |
+| Color Module | gives the core your own color scheme. You can share the scheme as a code. |
+
+<a id="en-asteroids"></a>
+
+### Asteroids
+
+At night, asteroids drift over reactors that are formed. They come in small, medium, large and the rare huge size. With a Star Funnel on the roof and four Cosmic Lasers around it, a tractor beam pulls them down. They burst at the funnel and the fragments spiral into your Item Port. You can find ores, star dust, neutron fragments and, if you're very lucky, quasar essence in them.
+
+<a id="en-overdrive"></a>
+
+### Overdrive and Ultimate mode
+
+**Overdrive Particles** double your output per level, but they also triple the instability. If the reactor breaks apart, the particles are lost.
+
+The **Ultimate Core** has one more step: **Ultimate mode**, which costs four Quasar Overdrive Particles. The first time you activate it, something from another universe notices. If you have GeckoLib installed, you'll see it happen.
+
+<a id="en-commands"></a>
+
+### Commands
+
+| Command | What it does |
+|---------|--------------|
+| `/cosmiccore cutscene` | Replays the Void Titan cutscene for the nearest awakened Ultimate Core (needs GeckoLib) |
+
+<a id="en-config"></a>
+
+### Configuration
+
+- `config/cosmiccore-common.toml`: balancing, for example buffer sizes, output multiplier, instability, collapse behavior and asteroid spawning.
+- `config/cosmiccore-client.toml`: graphics quality (`LOW` / `MEDIUM` / `HIGH`) and detail distance.
+- Fuels and stabilizers are data maps, so a datapack can change them:
+  `data/cosmiccore/data_maps/item/core_fuel.json` and `core_stabilizer.json`.
+- Asteroid loot tables can be changed by datapack too: `data/cosmiccore/loot_table/asteroid/`.
+
+<a id="en-build"></a>
+
+### Building from source
+
+```bash
+./gradlew build          # the jar ends up in build/libs/
+./gradlew runClient      # starts a test client
+./gradlew runData        # regenerates recipes, loot tables, tags and data maps
+python3 tools/generate_resources.py   # regenerates textures, models and language files (needs Pillow)
 ```
-H = Leerengehäuse / Energie-Port / Item-Port     C = wie H, hier sitzt der Controller (Mitte einer Bodenkante)
-F = Runenrahmen   G = Fokusglas   R = Resonanzschild-Emitter   X = Fokuskristall   K = Singularitätskern
-a = Luft (muss frei bleiben)      . = egal      ? = R in y=1, X in y=5
 
-y=0 Boden    y=1 (R) / y=5 (X)  y=2 / y=4        y=3 Äquator      y=6 Decke
-HHHCHHH          F.....F          F.....F          F.....F          HHHHHHH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGGGGGH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGHHHGH
-CHHHHHC          .aa?aa.          .aaaaa.          .aaKaa.          HGHHHGH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGHHHGH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGGGGGH
-HHHCHHH          F.....F          F.....F          F.....F          HHHHHHH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaRaa.          HGGGGGH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGHHHGH
-CHHHHHC          .aaXaa.          .aaaaa.          .RaKaR.          HGHHHGH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaaaa.          HGHHHGH
-HHHHHHH          .aaaaa.          .aaaaa.          .aaRaa.          HGGGGGH
-HHHCHHH          F.....F          F.....F          F.....F          HHHHHHH
+You can run the test client with a recipe viewer (`-Pviewer=jei` or `-Pviewer=emi`) or without GeckoLib (`-Pgeckolib=off`).
+
+<a id="en-license"></a>
+
+### License
+
+All rights reserved. © DR4KUN3
+
+<p align="right"><a href="#english">Back to top ↑</a> · <a href="#deutsch">Deutsch ↓</a></p>
+
+---
+
+<a id="deutsch"></a>
+
+## Deutsch
+
+Mit Cosmic Core baust du einen Reaktor Block für Block zusammen. Ist er fertig, werden die Blöcke in seine Mitte gesaugt und es entsteht ein kleines schwarzes Loch, gehalten von einem Netz aus leuchtenden Partikeln. Gib ihm Brennstoff und es erzeugt RF. Drehst du es höher, kommt deutlich mehr RF heraus, aber es wird auch instabiler. Genau darum geht es in der ganzen Mod.
+
+### Inhalt
+
+- [Was dich erwartet](#de-features)
+- [Voraussetzungen](#de-requirements)
+- [Installation](#de-install)
+- [Dein erster Reaktor](#de-first)
+- [Reaktorgrößen](#de-sizes)
+- [Brennstoff und Stabilisatoren](#de-fuel)
+- [Ports, Konsole und Lager](#de-ports)
+- [Module](#de-modules)
+- [Asteroiden](#de-asteroids)
+- [Overdrive und Ultimate-Modus](#de-overdrive)
+- [Befehle](#de-commands)
+- [Konfiguration](#de-config)
+- [Selbst bauen](#de-build)
+- [Lizenz](#de-license)
+
+<a id="de-features"></a>
+
+### Was dich erwartet
+
+- Ein Reaktor in vier Größen, vom kompakten 5×5×5 bis zum 11×11×11 großen Ultimativen Kern.
+- Ein lebendiges schwarzes Loch in der Mitte, mit Akkretionsscheibe, Jets und einem Eindämmungsfeld, dem du beim Arbeiten zusehen kannst.
+- Leistungsstufen, die du mit seltenen Materialien freischaltest, und Overdrive für alle, die gern etwas riskieren.
+- Asteroiden, die nachts über deine Basis ziehen. Laser holen sie herunter, und die Beute landet in deinem Lager.
+- Eine schwebende Hologramm-Konsole mit Leistung, Puffer, Brennstoff und der Restlaufzeit von Brennstoff und Stabilisatoren.
+- Das Kosmische Handbuch, ein Buch im Spiel mit drehbaren 3D-Ansichten jeder Reaktorgröße.
+- Optionale Unterstützung für JEI, EMI und REI und eine optionale Zwischensequenz, wenn GeckoLib installiert ist.
+
+<a id="de-requirements"></a>
+
+### Voraussetzungen
+
+| Was | Version |
+|-----|---------|
+| Minecraft | 1.21.1 |
+| NeoForge | 21.1.x |
+| Java | 21 |
+| GeckoLib *(optional)* | 4.9.x, nur für die Void-Titan-Zwischensequenz |
+| JEI / EMI / REI *(optional)* | jede Version für 1.21.1 |
+
+<a id="de-install"></a>
+
+### Installation
+
+1. NeoForge für Minecraft 1.21.1 installieren.
+2. Die `.jar` von Cosmic Core in den Ordner `mods` legen.
+3. Auf einem Server brauchen sowohl der Server als auch alle Spieler die Mod.
+
+<a id="de-first"></a>
+
+### Dein erster Reaktor
+
+1. Stell das **Kosmische Handbuch** her (Buch und Sternenstaub). Es erklärt alles direkt im Spiel, mit Bildern.
+2. Setz den **Controller**. Sofort öffnet sich ein Menü, in dem du die Größe wählst. Überleg gut, die Wahl ist endgültig.
+3. Schalte die **Vorschau** ein. Geisterblöcke zeigen dir, was wohin gehört, und falsche Blöcke werden rot umrandet.
+4. Bau die Struktur. Jeder Reaktor braucht mindestens **einen Energie-Port und einen Item-Port** in der Hülle.
+5. Leg Brennstoff in den Controller, drück **Start** und sieh zu, wie er zum Leben erwacht.
+
+> **Tipp:** Im Kreativmodus setzt der Knopf **Bauen** die komplette Struktur für dich, samt Ports.
+
+<a id="de-sizes"></a>
+
+### Reaktorgrößen
+
+| Größe | Leistungsstufen | Leistung je Stufe | Puffer je Stufe | Overdrive-Stufen |
+|-------|:---------------:|:-----------------:|:---------------:|:----------------:|
+| 5×5×5 | 1–4 | ×0,6 | 1 G RF | 1 |
+| 7×7×7 | 1–6 | ×0,85 | 2 G RF | 2 |
+| 9×9×9 | 1–8 | ×1,1 | 3 G RF | 3 |
+| **11×11×11 (Ultimativ)** | 1–10 | ×1,3 | 5 G RF | 3 + Ultimate-Modus |
+
+Höhere Stufen bringen mehr Leistung, verbrauchen aber auch mehr Brennstoff und heizen den Kern schneller auf. Jede neue Stufe schaltest du einmalig mit einem Gegenstand frei: Sternenstaub beim 5×5×5, verdichteter Sternenstaub beim 7×7×7, Neutronenstern-Fragmente beim 9×9×9 und Quasar-Essenz beim Ultimativen Kern.
+
+<a id="de-fuel"></a>
+
+### Brennstoff und Stabilisatoren
+
+**Brennstoff** hält die Reaktion am Laufen. Stärkere Brennstoffe liefern deutlich mehr RF pro Tick, manche laufen dafür heißer.
+
+| Brennstoff | RF/t | Brenndauer |
+|------------|-----:|-----------:|
+| Enderperle | 400 | 60 s |
+| Sculk-Katalysator | 600 | 120 s |
+| Enderauge | 700 | 90 s |
+| Echoscherbe | 900 | 180 s |
+| Sternenstaub | 1.200 | 120 s |
+| Verdichteter Sternenstaub | 2.600 | 1.200 s |
+| Netherstern | 3.000 | 600 s |
+| Neutronenstern-Fragment | 8.000 | 300 s *(läuft heiß)* |
+| Quasar-Essenz | 20.000 | 150 s *(läuft sehr heiß)* |
+
+**Stabilisatoren** (Obsidian, Weinender Obsidian, Netheritschrott) speisen ein Eindämmungsfeld, das die Instabilität im Zaum hält. Erreicht sie 100 %, läuft ein Countdown von 10 Sekunden. Bringst du sie rechtzeitig unter 95 %, ist der Kern gerettet, sonst kollabiert er.
+
+Der Controller zeigt dir, wie lange Brennstoff und Stabilisatoren bei den aktuellen Einstellungen noch reichen. Die Schätzung wird jede Sekunde neu berechnet.
+
+<a id="de-ports"></a>
+
+### Ports, Konsole und Lager
+
+- **Energie-Port:** gibt RF an jedes angrenzende Kabel ab.
+- **Item-Port:** Über ihn können Rohre und Trichter Brennstoff, Stabilisatoren und Module einfüllen. Außerdem hat er ein eigenes **Lager mit 27 Plätzen**, in dem die ganze Asteroiden-Beute landet. Öffnen per Rechtsklick, oder die Beute per Rohr abziehen.
+- Stehen die Ports **direkt neben dem Controller**, verschmelzen die drei zu einer Konsole mit einem gemeinsamen, breiten Hologramm-Bildschirm.
+- Ein Anschlussstück erscheint an einem Port erst, wenn wirklich etwas angeschlossen ist, etwa ein Rohr, Kabel oder eine Truhe aus einer beliebigen Mod.
+
+<a id="de-modules"></a>
+
+### Module
+
+Module kommen in den ausklappbaren Tab rechts am Controller-Menü.
+
+| Modul | Was es tut |
+|-------|------------|
+| Effizienz-Modul | 15 % weniger Brennstoffverbrauch (bis zu 4) |
+| Stabilitäts-Modul | 12 % weniger Instabilität (bis zu 4) |
+| Anti-Asteroiden-Modul | hält Asteroiden fern, lässt sich ein- und ausschalten |
+| Farb-Modul | gibt dem Kern dein eigenes Farbschema. Du kannst das Schema als Code teilen. |
+
+<a id="de-asteroids"></a>
+
+### Asteroiden
+
+Nachts ziehen Asteroiden über fertig gebaute Reaktoren, in den Größen klein, mittel, groß und selten riesig. Mit einem Sternentrichter auf dem Dach und vier Kosmos-Lasern drumherum holt ein Traktorstrahl sie herunter. Am Trichter zerbrechen sie, und die Bruchstücke spiralen in deinen Item-Port. Darin stecken Erze, Sternenstaub, Neutronenstern-Fragmente und mit viel Glück Quasar-Essenz.
+
+<a id="de-overdrive"></a>
+
+### Overdrive und Ultimate-Modus
+
+**Overdrive-Partikel** verdoppeln die Leistung pro Stufe, verdreifachen aber auch die Instabilität. Zerfällt der Reaktor, sind die Partikel verloren.
+
+Der **Ultimative Kern** hat noch eine Stufe mehr: den **Ultimate-Modus**, der vier Quasar-Overdrive-Partikel kostet. Wenn du ihn zum ersten Mal einschaltest, bemerkt dich etwas aus einem anderen Universum. Mit GeckoLib siehst du es auch.
+
+<a id="de-commands"></a>
+
+### Befehle
+
+| Befehl | Was er tut |
+|--------|------------|
+| `/cosmiccore cutscene` | Spielt die Void-Titan-Zwischensequenz für den nächsten erwachten Ultimativen Kern erneut ab (braucht GeckoLib) |
+
+<a id="de-config"></a>
+
+### Konfiguration
+
+- `config/cosmiccore-common.toml`: Balancing, zum Beispiel Puffergrößen, Leistungsfaktor, Instabilität, Verhalten beim Kollaps und das Erscheinen von Asteroiden.
+- `config/cosmiccore-client.toml`: Grafikqualität (`LOW` / `MEDIUM` / `HIGH`) und Detail-Entfernung.
+- Brennstoffe und Stabilisatoren sind Data Maps, ein Datapack kann sie also ändern:
+  `data/cosmiccore/data_maps/item/core_fuel.json` und `core_stabilizer.json`.
+- Auch die Beute der Asteroiden lässt sich per Datapack ändern: `data/cosmiccore/loot_table/asteroid/`.
+
+<a id="de-build"></a>
+
+### Selbst bauen
+
+```bash
+./gradlew build          # die Jar liegt danach in build/libs/
+./gradlew runClient      # startet einen Test-Client
+./gradlew runData        # erzeugt Rezepte, Loot-Tabellen, Tags und Data Maps neu
+python3 tools/generate_resources.py   # erzeugt Texturen, Modelle und Sprachdateien neu (braucht Pillow)
 ```
 
-Der **Resonanzschild-Emitter** sitzt unter dem Kern, der **Fokuskristall** darüber (7x7x7: 2 Blöcke Abstand,
-9x9x9: 3 Blöcke). **5x5x5:** Die Kammer ist zu eng - Emitter und Kristall sitzen in der Mitte von Boden bzw. Decke.
-Die Bauvorschau zeigt alles genau an.
+Den Test-Client kannst du mit einem Rezept-Viewer starten (`-Pviewer=jei` oder `-Pviewer=emi`) oder ohne GeckoLib (`-Pgeckolib=off`).
 
-7x7x7: 125 Blöcke, die Seiten sind offen, damit man die Animation sieht. Der Controller richtet sich beim Bilden
-automatisch nach außen aus. Rechtsklick auf den Controller (ohne Brennstoff in der Hand) zeigt Status bzw.
-den ersten Baufehler (mit Koordinate, erwartetem Block und Partikel an der Stelle).
+<a id="de-license"></a>
 
-## Kosmos-Erweiterungen
+### Lizenz
 
-- **Sternentrichter** (2x Fokusglas oben, Sternenstaub, Leerengehäuse): direkt auf die Deckenmitte setzen.
-  Mit freiem Himmel verdoppelt er den Himmelsbonus (+50 %) und saugt sichtbar Energie aus dem All.
-- **Asteroiden:** Nachts (Overworld, freier Himmel) und im End ziehen kleine, mittlere und große Asteroiden vorbei
-  (`asteroids`, `asteroidChance` in der Config). Energie: 50k / 250k / 1M RF.
-- **Kosmos-Laser** (Block: Fokuskristall, Sternenstaub, Eisen, Leerengehäuse): 4 Stück auf die Decke setzen - je einer
-  nördlich, östlich, südlich und westlich der Deckenmitte (der Sternentrichter darf in der Mitte sitzen).
-  Bei gebildeter Struktur werden sie zu vier Energiepartikeln, die um die Trichter-Position kreisen. Erfassen sie
-  einen Asteroiden, bündeln sie sich (Aufladen), feuern einen Strahl, bis er zerbricht, und leiten die freigesetzte
-  Energie direkt in den Puffer.
-- **Phantom-Blöcke:** Hüllenblöcke außerhalb der sichtbaren Kugel haben bei gebildeter Struktur keine Kollision und
-  sind nicht anwählbar. Ports bleiben sichtbar, damit Rohre/Kabel anderer Mods sauber andocken.
-## Ultimativer Kern (11x11x11)
+Alle Rechte vorbehalten. © DR4KUN3
 
-- Stufen 1–12, stärkste Leistung pro Stufe, am stabilsten.
-- **Vakuum-Energie:** Mit freiem Himmel erzeugt er zusätzlich 2.000 RF/t pro Stufe x kosmischer Faktor - auch ohne
-  Brennstoff und ohne Instabilität (`vacuumEnergyPerLevel`).
-- Eigene Optik: Spiralgalaxie in der Scheibe, drei umlaufende Sterne, goldene Krone.
-- **Erwachen:** Sein erster Start (einmalig pro Controller) löst für alle Spieler der Dimension einen Himmelseffekt
-  aus - Himmelsblitz, Lichtsäule ins All, Schockwellen über den Himmel, Polarlichter rund um die Welt, Sternschnuppen.
-
-## Overdrive
-
-- **Overdrive-Partikel** (4 Endkristalle um einen Netherstern): in der GUI mit „Overdrive +“ installieren (Warnung vorab).
-  Pro Stufe: RF x2, Instabilität x3. Maximal 1 / 2 / 3 Stufen bei 5x5x5 / 7x7x7 / 9x9x9.
-- Nur am gebildeten Reaktor einstellbar. „Entfernen“ oder Abbau/Zerfall des Reaktors setzt Overdrive zurück - die
-  Partikel sind dabei verloren.
-- Jede Stufe steigert das Bild: Überladung (blau, zweite Scheibe, Korona), Supernova (Gold, Ringstruktur,
-  Strahlenkranz), Quasar (Weiß/Violett, atmende Aura).
-
-## Spielmechanik
-
-- **Zündung:** Brennstoff (Rechtsklick auf Controller oder per Trichter/Rohr in den Item-Port) startet den Kern.
-- **Resonanz:** Die Leistung steigt über ~30 s von 20 % auf 100 % (`rampUpTicks`).
-- **Sternenlicht:** Freie Sicht zum Himmel über der Decke = +25 % (`skyLinkBonus`), ein Lichtstrahl schießt in den Himmel,
-  Sternenstaub regnet herab und eine Akkretionsscheibe kreist über dem Reaktor. Nur mit Himmelssicht gibt es im Overworld
-  den Nachtbonus (+25 %, Vollmond +50 %). The End: dauerhaft +40 %. Neumond und End machen den Kern instabiler.
-- **Instabilität:** Jede Verbrennung erhöht sie, stärkere Brennstoffe schneller. Stabilisatoren (Obsidian, Weinender Obsidian, Netherit-Schrott)
-  werden automatisch verbraucht und halten sie unten. Ab 70 % wird der Kern rot und unruhig (die Instabilität steigt ab hier gebremst), ab 85 % schlägt ein
-  Herzschlag-Alarm. Bei 100 % läuft ein **10-Sekunden-Countdown** (fällt sie vorher unter 95 %, ist der Kern gerettet),
-  danach **kollabiert** er:
-  Dunkelheit/Übelkeit/Schaden im Umkreis und der **Singularitätskern zerbricht** (`collapseDestroysCore`). Blockzerstörung ist standardmäßig aus.
-- **Ausgabe:** Energie-Ports schieben RF aktiv in angrenzende Blöcke und bieten die Energy-Capability an (nur Entnahme).
-
-Stabilisatoren halten dank `stabilizerMultiplier` (Standard x3) dreimal so lange wie ihre Data-Map-Werte.
-
-## Brennstoffe, Module, Beute
-
-- Brennstoff-Stufen: Sternenstaub → Verdichteter Sternenstaub → Neutronenstern-Fragment → Quasar-Essenz.
-  Heißere Brennstoffe (`heat` > 1) liefern viel mehr RF/t, treiben aber die Instabilität stärker.
-- Module im Controller (je bis zu 4): Effizienz-Modul (-15 % Verbrauch je Stück),
-  Stabilitäts-Modul (-12 % Instabilität je Stück, Feld hält 3 % tiefer).
-- Asteroiden-Beute landet in 6 Beute-Slots des Controllers; der Item-Port gibt sie an Rohre ab.
-- JEI, EMI und REI zeigen Brennstoffe, Stabilisatoren, Asteroiden-Beute und Info-Seiten (optional, kein Pflicht-Mod).
-- Grafikqualität: `config/cosmiccore-client.toml` (`quality` LOW/MEDIUM/HIGH, `detailDistance`).
-
-## Balancing ohne Neukompilieren
-
-- `config/cosmiccore-common.toml` (Puffer je Baustufe: 1G/2G/3G, ultimativ 5G, Port-Rate, globaler `outputMultiplier`, Instabilitätsrate, Kollaps ...)
-- Data Maps (auch per Datapack überschreibbar):
-  `data/cosmiccore/data_maps/item/core_fuel.json` und `core_stabilizer.json`. Fuel-Tooltips zeigen die Werte im Spiel an.
-- Asteroiden-Beute: `data/cosmiccore/loot_table/asteroid/small|medium|large.json`.
-
-## Ressourcen erzeugen
-
-- `./gradlew runData` – NeoForge-Datengenerierung nach `src/generated/resources`: Rezepte, Loot-Tables (Blöcke und
-  Asteroiden, Quelle `entity/AsteroidLoot.java`), Block-Tags und Data Maps (`datagen/ModDataMapProvider.java`).
-- `python3 tools/generate_resources.py` (braucht Pillow) – Texturen, Animationen, Modelle, Blockstates, Sprachdateien, Mod-Logo.
-
-Die Singularität und alle Effekte werden prozedural in `client/` gezeichnet (z. B. `SingularityCoreRenderer.java`).
+<p align="right"><a href="#deutsch">Nach oben ↑</a> · <a href="#english">English ↑</a></p>

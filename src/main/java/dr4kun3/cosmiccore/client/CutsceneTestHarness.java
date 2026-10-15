@@ -26,7 +26,11 @@ public final class CutsceneTestHarness {
     private static volatile net.minecraft.core.BlockPos testCore;
 
     private static net.minecraft.world.entity.Marker cam;
+    private static String guidePhase;
+    private static long guideMs, guideLastShot;
+    private static int guideShot;
     private static net.minecraft.core.BlockPos consoleAt;
+    private static final boolean GUIDE = System.getProperty("cosmiccore.guideTest") != null;
     private static final boolean CONSOLE = System.getProperty("cosmiccore.consoleTest") != null;
 
     private CutsceneTestHarness() {}
@@ -148,6 +152,31 @@ public final class CutsceneTestHarness {
             consoleTest(mc);
             return;
         }
+        if (GUIDE) {
+            // Handbuch: Aufklappen, einmal Umblaettern und Zuklappen als Bildfolge
+            if (worldTicks == 30) {
+                mc.options.guiScale().set(2);
+                mc.resizeDisplay();
+                mc.setScreen(new GuideScreen());
+                guidePhase = "o";
+                guideMs = net.minecraft.Util.getMillis();
+            }
+            if (worldTicks == 80 && mc.screen instanceof GuideScreen gs) {
+                gs.turn(1);
+                guidePhase = "t";
+                guideMs = net.minecraft.Util.getMillis();
+            }
+            if (worldTicks == 110 && mc.screen instanceof GuideScreen gs) {
+                gs.onClose();
+                guidePhase = "c";
+                guideMs = net.minecraft.Util.getMillis();
+            }
+            if (worldTicks == 140) {
+                finished = true;
+                mc.stop();
+            }
+            return;
+        }
         if (worldTicks == 20 && mc.getSingleplayerServer() != null) {
             // Buehne: ein fertiger ultimativer Kern 24 Bloecke vor dem Spieler (laeuft im Ultimate-Modus)
             net.minecraft.core.BlockPos at = mc.player.blockPosition().offset(0, 0, -18);
@@ -178,6 +207,17 @@ public final class CutsceneTestHarness {
 
     @SubscribeEvent
     public static void onFrame(RenderFrameEvent.Post event) {
+        if (GUIDE && guidePhase != null && !finished) {
+            long now = net.minecraft.Util.getMillis(), since = now - guideMs;
+            long window = guidePhase.equals("o") ? 1300 : 700, step = guidePhase.equals("o") ? 110 : 70;
+            if (since <= window && now - guideLastShot >= step) {
+                guideLastShot = now;
+                Minecraft mc = Minecraft.getInstance();
+                Screenshot.grab(mc.gameDirectory, String.format("cutscene_%s%02d.png", guidePhase, guideShot++ % 100), mc.getMainRenderTarget(), msg -> {});
+            }
+            if (since > window) guideShot = 0;
+            return;
+        }
         if (!ENABLED || !started || finished || !TitanCutscene.isActive()) return;
         int t = TitanCutscene.currentTick();
         if (t != lastShot && t % EVERY == 0) {
