@@ -93,7 +93,7 @@ public final class PortStation {
      * screenYaw dreht nur den Bildschirm (Fluegel schauen zur Konsolenmitte).
      */
     public static void solid(PoseStack pose, MultiBufferSource buffers, Level level, BlockState port, boolean energy, int connMask,
-                             float yaw, float screenYaw, float grow, Data data, boolean ownBase) {
+                             float yaw, float screenYaw, float grow, Data data, boolean ownBase, boolean screen) {
         var dispatcher = Minecraft.getInstance().getBlockRenderer();
         // Sockel
         pose.pushPose();
@@ -121,6 +121,7 @@ public final class PortStation {
         // Bodenfeld wie ein Portal (bei den Konsolenfluegeln zeichnet die Konsole ein gemeinsames Feld)
         if (ownBase) portalCapsule(buffers, new Matrix4f(base).translate(0, -0.495F, 0), 0.0F, 0.34F * Math.max(0.05F, grow));
         VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
+        if (!screen) return; // Port direkt am Controller: seine Anzeige liegt auf dem breiten Konsolenbildschirm
         Matrix4f sm = new Matrix4f(base).rotateY(screenYaw).translate(0, (1.0F - grow) * -0.4F, 0);
         float[] b0 = screen(-1.04F, -0.04F), b1 = screen(1.04F, -0.04F), b2 = screen(1.04F, 1.04F), b3 = screen(-1.04F, 1.04F);
         RenderUtil.quad2(dq, sm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], b2[0], b2[1], b2[2], b3[0], b3[1], b3[2],
@@ -210,9 +211,12 @@ public final class PortStation {
     // ------------------------------------------------------------------ Pass 2: Licht
 
     public static void glow(Matrix4f base, VertexConsumer vc, boolean energy, int connMask, float yaw, float screenYaw, float grow, Data d,
-                            boolean ownBase) {
+                            boolean ownBase, boolean screen) {
         float[] col = energy ? ENERGY : ITEM;
         float e = d.e() * grow;
+        if (ownBase) capsuleRim(vc, new Matrix4f(base).translate(0, -0.49F, 0), 0.0F, 0.34F * grow, col, e * 0.7F);
+        connectorGlow(base, vc, energy, connMask, yaw, e, d);
+        if (!screen) return;
         Matrix4f sm = new Matrix4f(base).rotateY(screenYaw).translate(0, (1.0F - grow) * -0.4F, 0);
         float[][] fr = {screen(-1.03F, -0.03F), screen(1.03F, -0.03F), screen(1.03F, 1.03F), screen(-1.03F, 1.03F)};
         for (int i = 0; i < 4; i++) {
@@ -239,8 +243,11 @@ public final class PortStation {
         }
         float sv = Mth.frac(d.t() * 0.015F + (energy ? 0.5F : 0.0F)) * 62.0F;
         segment(vc, tm, 2, sv, 0, PX - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.1F, e * 0.1F);
-        if (ownBase) capsuleRim(vc, new Matrix4f(base).translate(0, -0.49F, 0), 0.0F, 0.34F * grow, col, e * 0.7F);
-        // Leitungen von den Anschlussknoten zum Sockel, mit Fluss (Energie hinaus, Items hinein)
+    }
+
+    /** Leitungen von den Anschlussknoten zum Sockel, mit Fluss (Energie hinaus, Items hinein). */
+    private static void connectorGlow(Matrix4f base, VertexConsumer vc, boolean energy, int connMask, float yaw, float e, Data d) {
+        float[] col = energy ? ENERGY : ITEM;
         for (Direction dir : Direction.values()) {
             if ((connMask & (1 << dir.get3DDataValue())) == 0) continue;
             Vector3f c = connector(dir, yaw);

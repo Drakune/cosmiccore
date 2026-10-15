@@ -19,6 +19,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.data.ModelData;
@@ -88,11 +89,14 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
             BlockPos center = c.getSize().pattern().center(cpos, level.getBlockState(cpos).getValue(ControllerBlock.FACING));
             if (level.getBlockEntity(center) instanceof SingularityCoreBlockEntity sc) core = sc;
             BlockPos p = be.getBlockPos();
-            yaw = (float) Math.atan2(p.getX() - center.getX(), p.getZ() - center.getZ());
+            // gerade nach vorn: senkrecht zu der Seite, an der der Port sitzt (nicht schraeg zur Kernmitte)
+            int ox = p.getX() - center.getX(), oz = p.getZ() - center.getZ();
+            yaw = Math.abs(oz) >= Math.abs(ox) ? (oz >= 0 ? 0.0F : Mth.PI) : (ox > 0 ? Mth.HALF_PI : -Mth.HALF_PI);
             // Port auf der Kante des Controllers: gehoert zur Steuerkonsole, die zeichnet der Kern
             var right = dr4kun3.cosmiccore.block.Terminal.right(level.getBlockState(cpos).getValue(ControllerBlock.FACING));
             int dx = p.getX() - cpos.getX(), dz = p.getZ() - cpos.getZ();
-            if (p.getY() == cpos.getY() && (right.getStepX() == 0 ? dx == 0 : dz == 0)) return;
+            // nur direkt neben dem Controller
+            if (p.getY() == cpos.getY() && Math.abs(dx) + Math.abs(dz) == 1 && (right.getStepX() == 0 ? dx == 0 : dz == 0)) return;
         }
         float t = level.getGameTime() + partialTick;
         float bright = core == null ? 0.6F : Math.max(0.6F, phase == CorePhase.FORMED ? 0.6F : 1.0F);
@@ -104,9 +108,9 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         pose.scale(sc, sc, sc);
         pose.translate(0.0F, 0.5F, 0.0F);
         pose.mulPose(Axis.YP.rotation(yaw));
-        PortStation.solid(pose, buffers, level, state, energy, conn, yaw, 0.0F, Math.min(1.0F, st), data, true);
+        PortStation.solid(pose, buffers, level, state, energy, conn, yaw, 0.0F, Math.min(1.0F, st), data, true, true);
         PortStation.glow(new Matrix4f(pose.last().pose()), buffers.getBuffer(CosmicRenderTypes.glow()), energy, conn, yaw, 0.0F,
-                Math.min(1.0F, st), data, true);
+                Math.min(1.0F, st), data, true, true);
         pose.popPose();
         if (st < 1.0F) {
             float[] col = energy ? ENERGY : ITEM;

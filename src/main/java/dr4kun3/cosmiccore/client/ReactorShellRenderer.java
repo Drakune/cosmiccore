@@ -153,18 +153,44 @@ public final class ReactorShellRenderer {
     private static final float TEXT_SCALE = 0.0052F;
     private static final float PANEL_PX = 0.92F / TEXT_SCALE; // Breite in Textpixeln
 
+    /** Punkt auf der Bildschirmflaeche mit freier Breite (x in Bloecken), v in [0, 1] hoch. */
+    private static float[] screenAt(float x, float v) {
+        return new float[]{x, -0.02F + v * 0.56F, 0.07F - v * 0.22F};
+    }
+
     /** Textraum des Bildschirms: Ursprung oben links, x nach rechts, y nach unten (in Schriftpixeln). */
     private static Matrix4f textFrame(Matrix4f cm, float lift) {
+        return textFrame(cm, -0.46F, lift);
+    }
+
+    /** Textraum ab der linken Kante left (bei der verbreiterten Konsole weiter links). */
+    private static Matrix4f textFrame(Matrix4f cm, float left, float lift) {
         float tilt = (float) Math.atan2(0.22, 0.56);
-        float[] tl = screen(-1, 1);
+        float[] tl = screenAt(left, 1);
         return new Matrix4f(cm).translate(tl[0], tl[1], tl[2]).rotateX(-tilt).translate(0, 0, lift).scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
+    }
+
+    /** Breite eines Seitenabschnitts der verbreiterten Konsole (ein Port direkt daneben), in Bloecken. */
+    private static final float SECTION_W = 1.0F;
+
+    /**
+     * Ausdehnung des Bildschirms: links/rechts je ein Abschnitt pro direkt angrenzendem Port (waechst beim Ausfahren mit).
+     * Rueckgabe {links, rechts} in Bloecken (lokales X der Konsole).
+     */
+    private static float[] screenLR(Params p, ShellCell c) {
+        float out = wingOut(p), l = -0.46F, r = 0.46F;
+        for (EdgePort ep : edgePorts(p, c)) {
+            if (ep.k() < 0) l = -0.46F - SECTION_W * out;
+            else r = 0.46F + SECTION_W * out;
+        }
+        return new float[]{l, r};
     }
 
     private static final int ROW_TITLE = 3, ROW_STATUS = 14, ROW_OUT = 28, ROW_BUF = 39, BAR_BUF = 49, ROW_INST = 56,
             BAR_INST = 66, ROW_LEVEL = 73, ROW_OD = 84, ROW_FIELD = 95;
 
     /** Live-Daten als Tabelle: Bezeichnung links, Wert mit Einheit rechtsbuendig. */
-    private static void consoleText(Matrix4f cm, MultiBufferSource buffers, Params p) {
+    private static void consoleText(Matrix4f cm, MultiBufferSource buffers, Params p, ShellCell cell) {
         Font font = Minecraft.getInstance().font;
         SingularityCoreBlockEntity core = p.core();
         ReactorSize size = ReactorSize.bySize(p.size());
@@ -196,7 +222,17 @@ public final class ReactorShellRenderer {
             statusColor = 0;
         }
 
-        Matrix4f tm = textFrame(cm, 0.004F);
+        float[] lr = screenLR(p, cell);
+        Matrix4f full = textFrame(cm, lr[0], 0.004F);
+        float centerPx = (-0.46F - lr[0]) / TEXT_SCALE;
+        Matrix4f tm = new Matrix4f(full).translate(centerPx, 0, 0);
+        // Seitenabschnitte der direkt angrenzenden Ports (erst, wenn sie fast ausgefahren sind)
+        if (wingOut(p) > 0.8F) {
+            for (EdgePort ep : edgePorts(p, cell)) {
+                float x0 = ep.k() < 0 ? 0.0F : centerPx + PANEL_PX;
+                sectionText(font, new Matrix4f(full).translate(x0, 0, 0), buffers, ep, p);
+            }
+        }
         center(font, tm, buffers, "\u25C6 " + tr("console.cosmiccore.title") + " \u25C6", ROW_TITLE, 0xD8B8FF);
         if (!status.isEmpty()) center(font, tm, buffers, status, ROW_STATUS, statusColor);
         var ctrl = controllerOf(p);
@@ -214,6 +250,34 @@ public final class ReactorShellRenderer {
         row(font, tm, buffers, tr("console.cosmiccore.level"), core.getScale() + " / " + core.getScaleMax(), ROW_LEVEL, 0xE0A8FF);
         if (maxOd > 0) row(font, tm, buffers, tr("console.cosmiccore.overdrive"), od.toString().trim(), ROW_OD, 0xFFB040);
         row(font, tm, buffers, tr("console.cosmiccore.field"), Math.round(core.getShield() * 100) + " %", ROW_FIELD, 0x9AD8FF);
+    }
+
+    private static final float SECTION_PX = SECTION_W / TEXT_SCALE;
+
+    /** Abschnitt eines Ports auf dem breiten Bildschirm: Energie (Leistung, Puffer, Kapazitaet) bzw. Lager (Plaetze). */
+    private static void sectionText(Font font, Matrix4f tm, MultiBufferSource buffers, EdgePort ep, Params p) {
+        String title = "\u25C6 " + tr(ep.energy() ? "console.cosmiccore.wing_energy" : "console.cosmiccore.wing_items") + " \u25C6";
+        font.drawInBatch(title, (SECTION_PX - font.width(title)) / 2.0F, ROW_TITLE, 0xFF000000 | (ep.energy() ? 0x7AE8FF : 0xFFC070), false, tm, buffers,
+                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        if (ep.energy()) {
+            SingularityCoreBlockEntity core = p.core();
+            long cap = ReactorSizeCapacity.capacity(core.getStructureSize());
+            long stored = Math.round(cap * core.getEnergyPct() / 100.0);
+            secRow(font, tm, buffers, tr("console.cosmiccore.output"), compact(core.getOutput()) + " RF/t", ROW_OUT, 0x7AE8FF);
+            secRow(font, tm, buffers, tr("console.cosmiccore.buffer"), core.getEnergyPct() + " %", ROW_BUF, 0xC8B8F0);
+            secRow(font, tm, buffers, tr("console.cosmiccore.stored"), compact(stored) + " RF", ROW_INST, 0xC8B8F0);
+            secRow(font, tm, buffers, tr("console.cosmiccore.capacity"), compact(cap) + " RF", ROW_LEVEL, 0xA898C8);
+        } else {
+            int used = ep.be() instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip ? ip.getClientUsed() : 0;
+            int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
+            secRow(font, tm, buffers, tr("console.cosmiccore.slots"), used + " / " + slots, ROW_OUT, used >= slots ? 0xFF6060 : 0xFFC070);
+        }
+    }
+
+    private static void secRow(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int color) {
+        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(value, SECTION_PX - 6 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
+                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
     }
 
     private static String tr(String key, Object... args) {
@@ -269,8 +333,8 @@ public final class ReactorShellRenderer {
         if (!cs.hasProperty(dr4kun3.cosmiccore.block.ControllerBlock.FACING)) return out;
         var right = dr4kun3.cosmiccore.block.Terminal.right(cs.getValue(dr4kun3.cosmiccore.block.ControllerBlock.FACING));
         int half = p.size() / 2;
-        for (int k = -half; k <= half; k++) {
-            if (k == 0) continue;
+        for (int k = -1; k <= 1; k++) { // nur direkt neben dem Controller - mit Abstand bleibt ein Port eigenstaendig
+            if (k == 0 || Math.abs(k) > half) continue;
             if (p.level().getBlockEntity(cpos.relative(right, k)) instanceof dr4kun3.cosmiccore.block.entity.PortBlockEntity pb) {
                 out.add(new EdgePort(k, pb, pb.getBlockState().is(ModBlocks.ENERGY_PORT.get())));
             }
@@ -291,16 +355,6 @@ public final class ReactorShellRenderer {
 
     private static boolean isTerminal(Params p, ShellCell c) {
         return !edgePorts(p, c).isEmpty();
-    }
-
-    /** Ausdehnung des gemeinsamen Portalfelds entlang der Kante (lokales X, schon mit Ausfahren). */
-    private static float[] consoleSpan(Params p, ShellCell c) {
-        float out = wingOut(p), x0 = 0, x1 = 0;
-        for (EdgePort e : edgePorts(p, c)) {
-            x0 = Math.min(x0, e.k() * out);
-            x1 = Math.max(x1, e.k() * out);
-        }
-        return new float[]{x0, x1};
     }
 
     /**
@@ -324,7 +378,7 @@ public final class ReactorShellRenderer {
         cols.add(col);
         if (out > 0.02F) {
             for (EdgePort ep : ports) {
-                ends.add(new Vector3f(base).add(new Vector3f(side).mul(ep.k() * out)).add(0, 0.55F, 0).add(new Vector3f(back).mul(0.22F)));
+                ends.add(new Vector3f(base).add(new Vector3f(side).mul(ep.k() * out)).add(0, 0.72F, 0).add(new Vector3f(back).mul(0.28F)));
                 cols.add(ep.energy() ? ENERGY_GLYPH : ITEM_GLYPH);
             }
         }
@@ -375,8 +429,7 @@ public final class ReactorShellRenderer {
             pose.translate(c.dx(), c.dy(), c.dz());
             pose.mulPose(com.mojang.math.Axis.YP.rotation(yaw));
             pose.translate(ep.k() * out, 0, 0);
-            PortStation.solid(pose, buffers, p.level(), ep.be().getBlockState(), ep.energy(), conn, yaw, -Math.signum(ep.k()) * 0.28F * out,
-                    out, data.withPort(ep.be()), false);
+            PortStation.solid(pose, buffers, p.level(), ep.be().getBlockState(), ep.energy(), conn, yaw, 0.0F, out, data.withPort(ep.be()), true, false);
             pose.popPose();
         }
     }
@@ -389,8 +442,7 @@ public final class ReactorShellRenderer {
         PortStation.Data data = stationData(p, c);
         for (EdgePort ep : edgePorts(p, c)) {
             int conn = PortStation.connections(p.level(), ep.be(), ep.energy());
-            PortStation.glow(new Matrix4f(cm).translate(ep.k() * out, 0, 0), vc, ep.energy(), conn, yaw, -Math.signum(ep.k()) * 0.28F * out,
-                    out, data.withPort(ep.be()), false);
+            PortStation.glow(new Matrix4f(cm).translate(ep.k() * out, 0, 0), vc, ep.energy(), conn, yaw, 0.0F, out, data.withPort(ep.be()), true, false);
         }
     }
 
@@ -407,18 +459,47 @@ public final class ReactorShellRenderer {
         float e = Math.max(0.6F, p.energy());
         float[] cyan = {0.35F, 0.9F, 1.0F};
         float[] warn = lerp(new float[]{0.4F, 1.0F, 0.5F}, CRITICAL, p.heat());
-        // Rahmen
-        float[][] fr = {screen(-1.02F, -0.02F), screen(1.02F, -0.02F), screen(1.02F, 1.02F), screen(-1.02F, 1.02F)};
+        // Rahmen (bei Ports direkt daneben ueber die ganze Breite)
+        float[] lr = screenLR(p, c);
+        float[][] fr = {screenAt(lr[0] - 0.01F, -0.02F), screenAt(lr[1] + 0.01F, -0.02F), screenAt(lr[1] + 0.01F, 1.02F), screenAt(lr[0] - 0.01F, 1.02F)};
         for (int i = 0; i < 4; i++) {
             float[] a = fr[i], b = fr[(i + 1) % 4];
             segment(vc, cm, a[0], a[1], a[2], b[0], b[1], b[2], 0.006F, col[0], col[1], col[2], e * 0.8F, e * 0.8F);
             cube(vc, cm, a[0], a[1], a[2], 0.018F, 1.0F, 1.0F, 1.0F, e);
         }
         // Bodenring des Sockels
-        float[] span = consoleSpan(p, c);
-        PortStation.capsuleRim(vc, new Matrix4f(cm).translate((span[0] + span[1]) / 2, -0.49F, 0), (span[1] - span[0]) / 2, 0.44F, col, e * 0.7F);
+        PortStation.capsuleRim(vc, new Matrix4f(cm).translate(0, -0.49F, 0), 0.0F, 0.44F, col, e * 0.7F);
 
-        Matrix4f tm = textFrame(cm, 0.002F);
+        Matrix4f full = textFrame(cm, lr[0], 0.002F);
+        float centerPx = (-0.46F - lr[0]) / TEXT_SCALE, totalPx = (lr[1] - lr[0]) / TEXT_SCALE;
+        Matrix4f tm = new Matrix4f(full).translate(centerPx, 0, 0);
+        // Seitenabschnitte: Trennlinien, Titelstrich, Energie-Balken bzw. 27 Lager-Kaestchen
+        for (EdgePort ep : edgePorts(p, c)) {
+            float[] sc = ep.energy() ? ENERGY_GLYPH : ITEM_GLYPH;
+            float x0 = ep.k() < 0 ? 0.0F : centerPx + PANEL_PX, w = ep.k() < 0 ? centerPx : totalPx - centerPx - PANEL_PX;
+            float a = e * Math.min(1.0F, wingOut(p));
+            float divider = ep.k() < 0 ? centerPx : centerPx + PANEL_PX;
+            segment(vc, full, divider, 4, 0, divider, 104, 0, 0.5F, col[0], col[1], col[2], a * 0.5F, a * 0.5F);
+            if (w < SECTION_PX * 0.8F) continue;
+            Matrix4f sm = new Matrix4f(full).translate(x0, 0, 0);
+            segment(vc, sm, 6, 12, 0, w - 6, 12, 0, 0.5F, sc[0], sc[1], sc[2], a * 0.6F, a * 0.6F);
+            if (ep.energy()) {
+                float fill = Mth.clamp(p.core().getEnergyPct() / 100.0F, 0, 1);
+                segment(vc, sm, 6, BAR_BUF, 0, w - 6, BAR_BUF, 0, 1.4F, sc[0], sc[1], sc[2], a * 0.15F, a * 0.15F);
+                if (fill > 0) segment(vc, sm, 6, BAR_BUF, 0, 6 + (w - 12) * fill, BAR_BUF, 0, 1.4F, sc[0], sc[1], sc[2], a, a);
+            } else {
+                int used = ep.be() instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip ? ip.getClientUsed() : 0;
+                int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
+                float cw = (w - 12) / 9.0F;
+                for (int k = 0; k < slots; k++) { // 3 Reihen zu 9 wie im Lager
+                    float bx = 6 + (k % 9) * cw, by = 44 + (k / 9) * 9;
+                    boolean full2 = k < used;
+                    float[] cc = full2 && used >= slots ? new float[]{1.0F, 0.35F, 0.35F} : sc;
+                    float al = full2 ? a : a * 0.15F;
+                    segment(vc, sm, bx + 0.8F, by, 0, bx + cw - 0.8F, by, 0, 6.0F, cc[0], cc[1], cc[2], al, al);
+                }
+            }
+        }
         // Trennlinien unter Titel und Status
         segment(vc, tm, 6, 12, 0, PANEL_PX - 6, 12, 0, 0.5F, col[0], col[1], col[2], e * 0.6F, e * 0.6F);
         segment(vc, tm, 6, 25, 0, PANEL_PX - 6, 25, 0, 0.4F, col[0], col[1], col[2], e * 0.35F, e * 0.35F);
@@ -428,7 +509,7 @@ public final class ReactorShellRenderer {
         bar(vc, tm, BAR_INST, p.core().getInstability() / 100.0F, warn, e);
         // feine Scanlinie
         float sv = Mth.frac(p.t() * 0.012F) * 108.0F;
-        segment(vc, tm, 2, sv, 0, PANEL_PX - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.12F, e * 0.12F);
+        segment(vc, full, 2, sv, 0, totalPx - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.12F, e * 0.12F);
     }
 
     private static void bar(VertexConsumer vc, Matrix4f tm, float y, float frac, float[] col, float e) {
@@ -497,15 +578,16 @@ public final class ReactorShellRenderer {
                 Minecraft.getInstance().getBlockRenderer().renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose,
                         buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
                 pose.popPose();
-                // Portalfeld unter der Konsole - beim Terminal ein gemeinsames Feld bis unter die Fluegel
-                float[] span = consoleSpan(p, c);
-                PortStation.portalCapsule(buffers, new Matrix4f(cm).translate((span[0] + span[1]) / 2, -0.495F, 0), (span[1] - span[0]) / 2, 0.44F);
+                // Portalfeld unter dem Controller
+                PortStation.portalCapsule(buffers, new Matrix4f(cm).translate(0, -0.495F, 0), 0.0F, 0.44F);
                 VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
-                // undurchsichtiger Bildschirmhintergrund
-                float[] b0 = screen(-1.03F, -0.03F), b1 = screen(1.03F, -0.03F), b2 = screen(1.03F, 1.03F), b3 = screen(-1.03F, 1.03F);
+                // undurchsichtiger Bildschirmhintergrund - mit Ports direkt daneben ein breiter Bildschirm ueber allen
+                float[] lr = screenLR(p, c);
+                float[] b0 = screenAt(lr[0] - 0.014F, -0.03F), b1 = screenAt(lr[1] + 0.014F, -0.03F), b2 = screenAt(lr[1] + 0.014F, 1.03F),
+                        b3 = screenAt(lr[0] - 0.014F, 1.03F);
                 RenderUtil.quad2(dq, cm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], b2[0], b2[1], b2[2], b3[0], b3[1], b3[2],
                         PANEL[0], PANEL[1], PANEL[2], 1.0F);
-                if (p.settle() > 0.6F) consoleText(cm, buffers, p);
+                if (p.settle() > 0.6F) consoleText(cm, buffers, p, c);
                 if (isTerminal(p, c)) wingsSolid(pose, buffers, p, c);
                 pose.popPose();
             }

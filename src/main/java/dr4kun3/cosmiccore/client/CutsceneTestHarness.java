@@ -52,7 +52,7 @@ public final class CutsceneTestHarness {
                 level.setBlock(south.east(), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
                 level.setBlock(south.east().south(), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
                 // Konsole mit Abstand: Item-Port zwei Felder weiter (Luecke dazwischen ist Gehaeuse), Trichter oben drauf
-                level.setBlock(at.east(), dr4kun3.cosmiccore.block.ModBlocks.VOID_CASING.get().defaultBlockState(), 3);
+                // direkt daneben bleibt der Item-Port der Konsole; ein zweiter steht drei Felder weiter (eigenstaendig)
                 level.setBlock(at.east(3), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
                 level.setBlock(at.east(3).above(), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
                 // von Hand: erst der Controller, dann die Ports wie beim Platzieren durch einen Spieler
