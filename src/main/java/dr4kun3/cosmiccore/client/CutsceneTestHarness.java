@@ -89,17 +89,32 @@ public final class CutsceneTestHarness {
                 cam.setXRot(view[4]);
                 cam.xRotO = view[4];
                 mc.setCameraEntity(cam);
-            } else if (v == views.length) {
+            } else {
+                int step = v - views.length;
                 mc.setCameraEntity(mc.player);
-                mc.options.guiScale().set(1);
+                mc.options.guiScale().set(2);
                 mc.resizeDisplay();
                 server.execute(() -> {
                     var sp = server.getPlayerList().getPlayers().get(0);
                     var level = sp.serverLevel();
                     sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, 0, 20);
-                    if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at);
+                    switch (step) {
+                        case 0, 1 -> { if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at); }
+                        case 2 -> { if (level.getBlockEntity(at.east()) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip) sp.openMenu(ip, at.east()); }
+                        case 3 -> {
+                            // Pflicht-Ports: alle Energie-Ports entfernen, dann muss die Struktur zerfallen
+                            level.setBlock(at.west(), dr4kun3.cosmiccore.block.ModBlocks.VOID_CASING.get().defaultBlockState(), 3);
+                            level.setBlock(at.south(10).west(), dr4kun3.cosmiccore.block.ModBlocks.VOID_CASING.get().defaultBlockState(), 3);
+                            if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at);
+                        }
+                        default -> {}
+                    }
                 });
             }
+        }
+        if (worldTicks == 300 + 40 * (views.length + 1) + 10 && mc.screen instanceof ControllerScreen) {
+            // zweites Bild: Modul-Tab ausgeklappt
+            ((dr4kun3.cosmiccore.menu.ControllerMenu) ((ControllerScreen) mc.screen).getMenu()).modulesOpen = true;
         }
         if (worldTicks >= 24 && worldTicks < 300 && worldTicks % 8 == 0) {
             mc.options.hideGui = true;
@@ -109,7 +124,15 @@ public final class CutsceneTestHarness {
             int v = (worldTicks - 330) / 40;
             mc.options.hideGui = v < views.length;
             Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.getMainRenderTarget(), msg -> {});
-            if (v >= views.length) {
+            if (v == views.length + 3) {
+                var level = server.getLevel(mc.player.level().dimension());
+                server.execute(() -> {
+                    if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) {
+                        CosmicCore.LOGGER.info("[ConsoleTest] ohne Energie-Port: formed={}", c.isFormed());
+                    }
+                });
+            }
+            if (v >= views.length + 3) {
                 finished = true;
                 mc.stop();
             }

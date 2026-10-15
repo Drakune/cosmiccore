@@ -27,6 +27,10 @@ public class CosmicEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
+        // Modul-Tab rechts am Controller-Fenster freihalten
+        registry.addExclusionArea(dr4kun3.cosmiccore.client.ControllerScreen.class, (screen, out) -> {
+            for (var r : screen.extraAreas()) out.accept(new dev.emi.emi.api.widget.Bounds(r.getX(), r.getY(), r.getWidth(), r.getHeight()));
+        });
         for (Kind k : Kind.values()) {
             EmiRecipeCategory cat = new EmiRecipeCategory(CosmicCore.id(k.name().toLowerCase()), EmiStack.of(ViewerEntries.icon(k))) {
                 @Override

@@ -13,5 +13,8 @@ public final class ModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<ControllerMenu>> CONTROLLER =
             MENUS.register("controller", () -> IMenuTypeExtension.create(ControllerMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<ItemPortMenu>> ITEM_PORT =
+            MENUS.register("item_port", () -> IMenuTypeExtension.create(ItemPortMenu::new));
+
     private ModMenus() {}
 }

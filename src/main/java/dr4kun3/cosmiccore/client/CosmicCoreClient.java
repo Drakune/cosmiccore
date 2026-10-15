@@ -73,6 +73,7 @@ public final class CosmicCoreClient {
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.CONTROLLER.get(), ControllerScreen::new);
+        event.register(ModMenus.ITEM_PORT.get(), ItemPortScreen::new);
     }
 
     @SubscribeEvent

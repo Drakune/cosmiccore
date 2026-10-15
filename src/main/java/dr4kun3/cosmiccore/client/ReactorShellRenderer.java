@@ -282,7 +282,7 @@ public final class ReactorShellRenderer {
     private static PortStation.Data stationData(Params p, ShellCell c) {
         BlockPos cpos = p.corePos().offset(c.dx(), c.dy(), c.dz());
         return new PortStation.Data(p.level().getBlockEntity(cpos) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity ctrl
-                ? ctrl : null, p.core(), p.t(), Math.max(0.6F, p.energy()));
+                ? ctrl : null, p.core(), p.t(), Math.max(0.6F, p.energy()), 0);
     }
 
     /** Fluegel der Steuerkonsole: dieselben Stationen wie bei einzelnen Ports, seitlich ausgefahren und zur Mitte gedreht. */
@@ -300,7 +300,7 @@ public final class ReactorShellRenderer {
             pose.translate(c.dx(), c.dy(), c.dz());
             pose.mulPose(com.mojang.math.Axis.YP.rotation(yaw));
             pose.translate(side * out, 0, 0);
-            PortStation.solid(pose, buffers, p.level(), port.getBlockState(), energy, conn, yaw, -side * 0.28F * out, out, data);
+            PortStation.solid(pose, buffers, p.level(), port.getBlockState(), energy, conn, yaw, -side * 0.28F * out, out, data.withPort(port));
             pose.popPose();
         }
     }
@@ -319,7 +319,7 @@ public final class ReactorShellRenderer {
             float[] col = energy ? PortStation.ENERGY : PortStation.ITEM;
             int conn = PortStation.connections(p.level(), port, energy);
             float x = side * out;
-            PortStation.glow(new Matrix4f(cm).translate(x, 0, 0), vc, energy, conn, yaw, -side * 0.28F * out, out, data);
+            PortStation.glow(new Matrix4f(cm).translate(x, 0, 0), vc, energy, conn, yaw, -side * 0.28F * out, out, data.withPort(port));
             // Verbindung zur Konsole: Lichtleitung vom Fluegelsockel zur Mitte
             segment(vc, cm, x, -0.42F, 0, 0, -0.42F, 0, 0.02F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
             // Lichtimpuls laeuft auf beiden Seiten von der Konsolenmitte nach aussen zum Fluegel

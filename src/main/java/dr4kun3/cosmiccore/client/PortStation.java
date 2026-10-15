@@ -51,7 +51,12 @@ public final class PortStation {
     private static final int ROW_TITLE = 3, ROW_A = 18, ROW_B = 30, ROW_C = 42, BAR = 54;
 
     /** Daten fuer die Anzeige (Controller und Kern koennen auf dem Client kurz fehlen). */
-    public record Data(@Nullable ControllerBlockEntity ctrl, @Nullable SingularityCoreBlockEntity core, float t, float e) {}
+    public record Data(@Nullable ControllerBlockEntity ctrl, @Nullable SingularityCoreBlockEntity core, float t, float e, int used) {
+        /** Daten fuer einen bestimmten Port (belegte Lagerplaetze beim Item-Port). */
+        public Data withPort(@Nullable PortBlockEntity port) {
+            return new Data(ctrl, core, t, e, port instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip ? ip.getClientUsed() : 0);
+        }
+    }
 
     // ------------------------------------------------------------------ Anschluesse
 
@@ -153,21 +158,9 @@ public final class PortStation {
             row(font, tm, buffers, tr("console.cosmiccore.capacity"), compact(cap) + " RF", ROW_C, 0xA898C8);
             return;
         }
-        ControllerBlockEntity c = d.ctrl();
-        if (c == null) return;
-        if (c.hasEnergyPort()) {
-            // Brennstoff und Stabilisator zeigt dann der Controller - hier die Beute
-            int used = c.getClientLootItems().size();
-            row(font, tm, buffers, tr("console.cosmiccore.loot"), Integer.toString(c.getClientLoot()), ROW_A, 0xD8B8FF);
-            row(font, tm, buffers, tr("console.cosmiccore.slots"), used + " / " + ControllerBlockEntity.LOOT_SLOTS, ROW_B, 0xA898C8);
-            for (int i = 0; i < c.getClientLootItems().size(); i++) {
-                icon(tm, buffers, level, c.getClientLootItems().get(i), 6 + i * 13, ROW_C + 1);
-            }
-        } else {
-            itemRow(font, tm, buffers, level, tr("console.cosmiccore.fuel"), c.getClientFuel(), c.getFuelSeconds(), ROW_A, 0xFFC070, PX);
-            itemRow(font, tm, buffers, level, tr("console.cosmiccore.stabilizer"), c.getClientStab(), c.getStabSeconds(), ROW_B, 0x9AD8FF, PX);
-            row(font, tm, buffers, tr("console.cosmiccore.loot"), Integer.toString(c.getClientLoot()), ROW_C, 0xD8B8FF);
-        }
+        // Item-Port: einzige Angabe sind die belegten Plaetze seines Lagers
+        int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
+        row(font, tm, buffers, tr("console.cosmiccore.slots"), d.used() + " / " + slots, ROW_B - 4, d.used() >= slots ? 0xFF6060 : 0xFFC070);
     }
 
     /** Zeile "Bezeichnung  [Symbol] Anzahl · Restzeit" - auch fuer den Controller-Bildschirm. */
@@ -232,10 +225,14 @@ public final class PortStation {
             segment(vc, tm, 5, BAR, 0, PX - 5, BAR, 0, 1.4F, col[0], col[1], col[2], e * 0.15F, e * 0.15F);
             if (fill > 0) segment(vc, tm, 5, BAR, 0, 5 + (PX - 10) * fill, BAR, 0, 1.4F, col[0], col[1], col[2], e, e);
         } else if (!energy) {
-            for (int k = 0; k < 6; k++) { // Zufluss
-                float f = Mth.frac(d.t() * 0.02F + k / 6.0F);
-                float x = 5 + (PX - 10) * (1.0F - f);
-                segment(vc, tm, x, BAR, 0, x + 6, BAR, 0, 1.2F, col[0], col[1], col[2], e * Mth.sin(f * Mth.PI), 0.0F);
+            // Fuellstand des Lagers: 27 Kaestchen, belegte leuchten
+            int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
+            float cw = (PX - 10) / (float) slots;
+            for (int k = 0; k < slots; k++) {
+                float x0 = 5 + k * cw + 0.6F, x1 = 5 + (k + 1) * cw - 0.6F;
+                boolean full = k < d.used();
+                float[] c = full && d.used() >= slots ? new float[]{1.0F, 0.35F, 0.35F} : col;
+                segment(vc, tm, x0, BAR - 8, 0, x1, BAR - 8, 0, 3.0F, c[0], c[1], c[2], full ? e : e * 0.15F, full ? e : e * 0.15F);
             }
         }
         float sv = Mth.frac(d.t() * 0.015F + (energy ? 0.5F : 0.0F)) * 62.0F;

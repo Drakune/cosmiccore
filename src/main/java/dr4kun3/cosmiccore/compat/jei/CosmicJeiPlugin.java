@@ -40,6 +40,18 @@ public class CosmicJeiPlugin implements IModPlugin {
         return CosmicCore.id("jei_plugin");
     }
 
+    /** Der Modul-Tab ragt rechts aus dem Controller-Fenster - JEI soll ihn nicht verdecken. */
+    @Override
+    public void registerGuiHandlers(mezz.jei.api.registration.IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(dr4kun3.cosmiccore.client.ControllerScreen.class,
+                new mezz.jei.api.gui.handlers.IGuiContainerHandler<>() {
+                    @Override
+                    public java.util.List<net.minecraft.client.renderer.Rect2i> getGuiExtraAreas(dr4kun3.cosmiccore.client.ControllerScreen screen) {
+                        return screen.extraAreas();
+                    }
+                });
+    }
+
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();

@@ -201,6 +201,18 @@ public final class CorePattern {
         });
 
         if (unloaded[0]) return new Report(false, true, 0, null, null);
+        if (mismatches[0] == 0) {
+            // Pflicht: mindestens ein Energie-Port und ein Item-Port in der Huelle
+            boolean[] ports = {false, false};
+            forEach(center(controllerPos, facing), (pos, cell) -> {
+                if (cell != Cell.HULL && cell != Cell.SLOT) return;
+                BlockState s = level.getBlockState(pos);
+                if (s.is(ModBlocks.ENERGY_PORT.get())) ports[0] = true;
+                if (s.is(ModBlocks.ITEM_PORT.get())) ports[1] = true;
+            });
+            if (!ports[0]) return new Report(false, false, 1, controllerPos, Component.translatable("message.cosmiccore.missing_energy_port"));
+            if (!ports[1]) return new Report(false, false, 1, controllerPos, Component.translatable("message.cosmiccore.missing_item_port"));
+        }
         return new Report(mismatches[0] == 0, false, mismatches[0], first[0], expected[0]);
     }
 

@@ -42,7 +42,13 @@ import net.minecraft.world.inventory.Slot;
  */
 public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // Einheitliches Raster: 5 px Aussenabstand (Rand und zwischen Karten), 5 px Innenabstand in jeder Karte
-    private static final int W = 316, H = 325;
+    /** H = Hoehe der Groessenwahl; H_MAIN = Hoehe der Steuerung (ohne Beute-Reihe, Module im Seiten-Tab). */
+    /** Modul-Tab ausgeklappt? Standard eingeklappt - spart Platz. */
+    private static boolean tabOpen;
+    private static final int W = 316, H = 325, H_MAIN = ControllerMenu.INV_Y + 76 + 6;
+    // Modul-Tab rechts am Fenster
+    private static final int MTAB_X = W - 1, TAB_Y0 = ControllerMenu.TAB_TOP, TAB_CLOSED = 24, TAB_OPEN_W = 60,
+            TAB_OPEN_H = 22 + 2 * ControllerMenu.MOD_STEP_Y + 8;
     private static final int M = 5, PAD = 5;
     private static final int PANEL_BORDER = 0xFF3A2468, PANEL_FILL = 0xCC0E0820, PANEL_ACCENT = 0xFF6A44B8;
     private static final int HEAD = 0xFFB8A8D8;
@@ -89,7 +95,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     public ControllerScreen(ControllerMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         imageWidth = W;
-        imageHeight = H;
+        imageHeight = menu.sizeChosen() ? H_MAIN : H;
+        menu.modulesOpen = tabOpen; // Tab-Zustand bleibt fuer die Sitzung erhalten (wie bei Mekanism)
         inventoryLabelX = ControllerMenu.INV_X;
         inventoryLabelY = ControllerMenu.INV_Y - 11;
         titleLabelX = 8;
@@ -154,10 +161,40 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     // Schalter unter dem Anti-Asteroiden-Slot
-    private static final int ANTI_SW_X = ControllerMenu.MOD_X + 36, ANTI_SW_Y = ControllerMenu.MOD_Y + 19, ANTI_SW_W = 16, ANTI_SW_H = 7;
+    private static final int ANTI_SW_X = ControllerMenu.MOD_X, ANTI_SW_Y = ControllerMenu.MOD_Y + ControllerMenu.MOD_STEP_Y + 19,
+            ANTI_SW_W = 16, ANTI_SW_H = 7;
 
     // Farbfeld unter dem Farb-Modul-Slot: zeigt den Farbsatz als Streifen, Klick oeffnet das Farbmenue
-    private static final int COLOR_SW_X = ControllerMenu.MOD_X + 54;
+    private static final int COLOR_SW_X = ControllerMenu.MOD_X + ControllerMenu.MOD_STEP_X;
+
+    /** Lasche bzw. ausgeklappter Tab (relativ zum Fenster). */
+    private int[] tabRect() {
+        return menu.modulesOpen ? new int[]{MTAB_X, TAB_Y0, TAB_OPEN_W, TAB_OPEN_H} : new int[]{MTAB_X, TAB_Y0, TAB_CLOSED, TAB_CLOSED};
+    }
+
+    private boolean inTabHeader(int mx, int my) {
+        return in(mx, my, MTAB_X, TAB_Y0, menu.modulesOpen ? TAB_OPEN_W : TAB_CLOSED, menu.modulesOpen ? 20 : TAB_CLOSED);
+    }
+
+    private void drawModuleTab(GuiGraphics g, int x, int y, float t) {
+        if (!menu.sizeChosen()) return;
+        int[] r = tabRect();
+        int tx = x + r[0], ty = y + r[1];
+        // Lasche haengt am Fensterrand: links offen, damit sie wie angesetzt wirkt
+        g.fill(tx, ty, tx + r[2], ty + r[3], PANEL_BORDER);
+        g.fill(tx, ty + 1, tx + r[2] - 1, ty + r[3] - 1, 0xFF120A24);
+        g.fill(tx, ty + 1, tx + 1, ty + r[3] - 1, 0xFF1A0F33);
+        g.fill(tx + 3, ty + 1, tx + r[2] - 3, ty + 2, PANEL_ACCENT);
+        // Symbol: Effizienz-Modul, darunter ggf. Anzahl installierter Module
+        g.renderItem(new ItemStack(dr4kun3.cosmiccore.ModItems.EFFICIENCY_MODULE.get()), tx + 4, ty + 4);
+        int installed = 0;
+        for (int i = 2; i < ControllerMenu.MACHINE_SLOTS; i++) if (menu.slots.get(i).hasItem()) installed++;
+        if (menu.modulesOpen) {
+            g.drawString(font, Component.translatable("gui.cosmiccore.modules"), tx + 22, ty + 8, 0xFFE0C080, false);
+        } else if (installed > 0) {
+            g.drawString(font, String.valueOf(installed), tx + r[2] - 7, ty + r[3] - 9, 0xFFFFE080, true);
+        }
+    }
 
     private void drawColorSwatch(GuiGraphics g, int sx, int sy, float t) {
         boolean installed = menu.flag(ControllerMenu.F_COLOR_INSTALLED);
@@ -185,8 +222,30 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     @Override
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
+        int[] r = tabRect();
+        if (menu.sizeChosen() && in((int) mouseX - left, (int) mouseY - top, r[0], r[1], r[2], r[3])) return false;
+        return super.hasClickedOutside(mouseX, mouseY, left, top, button);
+    }
+
+    /** Bereiche ausserhalb des Fensters (fuer JEI/EMI/REI, damit die Item-Liste den Tab nicht verdeckt). */
+    public List<net.minecraft.client.renderer.Rect2i> extraAreas() {
+        if (!menu.sizeChosen()) return List.of();
+        int[] r = tabRect();
+        return List.of(new net.minecraft.client.renderer.Rect2i(leftPos + r[0], topPos + r[1], r[2], r[3]));
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (menu.sizeChosen() && button == 0 && menu.flag(ControllerMenu.F_COLOR_INSTALLED)
+        if (menu.sizeChosen() && button == 0 && inTabHeader((int) mouseX - leftPos, (int) mouseY - topPos)) {
+            menu.modulesOpen = tabOpen = !menu.modulesOpen;
+            if (minecraft != null) {
+                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+            return true;
+        }
+        if (menu.sizeChosen() && menu.modulesOpen && button == 0 && menu.flag(ControllerMenu.F_COLOR_INSTALLED)
                 && in((int) mouseX - leftPos, (int) mouseY - topPos, COLOR_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             if (minecraft != null) {
                 minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
@@ -201,7 +260,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             scrollTo(mouseX);
             return true;
         }
-        if (menu.sizeChosen() && button == 0 && menu.flag(ControllerMenu.F_ANTI_INSTALLED)
+        if (menu.sizeChosen() && menu.modulesOpen && button == 0 && menu.flag(ControllerMenu.F_ANTI_INSTALLED)
                 && in((int) mouseX - leftPos, (int) mouseY - topPos, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             press(ControllerMenu.BTN_ANTI_ASTEROID);
             if (minecraft != null) {
@@ -222,6 +281,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     @Override
     protected void containerTick() {
         super.containerTick();
+        int wanted = menu.sizeChosen() ? H_MAIN : H;
+        if (imageHeight != wanted && minecraft != null) { // nach der Groessenwahl wird das Fenster kompakter
+            imageHeight = wanted;
+            init(minecraft, width, height);
+            return;
+        }
         updateWidgets();
     }
 
@@ -264,9 +329,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         float t = (minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0) + partialTick;
 
         // Rahmen + Weltraum-Hintergrund
-        g.fill(x, y, x + W, y + H, 0xFF3A2468);
-        g.fill(x + 1, y + 1, x + W - 1, y + H - 1, 0xFF0A0614);
-        g.fillGradient(x + 2, y + 2, x + W - 2, y + H - 2, 0xFF1A0F33, 0xFF070410);
+        int hh = imageHeight;
+        g.fill(x, y, x + W, y + hh, 0xFF3A2468);
+        g.fill(x + 1, y + 1, x + W - 1, y + hh - 1, 0xFF0A0614);
+        g.fillGradient(x + 2, y + 2, x + W - 2, y + hh - 2, 0xFF1A0F33, 0xFF070410);
         drawStars(g, x, y, t);
 
         if (!menu.sizeChosen()) {
@@ -279,21 +345,20 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         drawPanel(g, x + BARS_X, y + TOP_Y, BARS_W, TOP_H);
         drawPanel(g, x + STATUS_X, y + TOP_Y, W - M - STATUS_X, TOP_H);
         drawPanel(g, x + M, y + CTRL_Y, W - 2 * M, CTRL_H);
-        drawPanel(g, x + M, y + SLOTS_Y, W - 2 * M, SLOTS_H);
         // Slots
         drawSlotBox(g, x + ControllerMenu.FUEL_X, y + ControllerMenu.FUEL_Y, 0xFFB06A20);
         drawSlotBox(g, x + ControllerMenu.STAB_X, y + ControllerMenu.STAB_Y, 0xFF2A8AA8);
         drawHBar(g, x + ControllerMenu.FUEL_X - 1, y + ControllerMenu.FUEL_Y + 19, 18, menu.burnProgress(), 0xFFFFB040, 0xFFFF6A00);
         drawHBar(g, x + ControllerMenu.STAB_X - 1, y + ControllerMenu.STAB_Y + 19, 18, menu.stabProgress(), 0xFF60E0FF, 0xFF2080FF);
-        // Modul-Slots (Gold) und Beute-Slots (Violett) hervorgehoben, Rest = Spielerinventar
-        for (Slot s : menu.slots) {
-            if (s.index < 2 || !s.isActive()) continue;
-            int border = s.index < ControllerBlockEntity.SLOT_LOOT_FIRST
-                    || (s.index >= ControllerBlockEntity.SLOT_ANTI && s.index < ControllerBlockEntity.INVENTORY_SIZE) ? 0xFFB08A30
-                    : s.index < ControllerBlockEntity.INVENTORY_SIZE ? 0xFF7A4AC0 : 0xFF2E2050;
-            drawSlotBox(g, x + s.x, y + s.y, border);
+        // Modul-Tab (eingeklappt nur die Lasche, ausgeklappt mit Slots, Schalter und Farbfeld)
+        drawModuleTab(g, x, y, t);
+        // Modul-Slots (Gold), Rest = Spielerinventar
+        for (int i = 2; i < menu.slots.size(); i++) {
+            Slot s = menu.slots.get(i);
+            if (!s.isActive()) continue;
+            drawSlotBox(g, x + s.x, y + s.y, i < ControllerMenu.MACHINE_SLOTS ? 0xFFB08A30 : 0xFF2E2050);
         }
-        if (menu.sizeChosen()) {
+        if (menu.sizeChosen() && menu.modulesOpen) {
             drawAntiSwitch(g, x + ANTI_SW_X, y + ANTI_SW_Y);
             drawColorSwatch(g, x + COLOR_SW_X, y + ANTI_SW_Y, t);
         }
@@ -458,8 +523,6 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawString(font, Component.translatable("gui.cosmiccore.scale"), COL_A, CTRL_Y + 1 + PAD, HEAD, false);
         g.drawString(font, Component.translatable("gui.cosmiccore.controls"), COL_B, CTRL_Y + 1 + PAD, HEAD, false);
         g.drawString(font, Component.translatable("gui.cosmiccore.overdrive"), COL_A, OD_Y + 4, menu.overdrive() > 0 ? 0xFFFFB040 : HEAD, false);
-        g.drawString(font, Component.translatable("gui.cosmiccore.loot"), ControllerMenu.LOOT_X - 1, SLOTS_Y + 1 + PAD, HEAD, false);
-        g.drawString(font, Component.translatable("gui.cosmiccore.modules"), ControllerMenu.MOD_X - 1, SLOTS_Y + 1 + PAD, 0xFFE0C080, false);
     }
 
     // ------------------------------------------------------------------ Groessenwahl
@@ -612,6 +675,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     private Component statusLine() {
         if (!menu.flag(ControllerMenu.F_FORMED)) {
+            // Pflicht-Ports: klar sagen, welcher fehlt
+            if (menu.flag(ControllerMenu.F_NO_ENERGY_PORT)) return Component.translatable("gui.cosmiccore.status.no_energy_port").withStyle(ChatFormatting.RED);
+            if (menu.flag(ControllerMenu.F_NO_ITEM_PORT)) return Component.translatable("gui.cosmiccore.status.no_item_port").withStyle(ChatFormatting.RED);
             return Component.translatable("gui.cosmiccore.status.incomplete", menu.errors()).withStyle(ChatFormatting.RED);
         }
         if (menu.meltdown() > 0) {
@@ -637,6 +703,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             return Component.translatable("gui.cosmiccore.status.unstable").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
         }
         return Component.translatable("gui.cosmiccore.status.active").withStyle(ChatFormatting.GREEN);
+    }
+
+    private boolean hasModule(int inventoryIndex) {
+        Slot slot = menu.machineSlot(inventoryIndex);
+        return slot != null && slot.hasItem();
     }
 
     private int instColor() {
@@ -670,25 +741,30 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
         int mx = mouseX - leftPos, my = mouseY - topPos;
         List<Component> tip = new ArrayList<>();
-        if (in(mx, my, ControllerMenu.MOD_X, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_EFFICIENCY).hasItem()) {
+        int mx0 = ControllerMenu.MOD_X, mx1 = mx0 + ControllerMenu.MOD_STEP_X, my0 = ControllerMenu.MOD_Y, my1 = my0 + ControllerMenu.MOD_STEP_Y;
+        boolean open = menu.modulesOpen;
+        if (inTabHeader(mx, my)) {
+            tip.add(Component.translatable("gui.cosmiccore.modules"));
+            tip.add(Component.translatable(open ? "gui.cosmiccore.tab.close" : "gui.cosmiccore.tab.open").withStyle(ChatFormatting.GRAY));
+        } else if (open && in(mx, my, mx0, my0, 16, 16) && !hasModule(ControllerBlockEntity.SLOT_EFFICIENCY)) {
             tip.add(Component.translatable("item.cosmiccore.efficiency_module"));
             tip.add(Component.translatable("tooltip.cosmiccore.efficiency_module").withStyle(ChatFormatting.GRAY));
-        } else if (in(mx, my, ControllerMenu.MOD_X + 18, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_STABILITY).hasItem()) {
+        } else if (open && in(mx, my, mx1, my0, 16, 16) && !hasModule(ControllerBlockEntity.SLOT_STABILITY)) {
             tip.add(Component.translatable("item.cosmiccore.stability_module"));
             tip.add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.GRAY));
-        } else if (in(mx, my, ControllerMenu.MOD_X + 36, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_ANTI).hasItem()) {
+        } else if (open && in(mx, my, mx0, my1, 16, 16) && !hasModule(ControllerBlockEntity.SLOT_ANTI)) {
             tip.add(Component.translatable("item.cosmiccore.anti_asteroid_module"));
             tip.add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module", dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get())
                     .withStyle(ChatFormatting.GRAY));
-        } else if (in(mx, my, ControllerMenu.MOD_X + 54, ControllerMenu.MOD_Y, 16, 16) && !menu.slots.get(ControllerBlockEntity.SLOT_COLOR).hasItem()) {
+        } else if (open && in(mx, my, mx1, my1, 16, 16) && !hasModule(ControllerBlockEntity.SLOT_COLOR)) {
             tip.add(Component.translatable("item.cosmiccore.color_module"));
             tip.add(Component.translatable("tooltip.cosmiccore.color_module").withStyle(ChatFormatting.GRAY));
-        } else if (in(mx, my, COLOR_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
+        } else if (open && in(mx, my, COLOR_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             boolean installed = menu.flag(ControllerMenu.F_COLOR_INSTALLED);
             tip.add(Component.translatable("gui.cosmiccore.color.title"));
             if (installed) tip.add(Component.literal(dr4kun3.cosmiccore.color.CoreColors.encode(menu.colorConfig())).withStyle(ChatFormatting.DARK_GRAY));
             tip.add(Component.translatable(installed ? "gui.cosmiccore.color.hint" : "gui.cosmiccore.color.missing").withStyle(ChatFormatting.GRAY));
-        } else if (in(mx, my, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
+        } else if (open && in(mx, my, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
             tip.add(Component.translatable("gui.cosmiccore.anti.title"));
             tip.add(Component.translatable(on ? "gui.cosmiccore.anti.on" : "gui.cosmiccore.anti.off")

@@ -43,14 +43,21 @@ public class ControllerMenu extends AbstractContainerMenu {
     public static final int DATA_COUNT = 33;
 
     public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16, F_FUNNEL = 32, F_LASER = 64, F_RUNNING = 128, F_FULL = 256, F_HAS_FUEL = 512,
-            F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048, F_COLOR_INSTALLED = 4096;
+            F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048, F_COLOR_INSTALLED = 4096,
+            F_NO_ENERGY_PORT = 8192, F_NO_ITEM_PORT = 16384;
 
     // Layout (auch vom Screen benutzt)
     // 5-px-Raster: Karten 5 px vom Rand und voneinander, 5 px Innenabstand (Slot-Rahmen = Slot - 1)
     public static final int FUEL_X = 12, FUEL_Y = 25, STAB_X = 12, STAB_Y = 52;
-    public static final int INV_X = 77, INV_Y = 243;
-    /** Beute-Reihe (6 Slots) und Modul-Slots (Effizienz, Stabilitaet, Anti-Asteroiden mit Schalter darunter). */
-    public static final int LOOT_X = 12, LOOT_Y = 193, MOD_X = 234, MOD_Y = 193;
+    public static final int INV_X = 77, INV_Y = 186;
+    /**
+     * Modul-Tab rechts am Fenster (klappt aus wie bei Mekanism): 2x2 Slots - Effizienz, Stabilitaet,
+     * Anti-Asteroiden (Schalter darunter) und Farbe (Farbfeld darunter). Koordinaten relativ zum Fenster.
+     */
+    public static final int GUI_W = 316, TAB_TOP = 18, MOD_X = GUI_W + 9, MOD_Y = TAB_TOP + 22, MOD_STEP_X = 22, MOD_STEP_Y = 30;
+
+    /** Nur Client: ist der Modul-Tab ausgeklappt? (Der Server laesst die Slots immer zu.) */
+    public boolean modulesOpen = true;
 
     private final BlockPos pos;
     private final ContainerLevelAccess access;
@@ -79,13 +86,11 @@ public class ControllerMenu extends AbstractContainerMenu {
 
         addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_FUEL, FUEL_X, FUEL_Y));
         addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_STAB, STAB_X, STAB_Y));
-        addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_EFFICIENCY, MOD_X, MOD_Y));
-        addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_STABILITY, MOD_X + 18, MOD_Y));
-        for (int i = 0; i < ControllerBlockEntity.LOOT_SLOTS; i++) {
-            addSlot(new LootSlot(machine, ControllerBlockEntity.SLOT_LOOT_FIRST + i, LOOT_X + i * 18, LOOT_Y));
-        }
-        addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_ANTI, MOD_X + 36, MOD_Y));
-        addSlot(new MachineSlot(machine, ControllerBlockEntity.SLOT_COLOR, MOD_X + 54, MOD_Y));
+        // Asteroiden-Beute liegt jetzt im Lager des Item-Ports - der Controller zeigt keine Beute-Slots mehr
+        addSlot(new ModuleSlot(machine, ControllerBlockEntity.SLOT_EFFICIENCY, MOD_X, MOD_Y));
+        addSlot(new ModuleSlot(machine, ControllerBlockEntity.SLOT_STABILITY, MOD_X + MOD_STEP_X, MOD_Y));
+        addSlot(new ModuleSlot(machine, ControllerBlockEntity.SLOT_ANTI, MOD_X, MOD_Y + MOD_STEP_Y));
+        addSlot(new ModuleSlot(machine, ControllerBlockEntity.SLOT_COLOR, MOD_X + MOD_STEP_X, MOD_Y + MOD_STEP_Y));
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new PlayerSlot(playerInv, col + row * 9 + 9, INV_X + col * 18, INV_Y + row * 18));
@@ -98,6 +103,16 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     // ------------------------------------------------------------------ Datenzugriff fuer den Screen
+
+    /** Anzahl der Maschinen-Slots im Menue (Brennstoff, Stabilisator, vier Module). */
+    public static final int MACHINE_SLOTS = 6;
+
+    /** Menue-Slot zu einem Slot des Controller-Inventars (null = nicht im Menue, z. B. der Beute-Puffer). */
+    @Nullable
+    public Slot machineSlot(int inventoryIndex) {
+        for (int i = 0; i < MACHINE_SLOTS; i++) if (slots.get(i).getSlotIndex() == inventoryIndex) return slots.get(i);
+        return null;
+    }
 
     public BlockPos getPos() {
         return pos;
@@ -216,14 +231,13 @@ public class ControllerMenu extends AbstractContainerMenu {
         if (!slot.hasItem()) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
         ItemStack copy = stack.copy();
-        // Slots 0-3: Brennstoff, Stabilisator, Module | 4-9: Beute | 10: Anti-Asteroiden-Modul | danach Spielerinventar
-        final int machineEnd = ControllerBlockEntity.INVENTORY_SIZE, invEnd = slots.size();
+        // Slots 0-1: Brennstoff, Stabilisator | 2-5: Module | danach Spielerinventar
+        final int machineEnd = MACHINE_SLOTS, invEnd = slots.size();
         if (index < machineEnd) {
             if (!moveItemStackTo(stack, machineEnd, invEnd, true)) return ItemStack.EMPTY;
         } else {
             // erst in den passenden Maschinenslot, sonst zwischen Inventar und Hotbar wechseln
-            if (!moveItemStackTo(stack, 0, ControllerBlockEntity.SLOT_LOOT_FIRST, false)
-                    && !moveItemStackTo(stack, ControllerBlockEntity.SLOT_ANTI, ControllerBlockEntity.SLOT_COLOR + 1, false)) {
+            if (!moveItemStackTo(stack, 0, machineEnd, false)) {
                 int hotbarStart = invEnd - 9;
                 if (index < hotbarStart) {
                     if (!moveItemStackTo(stack, hotbarStart, invEnd, false)) return ItemStack.EMPTY;
@@ -240,20 +254,15 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /** Solange die Baugroesse nicht gewaehlt ist, zeigt der Screen nur die Auswahl - Slots sind dann aus. */
-    /** Beute kann nur entnommen werden. */
-    private final class LootSlot extends SlotItemHandler {
-        LootSlot(IItemHandler handler, int index, int x, int y) {
+    /** Modul-Slot im Seiten-Tab: auf dem Client nur sichtbar und klickbar, solange der Tab ausgeklappt ist. */
+    private final class ModuleSlot extends SlotItemHandler {
+        ModuleSlot(IItemHandler handler, int index, int x, int y) {
             super(handler, index, x, y);
         }
 
         @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
-        }
-
-        @Override
         public boolean isActive() {
-            return sizeChosen();
+            return sizeChosen() && modulesOpen;
         }
     }
 

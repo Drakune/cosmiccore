@@ -36,6 +36,16 @@ public class CosmicReiPlugin implements REIClientPlugin {
         for (Kind k : Kind.values()) IDS.put(k, CategoryIdentifier.of(CosmicCore.MODID, k.name().toLowerCase()));
     }
 
+    /** Modul-Tab rechts am Controller-Fenster freihalten. */
+    @Override
+    public void registerExclusionZones(me.shedaniel.rei.api.client.registry.screen.ExclusionZones zones) {
+        zones.register(dr4kun3.cosmiccore.client.ControllerScreen.class, screen -> {
+            List<Rectangle> out = new ArrayList<>();
+            for (var r : screen.extraAreas()) out.add(new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight()));
+            return out;
+        });
+    }
+
     @Override
     public void registerCategories(CategoryRegistry registry) {
         for (Kind k : Kind.values()) {

@@ -509,6 +509,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (level.getGameTime() % 20 == 0) {
             updateForecast(level);
             energyPort = formed && scanEnergyPort(level);
+            if (formed) flushLoot(level);
         }
         if (formed && level.getGameTime() % 20 == 0) {
             // Inhalt fuer Konsole und Port-Stationen nur bei Aenderung senden
@@ -804,7 +805,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         var params = new net.minecraft.world.level.storage.loot.LootParams.Builder(level)
                 .create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.EMPTY);
         for (ItemStack drop : table.getRandomItems(params)) {
-            ItemStack rest = drop;
+            ItemStack rest = storeInPorts(level, drop);
+            // Ueberlauf: verdeckter Puffer im Controller, wird in die Ports nachgeschoben, sobald dort Platz ist
             for (int i = SLOT_LOOT_FIRST; i < LOOT_END && !rest.isEmpty(); i++) {
                 rest = inventory.insertItem(i, rest, false);
             }
@@ -1408,6 +1410,28 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return h;
     }
 
+    /** Legt Beute in die Lager der Item-Ports der Struktur; zurueck kommt, was nirgends passt. */
+    private ItemStack storeInPorts(ServerLevel level, ItemStack stack) {
+        CorePattern p = pattern();
+        if (p == null || !formed) return stack;
+        ItemStack[] rest = {stack};
+        p.forEach(center(level), (pos, cell) -> {
+            if (rest[0].isEmpty() || (cell != CorePattern.Cell.HULL && cell != CorePattern.Cell.SLOT) || !level.hasChunkAt(pos)) return;
+            if (level.getBlockEntity(pos) instanceof ItemPortBlockEntity port) rest[0] = port.store(rest[0]);
+        });
+        return rest[0];
+    }
+
+    /** Verdeckten Beute-Puffer (aeltere Spielstaende, volle Ports) in die Item-Ports nachschieben. */
+    private void flushLoot(ServerLevel level) {
+        for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) {
+            ItemStack st = inventory.getStackInSlot(i);
+            if (st.isEmpty()) continue;
+            ItemStack rest = storeInPorts(level, st.copy());
+            if (rest.getCount() != st.getCount()) inventory.setStackInSlot(i, rest);
+        }
+    }
+
     private boolean scanEnergyPort(ServerLevel level) {
         CorePattern p = pattern();
         if (p == null) return false;
@@ -1567,6 +1591,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /** Scheitert die Struktur nur an einem fehlenden Pflicht-Port (Uebersetzungsschluessel der Meldung)? */
+    private boolean missing(String key) {
+        return lastReport != null && lastReport.expected() != null
+                && lastReport.expected().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
+                && tc.getKey().equals(key);
+    }
+
     /** Werte fuer die GUI. Ganzzahlen > 16 Bit werden in zwei Haelften uebertragen (Vanilla sendet nur Shorts). */
     private final class DataAccess implements ContainerData {
         @Override
@@ -1601,7 +1632,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                         | (burnTime > 0 || !inventory.getStackInSlot(SLOT_FUEL).isEmpty() ? ControllerMenu.F_HAS_FUEL : 0)
                         | (hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_INSTALLED : 0)
                         | (antiAsteroid && hasAntiAsteroidModule() ? ControllerMenu.F_ANTI_ON : 0)
-                        | (hasColorModule() ? ControllerMenu.F_COLOR_INSTALLED : 0);
+                        | (hasColorModule() ? ControllerMenu.F_COLOR_INSTALLED : 0)
+                        | (!formed && missing("message.cosmiccore.missing_energy_port") ? ControllerMenu.F_NO_ENERGY_PORT : 0)
+                        | (!formed && missing("message.cosmiccore.missing_item_port") ? ControllerMenu.F_NO_ITEM_PORT : 0);
                 case ControllerMenu.D_COSMIC -> (int) Math.round(lastCosmic * 100.0);
                 case ControllerMenu.D_BURN -> burnTotal <= 0 ? 0 : Math.round(1000f * burnTime / burnTotal);
                 case ControllerMenu.D_STAB -> fieldMax <= 0 ? 0 : Math.round(1000f * Math.min(1f, field / fieldMax));
