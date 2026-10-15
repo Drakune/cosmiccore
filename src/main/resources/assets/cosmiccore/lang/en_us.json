@@ -232,14 +232,16 @@
   "gui.cosmiccore.channel.field": "Holding field",
   "gui.cosmiccore.channel.laser": "Laser",
   "gui.cosmiccore.channel.particles": "Particles",
-  "cutscene.cosmiccore.line1": "Ultimate mode sends a call out into space ...",
+  "cutscene.cosmiccore.line1": "The core burns in Ultimate mode - and sends a call out into space ...",
+  "cutscene.cosmiccore.boss_name": "VOID TITAN",
+  "cutscene.cosmiccore.boss_title": "Warden of the Universe Beyond the Void",
   "cutscene.cosmiccore.line2": "Higher and higher - until the world is just a speck.",
   "cutscene.cosmiccore.line3": "Faster than light, beyond the edge of the universe ...",
   "cutscene.cosmiccore.line4": "In another universe, the Void Titan awakens.",
   "cutscene.cosmiccore.line5": "It gathers the energy of its entire cosmos ...",
   "cutscene.cosmiccore.skip": "[Hold sneak] Skip",
   "message.cosmiccore.cutscene.none": "No awakened ultimate core nearby (64 blocks)",
-  "cutscene.cosmiccore.line6": "... and hurls it across the void to Earth.",
+  "cutscene.cosmiccore.line6": "... and hurls it back to Earth at the speed of light.",
   "cutscene.cosmiccore.line7": "As long as Ultimate mode burns, its beam feeds your core.",
   "entity.cosmiccore.void_titan": "Void Titan"
 }

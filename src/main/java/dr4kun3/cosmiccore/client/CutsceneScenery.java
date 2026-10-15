@@ -165,10 +165,10 @@ final class CutsceneScenery {
         colorSphere(solid, m, c, r, 24, 40, rot, (x, y, z) -> {
             float n = land(x, y, z);
             int col;
-            if (Math.abs(y) > 0.86F + 0.05F * n) col = 0xFFE8F0FF;                      // Eis
+            if (Math.abs(z) > 0.93F + 0.04F * n) col = 0xFFE8F0FF;                      // Eis (Pole liegen seitlich im Bild)
             else if (n > 0.18F) {
                 float dry = Mth.sin(x * 6.1F + z * 4.3F) * 0.5F + 0.5F;
-                col = Math.abs(y) < 0.38F && dry > 0.6F ? 0xFFB49A64 : lerpColor(0xFF2E7A3A, 0xFF1C5A2A, Mth.clamp(n - 0.18F, 0, 1)); // Wueste/Wald
+                col = Math.abs(z) < 0.38F && dry > 0.6F ? 0xFFB49A64 : lerpColor(0xFF2E7A3A, 0xFF1C5A2A, Mth.clamp(n - 0.18F, 0, 1)); // Wueste/Wald
             } else col = lerpColor(0xFF0A2A6E, 0xFF2A70B4, Mth.clamp((n + 0.1F) / 0.28F, 0, 1)); // Tiefsee -> Kuestenwasser
             // Licht (nur die Beleuchtung dreht nicht mit der Oberflaeche - naeherungsweise genuegt die Oberflaechennormale)
             float light = Mth.clamp(x * s.x + y * s.y + z * s.z, 0.0F, 1.0F);
@@ -186,7 +186,7 @@ final class CutsceneScenery {
         colorSphere(glow, m, c, r * 1.012F, 18, 30, rot * 1.3F, (x, y, z) -> {
             float cl = Mth.sin(x * 7.3F + y * 2.1F) * Mth.sin(z * 6.7F - y * 3.3F) + 0.5F * Mth.sin(x * 13.0F + z * 11.0F);
             float light = Mth.clamp(x * s.x + y * s.y + z * s.z + 0.1F, 0.0F, 1.0F);
-            int a = (int) (255 * Mth.clamp((cl - 0.3F) * 1.4F, 0.0F, 0.85F) * light);
+            int a = (int) (255 * Mth.clamp((cl - 0.55F) * 1.2F, 0.0F, 0.45F) * light);
             return (a << 24) | 0xFFFFFF;
         });
         float[] blue = {0.35F, 0.65F, 1.0F};

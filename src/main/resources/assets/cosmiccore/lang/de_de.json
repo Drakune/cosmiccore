@@ -232,14 +232,16 @@
   "gui.cosmiccore.channel.field": "Haltefeld",
   "gui.cosmiccore.channel.laser": "Laser",
   "gui.cosmiccore.channel.particles": "Partikel",
-  "cutscene.cosmiccore.line1": "Der Ultimate-Modus sendet einen Ruf hinaus ins All ...",
+  "cutscene.cosmiccore.line1": "Der Kern brennt im Ultimate-Modus - und sendet einen Ruf hinaus ins All ...",
+  "cutscene.cosmiccore.boss_name": "VOID-TITAN",
+  "cutscene.cosmiccore.boss_title": "Wächter des Universums jenseits der Leere",
   "cutscene.cosmiccore.line2": "Höher und höher - bis die Welt nur noch ein Punkt ist.",
   "cutscene.cosmiccore.line3": "Schneller als das Licht, über die Grenzen des Universums hinaus ...",
   "cutscene.cosmiccore.line4": "In einem anderen Universum erwacht der Void-Titan.",
   "cutscene.cosmiccore.line5": "Er sammelt die Energie seines ganzen Kosmos ...",
   "cutscene.cosmiccore.skip": "[Schleichen halten] Überspringen",
   "message.cosmiccore.cutscene.none": "Kein erwachter ultimativer Kern in der Nähe (64 Blöcke)",
-  "cutscene.cosmiccore.line6": "... und schleudert sie quer durch die Leere zur Erde.",
+  "cutscene.cosmiccore.line6": "... und schleudert sie mit Lichtgeschwindigkeit zurück zur Erde.",
   "cutscene.cosmiccore.line7": "Solange der Ultimate-Modus brennt, nährt sein Strahl deinen Kern.",
   "entity.cosmiccore.void_titan": "Void-Titan"
 }
