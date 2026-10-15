@@ -38,12 +38,13 @@ public class ControllerBlock extends Block implements EntityBlock {
         super(props);
         registerDefaultState(stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
-                .setValue(ModProperties.PHASE, CorePhase.DORMANT));
+                .setValue(ModProperties.PHASE, CorePhase.DORMANT)
+                .setValue(ModProperties.TERMINAL, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, ModProperties.PHASE);
+        builder.add(FACING, ModProperties.PHASE, ModProperties.TERMINAL);
     }
 
     private static final VoxelShape NODE = Block.box(3, 3, 3, 13, 13, 13);
@@ -56,7 +57,16 @@ public class ControllerBlock extends Block implements EntityBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
-        return defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());
+        Direction facing = ctx.getHorizontalDirection().getOpposite();
+        return defaultBlockState().setValue(FACING, facing)
+                .setValue(ModProperties.TERMINAL, Terminal.isTerminal(ctx.getLevel(), ctx.getClickedPos(), facing));
+    }
+
+    /** Item-Port links und Energie-Port rechts daneben machen den Controller zur Steuerkonsole. */
+    @Override
+    protected BlockState updateShape(BlockState state, Direction dir, BlockState neighbor, net.minecraft.world.level.LevelAccessor level,
+                                     BlockPos pos, BlockPos neighborPos) {
+        return state.setValue(ModProperties.TERMINAL, Terminal.isTerminal(level, pos, state.getValue(FACING)));
     }
 
     @Nullable

@@ -298,6 +298,10 @@ public final class ReactorShellRenderer {
     private static boolean flies(Params p, ShellCell c) {
         // Ports bleiben als echte Anschlussbloecke stehen
         BlockState s = p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz()));
+        // fremde Bloecke (z. B. Rohre an den Andockstellen der Konsole) gehoeren nicht zur Struktur
+        if (!net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getNamespace().equals(dr4kun3.cosmiccore.CosmicCore.MODID)) {
+            return false;
+        }
         return !s.is(ModBlocks.ENERGY_PORT.get()) && !s.is(ModBlocks.ITEM_PORT.get());
     }
 

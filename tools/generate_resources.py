@@ -626,6 +626,91 @@ def draw_guide_book():
     return img
 
 
+# ----------------------------------------------------------------- Steuerkonsole (Item-Port | Controller | Energie-Port)
+def terminal_tile(part, phase, f, nf):
+    """Ein Drittel der durchgehenden Konsolenfront (part 0 = links/Item, 1 = Mitte/Controller, 2 = rechts/Energie)."""
+    rnd = random.Random(60 + part)
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            n = rnd.randint(-4, 4)
+            px[x, y] = (clamp(22 + n), clamp(15 + n), clamp(36 + n * 1.4), 255)
+    for x in range(16):  # durchgehende Leisten oben und unten
+        put(px, x, 0, (70, 55, 105)); put(px, x, 1, (40, 31, 64)); put(px, x, 2, (60, 48, 96))
+        put(px, x, 13, (60, 48, 96)); put(px, x, 14, (16, 11, 28)); put(px, x, 15, (6, 4, 12))
+    for y in range(3, 13):  # Bildschirmflaeche ueber alle drei Bloecke
+        for x in range(16):
+            put(px, x, y, (9, 5, 18))
+    edge = 0 if part == 0 else 15 if part == 2 else None
+    if edge is not None:  # nur die Aussenkanten der Konsole bekommen einen Rahmen
+        for y in range(16):
+            put(px, edge, y, (70, 55, 105) if edge == 0 else (6, 4, 12))
+            put(px, 1 if edge == 0 else 14, y, (60, 48, 96) if 2 <= y <= 13 else (40, 31, 64))
+    # Leitung am unteren Bildschirmrand: von den Ports zur Mitte
+    if part == 0:
+        line = [(x, 11) for x in range(3, 16)]
+    elif part == 2:
+        line = [(x, 11) for x in range(12, -1, -1)]
+    else:
+        line = [(x, 11) for x in range(0, 16)]
+    glow_path(px, line, phase, f, nf, 61 + part)
+    if part == 1:
+        tmp = Image.new('RGBA', (16, 16), (9, 5, 18, 255))
+        tp = tmp.load()
+        paint_eye(tp, phase, f, nf, cx=7.5, cy=6.5, half_w=5.5, max_h=2.9, seed=6)
+        for y in range(3, 11):
+            for x in range(1, 15):
+                if tp[x, y][:3] != (9, 5, 18):
+                    put(px, x, y, tp[x, y])
+        leds = [(3, 1), (6, 1), (9, 1), (12, 1)]
+    else:
+        icon = ([(9, 4), (8, 5), (7, 6), (6, 7), (7, 7), (8, 7), (9, 7), (8, 8), (7, 9), (6, 10)] if part == 2 else
+                [(5, 4), (6, 5), (7, 6), (8, 6), (9, 5), (10, 4), (5, 7), (6, 8), (7, 9), (8, 9), (9, 8), (10, 7)])
+        if part == 2:
+            icon = [(x - 1, y - 1) for x, y in icon]
+        else:
+            icon = [(x + 1, y - 1) for x, y in icon]
+        glow_path(px, icon, phase, f, nf, 64 + part)
+        leds = [(5, 1), (10, 1)]
+    ph = f / max(nf, 1)
+    for k, (x, y) in enumerate(leds):
+        if phase == 'dormant':
+            c = (34, 26, 50)
+        elif phase == 'unstable':
+            c = (255, 40, 50) if (f + k + part) % 2 == 0 else (70, 10, 16)
+        else:
+            c = lerp((60, 40, 120), (120, 240, 255) if phase == 'active' else (170, 110, 255),
+                     0.5 + 0.5 * math.sin(2 * math.pi * ph + k + part * 2))
+        put(px, x, y, c)
+    return img
+
+
+def draw_terminal_left(phase, f, nf):
+    return terminal_tile(0, phase, f, nf)
+
+
+def draw_terminal_center(phase, f, nf):
+    return terminal_tile(1, phase, f, nf)
+
+
+def draw_terminal_right(phase, f, nf):
+    return terminal_tile(2, phase, f, nf)
+
+
+def draw_terminal_trim(phase, f, nf):
+    """Zierleiste fuer Pult und Blende: dunkles Metall mit durchgehender Leuchtlinie in der Mitte (Zeile 7)."""
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = (30, 22, 48, 255) if y < 7 else (14, 9, 24, 255)
+    glow_path(px, [(x, 7) for x in range(16)], phase, f, nf, 70)
+    for x in range(16):
+        put(px, x, 6, (70, 55, 105)); put(px, x, 8, (8, 5, 14))
+    return img
+
+
 # ----------------------------------------------------------------- Ausgabe der Texturen
 PAINTERS = {
     'void_casing': draw_casing,
@@ -636,6 +721,10 @@ PAINTERS = {
     'controller_front': draw_controller_front,
     'energy_port': draw_energy_port,
     'item_port': draw_item_port,
+    'terminal_left': draw_terminal_left,
+    'terminal_center': draw_terminal_center,
+    'terminal_right': draw_terminal_right,
+    'terminal_trim': draw_terminal_trim,
 }
 
 
@@ -735,6 +824,51 @@ def models():
         wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': {
             f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'} for p in PHASES}})
 
+    # Steuerkonsole: Controller + Item-Port links + Energie-Port rechts (Modelle mit Front nach Norden).
+    # Durchgehende Bildschirmfront, unten ein Pult, oben eine Blende; aussen an den Ports die Anschlussbuchse.
+    def terminal(front, p, socket_side=None):
+        casing = f'{MOD}:block/void_casing_{p}'
+        trim = f'{MOD}:block/terminal_trim_{p}'
+        tex = {'particle': casing, 'casing': casing, 'front': f'{MOD}:block/{front}_{p}', 'trim': trim,
+               'socket': f'{MOD}:block/port_socket'}
+        def face(t, uv=None, cull=None):
+            d = {'texture': t}
+            if uv:
+                d['uv'] = uv
+            if cull:
+                d['cullface'] = cull
+            return d
+        body = {d: face('#casing', cull=d) for d in ('down', 'up', 'south', 'east', 'west')}
+        body['north'] = face('#front', cull='north')
+        if socket_side:
+            body[socket_side] = face('#socket', cull=socket_side)
+        def strip(y0, y1, depth):
+            return {'from': [0, y0, -depth], 'to': [16, y1, 0], 'faces': {
+                'north': face('#trim', [0, 7 - (y1 - y0) // 2, 16, 7 - (y1 - y0) // 2 + (y1 - y0)]),
+                'up': face('#casing', [0, 0, 16, depth]), 'down': face('#casing', [0, 0, 16, depth]),
+                'east': face('#casing', [0, 0, depth, y1 - y0]), 'west': face('#casing', [0, 0, depth, y1 - y0])}}
+        return {'parent': 'minecraft:block/block', 'textures': tex,
+                'elements': [{'from': [0, 0, 0], 'to': [16, 16, 16], 'faces': body},
+                             strip(0, 3, 3),     # Pult
+                             strip(14, 16, 2)]}  # Blende
+    for p in PHASES:
+        wjson(f'{ASSETS}/models/block/controller_terminal_{p}.json', terminal('terminal_center', p))
+        # Energie-Port rechts vom Controller (von vorn) = im Modell westlich, Item-Port links = oestlich
+        wjson(f'{ASSETS}/models/block/energy_port_terminal_{p}.json', terminal('terminal_right', p, 'west'))
+        wjson(f'{ASSETS}/models/block/item_port_terminal_{p}.json', terminal('terminal_left', p, 'east'))
+    sides = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
+    for b in ('energy_port', 'item_port'):
+        variants = {}
+        for p in PHASES:
+            variants[f'console=none,phase={p}'] = {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'}
+            for side, y in sides.items():
+                # gebildet: der PortRenderer zeichnet das Seitenteil (mit Einrasten und Lichtleitung)
+                e = {'model': f'{MOD}:block/{b}_terminal_dormant' if p == 'dormant' else f'{MOD}:block/{b}_hidden'}
+                if y and p == 'dormant':
+                    e['y'] = y
+                variants[f'console={side},phase={p}'] = e
+        wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
+
     # Glas (transluzent)
     for p in PHASES:
         wjson(f'{ASSETS}/models/block/focus_glass_{p}.json',
@@ -758,10 +892,12 @@ def models():
     variants = {}
     for facing, y in rot.items():
         for p in PHASES:
-            entry = {'model': f'{MOD}:block/controller_{p if p == "dormant" else "hidden"}'}
-            if y:
-                entry['y'] = y
-            variants[f'facing={facing},phase={p}'] = entry
+            for term in ('false', 'true'):
+                base = 'controller_terminal' if term == 'true' else 'controller'
+                entry = {'model': f'{MOD}:block/{base}_{p}' if p == 'dormant' else f'{MOD}:block/controller_hidden'}
+                if y:
+                    entry['y'] = y
+                variants[f'facing={facing},phase={p},terminal={term}'] = entry
     wjson(f'{ASSETS}/blockstates/controller.json', {'variants': variants})
     wjson(f'{ASSETS}/models/item/controller.json', {'parent': f'{MOD}:block/controller_formed'})
 
@@ -921,7 +1057,7 @@ DE = {
     'guide.cosmiccore.page.1': '§5§lKosmischer Kern§r\n§8Handbuch für Reaktorbauer§r\n\nDer Kerngenerator bündelt Sternenlicht in einer Singularität und wandelt es in RF um.\n\nEs gilt: mehr Leistung bedeutet mehr Risiko.',
     'guide.cosmiccore.page.2': '§5§lAufbau§r\n\n1. Controller platzieren.\n2. Größe wählen: 5x5x5, 7x7x7 oder 9x9x9. Die Wahl ist endgültig!\n3. In der GUI die §dVorschau§r einschalten: Geisterblöcke zeigen, was wohin gehört, rot = falscher Block.',
     'guide.cosmiccore.page.3': '§5§lBlöcke§r\n§lGehäuse:§r Boden, Decke\n§lRunenrahmen:§r Ecken\n§lFokusglas:§r Deckenring\n§lSchild-Emitter:§r unter dem Kern\n§lKristall:§r über dem Kern\n§lKern:§r Mitte\n\nDas Innere muss leer sein. Die Vorschau zeigt alles genau.',
-    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an.',
+    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an.\n\n§d§lSteuerkonsole:§r Item-Port links und Energie-Port rechts neben dem Controller verschmelzen zu einer Konsole. Rohre und Kabel docken außen an - diese beiden Plätze bleiben frei.',
     'guide.cosmiccore.page.5': '§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...',
     'guide.cosmiccore.page.6': '§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.',
     'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen: 5er 4, 7er 6, 9er 8, ultimativ 10. Jede neue Stufe einmalig freischalten: §e5er§r Sternenstaub, §e7er§r verd. Sternenstaub, §e9er§r Neutronenstern, §eUltimativ§r Quasar-Essenz.',
@@ -1168,7 +1304,7 @@ EN = {
     'guide.cosmiccore.page.1': "§5§lCosmic Core§r\n§8A reactor builder's guide§r\n\nThe core generator focuses starlight into a singularity and turns it into RF.\n\nThe rule: more power means more risk.",
     'guide.cosmiccore.page.2': '§5§lBuilding§r\n\n1. Place the controller.\n2. Choose a size: 5x5x5, 7x7x7 or 9x9x9. This choice is final!\n3. Turn on the §dPreview§r in the GUI: ghost blocks show what goes where, red = wrong block.',
     'guide.cosmiccore.page.3': '§5§lBlocks§r\n§lCasing:§r floor, ceiling\n§lRune Frame:§r corners\n§lFocus Glass:§r ceiling ring\n§lShield Emitter:§r below the core\n§lCrystal:§r above the core\n§lCore:§r center\n\nThe inside must be empty. The preview shows everything.',
-    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts can replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes.',
+    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nPorts can replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes.\n\n§d§lControl console:§r item port left and energy port right of the controller merge into one console. Pipes and cables dock on the outside - those two spots stay free.',
     'guide.cosmiccore.page.5': '§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...',
     'guide.cosmiccore.page.6': '§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.',
     'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels: 5x 4, 7x 6, 9x 8, ultimate 10. Unlock each new level once: §e5x§r star dust, §e7x§r compressed star dust, §e9x§r neutron star, §eUltimate§r quasar essence.',

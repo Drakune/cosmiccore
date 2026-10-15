@@ -13,5 +13,10 @@ public final class ModProperties {
     /** Kosmos-Laser ist Teil eines gebildeten Laser-Arrays (Modell ausgeblendet, das grosse Geschuetz wird gerendert). */
     public static final BooleanProperty LINKED = BooleanProperty.create("linked");
 
+    /** Controller bildet mit Item-Port (links) und Energie-Port (rechts) eine gemeinsame Steuerkonsole. */
+    public static final BooleanProperty TERMINAL = BooleanProperty.create("terminal");
+    /** Port gehoert zu einer Steuerkonsole (Blickrichtung des Controllers) oder steht allein. */
+    public static final EnumProperty<ConsoleSide> CONSOLE = EnumProperty.create("console", ConsoleSide.class);
+
     private ModProperties() {}
 }

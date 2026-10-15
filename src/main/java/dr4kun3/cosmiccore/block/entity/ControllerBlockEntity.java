@@ -1134,17 +1134,19 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     /**
      * Kreativ-Modus: setzt die komplette Struktur in der aktuellen Ausrichtung. Luft-Zellen werden freigeraeumt,
-     * "egal"-Zellen bleiben unberuehrt. Gegenueber dem Controller entsteht ein Energie-Port, links davon ein Item-Port.
+     * "egal"-Zellen bleiben unberuehrt. Rechts neben dem Controller (von vorn gesehen) entsteht der Energie-Port, links
+     * der Item-Port - zusammen bilden die drei eine Steuerkonsole, an deren Seiten Rohre und Kabel andocken.
      */
     private void buildStructure(ServerLevel level) {
         CorePattern p = pattern();
         if (p == null || formed) return;
         Direction facing = facing();
         BlockPos center = p.center(worldPosition, facing);
-        BlockPos energyPort = center.relative(facing.getOpposite(), p.half()).below(p.half());
-        BlockPos itemPort = center.relative(facing.getClockWise(), p.half()).below(p.half());
+        BlockPos energyPort = worldPosition.relative(dr4kun3.cosmiccore.block.Terminal.right(facing));
+        BlockPos itemPort = worldPosition.relative(dr4kun3.cosmiccore.block.Terminal.left(facing));
         p.forEach(center, facing, (pos, cell) -> {
             if (cell == CorePattern.Cell.ANY || pos.equals(worldPosition)) return;
+            if (CorePattern.isDock(pos, worldPosition, facing)) return; // frei fuer Rohre und Kabel
             BlockState target;
             if (cell == CorePattern.Cell.AIR) {
                 target = Blocks.AIR.defaultBlockState();
@@ -1161,7 +1163,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             if (current.is(target.getBlock()) || (!port && CorePattern.matches(cell, current, false))) {
                 return; // passt schon
             }
-            level.setBlock(pos, target, Block.UPDATE_ALL);
+            // Zustand aus den Nachbarn ableiten (Ports erkennen so die Steuerkonsole)
+            level.setBlock(pos, Block.updateFromNeighbourShapes(target, level, pos), Block.UPDATE_ALL);
         });
         if (withLasers) {
             for (Direction d : Direction.Plane.HORIZONTAL) {

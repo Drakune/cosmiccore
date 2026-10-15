@@ -49,10 +49,19 @@ public final class StructurePreview {
         Lighting.setupFor3DItems();
         MultiBufferSource.BufferSource buffers = g.bufferSource();
         p.forEach(BlockPos.ZERO, Direction.SOUTH, (pos, cell) -> {
+            if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei fuer Rohre
             BlockState state = CorePattern.blockFor(cell);
             if (state == null) return;
+            // Steuerkonsole: Item-Port links, Controller, Energie-Port rechts
             if (pos.equals(controller)) {
-                state = ModBlocks.CONTROLLER.get().defaultBlockState().setValue(ControllerBlock.FACING, Direction.SOUTH);
+                state = ModBlocks.CONTROLLER.get().defaultBlockState().setValue(ControllerBlock.FACING, Direction.SOUTH)
+                        .setValue(dr4kun3.cosmiccore.block.ModProperties.TERMINAL, true);
+            } else if (pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.right(Direction.SOUTH)))) {
+                state = ModBlocks.ENERGY_PORT.get().defaultBlockState()
+                        .setValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE, dr4kun3.cosmiccore.block.ConsoleSide.SOUTH);
+            } else if (pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.left(Direction.SOUTH)))) {
+                state = ModBlocks.ITEM_PORT.get().defaultBlockState()
+                        .setValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE, dr4kun3.cosmiccore.block.ConsoleSide.SOUTH);
             }
             block(dispatcher, ps, buffers, state, pos.getX() - 0.5F, pos.getY() - 0.5F, pos.getZ() - 0.5F);
         });

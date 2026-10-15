@@ -72,9 +72,18 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
 
         // 1) Geisterbloecke (Linien erst danach - ein Wechsel des RenderTypes schliesst den vorherigen Puffer ab)
         pattern.forEach(center, facing, (pos, cell) -> {
-            if (cell == CorePattern.Cell.ANY || pos.equals(origin)) return;
+            if (cell == CorePattern.Cell.ANY || pos.equals(origin) || CorePattern.isDock(pos, origin, facing)) return;
             BlockState current = level.getBlockState(pos);
             if (CorePattern.matches(cell, current, false)) return;
+            // Steuerkonsole: rechts der Energie-Port, links der Item-Port
+            if (pos.equals(origin.relative(dr4kun3.cosmiccore.block.Terminal.right(facing))) && current.isAir()) {
+                ghost(dispatcher, pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState());
+                return;
+            }
+            if (pos.equals(origin.relative(dr4kun3.cosmiccore.block.Terminal.left(facing))) && current.isAir()) {
+                ghost(dispatcher, pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState());
+                return;
+            }
 
             // in der Kammer stoert jeder Block (auch Gras), sonst nur Bloecke, die man nicht einfach ueberbauen kann
             if (!current.isAir() && (cell == CorePattern.Cell.AIR || !current.canBeReplaced())) {
@@ -178,5 +187,16 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             delegate.setNormal(x, y, z);
             return this;
         }
+    }
+
+    private static void ghost(BlockRenderDispatcher dispatcher, PoseStack pose, VertexConsumer vc, BlockPos origin, BlockPos pos, BlockState target) {
+        BakedModel model = dispatcher.getBlockModel(target);
+        pose.pushPose();
+        pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
+        pose.scale(0.82F, 0.82F, 0.82F);
+        pose.translate(-0.5, -0.5, -0.5);
+        dispatcher.getModelRenderer().renderModel(pose.last(), vc, target, model, 1.0F, 1.0F, 1.0F,
+                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+        pose.popPose();
     }
 }

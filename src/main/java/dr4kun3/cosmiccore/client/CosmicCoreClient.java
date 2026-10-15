@@ -49,6 +49,8 @@ public final class CosmicCoreClient {
             if (phase == dr4kun3.cosmiccore.block.CorePhase.DORMANT) continue;
             event.register(PortRenderer.plugModel(true, phase));
             event.register(PortRenderer.plugModel(false, phase));
+            event.register(PortRenderer.terminalModel(true, phase));
+            event.register(PortRenderer.terminalModel(false, phase));
         }
     }
 

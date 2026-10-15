@@ -163,6 +163,15 @@ public final class CorePattern {
         }
     }
 
+    /**
+     * Andockstellen der Steuerkonsole: die Plaetze direkt aussen neben den beiden Ports (zwei Bloecke links und rechts
+     * vom Controller). Sie gehoeren nicht zur Struktur und bleiben frei fuer Rohre und Kabel.
+     */
+    public static boolean isDock(BlockPos pos, BlockPos controller, Direction facing) {
+        return pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.right(facing), 2))
+                || pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.left(facing), 2));
+    }
+
     /** Zellen, die tatsaechlich Strukturbloecke sind (also alles ausser ANY und AIR). */
     public static boolean isBlockCell(Cell cell) {
         return cell != Cell.ANY && cell != Cell.AIR;
@@ -177,7 +186,7 @@ public final class CorePattern {
         final boolean[] unloaded = {false};
 
         forEach(center(controllerPos, facing), facing, (pos, cell) -> {
-            if (cell == Cell.ANY) return;
+            if (cell == Cell.ANY || isDock(pos, controllerPos, facing)) return;
             if (!level.hasChunkAt(pos)) {
                 unloaded[0] = true;
                 return;
