@@ -49,7 +49,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     // Betrieb: Kern-Karte (Slots), Anzeige-Karte (Balken), Status-Karte, Steuerung, Beute/Module
     private static final int TOP_Y = 18, TOP_H = 84;
-    private static final int CORE_X = M, CORE_W = 30;
+    private static final int CORE_X = M, CORE_W = 118;
     private static final int BARS_X = CORE_X + CORE_W + M, BARS_W = 56;
     private static final int STATUS_X = BARS_X + BARS_W + M;
     private static final int BAR_Y = 25, BAR_H = 60, BAR_W = 10;
@@ -418,12 +418,28 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xFFB8A8D8, false);
 
         int ly = TOP_Y + 1 + PAD;
-        g.drawString(font, statusLine(), INFO_X, ly, 0xFFFFFFFF, false);
-        ly += 11;
-        g.drawString(font, Component.translatable("gui.cosmiccore.output", fmt(menu.output())), INFO_X, ly, 0xFF9AE8FF, false);
-        ly += 11;
-        g.drawString(font, Component.translatable("gui.cosmiccore.energy", compact(menu.energy()), compact(menu.capacity())), INFO_X, ly, 0xFFC8B8F0, false);
-        ly += 11;
+        int statusW = W - M - 1 - PAD - INFO_X;
+        g.drawWordWrap(font, statusLine(), INFO_X, ly, statusW, 0xFFFFFFFF);
+        ly += 11 * Math.max(1, font.split(statusLine(), statusW).size()) + 4;
+
+        // Kern-Karte: neben den Slots Vorrat und Restlaufzeit, darunter Leistung und Puffer
+        int tx = ControllerMenu.FUEL_X + 20;
+        ItemStack fuel = menu.slots.get(ControllerBlockEntity.SLOT_FUEL).getItem();
+        ItemStack stab = menu.slots.get(ControllerBlockEntity.SLOT_STAB).getItem();
+        g.drawString(font, Component.translatable("gui.cosmiccore.fuel_label"), tx, ControllerMenu.FUEL_Y, HEAD, false);
+        g.drawString(font, fuel.getCount() + " \u00B7 " + PortStation.duration(menu.fuelSeconds()), tx, ControllerMenu.FUEL_Y + 10, 0xFFFFC070, false);
+        g.drawString(font, Component.translatable("gui.cosmiccore.stab_label"), tx, ControllerMenu.STAB_Y, HEAD, false);
+        g.drawString(font, stab.getCount() + " \u00B7 " + PortStation.duration(menu.stabSeconds()), tx, ControllerMenu.STAB_Y + 10, 0xFF9AD8FF, false);
+        int cx0 = CORE_X + 1 + PAD, cx1 = CORE_X + CORE_W - 1 - PAD;
+        int oy = ControllerMenu.STAB_Y + 25;
+        g.fill(cx0, oy - 3, cx1, oy - 2, 0x663A2468);
+        String out = PortStation.compact(menu.output()) + " RF/t";
+        g.drawString(font, Component.translatable("gui.cosmiccore.out_label"), cx0, oy, HEAD, false);
+        g.drawString(font, out, cx1 - font.width(out), oy, 0xFF9AE8FF, false);
+        String buf = PortStation.compact(menu.energy()) + "/" + PortStation.compact(menu.capacity());
+        g.drawString(font, Component.translatable("gui.cosmiccore.buf_label"), cx0, oy + 10, HEAD, false);
+        g.drawString(font, buf, cx1 - font.width(buf), oy + 10, 0xFFC8B8F0, false);
+
         g.drawString(font, Component.translatable("gui.cosmiccore.instability", String.format("%.1f", menu.instability())), INFO_X, ly, instColor(), false);
         ly += 11;
         g.drawString(font, Component.translatable("gui.cosmiccore.cosmic", String.format("%.2f", menu.cosmic())), INFO_X, ly, 0xFFE0A8FF, false);

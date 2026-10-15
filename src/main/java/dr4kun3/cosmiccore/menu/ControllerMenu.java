@@ -38,15 +38,16 @@ public class ControllerMenu extends AbstractContainerMenu {
     public static final int D_ENERGY_LO = 0, D_ENERGY_HI = 1, D_CAPACITY_LO = 2, D_CAPACITY_HI = 3, D_OUTPUT_LO = 4, D_OUTPUT_HI = 5,
             D_INSTABILITY = 6, D_RESONANCE = 7, D_SCALE = 8, D_MAX_SCALE = 9, D_SIZE = 10, D_FLAGS = 11, D_COSMIC = 12,
             D_BURN = 13, D_STAB = 14, D_COLLAPSE = 15, D_ERRORS = 16, D_OVERDRIVE = 17, D_MELTDOWN = 18, D_UNLOCKED = 19,
-            D_COLOR_MASK = 20, D_COLOR_FIRST = 21; // Farbsatz: Maske + 8 Farben (RGB555 passt in ein Datenfeld)
-    public static final int DATA_COUNT = 29;
+            D_COLOR_MASK = 20, D_COLOR_FIRST = 21, // Farbsatz: Maske + 8 Farben (RGB555 passt in ein Datenfeld)
+            D_FUEL_TIME_LO = 29, D_FUEL_TIME_HI = 30, D_STAB_TIME_LO = 31, D_STAB_TIME_HI = 32;
+    public static final int DATA_COUNT = 33;
 
     public static final int F_FORMED = 1, F_ENABLED = 2, F_PREVIEW = 4, F_SKY = 8, F_BURNING = 16, F_FUNNEL = 32, F_LASER = 64, F_RUNNING = 128, F_FULL = 256, F_HAS_FUEL = 512,
             F_ANTI_INSTALLED = 1024, F_ANTI_ON = 2048, F_COLOR_INSTALLED = 4096;
 
     // Layout (auch vom Screen benutzt)
     // 5-px-Raster: Karten 5 px vom Rand und voneinander, 5 px Innenabstand (Slot-Rahmen = Slot - 1)
-    public static final int FUEL_X = 12, FUEL_Y = 32, STAB_X = 12, STAB_Y = 67;
+    public static final int FUEL_X = 12, FUEL_Y = 25, STAB_X = 12, STAB_Y = 52;
     public static final int INV_X = 77, INV_Y = 243;
     /** Beute-Reihe (6 Slots) und Modul-Slots (Effizienz, Stabilitaet, Anti-Asteroiden mit Schalter darunter). */
     public static final int LOOT_X = 12, LOOT_Y = 193, MOD_X = 234, MOD_Y = 193;
@@ -113,6 +114,15 @@ public class ControllerMenu extends AbstractContainerMenu {
 
     public long capacity() {
         return (wide(D_CAPACITY_LO, D_CAPACITY_HI) & 0xFFFFFFFFL) * 1000L;
+    }
+
+    /** Restlaufzeit des Brennstoffs in Sekunden (oder ControllerBlockEntity.TIME_*). */
+    public int fuelSeconds() {
+        return wide(D_FUEL_TIME_LO, D_FUEL_TIME_HI);
+    }
+
+    public int stabSeconds() {
+        return wide(D_STAB_TIME_LO, D_STAB_TIME_HI);
     }
 
     public int output() {

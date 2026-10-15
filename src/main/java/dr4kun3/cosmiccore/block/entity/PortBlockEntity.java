@@ -15,6 +15,9 @@ public abstract class PortBlockEntity extends BlockEntity {
     private BlockPos controllerPos;
     /** Nur Client: Zeitpunkt, an dem die Struktur als gebildet gesehen wurde (fuer die Einblend-Animation). */
     public long clientAppear = Long.MIN_VALUE;
+    /** Nur Client: Seiten, an denen etwas angedockt ist (Bitmaske), und wann zuletzt geprueft. */
+    public int clientConnMask;
+    public long clientConnTick = Long.MIN_VALUE;
 
 
     protected PortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {

@@ -199,8 +199,17 @@ public final class ReactorShellRenderer {
         Matrix4f tm = textFrame(cm, 0.004F);
         center(font, tm, buffers, "\u25C6 " + tr("console.cosmiccore.title") + " \u25C6", ROW_TITLE, 0xD8B8FF);
         if (!status.isEmpty()) center(font, tm, buffers, status, ROW_STATUS, statusColor);
-        row(font, tm, buffers, tr("console.cosmiccore.output"), compact(core.getOutput()) + " RF/t", ROW_OUT, 0x7AE8FF);
-        row(font, tm, buffers, tr("console.cosmiccore.buffer"), compact(stored) + " / " + compact(cap) + " RF", ROW_BUF, 0xC8B8F0);
+        var ctrl = controllerOf(p);
+        if (ctrl != null && ctrl.hasEnergyPort()) {
+            // Leistung und Puffer zeigt der Energie-Port - hier Vorrat und Restlaufzeit
+            PortStation.itemRow(font, tm, buffers, p.level(), tr("console.cosmiccore.fuel"), ctrl.getClientFuel(), ctrl.getFuelSeconds(),
+                    ROW_OUT, 0xFFC070, PANEL_PX - 1);
+            PortStation.itemRow(font, tm, buffers, p.level(), tr("console.cosmiccore.stabilizer"), ctrl.getClientStab(), ctrl.getStabSeconds(),
+                    ROW_BUF, 0x9AD8FF, PANEL_PX - 1);
+        } else {
+            row(font, tm, buffers, tr("console.cosmiccore.output"), compact(core.getOutput()) + " RF/t", ROW_OUT, 0x7AE8FF);
+            row(font, tm, buffers, tr("console.cosmiccore.buffer"), compact(stored) + " / " + compact(cap) + " RF", ROW_BUF, 0xC8B8F0);
+        }
         row(font, tm, buffers, tr("console.cosmiccore.instability"), inst + " %", ROW_INST, instColor);
         row(font, tm, buffers, tr("console.cosmiccore.level"), core.getScale() + " / " + core.getScaleMax(), ROW_LEVEL, 0xE0A8FF);
         if (maxOd > 0) row(font, tm, buffers, tr("console.cosmiccore.overdrive"), od.toString().trim(), ROW_OD, 0xFFB040);
@@ -223,6 +232,23 @@ public final class ReactorShellRenderer {
     }
 
     /** Puffer-Kapazitaet je Baustufe (wie im Controller: ReactorSize.buffer()). */
+    /** Controller der Struktur (sitzt in einer SLOT-Zelle). */
+    @org.jetbrains.annotations.Nullable
+    private static dr4kun3.cosmiccore.block.entity.ControllerBlockEntity controllerOf(Params p) {
+        for (ShellCell c : cells(p.size())) {
+            if (c.cell() != CorePattern.Cell.SLOT) continue;
+            if (p.level().getBlockEntity(p.corePos().offset(c.dx(), c.dy(), c.dz())) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity ctrl) {
+                return ctrl;
+            }
+        }
+        return null;
+    }
+
+    /** Puffer-Kapazitaet je Baustufe (auch fuer die Port-Stationen). */
+    static long capacity(int structureSize) {
+        return ReactorSizeCapacity.capacity(structureSize);
+    }
+
     private static final class ReactorSizeCapacity {
         static long capacity(int structureSize) {
             ReactorSize rs = ReactorSize.bySize(structureSize);
@@ -243,158 +269,62 @@ public final class ReactorShellRenderer {
         return 1.0F - (1.0F - k) * (1.0F - k) * (1.0F - k);
     }
 
-    /** Bildschirm eines Fluegels (kleiner, tiefer, zur Mitte gedreht): u in [-1, 1], v in [0, 1]. */
-    private static float[] wingScreen(float u, float v) {
-        return new float[]{u * 0.34F, -0.04F + v * 0.42F, 0.08F - v * 0.16F};
+    @org.jetbrains.annotations.Nullable
+    private static dr4kun3.cosmiccore.block.entity.PortBlockEntity wingPort(Params p, ShellCell c, int side) {
+        BlockPos cpos = p.corePos().offset(c.dx(), c.dy(), c.dz());
+        BlockState cs = p.level().getBlockState(cpos);
+        if (!cs.hasProperty(dr4kun3.cosmiccore.block.ControllerBlock.FACING)) return null;
+        var facing = cs.getValue(dr4kun3.cosmiccore.block.ControllerBlock.FACING);
+        BlockPos pos = cpos.relative(side > 0 ? dr4kun3.cosmiccore.block.Terminal.right(facing) : dr4kun3.cosmiccore.block.Terminal.left(facing));
+        return p.level().getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.PortBlockEntity pb ? pb : null;
     }
 
-    private static final float WING_PX = 0.68F / TEXT_SCALE;
-
-    /** Lokaler Rahmen eines Fluegels: side = +1 rechts (Energie), -1 links (Items), von vorn gesehen. */
-    private static Matrix4f wingFrame(Matrix4f cm, int side, float out) {
-        return new Matrix4f(cm).translate(side * out, 0, 0).rotateY(-side * 0.28F * out);
+    private static PortStation.Data stationData(Params p, ShellCell c) {
+        BlockPos cpos = p.corePos().offset(c.dx(), c.dy(), c.dz());
+        return new PortStation.Data(p.level().getBlockEntity(cpos) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity ctrl
+                ? ctrl : null, p.core(), p.t(), Math.max(0.6F, p.energy()));
     }
 
-    private static Matrix4f wingText(Matrix4f wm, float lift) {
-        float tilt = (float) Math.atan2(0.16, 0.42);
-        float[] tl = wingScreen(-1, 1);
-        return new Matrix4f(wm).translate(tl[0], tl[1], tl[2]).rotateX(-tilt).translate(0, 0, lift).scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
-    }
-
+    /** Fluegel der Steuerkonsole: dieselben Stationen wie bei einzelnen Ports, seitlich ausgefahren und zur Mitte gedreht. */
     private static void wingsSolid(PoseStack pose, MultiBufferSource buffers, Params p, ShellCell c) {
         float out = wingOut(p);
         if (out <= 0.01F) return;
         float yaw = (float) Math.atan2(c.dx(), c.dz());
-        BlockPos cpos = p.corePos().offset(c.dx(), c.dy(), c.dz());
-        var dispatcher = Minecraft.getInstance().getBlockRenderer();
+        PortStation.Data data = stationData(p, c);
         for (int side = -1; side <= 1; side += 2) {
+            var port = wingPort(p, c, side);
+            if (port == null) continue;
             boolean energy = side > 0;
+            int conn = PortStation.connections(p.level(), port, energy);
             pose.pushPose();
             pose.translate(c.dx(), c.dy(), c.dz());
             pose.mulPose(com.mojang.math.Axis.YP.rotation(yaw));
             pose.translate(side * out, 0, 0);
-            Matrix4f base = pose.last().pose();
-            // Sockel und Bodenplatte
-            pose.pushPose();
-            pose.translate(-0.14F, -0.5F, -0.14F);
-            pose.scale(0.28F, 0.4F * out, 0.28F);
-            dispatcher.renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose, buffers, LightTexture.FULL_BRIGHT,
-                    OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
-            pose.popPose();
-            // Anschlussknoten an der Aussenseite - hier docken Rohre und Kabel an
-            BlockState port = p.level().getBlockState(cpos.relative(energy
-                    ? dr4kun3.cosmiccore.block.Terminal.right(p.level().getBlockState(cpos).getValue(dr4kun3.cosmiccore.block.ControllerBlock.FACING))
-                    : dr4kun3.cosmiccore.block.Terminal.left(p.level().getBlockState(cpos).getValue(dr4kun3.cosmiccore.block.ControllerBlock.FACING))));
-            if (port.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)) {
-                var phase = port.getValue(dr4kun3.cosmiccore.block.ModProperties.PHASE);
-                if (phase != dr4kun3.cosmiccore.block.CorePhase.DORMANT) {
-                    var model = Minecraft.getInstance().getModelManager().getModel(PortRenderer.plugModel(energy, phase));
-                    pose.pushPose();
-                    pose.translate(side * 0.31F, -0.27F, 0.0F);
-                    pose.scale(0.38F * out, 0.38F * out, 0.38F * out);
-                    pose.translate(-0.5F, -0.5F, -0.5F);
-                    dispatcher.getModelRenderer().renderModel(pose.last(), buffers.getBuffer(RenderType.cutout()), port, model,
-                            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, RenderType.cutout());
-                    pose.popPose();
-                }
-            }
-            VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
-            disc(dq, new Matrix4f(base).translate(0, -0.495F, 0), 0.34F, PLATE);
-            Matrix4f wm = wingFrame(new Matrix4f(base).translate(-side * out, 0, 0), side, out);
-            float[] b0 = wingScreen(-1.04F, -0.04F), b1 = wingScreen(1.04F, -0.04F), b2 = wingScreen(1.04F, 1.04F), b3 = wingScreen(-1.04F, 1.04F);
-            RenderUtil.quad2(dq, wm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], b2[0], b2[1], b2[2], b3[0], b3[1], b3[2],
-                    PANEL[0], PANEL[1], PANEL[2], 1.0F);
-            if (out > 0.7F) wingText(wm, buffers, p, cpos, energy);
+            PortStation.solid(pose, buffers, p.level(), port.getBlockState(), energy, conn, yaw, -side * 0.28F * out, out, data);
             pose.popPose();
         }
     }
 
-    private static final int WROW_TITLE = 3, WROW_A = 18, WROW_B = 30, WROW_C = 42, WBAR = 54;
-
-    private static void wingText(Matrix4f wm, MultiBufferSource buffers, Params p, BlockPos cpos, boolean energy) {
-        Font font = Minecraft.getInstance().font;
-        Matrix4f tm = wingText(wm, 0.004F);
-        String title = "\u25C6 " + tr(energy ? "console.cosmiccore.wing_energy" : "console.cosmiccore.wing_items") + " \u25C6";
-        wcenter(font, tm, buffers, title, WROW_TITLE, energy ? 0x7AE8FF : 0xFFC070);
-        if (energy) {
-            SingularityCoreBlockEntity core = p.core();
-            long cap = ReactorSizeCapacity.capacity(core.getStructureSize());
-            wrow(font, tm, buffers, tr("console.cosmiccore.output"), compact(core.getOutput()) + " RF/t", WROW_A, 0x7AE8FF);
-            wrow(font, tm, buffers, tr("console.cosmiccore.buffer"), core.getEnergyPct() + " %", WROW_B, 0xC8B8F0);
-            wrow(font, tm, buffers, tr("console.cosmiccore.capacity"), compact(cap) + " RF", WROW_C, 0xA898C8);
-        } else if (p.level().getBlockEntity(cpos) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity ctrl) {
-            itemRow(font, tm, buffers, p, tr("console.cosmiccore.fuel"), ctrl.getClientFuel(), WROW_A, 0xFFC070);
-            itemRow(font, tm, buffers, p, tr("console.cosmiccore.stabilizer"), ctrl.getClientStab(), WROW_B, 0x9AD8FF);
-            wrow(font, tm, buffers, tr("console.cosmiccore.loot"), Integer.toString(ctrl.getClientLoot()), WROW_C, 0xD8B8FF);
-        }
-    }
-
-    private static void itemRow(Font font, Matrix4f tm, MultiBufferSource buffers, Params p, String label,
-                                net.minecraft.world.item.ItemStack stack, int y, int color) {
-        String value = stack.isEmpty() ? "-" : Integer.toString(stack.getCount());
-        wrow(font, tm, buffers, label, value, y, color);
-        if (stack.isEmpty()) return;
-        // kleines Symbol links neben der Zahl
-        float x = WING_PX - 6 - font.width(value) - 10;
-        PoseStack ps = new PoseStack();
-        ps.last().pose().set(tm);
-        ps.translate(x + 4, y + 3.5F, -0.5F);
-        ps.scale(8.0F, -8.0F, 0.01F);
-        Minecraft.getInstance().getItemRenderer().renderStatic(stack, net.minecraft.world.item.ItemDisplayContext.GUI,
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ps, buffers, p.level(), 0);
-    }
-
-    private static void wcenter(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
-        font.drawInBatch(text, (WING_PX - font.width(text)) / 2.0F, y, 0xFF000000 | color, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
-    }
-
-    private static void wrow(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int valueColor) {
-        font.drawInBatch(label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
-        font.drawInBatch(value, WING_PX - 5 - font.width(value), y, 0xFF000000 | valueColor, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
-    }
-
-    /** Leuchtender Teil der Fluegel: Rahmen, Trennlinie, Balken bzw. Symbol und die Lichtleitungen zur Mitte. */
     private static void wingsGlow(Matrix4f km, VertexConsumer vc, ShellCell c, Params p) {
         float out = wingOut(p);
         if (out <= 0.01F) return;
+        float yaw = (float) Math.atan2(c.dx(), c.dz());
         Matrix4f cm = consoleFrame(km, c);
-        float e = Math.max(0.6F, p.energy());
+        PortStation.Data data = stationData(p, c);
+        float e = data.e();
         for (int side = -1; side <= 1; side += 2) {
+            var port = wingPort(p, c, side);
+            if (port == null) continue;
             boolean energy = side > 0;
-            float[] col = energy ? ENERGY_GLYPH : ITEM_GLYPH;
-            Matrix4f wm = wingFrame(cm, side, out);
-            float[][] fr = {wingScreen(-1.03F, -0.03F), wingScreen(1.03F, -0.03F), wingScreen(1.03F, 1.03F), wingScreen(-1.03F, 1.03F)};
-            for (int i = 0; i < 4; i++) {
-                float[] a = fr[i], b = fr[(i + 1) % 4];
-                segment(vc, wm, a[0], a[1], a[2], b[0], b[1], b[2], 0.005F, col[0], col[1], col[2], e * 0.8F * out, e * 0.8F * out);
-                cube(vc, wm, a[0], a[1], a[2], 0.015F, 1.0F, 1.0F, 1.0F, e * out);
-            }
-            Matrix4f tm = wingText(wm, 0.002F);
-            segment(vc, tm, 5, 12, 0, WING_PX - 5, 12, 0, 0.5F, col[0], col[1], col[2], e * 0.6F, e * 0.6F);
-            if (energy) {
-                float fx0 = 5, fx1 = WING_PX - 5, fill = Mth.clamp(p.core().getEnergyPct() / 100.0F, 0, 1);
-                segment(vc, tm, fx0, WBAR, 0, fx1, WBAR, 0, 1.4F, col[0], col[1], col[2], e * 0.15F, e * 0.15F);
-                if (fill > 0) segment(vc, tm, fx0, WBAR, 0, fx0 + (fx1 - fx0) * fill, WBAR, 0, 1.4F, col[0], col[1], col[2], e, e);
-            } else {
-                // Zufluss: Punkte wandern in Richtung Mitte
-                for (int k = 0; k < 6; k++) {
-                    float f = Mth.frac(p.t() * 0.02F + k / 6.0F);
-                    float x = 5 + (WING_PX - 10) * (1.0F - f);
-                    segment(vc, tm, x, WBAR, 0, x + 6, WBAR, 0, 1.2F, col[0], col[1], col[2], e * Mth.sin(f * Mth.PI), 0.0F);
-                }
-            }
-            float sv = Mth.frac(p.t() * 0.015F + (energy ? 0.5F : 0.0F)) * 62.0F;
-            segment(vc, tm, 2, sv, 0, WING_PX - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.1F, e * 0.1F);
-            // Lichtleitung vom Fluegelsockel zur Mitte und vom Anschlussknoten zum Sockel
+            float[] col = energy ? PortStation.ENERGY : PortStation.ITEM;
+            int conn = PortStation.connections(p.level(), port, energy);
             float x = side * out;
+            PortStation.glow(new Matrix4f(cm).translate(x, 0, 0), vc, energy, conn, yaw, -side * 0.28F * out, out, data);
+            // Verbindung zur Konsole: Lichtleitung vom Fluegelsockel zur Mitte
             segment(vc, cm, x, -0.42F, 0, 0, -0.42F, 0, 0.02F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
-            segment(vc, cm, x + side * 0.31F, -0.27F, 0, x, -0.27F, 0, 0.015F, col[0], col[1], col[2], e * 0.6F * out, e * 0.6F * out);
             float s = Mth.frac(p.t() * 0.04F + (energy ? 0.0F : 0.5F));
             float ps = energy ? s : 1.0F - s; // Energie fliesst nach aussen, Items nach innen
             cube(vc, cm, ps * x, -0.42F, 0, 0.022F, 1.0F, 1.0F, 1.0F, e * Mth.sin(ps * Mth.PI));
-            RenderUtil.flatCircle(vc, new Matrix4f(cm).translate(x, -0.49F, 0), 0.32F, 0.01F, 40, col, e * 0.6F * out);
         }
     }
 
@@ -426,7 +356,8 @@ public final class ReactorShellRenderer {
         segment(vc, tm, 6, 12, 0, PANEL_PX - 6, 12, 0, 0.5F, col[0], col[1], col[2], e * 0.6F, e * 0.6F);
         segment(vc, tm, 6, 25, 0, PANEL_PX - 6, 25, 0, 0.4F, col[0], col[1], col[2], e * 0.35F, e * 0.35F);
         // Balken: Puffer und Instabilitaet (Spur + Fuellung)
-        bar(vc, tm, BAR_BUF, p.core().getEnergyPct() / 100.0F, cyan, e);
+        var ctrl = controllerOf(p);
+        if (ctrl == null || !ctrl.hasEnergyPort()) bar(vc, tm, BAR_BUF, p.core().getEnergyPct() / 100.0F, cyan, e);
         bar(vc, tm, BAR_INST, p.core().getInstability() / 100.0F, warn, e);
         // feine Scanlinie
         float sv = Mth.frac(p.t() * 0.012F) * 108.0F;
@@ -464,17 +395,12 @@ public final class ReactorShellRenderer {
     }
 
     private static boolean flies(Params p, ShellCell c) {
-        // Ports bleiben als echte Anschlussbloecke stehen
         BlockState s = p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz()));
         // fremde Bloecke (z. B. Rohre an den Andockstellen der Konsole) gehoeren nicht zur Struktur
         if (!net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getNamespace().equals(dr4kun3.cosmiccore.CosmicCore.MODID)) {
             return false;
         }
-        if (s.hasProperty(dr4kun3.cosmiccore.block.ModProperties.CONSOLE)
-                && s.getValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE) != dr4kun3.cosmiccore.block.ConsoleSide.NONE) {
-            return true; // Teil der Steuerkonsole: verwandelt sich zusammen mit dem Controller
-        }
-        return !s.is(ModBlocks.ENERGY_PORT.get()) && !s.is(ModBlocks.ITEM_PORT.get());
+        return true; // auch die Ports verwandeln sich und kehren als Stationen zurueck
     }
 
     // ------------------------------------------------------------------ Pass 1: Konsole und eingesaugte Bloecke

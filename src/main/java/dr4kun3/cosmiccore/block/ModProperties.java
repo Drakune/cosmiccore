@@ -18,5 +18,8 @@ public final class ModProperties {
     /** Port gehoert zu einer Steuerkonsole (Blickrichtung des Controllers) oder steht allein. */
     public static final EnumProperty<ConsoleSide> CONSOLE = EnumProperty.create("console", ConsoleSide.class);
 
+    /** Port der Steuerkonsole: an seiner Aussenseite ist etwas angedockt (Rohr, Kabel ...) - erst dann zeigt er die Buchse. */
+    public static final BooleanProperty DOCKED = BooleanProperty.create("docked");
+
     private ModProperties() {}
 }

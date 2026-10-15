@@ -28,6 +28,36 @@ public final class Terminal {
                 && level.getBlockState(controller.relative(left(facing))).is(ModBlocks.ITEM_PORT.get());
     }
 
+    /** Aussenseite eines Konsolen-Ports (vom Controller weg). */
+    public static Direction outer(ConsoleSide console, boolean energy) {
+        Direction facing = console.direction();
+        if (facing == null) return Direction.UP;
+        return energy ? right(facing) : left(facing);
+    }
+
+    /** Ist an der Aussenseite etwas angedockt: Block mit passender Schnittstelle oder ein Block einer anderen Mod? */
+    public static boolean docked(net.minecraft.world.level.LevelAccessor level, BlockPos port, ConsoleSide console, boolean energy) {
+        if (console == ConsoleSide.NONE) return false;
+        Direction out = outer(console, energy);
+        BlockPos n = port.relative(out);
+        BlockState s = level.getBlockState(n);
+        if (s.isAir()) return false;
+        String ns = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getNamespace();
+        if (ns.equals(dr4kun3.cosmiccore.CosmicCore.MODID)) return false;
+        if (!ns.equals("minecraft")) return true;
+        if (level instanceof net.minecraft.world.level.Level l) {
+            return energy ? l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, n, out.getOpposite()) != null
+                    : l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, n, out.getOpposite()) != null;
+        }
+        return false;
+    }
+
+    /** Zustand eines Ports aus seiner Umgebung (Konsole und Andocken). */
+    public static BlockState portState(BlockState state, net.minecraft.world.level.LevelAccessor level, BlockPos pos, boolean energy) {
+        ConsoleSide console = consoleFor(level, pos, energy);
+        return state.setValue(ModProperties.CONSOLE, console).setValue(ModProperties.DOCKED, docked(level, pos, console, energy));
+    }
+
     /** Zu welcher Konsole gehoert dieser Port (Blickrichtung des Controllers) - oder keiner. */
     public static ConsoleSide consoleFor(BlockGetter level, BlockPos port, boolean energy) {
         for (Direction d : Direction.Plane.HORIZONTAL) {

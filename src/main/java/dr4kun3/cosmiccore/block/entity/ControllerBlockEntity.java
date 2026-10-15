@@ -93,6 +93,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private ItemStack clientFuel = ItemStack.EMPTY, clientStab = ItemStack.EMPTY;
     private int clientLoot;
     private int consoleSignature;
+    private final java.util.List<ItemStack> clientLootItems = new java.util.ArrayList<>();
+    /** Restlaufzeit in Sekunden bei den aktuellen Einstellungen (jede Sekunde neu berechnet); siehe TIME_*. */
+    private int fuelSeconds = TIME_NONE, stabSeconds = TIME_NONE;
+    /** Gibt es einen Energie-Port in der Struktur? Dann zeigt der Controller Brennstoff statt Leistung/Puffer. */
+    private boolean energyPort;
+    /** Sonderwerte der Restlaufzeit: nicht berechenbar, pausiert (Puffer voll), abgeschaltet. 0 = leer. */
+    public static final int TIME_NONE = -1, TIME_PAUSED = -2, TIME_OFF = -3;
     private final IItemHandler itemView = new InsertOnlyView();
     private final IEnergyStorage energyView = new EnergyView();
     private final ContainerData dataAccess = new DataAccess();
@@ -499,10 +506,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             antiAsteroid = false; // Modul entnommen: Abwehr aus, Asteroiden erscheinen wieder
             setChanged();
         }
+        if (level.getGameTime() % 20 == 0) {
+            updateForecast(level);
+            energyPort = formed && scanEnergyPort(level);
+        }
         if (formed && level.getGameTime() % 20 == 0) {
-            // Inhalt fuer die Konsolenfluegel nur bei Aenderung senden
+            // Inhalt fuer Konsole und Port-Stationen nur bei Aenderung senden
             int sig = java.util.Objects.hash(inventory.getStackInSlot(SLOT_FUEL).getItem(), inventory.getStackInSlot(SLOT_FUEL).getCount(),
-                    inventory.getStackInSlot(SLOT_STAB).getItem(), inventory.getStackInSlot(SLOT_STAB).getCount(), lootCount());
+                    inventory.getStackInSlot(SLOT_STAB).getItem(), inventory.getStackInSlot(SLOT_STAB).getCount(), lootCount(),
+                    fuelSeconds, stabSeconds, energyPort, lootSignature());
             if (sig != consoleSignature) {
                 consoleSignature = sig;
                 changedAndSync();
@@ -1378,7 +1390,86 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (!inventory.getStackInSlot(SLOT_FUEL).isEmpty()) tag.put("fuel", inventory.getStackInSlot(SLOT_FUEL).save(registries));
         if (!inventory.getStackInSlot(SLOT_STAB).isEmpty()) tag.put("stab", inventory.getStackInSlot(SLOT_STAB).save(registries));
         tag.putInt("loot", lootCount());
+        tag.putInt("fuelSec", fuelSeconds);
+        tag.putInt("stabSec", stabSeconds);
+        tag.putBoolean("energyPort", energyPort);
+        net.minecraft.nbt.ListTag lootList = new net.minecraft.nbt.ListTag();
+        for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) {
+            ItemStack st = inventory.getStackInSlot(i);
+            if (!st.isEmpty()) lootList.add(st.save(registries));
+        }
+        tag.put("lootItems", lootList);
         return tag;
+    }
+
+    private int lootSignature() {
+        int h = 0;
+        for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) h = h * 31 + inventory.getStackInSlot(i).getItem().hashCode();
+        return h;
+    }
+
+    private boolean scanEnergyPort(ServerLevel level) {
+        CorePattern p = pattern();
+        if (p == null) return false;
+        boolean[] found = {false};
+        p.forEach(center(level), (pos, cell) -> {
+            if (!found[0] && (cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT) && level.hasChunkAt(pos)
+                    && level.getBlockState(pos).is(ModBlocks.ENERGY_PORT.get())) {
+                found[0] = true;
+            }
+        });
+        return found[0];
+    }
+
+    /**
+     * Wie lange reichen Brennstoff und Stabilisator bei der aktuellen Stufe, Overdrive, Modulen und Umgebung?
+     * Brennstoff: Restbrenndauer / Verbrauch pro Tick. Stabilisator: Feldpunkte / Hitze pro Tick (im Gleichgewicht
+     * verbraucht das Feld genau so viel, wie die Reaktion an Instabilitaet erzeugt).
+     */
+    private void updateForecast(ServerLevel level) {
+        if (!formed || !enabled || collapseCooldown > 0 || size == null) {
+            fuelSeconds = stabSeconds = TIME_OFF;
+            return;
+        }
+        ItemStack fuelStack = inventory.getStackInSlot(SLOT_FUEL);
+        CoreFuel slotFuel = ModDataMaps.fuel(fuelStack);
+        long units = Math.max(0, burnTime) + (slotFuel == null ? 0L : (long) fuelStack.getCount() * slotFuel.burnTime());
+        float perTick = scale * fuelUseFactor();
+        if (energy >= getCapacity()) {
+            fuelSeconds = stabSeconds = TIME_PAUSED;
+            return;
+        }
+        fuelSeconds = units <= 0 ? 0 : (int) Math.min(Integer.MAX_VALUE, Math.ceil(units / Math.max(1e-6, perTick) / 20.0));
+        // Hitze der laufenden (sonst der naechsten) Ladung
+        int power = burnTime > 0 ? burnPower : slotFuel != null ? slotFuel.power() : 0;
+        float heat = burnTime > 0 ? burnHeat : slotFuel != null ? slotFuel.heat() : 0f;
+        double gain = CoreConfig.INSTABILITY_RATE.get() * (power / 1000.0) * heat * instabilityScale() * cosmicInstability(level)
+                * stabilityFactor();
+        if (instability > UNSTABLE_ON) gain *= 0.4;
+        ItemStack stabStack = inventory.getStackInSlot(SLOT_STAB);
+        CoreStabilizer stab = ModDataMaps.stabilizer(stabStack);
+        double points = Math.max(0f, field) + (stab == null ? 0.0 : stabStack.getCount() * stabilizerPoints(stab) * size.stabilizerFactor());
+        if (units <= 0 || gain <= 0) {
+            stabSeconds = points <= 0 ? 0 : TIME_NONE;
+        } else {
+            stabSeconds = points <= 0 ? 0 : (int) Math.min(Integer.MAX_VALUE, Math.ceil(points / gain / 20.0));
+        }
+    }
+
+    public int getFuelSeconds() {
+        return fuelSeconds;
+    }
+
+    public int getStabSeconds() {
+        return stabSeconds;
+    }
+
+    public boolean hasEnergyPort() {
+        return energyPort;
+    }
+
+    public java.util.List<ItemStack> getClientLootItems() {
+        return clientLootItems;
     }
 
     private int lootCount() {
@@ -1409,6 +1500,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         clientFuel = tag.contains("fuel") ? ItemStack.parseOptional(registries, tag.getCompound("fuel")) : ItemStack.EMPTY;
         clientStab = tag.contains("stab") ? ItemStack.parseOptional(registries, tag.getCompound("stab")) : ItemStack.EMPTY;
         clientLoot = tag.getInt("loot");
+        fuelSeconds = tag.contains("fuelSec") ? tag.getInt("fuelSec") : TIME_NONE;
+        stabSeconds = tag.contains("stabSec") ? tag.getInt("stabSec") : TIME_NONE;
+        energyPort = tag.getBoolean("energyPort");
+        clientLootItems.clear();
+        for (net.minecraft.nbt.Tag t : tag.getList("lootItems", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+            ItemStack st = ItemStack.parseOptional(registries, (CompoundTag) t);
+            if (!st.isEmpty()) clientLootItems.add(st);
+        }
     }
 
     @Override
@@ -1510,6 +1609,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 case ControllerMenu.D_OVERDRIVE -> overdrive;
                 case ControllerMenu.D_MELTDOWN -> meltdown <= 0 ? 0 : (MELTDOWN_TICKS - meltdown) / 20 + 1;
                 case ControllerMenu.D_ERRORS -> lastReport == null || formed ? 0 : Math.min(32767, lastReport.mismatches());
+                case ControllerMenu.D_FUEL_TIME_LO -> fuelSeconds & 0xFFFF;
+                case ControllerMenu.D_FUEL_TIME_HI -> fuelSeconds >>> 16;
+                case ControllerMenu.D_STAB_TIME_LO -> stabSeconds & 0xFFFF;
+                case ControllerMenu.D_STAB_TIME_HI -> stabSeconds >>> 16;
                 default -> 0;
             };
         }

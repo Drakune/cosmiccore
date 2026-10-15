@@ -77,26 +77,40 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         if (st <= 0.0F) return;
 
         boolean energy = state.is(ModBlocks.ENERGY_PORT.get());
-        net.minecraft.core.Direction console = state.getValue(ModProperties.CONSOLE).direction();
-        if (console != null) return; // Seitenfluegel der Steuerkonsole: zeichnet der Kern mit der Konsole (ReactorShellRenderer)
-        BakedModel model = Minecraft.getInstance().getModelManager().getModel(plugModel(energy, phase));
+        if (state.getValue(ModProperties.CONSOLE).direction() != null) return; // Fluegel der Steuerkonsole: zeichnet der Kern
+        // Station: wie die Konsole waechst sie nach dem Formen federnd aus ihrem Sockel, Bildschirm nach aussen gewandt
+        ControllerBlockEntity ctrl = null;
+        SingularityCoreBlockEntity core = null;
+        float yaw = 0.0F;
+        BlockPos cpos = be.getControllerPos();
+        if (cpos != null && level.getBlockEntity(cpos) instanceof ControllerBlockEntity c && c.getSize() != null
+                && level.getBlockState(cpos).hasProperty(ControllerBlock.FACING)) {
+            ctrl = c;
+            BlockPos center = c.getSize().pattern().center(cpos, level.getBlockState(cpos).getValue(ControllerBlock.FACING));
+            if (level.getBlockEntity(center) instanceof SingularityCoreBlockEntity sc) core = sc;
+            BlockPos p = be.getBlockPos();
+            yaw = (float) Math.atan2(p.getX() - center.getX(), p.getZ() - center.getZ());
+        }
+        float t = level.getGameTime() + partialTick;
+        float bright = core == null ? 0.6F : Math.max(0.6F, phase == CorePhase.FORMED ? 0.6F : 1.0F);
+        PortStation.Data data = new PortStation.Data(ctrl, core, t, bright);
+        int conn = PortStation.connections(level, be, energy);
         float sc = SingularityCoreBlockEntity.easeOutBack(st);
         pose.pushPose();
-        pose.translate(0.5F, 0.5F, 0.5F);
-        pose.mulPose(Axis.YP.rotationDegrees((1.0F - st) * 270.0F));
+        pose.translate(0.5F, 0.0F, 0.5F);
         pose.scale(sc, sc, sc);
-        pose.translate(-0.5F, -0.5F, -0.5F);
-        Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(pose.last(),
-                buffers.getBuffer(RenderType.cutout()), state, model, 1.0F, 1.0F, 1.0F, light, overlay, ModelData.EMPTY, RenderType.cutout());
+        pose.translate(0.0F, 0.5F, 0.0F);
+        pose.mulPose(Axis.YP.rotation(yaw));
+        PortStation.solid(pose, buffers, level, state, energy, conn, yaw, 0.0F, Math.min(1.0F, st), data);
+        PortStation.glow(new Matrix4f(pose.last().pose()), buffers.getBuffer(CosmicRenderTypes.glow()), energy, conn, yaw, 0.0F,
+                Math.min(1.0F, st), data);
         pose.popPose();
-
         if (st < 1.0F) {
             float[] col = energy ? ENERGY : ITEM;
             VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
             Matrix4f m = new Matrix4f(pose.last().pose()).translate(0.5F, 0.5F, 0.5F);
             RenderUtil.glowSphere(glow, m, 0.3F + 0.5F * st, 8, 12, col, 0.6F * (1.0F - st));
             RenderUtil.glowSphere(glow, m, 0.15F + 0.2F * st, 6, 10, new float[]{1, 1, 1}, 0.8F * (1.0F - st));
-            RenderUtil.flatCircle(glow, new Matrix4f(m).translate(0, -0.5F + st, 0), 0.6F, 0.03F, 32, col, 1.0F - st);
         }
     }
 }

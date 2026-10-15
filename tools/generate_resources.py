@@ -856,17 +856,22 @@ def models():
         # Energie-Port rechts vom Controller (von vorn) = im Modell westlich, Item-Port links = oestlich
         wjson(f'{ASSETS}/models/block/energy_port_terminal_{p}.json', terminal('terminal_right', p, 'west'))
         wjson(f'{ASSETS}/models/block/item_port_terminal_{p}.json', terminal('terminal_left', p, 'east'))
+        # ohne angedocktes Rohr: Aussenseite schlicht (Gehaeuse), die Buchse erscheint erst beim Andocken
+        wjson(f'{ASSETS}/models/block/energy_port_terminal_plain_{p}.json', terminal('terminal_right', p))
+        wjson(f'{ASSETS}/models/block/item_port_terminal_plain_{p}.json', terminal('terminal_left', p))
     sides = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
     for b in ('energy_port', 'item_port'):
         variants = {}
         for p in PHASES:
-            variants[f'console=none,phase={p}'] = {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'}
-            for side, y in sides.items():
-                # gebildet: der PortRenderer zeichnet das Seitenteil (mit Einrasten und Lichtleitung)
-                e = {'model': f'{MOD}:block/{b}_terminal_dormant' if p == 'dormant' else f'{MOD}:block/{b}_hidden'}
-                if y and p == 'dormant':
-                    e['y'] = y
-                variants[f'console={side},phase={p}'] = e
+            for dock in ('false', 'true'):
+                variants[f'console=none,docked={dock},phase={p}'] = {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'}
+                for side, y in sides.items():
+                    # gebildet: Station bzw. Konsolenfluegel werden gerendert
+                    name = f'{b}_terminal_dormant' if dock == 'true' else f'{b}_terminal_plain_dormant'
+                    e = {'model': f'{MOD}:block/{name}' if p == 'dormant' else f'{MOD}:block/{b}_hidden'}
+                    if y and p == 'dormant':
+                        e['y'] = y
+                    variants[f'console={side},docked={dock},phase={p}'] = e
         wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
 
     # Glas (transluzent)
@@ -1034,7 +1039,11 @@ DE = {
     'gui.cosmiccore.output': 'Leistung: %s RF/t',
     'gui.cosmiccore.energy': 'Energie: %s / %s RF',
     'gui.cosmiccore.instability': 'Instabilität: %s %%',
-    'gui.cosmiccore.cosmic': 'Kosmischer Faktor: x%s',
+    'gui.cosmiccore.cosmic': 'Kosmos-Faktor: x%s',
+    'gui.cosmiccore.fuel_label': 'Brennstoff',
+    'gui.cosmiccore.stab_label': 'Stabilisator',
+    'gui.cosmiccore.out_label': 'Leistung',
+    'gui.cosmiccore.buf_label': 'Puffer',
     'gui.cosmiccore.sky_on': '✦ Himmel: frei',
     'gui.cosmiccore.sky_off': '✧ Himmel: verdeckt',
     'gui.cosmiccore.size': 'Reaktor: %sx%sx%s',
@@ -1072,7 +1081,7 @@ DE = {
     'entity.cosmiccore.large_asteroid': 'Großer Asteroid',
     'entity.cosmiccore.huge_asteroid': 'Sehr großer Asteroid',
     'jei.cosmiccore.loot.huge': 'Sehr großer Asteroid',
-    'gui.cosmiccore.funnel_on': '✦ Sternentrichter: aktiv',
+    'gui.cosmiccore.funnel_on': '✦ Trichter: aktiv',
     'guide.cosmiccore.page.11': '§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.',
     'guide.cosmiccore.page.12': '§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über Reaktoren hinweg - klein, mittel, groß und selten sehr groß.\n\nSie liefern keine Energie, sondern Beute: Rohstoffe und Brennstoffe für den Controller.',
     'guide.cosmiccore.page.13': '§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie werden zu kreisenden Energiepartikeln, die Asteroiden heranziehen und ihre Beute sammeln - auch ohne Brennstoff.',
@@ -1107,6 +1116,10 @@ DE = {
     'console.cosmiccore.fuel': 'Brennstoff',
     'console.cosmiccore.stabilizer': 'Stabilisator',
     'console.cosmiccore.loot': 'Beute',
+    'console.cosmiccore.slots': 'Plätze',
+    'console.cosmiccore.paused': 'pausiert',
+    'console.cosmiccore.off': 'aus',
+    'console.cosmiccore.empty': 'leer',
     'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
     'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-10, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Ultimate-Modus weckt den Void-Titanen in einem anderen Universum - solange der Modus läuft, fällt sein Strahl in den Trichter.',
     'item.cosmiccore.compressed_star_dust': 'Verdichteter Sternenstaub',
@@ -1288,6 +1301,10 @@ EN = {
     'gui.cosmiccore.energy': 'Energy: %s / %s RF',
     'gui.cosmiccore.instability': 'Instability: %s %%',
     'gui.cosmiccore.cosmic': 'Cosmic factor: x%s',
+    'gui.cosmiccore.fuel_label': 'Fuel',
+    'gui.cosmiccore.stab_label': 'Stabilizer',
+    'gui.cosmiccore.out_label': 'Output',
+    'gui.cosmiccore.buf_label': 'Buffer',
     'gui.cosmiccore.sky_on': '✦ Sky: clear',
     'gui.cosmiccore.sky_off': '✧ Sky: blocked',
     'gui.cosmiccore.size': 'Reactor: %sx%sx%s',
@@ -1360,6 +1377,10 @@ EN = {
     'console.cosmiccore.fuel': 'Fuel',
     'console.cosmiccore.stabilizer': 'Stabilizer',
     'console.cosmiccore.loot': 'Loot',
+    'console.cosmiccore.slots': 'Slots',
+    'console.cosmiccore.paused': 'paused',
+    'console.cosmiccore.off': 'off',
+    'console.cosmiccore.empty': 'empty',
     'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
     'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-10, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first Ultimate mode awakens the Void Titan in another universe - while the mode runs, its beam falls into the funnel.',
     'item.cosmiccore.compressed_star_dust': 'Compressed Star Dust',

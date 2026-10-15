@@ -26,23 +26,32 @@ public final class CutsceneTestHarness {
     private static volatile net.minecraft.core.BlockPos testCore;
 
     private static net.minecraft.world.entity.Marker cam;
+    private static net.minecraft.core.BlockPos consoleAt;
     private static final boolean CONSOLE = System.getProperty("cosmiccore.consoleTest") != null;
 
     private CutsceneTestHarness() {}
 
-    /** Konsolen-Test: Kreativ-Bau (gebildet) und eine von Hand gesetzte Konsole (ruhend), Ansichten von vorn und von der Seite. */
+    /** Konsolen-Test: Kreativ-Bau (gebildet, mit Trichter am Item-Port), einzelne Ports, eine ruhende Konsole und das Menue. */
     private static void consoleTest(Minecraft mc) {
         var server = mc.getSingleplayerServer();
         if (server == null) return;
-        net.minecraft.core.BlockPos at = mc.player.blockPosition().offset(0, 0, -18);
+        if (consoleAt == null) consoleAt = mc.player.blockPosition().offset(0, 0, -18);
+        net.minecraft.core.BlockPos at = consoleAt;
         net.minecraft.core.BlockPos manual = at.offset(-16, 0, 0);
-        int[][] views = {{0, 1, -5, 0, 12}, {0, 2, -3, 0, 35}, {-5, 1, -3, -60, 10}, {5, 1, -3, 60, 10}};
+        // Kamera relativ zum Controller: x, y, z, Blickrichtung, Neigung
+        int[][] views = {{0, 1, -5, 0, 12}, {5, 1, -3, 60, 10}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
         if (worldTicks == 20) {
             server.execute(() -> {
                 var level = server.getLevel(mc.player.level().dimension());
                 if (level == null) return;
                 dr4kun3.cosmiccore.block.entity.ControllerBlockEntity.debugSetupUltimate(level, at);
                 level.setDayTime(6000);
+                // einzelne Ports in der Mitte der gegenueberliegenden Bodenkante, ein Trichter dockt am Item-Port der Konsole an
+                net.minecraft.core.BlockPos south = at.south(10);
+                level.setBlock(south.west(), dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState(), 3);
+                level.setBlock(south.east(), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
+                level.setBlock(south.east().south(), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
+                level.setBlock(at.east(2), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
                 // von Hand: erst der Controller, dann die Ports wie beim Platzieren durch einen Spieler
                 level.setBlock(manual, dr4kun3.cosmiccore.block.ModBlocks.CONTROLLER.get().defaultBlockState(), 3);
                 var right = manual.relative(dr4kun3.cosmiccore.block.Terminal.right(net.minecraft.core.Direction.NORTH));
@@ -51,30 +60,46 @@ public final class CutsceneTestHarness {
                         dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState(), level, right), 3);
                 level.setBlock(left, net.minecraft.world.level.block.Block.updateFromNeighbourShapes(
                         dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), level, left), 3);
-                for (var pos : new net.minecraft.core.BlockPos[]{at, at.west(), at.east(), at.west(2), at.east(2), manual, right, left}) {
+                level.setBlock(left.east(), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
+            });
+        }
+        if (worldTicks == 200) {
+            server.execute(() -> {
+                var level = server.getLevel(mc.player.level().dimension());
+                for (var pos : new net.minecraft.core.BlockPos[]{at, at.west(), at.east(), at.east(2), manual, manual.west(), manual.east()}) {
                     CosmicCore.LOGGER.info("[ConsoleTest] {} = {}", pos, level.getBlockState(pos));
                 }
-                CosmicCore.LOGGER.info("[ConsoleTest] Energie-Cap West={} Item-Cap Ost={}",
-                        level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, at.west(), net.minecraft.core.Direction.WEST) != null,
-                        level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, at.east(), net.minecraft.core.Direction.EAST) != null);
+                if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) {
+                    CosmicCore.LOGGER.info("[ConsoleTest] fuel={}s stab={}s energyPort={}", c.getFuelSeconds(), c.getStabSeconds(), c.hasEnergyPort());
+                }
             });
         }
         if (worldTicks == 15 || worldTicks >= 300 && (worldTicks - 300) % 40 == 0) {
             int v = worldTicks == 15 ? 0 : (worldTicks - 300) / 40;
-            if (v >= views.length * 2) return;
-            int[] view = views[v % views.length];
-            net.minecraft.core.BlockPos base = v < views.length ? at : manual;
-            if (cam == null) cam = net.minecraft.world.entity.EntityType.MARKER.create(mc.level);
-            double x = base.getX() + 0.5 + view[0], y = base.getY() + view[1] + 0.2, z = base.getZ() + 0.5 + view[2];
-            cam.setPos(x, y, z);
-            cam.xo = cam.xOld = x;
-            cam.yo = cam.yOld = y;
-            cam.zo = cam.zOld = z;
-            cam.setYRot(view[3]);
-            cam.yRotO = view[3];
-            cam.setXRot(view[4]);
-            cam.xRotO = view[4];
-            mc.setCameraEntity(cam);
+            if (v < views.length) {
+                int[] view = views[v];
+                if (cam == null) cam = net.minecraft.world.entity.EntityType.MARKER.create(mc.level);
+                double x = at.getX() + 0.5 + view[0], y = at.getY() + view[1] + 0.2, z = at.getZ() + 0.5 + view[2];
+                cam.setPos(x, y, z);
+                cam.xo = cam.xOld = x;
+                cam.yo = cam.yOld = y;
+                cam.zo = cam.zOld = z;
+                cam.setYRot(view[3]);
+                cam.yRotO = view[3];
+                cam.setXRot(view[4]);
+                cam.xRotO = view[4];
+                mc.setCameraEntity(cam);
+            } else if (v == views.length) {
+                mc.setCameraEntity(mc.player);
+                mc.options.guiScale().set(1);
+                mc.resizeDisplay();
+                server.execute(() -> {
+                    var sp = server.getPlayerList().getPlayers().get(0);
+                    var level = sp.serverLevel();
+                    sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, 0, 20);
+                    if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at);
+                });
+            }
         }
         if (worldTicks >= 24 && worldTicks < 300 && worldTicks % 8 == 0) {
             mc.options.hideGui = true;
@@ -82,9 +107,9 @@ public final class CutsceneTestHarness {
         }
         if (worldTicks >= 330 && (worldTicks - 330) % 40 == 0) {
             int v = (worldTicks - 330) / 40;
-            mc.options.hideGui = true;
+            mc.options.hideGui = v < views.length;
             Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.getMainRenderTarget(), msg -> {});
-            if (v >= views.length * 2 - 1) {
+            if (v >= views.length) {
                 finished = true;
                 mc.stop();
             }

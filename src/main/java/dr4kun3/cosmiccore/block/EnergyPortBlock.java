@@ -17,24 +17,25 @@ public class EnergyPortBlock extends Block implements EntityBlock {
     public EnergyPortBlock(Properties props) {
         super(props);
         registerDefaultState(stateDefinition.any().setValue(ModProperties.PHASE, CorePhase.DORMANT)
-                .setValue(ModProperties.CONSOLE, ConsoleSide.NONE));
+                .setValue(ModProperties.CONSOLE, ConsoleSide.NONE)
+                .setValue(ModProperties.DOCKED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(ModProperties.PHASE, ModProperties.CONSOLE);
+        builder.add(ModProperties.PHASE, ModProperties.CONSOLE, ModProperties.DOCKED);
     }
 
     @Override
     public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
-        return defaultBlockState().setValue(ModProperties.CONSOLE, Terminal.consoleFor(ctx.getLevel(), ctx.getClickedPos(), true));
+        return Terminal.portState(defaultBlockState(), ctx.getLevel(), ctx.getClickedPos(), true);
     }
 
     /** Nachbar geaendert: gehoert der Port (noch) zu einer Steuerkonsole? */
     @Override
     protected BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighbor,
                                      net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        return state.setValue(ModProperties.CONSOLE, Terminal.consoleFor(level, pos, true));
+        return Terminal.portState(state, level, pos, true);
     }
 
     @Nullable
