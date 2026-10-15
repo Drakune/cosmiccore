@@ -358,8 +358,8 @@ public final class ReactorShellRenderer {
     }
 
     /**
-     * Y-Strahl der Steuerkonsole: ein Stamm vom Kern bis ueber die Konsole, dort gabelt er sich zum Controller und zu
-     * jedem Port auf der Kante. Die Aeste enden oben hinter den Bildschirmen (sie kreuzen sie nicht).
+     * Y-Strahl der Steuerkonsole: ein Stamm vom Kern bis hinter die Konsole, dort gabelt er sich zum Controller und zu
+     * den Ports direkt daneben. Gabelung und Aeste liegen hinter den Bildschirmen und werden von ihnen verdeckt.
      * Lichtkugeln fliegen den Stamm hinab und verteilen sich auf die Aeste.
      */
     private static void yBridge(Matrix4f m, VertexConsumer vc, Params p, ShellCell c, float[] top, float[] col) {
@@ -369,16 +369,16 @@ public final class ReactorShellRenderer {
         Vector3f back = new Vector3f(-Mth.sin(yaw), 0, -Mth.cos(yaw)); // lokales -Z: hinter den Bildschirmen, zum Kern
         Vector3f base = new Vector3f(c.dx(), c.dy(), c.dz());
         Vector3f a = new Vector3f(top[0], top[1], top[2]);
-        Vector3f j = new Vector3f(base).add(0, 1.6F, 0).add(new Vector3f(back).mul(0.45F)); // Gabelung ueber der Konsole
+        Vector3f j = new Vector3f(base).add(0, 0.3F, 0).add(new Vector3f(back).mul(0.75F)); // Gabelung hinter den Bildschirmen
         float out = wingOut(p);
         List<EdgePort> ports = edgePorts(p, c);
         List<Vector3f> ends = new ArrayList<>();
         List<float[]> cols = new ArrayList<>();
-        ends.add(new Vector3f(base).add(0, 0.72F, 0).add(new Vector3f(back).mul(0.28F)));
+        ends.add(new Vector3f(base).add(0, 0.25F, 0).add(new Vector3f(back).mul(0.3F)));
         cols.add(col);
         if (out > 0.02F) {
             for (EdgePort ep : ports) {
-                ends.add(new Vector3f(base).add(new Vector3f(side).mul(ep.k() * out)).add(0, 0.72F, 0).add(new Vector3f(back).mul(0.28F)));
+                ends.add(new Vector3f(base).add(new Vector3f(side).mul(ep.k() * out)).add(0, 0.25F, 0).add(new Vector3f(back).mul(0.3F)));
                 cols.add(ep.energy() ? ENERGY_GLYPH : ITEM_GLYPH);
             }
         }
@@ -496,7 +496,7 @@ public final class ReactorShellRenderer {
                     boolean full2 = k < used;
                     float[] cc = full2 && used >= slots ? new float[]{1.0F, 0.35F, 0.35F} : sc;
                     float al = full2 ? a : a * 0.15F;
-                    segment(vc, sm, bx + 0.8F, by, 0, bx + cw - 0.8F, by, 0, 6.0F, cc[0], cc[1], cc[2], al, al);
+                    segment(vc, sm, bx + 0.8F, by, 0, bx + cw - 0.8F, by, 0, 3.0F, cc[0], cc[1], cc[2], al, al);
                 }
             }
         }

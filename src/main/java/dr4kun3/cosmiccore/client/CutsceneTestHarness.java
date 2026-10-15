@@ -39,7 +39,7 @@ public final class CutsceneTestHarness {
         net.minecraft.core.BlockPos at = consoleAt;
         net.minecraft.core.BlockPos manual = at.offset(-16, 0, 0);
         // Kamera relativ zum Controller: x, y, z, Blickrichtung, Neigung
-        int[][] views = {{1, 2, -7, 0, 14}, {6, 1, -3, 60, 10}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
+        int[][] views = {{1, 2, -7, 0, 14}, {0, 3, 4, 180, 30}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
         if (worldTicks == 20) {
             server.execute(() -> {
                 var level = server.getLevel(mc.player.level().dimension());
