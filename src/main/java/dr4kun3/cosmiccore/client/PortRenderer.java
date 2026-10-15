@@ -78,10 +78,7 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
 
         boolean energy = state.is(ModBlocks.ENERGY_PORT.get());
         net.minecraft.core.Direction console = state.getValue(ModProperties.CONSOLE).direction();
-        if (console != null) {
-            terminal(be, state, phase, energy, console, st, level, pose, buffers, light, overlay);
-            return;
-        }
+        if (console != null) return; // Seitenfluegel der Steuerkonsole: zeichnet der Kern mit der Konsole (ReactorShellRenderer)
         BakedModel model = Minecraft.getInstance().getModelManager().getModel(plugModel(energy, phase));
         float sc = SingularityCoreBlockEntity.easeOutBack(st);
         pose.pushPose();
@@ -100,51 +97,6 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
             RenderUtil.glowSphere(glow, m, 0.3F + 0.5F * st, 8, 12, col, 0.6F * (1.0F - st));
             RenderUtil.glowSphere(glow, m, 0.15F + 0.2F * st, 6, 10, new float[]{1, 1, 1}, 0.8F * (1.0F - st));
             RenderUtil.flatCircle(glow, new Matrix4f(m).translate(0, -0.5F + st, 0), 0.6F, 0.03F, 32, col, 1.0F - st);
-        }
-    }
-
-    /**
-     * Seitenteil der Steuerkonsole: bleibt als massiver Block stehen (Rohre docken aussen an) und ist ueber eine
-     * Lichtleitung mit dem schwebenden Bildschirm des Controllers verbunden.
-     */
-    private static void terminal(PortBlockEntity be, BlockState state, CorePhase phase, boolean energy, net.minecraft.core.Direction facing,
-                                 float st, Level level, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
-        BakedModel model = Minecraft.getInstance().getModelManager().getModel(terminalModel(energy, phase));
-        float yRot = switch (facing) {
-            case EAST -> 90.0F;
-            case SOUTH -> 180.0F;
-            case WEST -> 270.0F;
-            default -> 0.0F;
-        };
-        // waehrend des Formens: kurzes Einrasten (leichtes Nachfedern statt Drehen)
-        float sc = 0.85F + 0.15F * SingularityCoreBlockEntity.easeOutBack(st);
-        pose.pushPose();
-        pose.translate(0.5F, 0.5F, 0.5F);
-        pose.mulPose(Axis.YP.rotationDegrees(-yRot));
-        pose.scale(sc, sc, sc);
-        pose.translate(-0.5F, -0.5F, -0.5F);
-        Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(pose.last(),
-                buffers.getBuffer(RenderType.cutout()), state, model, 1.0F, 1.0F, 1.0F, light, overlay, ModelData.EMPTY, RenderType.cutout());
-        pose.popPose();
-
-        // Lichtleitung zum Controller-Sockel und Energiefluss darin
-        float[] col = energy ? ENERGY : ITEM;
-        net.minecraft.core.Direction toController = energy ? facing.getClockWise() : facing.getCounterClockWise();
-        float dx = toController.getStepX(), dz = toController.getStepZ();
-        float t = level.getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
-        VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
-        Matrix4f m = pose.last().pose();
-        float y = 0.22F, a = st;
-        float x0 = 0.5F + dx * 0.5F, z0 = 0.5F + dz * 0.5F, x1 = 0.5F + dx * 1.35F, z1 = 0.5F + dz * 1.35F;
-        RenderUtil.segment(glow, m, x0, y, z0, x1, y, z1, 0.05F, col[0], col[1], col[2], 0.5F * a, 0.3F * a);
-        RenderUtil.segment(glow, m, x0, y, z0, x1, y, z1, 0.015F, 1.0F, 1.0F, 1.0F, 0.9F * a, 0.6F * a);
-        float s = net.minecraft.util.Mth.frac(t * 0.05F);
-        float ps = energy ? 1.0F - s : s; // Energie fliesst nach aussen, Items nach innen
-        RenderUtil.cube(glow, m, net.minecraft.util.Mth.lerp(ps, x0, x1), y, net.minecraft.util.Mth.lerp(ps, z0, z1), 0.035F,
-                1.0F, 1.0F, 1.0F, a * net.minecraft.util.Mth.sin(ps * net.minecraft.util.Mth.PI));
-        if (st < 1.0F) {
-            Matrix4f c = new Matrix4f(m).translate(0.5F, 0.5F, 0.5F);
-            RenderUtil.glowSphere(glow, c, 0.4F + 0.4F * st, 8, 12, col, 0.5F * (1.0F - st));
         }
     }
 }

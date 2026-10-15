@@ -89,6 +89,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private static final float IDLE_DECAY = 0.05f;      // Abkuehlung pro Tick ohne Verbrennung
 
     private final CoreInventory inventory = new CoreInventory(this::setChanged);
+    /** Fuer die Seitenfluegel der Steuerkonsole: Brennstoff, Stabilisator und Beute (an Clients synchronisiert). */
+    private ItemStack clientFuel = ItemStack.EMPTY, clientStab = ItemStack.EMPTY;
+    private int clientLoot;
+    private int consoleSignature;
     private final IItemHandler itemView = new InsertOnlyView();
     private final IEnergyStorage energyView = new EnergyView();
     private final ContainerData dataAccess = new DataAccess();
@@ -494,6 +498,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (antiAsteroid && !hasAntiAsteroidModule()) {
             antiAsteroid = false; // Modul entnommen: Abwehr aus, Asteroiden erscheinen wieder
             setChanged();
+        }
+        if (formed && level.getGameTime() % 20 == 0) {
+            // Inhalt fuer die Konsolenfluegel nur bei Aenderung senden
+            int sig = java.util.Objects.hash(inventory.getStackInSlot(SLOT_FUEL).getItem(), inventory.getStackInSlot(SLOT_FUEL).getCount(),
+                    inventory.getStackInSlot(SLOT_STAB).getItem(), inventory.getStackInSlot(SLOT_STAB).getCount(), lootCount());
+            if (sig != consoleSignature) {
+                consoleSignature = sig;
+                changedAndSync();
+            }
         }
         if (--checkTimer <= 0) {
             checkTimer = CoreConfig.VALIDATION_INTERVAL.get();
@@ -1362,7 +1375,28 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putBoolean("withFunnel", withFunnel);
         tag.putBoolean("withLasers", withLasers);
         tag.putBoolean("formed", formed);
+        if (!inventory.getStackInSlot(SLOT_FUEL).isEmpty()) tag.put("fuel", inventory.getStackInSlot(SLOT_FUEL).save(registries));
+        if (!inventory.getStackInSlot(SLOT_STAB).isEmpty()) tag.put("stab", inventory.getStackInSlot(SLOT_STAB).save(registries));
+        tag.putInt("loot", lootCount());
         return tag;
+    }
+
+    private int lootCount() {
+        int n = 0;
+        for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) n += inventory.getStackInSlot(i).getCount();
+        return n;
+    }
+
+    public ItemStack getClientFuel() {
+        return clientFuel;
+    }
+
+    public ItemStack getClientStab() {
+        return clientStab;
+    }
+
+    public int getClientLoot() {
+        return clientLoot;
     }
 
     @Override
@@ -1372,6 +1406,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         withFunnel = tag.getBoolean("withFunnel");
         withLasers = tag.getBoolean("withLasers");
         formed = tag.getBoolean("formed");
+        clientFuel = tag.contains("fuel") ? ItemStack.parseOptional(registries, tag.getCompound("fuel")) : ItemStack.EMPTY;
+        clientStab = tag.contains("stab") ? ItemStack.parseOptional(registries, tag.getCompound("stab")) : ItemStack.EMPTY;
+        clientLoot = tag.getInt("loot");
     }
 
     @Override

@@ -59,8 +59,8 @@ public final class CutsceneTestHarness {
                         level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, at.east(), net.minecraft.core.Direction.EAST) != null);
             });
         }
-        if (worldTicks >= 100 && (worldTicks - 100) % 40 == 0) {
-            int v = (worldTicks - 100) / 40;
+        if (worldTicks == 15 || worldTicks >= 300 && (worldTicks - 300) % 40 == 0) {
+            int v = worldTicks == 15 ? 0 : (worldTicks - 300) / 40;
             if (v >= views.length * 2) return;
             int[] view = views[v % views.length];
             net.minecraft.core.BlockPos base = v < views.length ? at : manual;
@@ -76,8 +76,12 @@ public final class CutsceneTestHarness {
             cam.xRotO = view[4];
             mc.setCameraEntity(cam);
         }
-        if (worldTicks >= 130 && (worldTicks - 130) % 40 == 0) {
-            int v = (worldTicks - 130) / 40;
+        if (worldTicks >= 24 && worldTicks < 300 && worldTicks % 8 == 0) {
+            mc.options.hideGui = true;
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_a%03d.png", worldTicks), mc.getMainRenderTarget(), msg -> {});
+        }
+        if (worldTicks >= 330 && (worldTicks - 330) % 40 == 0) {
+            int v = (worldTicks - 330) / 40;
             mc.options.hideGui = true;
             Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.getMainRenderTarget(), msg -> {});
             if (v >= views.length * 2 - 1) {
