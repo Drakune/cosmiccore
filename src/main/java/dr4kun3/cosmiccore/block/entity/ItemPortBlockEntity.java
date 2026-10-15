@@ -89,7 +89,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new ItemPortMenu(id, inv, this);
+        return new ItemPortMenu(id, inv, this, null);
     }
 
     @Override

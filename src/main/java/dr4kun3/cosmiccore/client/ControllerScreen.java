@@ -172,6 +172,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return menu.modulesOpen ? new int[]{MTAB_X, TAB_Y0, TAB_OPEN_W, TAB_OPEN_H} : new int[]{MTAB_X, TAB_Y0, TAB_CLOSED, TAB_CLOSED};
     }
 
+    /** Lager-Tab direkt unter dem Modul-Tab: oeffnet das Lager des Item-Ports. */
+    private int[] storageTabRect() {
+        int[] r = tabRect();
+        return new int[]{MTAB_X, r[1] + r[3] + 2, TAB_CLOSED, TAB_CLOSED};
+    }
+
     private boolean inTabHeader(int mx, int my) {
         return in(mx, my, MTAB_X, TAB_Y0, menu.modulesOpen ? TAB_OPEN_W : TAB_CLOSED, menu.modulesOpen ? 20 : TAB_CLOSED);
     }
@@ -185,6 +191,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fill(tx, ty + 1, tx + r[2] - 1, ty + r[3] - 1, 0xFF120A24);
         g.fill(tx, ty + 1, tx + 1, ty + r[3] - 1, 0xFF1A0F33);
         g.fill(tx + 3, ty + 1, tx + r[2] - 3, ty + 2, PANEL_ACCENT);
+        // Lager-Tab darunter (Truhe)
+        int[] sr = storageTabRect();
+        int sx = x + sr[0], sy = y + sr[1];
+        g.fill(sx, sy, sx + sr[2], sy + sr[3], PANEL_BORDER);
+        g.fill(sx, sy + 1, sx + sr[2] - 1, sy + sr[3] - 1, 0xFF120A24);
+        g.fill(sx, sy + 1, sx + 1, sy + sr[3] - 1, 0xFF1A0F33);
+        g.fill(sx + 3, sy + 1, sx + sr[2] - 3, sy + 2, 0xFFB06A20);
+        g.renderItem(new ItemStack(dr4kun3.cosmiccore.ModItems.ITEM_PORT.get()), sx + 4, sy + 4);
         // Symbol: Effizienz-Modul, darunter ggf. Anzahl installierter Module
         g.renderItem(new ItemStack(dr4kun3.cosmiccore.ModItems.EFFICIENCY_MODULE.get()), tx + 4, ty + 4);
         int installed = 0;
@@ -223,20 +237,31 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     @Override
     protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
-        int[] r = tabRect();
-        if (menu.sizeChosen() && in((int) mouseX - left, (int) mouseY - top, r[0], r[1], r[2], r[3])) return false;
+        int[] r = tabRect(), sr = storageTabRect();
+        if (menu.sizeChosen() && (in((int) mouseX - left, (int) mouseY - top, r[0], r[1], r[2], r[3])
+                || in((int) mouseX - left, (int) mouseY - top, sr[0], sr[1], sr[2], sr[3]))) return false;
         return super.hasClickedOutside(mouseX, mouseY, left, top, button);
     }
 
     /** Bereiche ausserhalb des Fensters (fuer JEI/EMI/REI, damit die Item-Liste den Tab nicht verdeckt). */
     public List<net.minecraft.client.renderer.Rect2i> extraAreas() {
         if (!menu.sizeChosen()) return List.of();
-        int[] r = tabRect();
-        return List.of(new net.minecraft.client.renderer.Rect2i(leftPos + r[0], topPos + r[1], r[2], r[3]));
+        int[] r = tabRect(), sr = storageTabRect();
+        return List.of(new net.minecraft.client.renderer.Rect2i(leftPos + r[0], topPos + r[1], r[2], r[3]),
+                new net.minecraft.client.renderer.Rect2i(leftPos + sr[0], topPos + sr[1], sr[2], sr[3]));
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int[] sr = storageTabRect();
+        if (menu.sizeChosen() && button == 0 && in((int) mouseX - leftPos, (int) mouseY - topPos, sr[0], sr[1], sr[2], sr[3])) {
+            press(ControllerMenu.BTN_STORAGE);
+            if (minecraft != null) {
+                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+            return true;
+        }
         if (menu.sizeChosen() && button == 0 && inTabHeader((int) mouseX - leftPos, (int) mouseY - topPos)) {
             menu.modulesOpen = tabOpen = !menu.modulesOpen;
             if (minecraft != null) {
@@ -743,7 +768,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         List<Component> tip = new ArrayList<>();
         int mx0 = ControllerMenu.MOD_X, mx1 = mx0 + ControllerMenu.MOD_STEP_X, my0 = ControllerMenu.MOD_Y, my1 = my0 + ControllerMenu.MOD_STEP_Y;
         boolean open = menu.modulesOpen;
-        if (inTabHeader(mx, my)) {
+        int[] str = storageTabRect();
+        if (in(mx, my, str[0], str[1], str[2], str[3])) {
+            tip.add(Component.translatable("gui.cosmiccore.storage"));
+            tip.add(Component.translatable("gui.cosmiccore.storage.hint").withStyle(ChatFormatting.GRAY));
+        } else if (inTabHeader(mx, my)) {
             tip.add(Component.translatable("gui.cosmiccore.modules"));
             tip.add(Component.translatable(open ? "gui.cosmiccore.tab.close" : "gui.cosmiccore.tab.open").withStyle(ChatFormatting.GRAY));
         } else if (open && in(mx, my, mx0, my0, 16, 16) && !hasModule(ControllerBlockEntity.SLOT_EFFICIENCY)) {

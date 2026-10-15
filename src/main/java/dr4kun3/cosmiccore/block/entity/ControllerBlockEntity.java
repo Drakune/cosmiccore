@@ -359,6 +359,19 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             return true;
         }
         if (size == null) return false;
+        if (id == ControllerMenu.BTN_STORAGE) {
+            ItemPortBlockEntity port = firstItemPort(sl);
+            if (port == null) return false;
+            BlockPos back = worldPosition;
+            // eigenes Menue mit Rueckweg - beim Schliessen oeffnet der Server wieder diese Steuerung
+            player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                    (cid, inv, pl) -> new dr4kun3.cosmiccore.menu.ItemPortMenu(cid, inv, port, back), port.getDisplayName()), buf -> {
+                buf.writeBlockPos(port.getBlockPos());
+                buf.writeBoolean(true);
+                buf.writeBlockPos(back);
+            });
+            return true;
+        }
         if (id == ControllerMenu.BTN_ANTI_ASTEROID) {
             if (!hasAntiAsteroidModule()) return false; // Schalter ist ohne Modul gesperrt
             antiAsteroid = !antiAsteroid;
@@ -1408,6 +1421,21 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         int h = 0;
         for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) h = h * 31 + inventory.getStackInSlot(i).getItem().hashCode();
         return h;
+    }
+
+    /** Erster Item-Port der Struktur (fuer den Lager-Knopf im Menue). */
+    @Nullable
+    private ItemPortBlockEntity firstItemPort(ServerLevel level) {
+        CorePattern p = pattern();
+        if (p == null) return null;
+        ItemPortBlockEntity[] found = {null};
+        p.forEach(center(level), (pos, cell) -> {
+            if (found[0] == null && (cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT) && level.hasChunkAt(pos)
+                    && level.getBlockEntity(pos) instanceof ItemPortBlockEntity ip) {
+                found[0] = ip;
+            }
+        });
+        return found[0];
     }
 
     /** Legt Beute in die Lager der Item-Ports der Struktur; zurueck kommt, was nirgends passt. */

@@ -101,9 +101,9 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         pose.scale(sc, sc, sc);
         pose.translate(0.0F, 0.5F, 0.0F);
         pose.mulPose(Axis.YP.rotation(yaw));
-        PortStation.solid(pose, buffers, level, state, energy, conn, yaw, 0.0F, Math.min(1.0F, st), data);
+        PortStation.solid(pose, buffers, level, state, energy, conn, yaw, 0.0F, Math.min(1.0F, st), data, true);
         PortStation.glow(new Matrix4f(pose.last().pose()), buffers.getBuffer(CosmicRenderTypes.glow()), energy, conn, yaw, 0.0F,
-                Math.min(1.0F, st), data);
+                Math.min(1.0F, st), data, true);
         pose.popPose();
         if (st < 1.0F) {
             float[] col = energy ? ENERGY : ITEM;

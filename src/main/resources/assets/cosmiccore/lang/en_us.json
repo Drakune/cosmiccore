@@ -29,6 +29,8 @@
   "gui.cosmiccore.status.no_energy_port": "Energy port missing",
   "gui.cosmiccore.status.no_item_port": "Item port missing",
   "gui.cosmiccore.tab.open": "Click to expand",
+  "gui.cosmiccore.storage": "Loot storage",
+  "gui.cosmiccore.storage.hint": "Opens the item port storage - closing returns here",
   "gui.cosmiccore.tab.close": "Click to collapse",
   "message.cosmiccore.expected_slot": "Void Casing, port or controller (middle of a bottom edge)",
   "tooltip.cosmiccore.fuel": "Core generator fuel: %s RF/t, %s s",

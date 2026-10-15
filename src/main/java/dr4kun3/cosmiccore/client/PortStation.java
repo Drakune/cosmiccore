@@ -93,7 +93,7 @@ public final class PortStation {
      * screenYaw dreht nur den Bildschirm (Fluegel schauen zur Konsolenmitte).
      */
     public static void solid(PoseStack pose, MultiBufferSource buffers, Level level, BlockState port, boolean energy, int connMask,
-                             float yaw, float screenYaw, float grow, Data data) {
+                             float yaw, float screenYaw, float grow, Data data, boolean ownBase) {
         var dispatcher = Minecraft.getInstance().getBlockRenderer();
         // Sockel
         pose.pushPose();
@@ -118,8 +118,9 @@ public final class PortStation {
             pose.popPose();
         }
         Matrix4f base = pose.last().pose();
+        // Bodenfeld wie ein Portal (bei den Konsolenfluegeln zeichnet die Konsole ein gemeinsames Feld)
+        if (ownBase) portalCapsule(buffers, new Matrix4f(base).translate(0, -0.495F, 0), 0.0F, 0.34F * Math.max(0.05F, grow));
         VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
-        disc(dq, new Matrix4f(base).translate(0, -0.495F, 0), 0.34F);
         Matrix4f sm = new Matrix4f(base).rotateY(screenYaw).translate(0, (1.0F - grow) * -0.4F, 0);
         float[] b0 = screen(-1.04F, -0.04F), b1 = screen(1.04F, -0.04F), b2 = screen(1.04F, 1.04F), b3 = screen(-1.04F, 1.04F);
         RenderUtil.quad2(dq, sm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], b2[0], b2[1], b2[2], b3[0], b3[1], b3[2],
@@ -208,7 +209,8 @@ public final class PortStation {
 
     // ------------------------------------------------------------------ Pass 2: Licht
 
-    public static void glow(Matrix4f base, VertexConsumer vc, boolean energy, int connMask, float yaw, float screenYaw, float grow, Data d) {
+    public static void glow(Matrix4f base, VertexConsumer vc, boolean energy, int connMask, float yaw, float screenYaw, float grow, Data d,
+                            boolean ownBase) {
         float[] col = energy ? ENERGY : ITEM;
         float e = d.e() * grow;
         Matrix4f sm = new Matrix4f(base).rotateY(screenYaw).translate(0, (1.0F - grow) * -0.4F, 0);
@@ -237,7 +239,7 @@ public final class PortStation {
         }
         float sv = Mth.frac(d.t() * 0.015F + (energy ? 0.5F : 0.0F)) * 62.0F;
         segment(vc, tm, 2, sv, 0, PX - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.1F, e * 0.1F);
-        RenderUtil.flatCircle(vc, new Matrix4f(base).translate(0, -0.49F, 0), 0.32F, 0.01F, 40, col, e * 0.6F);
+        if (ownBase) capsuleRim(vc, new Matrix4f(base).translate(0, -0.49F, 0), 0.0F, 0.34F * grow, col, e * 0.7F);
         // Leitungen von den Anschlussknoten zum Sockel, mit Fluss (Energie hinaus, Items hinein)
         for (Direction dir : Direction.values()) {
             if ((connMask & (1 << dir.get3DDataValue())) == 0) continue;
@@ -248,6 +250,57 @@ public final class PortStation {
             float ps = energy ? 1.0F - s : s;
             cube(vc, base, Mth.lerp(ps, c.x, to.x), Mth.lerp(ps, c.y, to.y), Mth.lerp(ps, c.z, to.z), 0.02F, 1, 1, 1, e * Mth.sin(ps * Mth.PI));
         }
+    }
+
+    // ------------------------------------------------------------------ Portalfeld
+
+    /**
+     * Schwarzes Portalfeld (End-Portal-Sternenhimmel) in der XZ-Ebene: Kapsel von -halfLen bis +halfLen entlang X mit
+     * Radius r (halfLen = 0: runde Scheibe). Verbindet Controller und Ports der Steuerkonsole zu einer Flaeche.
+     */
+    public static void portalCapsule(MultiBufferSource buffers, Matrix4f m, float halfLen, float r) {
+        VertexConsumer vc = buffers.getBuffer(RenderType.endPortal());
+        int seg = 16;
+        // Mittelteil
+        if (halfLen > 0) twoSided(vc, m, -halfLen, -r, halfLen, -r, halfLen, r, -halfLen, r);
+        // halbrunde Enden
+        for (int end = -1; end <= 1; end += 2) {
+            float cx = end * halfLen;
+            for (int i = 0; i < seg; i++) {
+                float a0 = -Mth.HALF_PI + Mth.PI * i / seg, a1 = -Mth.HALF_PI + Mth.PI * (i + 1) / seg;
+                float x0 = cx + end * Mth.cos(a0) * r, z0 = Mth.sin(a0) * r, x1 = cx + end * Mth.cos(a1) * r, z1 = Mth.sin(a1) * r;
+                twoSided(vc, m, cx, 0, x0, z0, x1, z1, cx, 0);
+            }
+        }
+    }
+
+    /** Leuchtender Rand des Portalfelds. */
+    public static void capsuleRim(VertexConsumer vc, Matrix4f m, float halfLen, float r, float[] col, float a) {
+        if (r <= 0.001F) return;
+        if (halfLen > 0) {
+            segment(vc, m, -halfLen, 0, -r, halfLen, 0, -r, 0.012F, col[0], col[1], col[2], a, a);
+            segment(vc, m, -halfLen, 0, r, halfLen, 0, r, 0.012F, col[0], col[1], col[2], a, a);
+        }
+        int seg = 20;
+        for (int end = -1; end <= 1; end += 2) {
+            float cx = end * halfLen;
+            for (int i = 0; i < seg; i++) {
+                float a0 = -Mth.HALF_PI + Mth.PI * i / seg, a1 = -Mth.HALF_PI + Mth.PI * (i + 1) / seg;
+                segment(vc, m, cx + end * Mth.cos(a0) * r, 0, Mth.sin(a0) * r, cx + end * Mth.cos(a1) * r, 0, Mth.sin(a1) * r,
+                        0.012F, col[0], col[1], col[2], a, a);
+            }
+        }
+    }
+
+    private static void twoSided(VertexConsumer vc, Matrix4f m, float x0, float z0, float x1, float z1, float x2, float z2, float x3, float z3) {
+        vc.addVertex(m, x0, 0, z0);
+        vc.addVertex(m, x1, 0, z1);
+        vc.addVertex(m, x2, 0, z2);
+        vc.addVertex(m, x3, 0, z3);
+        vc.addVertex(m, x3, 0, z3);
+        vc.addVertex(m, x2, 0, z2);
+        vc.addVertex(m, x1, 0, z1);
+        vc.addVertex(m, x0, 0, z0);
     }
 
     // ------------------------------------------------------------------ Hilfen

@@ -33,6 +33,8 @@ public class ControllerMenu extends AbstractContainerMenu {
     public static final int BTN_OVERDRIVE_UP = 15;
     public static final int BTN_OVERDRIVE_DOWN = 16;
     public static final int BTN_ANTI_ASTEROID = 17;
+    /** Lager des Item-Ports oeffnen (beim Schliessen geht es zurueck zum Controller). */
+    public static final int BTN_STORAGE = 18;
 
     // Datenfelder
     public static final int D_ENERGY_LO = 0, D_ENERGY_HI = 1, D_CAPACITY_LO = 2, D_CAPACITY_HI = 3, D_OUTPUT_LO = 4, D_OUTPUT_HI = 5,

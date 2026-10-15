@@ -21,20 +21,24 @@ public class ItemPortMenu extends AbstractContainerMenu {
 
     private final ContainerLevelAccess access;
     private final BlockPos pos;
+    /** Controller, zu dem es beim Schliessen zurueckgeht (oder null bei Rechtsklick auf den Port). */
+    @org.jetbrains.annotations.Nullable
+    private final BlockPos returnTo;
 
     /** Client. */
     public ItemPortMenu(int id, Inventory inv, RegistryFriendlyByteBuf buf) {
-        this(id, inv, buf.readBlockPos(), new ItemStackHandler(ItemPortBlockEntity.STORAGE_SLOTS));
+        this(id, inv, buf.readBlockPos(), new ItemStackHandler(ItemPortBlockEntity.STORAGE_SLOTS), buf.readBoolean() ? buf.readBlockPos() : null);
     }
 
     /** Server. */
-    public ItemPortMenu(int id, Inventory inv, ItemPortBlockEntity be) {
-        this(id, inv, be.getBlockPos(), be.getStorage());
+    public ItemPortMenu(int id, Inventory inv, ItemPortBlockEntity be, @org.jetbrains.annotations.Nullable BlockPos returnTo) {
+        this(id, inv, be.getBlockPos(), be.getStorage(), returnTo);
     }
 
-    private ItemPortMenu(int id, Inventory inv, BlockPos pos, IItemHandler storage) {
+    private ItemPortMenu(int id, Inventory inv, BlockPos pos, IItemHandler storage, @org.jetbrains.annotations.Nullable BlockPos returnTo) {
         super(ModMenus.ITEM_PORT.get(), id);
         this.pos = pos;
+        this.returnTo = returnTo;
         this.access = ContainerLevelAccess.create(inv.player.level(), pos);
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -56,6 +60,23 @@ public class ItemPortMenu extends AbstractContainerMenu {
 
     public BlockPos getPos() {
         return pos;
+    }
+
+    @org.jetbrains.annotations.Nullable
+    public BlockPos getReturnTo() {
+        return returnTo;
+    }
+
+    /** Knopf 0: zurueck zur Steuerung des Controllers (ersetzt dieses Menue). */
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id != 0 || returnTo == null || !(player.level().getBlockEntity(returnTo) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c)) {
+            return false;
+        }
+        if (player.distanceToSqr(returnTo.getX() + 0.5, returnTo.getY() + 0.5, returnTo.getZ() + 0.5) > 64.0) return false;
+        BlockPos back = returnTo;
+        player.openMenu(c, back);
+        return true;
     }
 
     @Override

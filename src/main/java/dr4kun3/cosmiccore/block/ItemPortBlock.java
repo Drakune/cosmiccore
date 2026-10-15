@@ -46,7 +46,10 @@ public class ItemPortBlock extends Block implements EntityBlock {
                                                                    net.minecraft.world.entity.player.Player player,
                                                                    net.minecraft.world.phys.BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity be) {
-            player.openMenu(be, pos);
+            player.openMenu(be, buf -> {
+                buf.writeBlockPos(pos);
+                buf.writeBoolean(false);
+            });
         }
         return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
     }

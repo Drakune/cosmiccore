@@ -263,6 +263,45 @@ public final class ReactorShellRenderer {
         return s.hasProperty(dr4kun3.cosmiccore.block.ModProperties.TERMINAL) && s.getValue(dr4kun3.cosmiccore.block.ModProperties.TERMINAL);
     }
 
+    /**
+     * Y-Strahl der Steuerkonsole: ein Stamm vom Kern bis kurz ueber die Konsole, dort gabelt er sich zum Controller und
+     * zu den beiden Fluegeln. Lichtkugeln fliegen den Stamm hinab und verteilen sich auf die Aeste.
+     */
+    private static void yBridge(Matrix4f m, VertexConsumer vc, Params p, ShellCell c, float[] top, float[] col) {
+        float e = p.energy();
+        float yaw = (float) Math.atan2(c.dx(), c.dz());
+        Vector3f side = new Vector3f(Mth.cos(yaw), 0, -Mth.sin(yaw)); // lokales +X der Konsole (rechts, von vorn)
+        Vector3f base = new Vector3f(c.dx(), c.dy(), c.dz());
+        Vector3f a = new Vector3f(top[0], top[1], top[2]);
+        Vector3f j = new Vector3f(base).lerp(a, 0.35F); // Gabelung
+        float out = wingOut(p);
+        Vector3f[] ends = {new Vector3f(base).add(new Vector3f(side).mul(-out)).add(0, 0.2F, 0), new Vector3f(base).add(0, 0.25F, 0),
+                new Vector3f(base).add(new Vector3f(side).mul(out)).add(0, 0.2F, 0)};
+        float[][] cols = {ITEM_GLYPH, col, ENERGY_GLYPH};
+        // Stamm
+        segment(vc, m, j.x, j.y, j.z, a.x, a.y, a.z, 0.06F, col[0], col[1], col[2], e * 0.8F, e * 0.5F);
+        segment(vc, m, j.x, j.y, j.z, a.x, a.y, a.z, 0.018F, 1.0F, 1.0F, 1.0F, e, e * 0.7F);
+        RenderUtil.glowSphere(vc, new Matrix4f(m).translate(j.x, j.y, j.z), 0.09F, 6, 10, new float[]{1, 1, 1}, e * 0.7F);
+        // Aeste (die Fluegel-Aeste erst, wenn die Fluegel ausfahren)
+        for (int k = 0; k < 3; k++) {
+            if (k != 1 && out <= 0.02F) continue;
+            Vector3f t = ends[k];
+            float[] bc = cols[k];
+            segment(vc, m, t.x, t.y, t.z, j.x, j.y, j.z, 0.04F, bc[0], bc[1], bc[2], e * 0.6F, e * 0.8F);
+            segment(vc, m, t.x, t.y, t.z, j.x, j.y, j.z, 0.012F, 1.0F, 1.0F, 1.0F, e * 0.8F, e);
+        }
+        // Lichtkugeln: Stamm hinab, dann abwechselnd in einen der drei Aeste
+        for (int k = 0; k < 6; k++) {
+            float s = Mth.frac(p.t() * 0.025F + k / 6.0F);
+            int branch = k % 3;
+            if (branch != 1 && out <= 0.02F) branch = 1;
+            Vector3f q;
+            if (s < 0.55F) q = new Vector3f(a).lerp(j, s / 0.55F);
+            else q = new Vector3f(j).lerp(ends[branch], (s - 0.55F) / 0.45F);
+            cube(vc, m, q.x, q.y, q.z, 0.045F, 1.0F, 1.0F, 1.0F, e * Mth.sin(s * Mth.PI) * 0.9F + 0.1F * e);
+        }
+    }
+
     /** Ausfahren der Fluegel: erst waechst die Konsole, dann gleiten die Fluegel seitlich heraus (0..1). */
     private static float wingOut(Params p) {
         float k = Mth.clamp((p.settle() - 0.25F) / 0.75F, 0.0F, 1.0F);
@@ -300,7 +339,7 @@ public final class ReactorShellRenderer {
             pose.translate(c.dx(), c.dy(), c.dz());
             pose.mulPose(com.mojang.math.Axis.YP.rotation(yaw));
             pose.translate(side * out, 0, 0);
-            PortStation.solid(pose, buffers, p.level(), port.getBlockState(), energy, conn, yaw, -side * 0.28F * out, out, data.withPort(port));
+            PortStation.solid(pose, buffers, p.level(), port.getBlockState(), energy, conn, yaw, -side * 0.28F * out, out, data.withPort(port), false);
             pose.popPose();
         }
     }
@@ -319,12 +358,7 @@ public final class ReactorShellRenderer {
             float[] col = energy ? PortStation.ENERGY : PortStation.ITEM;
             int conn = PortStation.connections(p.level(), port, energy);
             float x = side * out;
-            PortStation.glow(new Matrix4f(cm).translate(x, 0, 0), vc, energy, conn, yaw, -side * 0.28F * out, out, data.withPort(port));
-            // Verbindung zur Konsole: Lichtleitung vom Fluegelsockel zur Mitte
-            segment(vc, cm, x, -0.42F, 0, 0, -0.42F, 0, 0.02F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
-            // Lichtimpuls laeuft auf beiden Seiten von der Konsolenmitte nach aussen zum Fluegel
-            float ps = Mth.frac(p.t() * 0.04F + (energy ? 0.0F : 0.5F));
-            cube(vc, cm, ps * x, -0.42F, 0, 0.022F, 1.0F, 1.0F, 1.0F, e * Mth.sin(ps * Mth.PI));
+            PortStation.glow(new Matrix4f(cm).translate(x, 0, 0), vc, energy, conn, yaw, -side * 0.28F * out, out, data.withPort(port), false);
         }
     }
 
@@ -349,7 +383,7 @@ public final class ReactorShellRenderer {
             cube(vc, cm, a[0], a[1], a[2], 0.018F, 1.0F, 1.0F, 1.0F, e);
         }
         // Bodenring des Sockels
-        RenderUtil.flatCircle(vc, new Matrix4f(cm).translate(0, -0.49F, 0), 0.44F, 0.012F, 48, col, e * 0.7F);
+        PortStation.capsuleRim(vc, new Matrix4f(cm).translate(0, -0.49F, 0), isTerminal(p, c) ? wingOut(p) : 0.0F, 0.44F, col, e * 0.7F);
 
         Matrix4f tm = textFrame(cm, 0.002F);
         // Trennlinien unter Titel und Status
@@ -430,8 +464,9 @@ public final class ReactorShellRenderer {
                 Minecraft.getInstance().getBlockRenderer().renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose,
                         buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
                 pose.popPose();
+                // Portalfeld unter der Konsole - beim Terminal ein gemeinsames Feld bis unter die Fluegel
+                PortStation.portalCapsule(buffers, new Matrix4f(cm).translate(0, -0.495F, 0), isTerminal(p, c) ? wingOut(p) : 0.0F, 0.44F);
                 VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
-                disc(dq, new Matrix4f(cm).translate(0, -0.495F, 0), 0.46F, PLATE);
                 // undurchsichtiger Bildschirmhintergrund
                 float[] b0 = screen(-1.03F, -0.03F), b1 = screen(1.03F, -0.03F), b2 = screen(1.03F, 1.03F), b3 = screen(-1.03F, 1.03F);
                 RenderUtil.quad2(dq, cm, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], b2[0], b2[1], b2[2], b3[0], b3[1], b3[2],
@@ -621,15 +656,28 @@ public final class ReactorShellRenderer {
                 RenderUtil.flatCircle(vc, new Matrix4f(bm).translate(0, -0.5F + st, 0), 0.55F, 0.03F, 32, bridgeCol, 1.0F - st);
                 if (st <= 0.0F) continue;
             }
+            // Ports der Steuerkonsole haengen am Y-Strahl des Controllers - keine eigene Bruecke
+            if (!controller && s.hasProperty(dr4kun3.cosmiccore.block.ModProperties.CONSOLE)
+                    && s.getValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE) != dr4kun3.cosmiccore.block.ConsoleSide.NONE) {
+                continue;
+            }
             // Lichtbruecke vom Block (Knoten bzw. Port) zur Kugel - waechst beim Materialisieren heraus
             float[] end = {Mth.lerp(st, c.dx(), cpos[0]), Mth.lerp(st, c.dy(), cpos[1]), Mth.lerp(st, c.dz(), cpos[2])};
-            segment(vc, m, c.dx(), c.dy(), c.dz(), end[0], end[1], end[2], 0.05F, bridgeCol[0], bridgeCol[1], bridgeCol[2],
-                    p.energy() * 0.8F, p.energy() * 0.4F);
-            segment(vc, m, c.dx(), c.dy(), c.dz(), end[0], end[1], end[2], 0.015F, 1.0F, 1.0F, 1.0F, p.energy(), p.energy() * 0.6F);
+            boolean yBeam = controller && isTerminal(p, c);
+            if (yBeam) {
+                yBridge(m, vc, p, c, end, bridgeCol);
+            } else {
+                segment(vc, m, c.dx(), c.dy(), c.dz(), end[0], end[1], end[2], 0.05F, bridgeCol[0], bridgeCol[1], bridgeCol[2],
+                        p.energy() * 0.8F, p.energy() * 0.4F);
+                segment(vc, m, c.dx(), c.dy(), c.dz(), end[0], end[1], end[2], 0.015F, 1.0F, 1.0F, 1.0F, p.energy(), p.energy() * 0.6F);
+            }
             if (st < 1.0F && !controller) continue; // Port-Symbole erst, wenn die Bruecke steht
-            float bs = Mth.frac(p.t() * 0.04F + c.dx() * 0.3F);
-            cube(vc, m, Mth.lerp(bs, c.dx(), cpos[0]), Mth.lerp(bs, c.dy(), cpos[1]), Mth.lerp(bs, c.dz(), cpos[2]),
-                    0.05F, 1.0F, 1.0F, 1.0F, p.energy() * Mth.sin(bs * Mth.PI));
+            if (!yBeam) {
+                // Lichtkugeln fliegen vom Kern zum Port bzw. Controller
+                float bs = Mth.frac(p.t() * 0.04F + c.dx() * 0.3F);
+                cube(vc, m, Mth.lerp(bs, cpos[0], c.dx()), Mth.lerp(bs, cpos[1], c.dy()), Mth.lerp(bs, cpos[2], c.dz()),
+                        0.05F, 1.0F, 1.0F, 1.0F, p.energy() * Mth.sin(bs * Mth.PI));
+            }
             if (controller) {
                 if (st >= 1.0F) circle(m, vc, cpos, east, north, 0.32F, new float[]{0.8F, 0.6F, 1.0F}, p.energy() * pulse);
                 // Konsolenrahmen waechst mit der Konsole (gleiche Skalierung wie im deckenden Pass)

@@ -91,8 +91,17 @@ public final class CutsceneTestHarness {
                 mc.setCameraEntity(cam);
             } else {
                 int step = v - views.length;
+                // Lager-Knopf im Controller-Menue druecken bzw. das Lager schliessen (Rueckweg pruefen)
+                if (step == 2 && mc.screen instanceof ControllerScreen cs && mc.gameMode != null) {
+                    mc.gameMode.handleInventoryButtonClick(cs.getMenu().containerId, dr4kun3.cosmiccore.menu.ControllerMenu.BTN_STORAGE);
+                    return;
+                }
+                if (step == 3 && mc.screen instanceof ItemPortScreen ips) {
+                    ips.onClose();
+                    return;
+                }
                 mc.setCameraEntity(mc.player);
-                mc.options.guiScale().set(2);
+                mc.options.guiScale().set(1);
                 mc.resizeDisplay();
                 server.execute(() -> {
                     var sp = server.getPlayerList().getPlayers().get(0);
@@ -100,13 +109,6 @@ public final class CutsceneTestHarness {
                     sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, 0, 20);
                     switch (step) {
                         case 0, 1 -> { if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at); }
-                        case 2 -> { if (level.getBlockEntity(at.east()) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip) sp.openMenu(ip, at.east()); }
-                        case 3 -> {
-                            // Pflicht-Ports: alle Energie-Ports entfernen, dann muss die Struktur zerfallen
-                            level.setBlock(at.west(), dr4kun3.cosmiccore.block.ModBlocks.VOID_CASING.get().defaultBlockState(), 3);
-                            level.setBlock(at.south(10).west(), dr4kun3.cosmiccore.block.ModBlocks.VOID_CASING.get().defaultBlockState(), 3);
-                            if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at);
-                        }
                         default -> {}
                     }
                 });
@@ -124,14 +126,7 @@ public final class CutsceneTestHarness {
             int v = (worldTicks - 330) / 40;
             mc.options.hideGui = v < views.length;
             Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.getMainRenderTarget(), msg -> {});
-            if (v == views.length + 3) {
-                var level = server.getLevel(mc.player.level().dimension());
-                server.execute(() -> {
-                    if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) {
-                        CosmicCore.LOGGER.info("[ConsoleTest] ohne Energie-Port: formed={}", c.isFormed());
-                    }
-                });
-            }
+            CosmicCore.LOGGER.info("[ConsoleTest] Bild {}: Bildschirm = {}", v, mc.screen == null ? "-" : mc.screen.getClass().getSimpleName());
             if (v >= views.length + 3) {
                 finished = true;
                 mc.stop();

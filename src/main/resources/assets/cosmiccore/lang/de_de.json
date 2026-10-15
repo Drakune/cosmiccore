@@ -29,6 +29,8 @@
   "gui.cosmiccore.status.no_energy_port": "Energie-Port fehlt",
   "gui.cosmiccore.status.no_item_port": "Item-Port fehlt",
   "gui.cosmiccore.tab.open": "Klicken zum Ausklappen",
+  "gui.cosmiccore.storage": "Beutelager",
+  "gui.cosmiccore.storage.hint": "Öffnet das Lager des Item-Ports - Schließen führt zurück",
   "gui.cosmiccore.tab.close": "Klicken zum Einklappen",
   "message.cosmiccore.expected_slot": "Leerengehäuse, Port oder Controller (Mitte einer Bodenkante)",
   "tooltip.cosmiccore.fuel": "Kerngenerator-Brennstoff: %s RF/t, %s s",

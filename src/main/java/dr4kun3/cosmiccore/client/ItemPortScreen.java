@@ -21,6 +21,17 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
         inventoryLabelY = ItemPortMenu.INV_Y - 11;
     }
 
+    /** Vom Controller aus geoeffnet: Schliessen fuehrt zurueck zur Steuerung. */
+    @Override
+    public void onClose() {
+        if (menu.getReturnTo() != null && minecraft != null && minecraft.gameMode != null && minecraft.player != null
+                && minecraft.player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(menu.getReturnTo())) <= 64.0) {
+            minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 0);
+            return; // der Server oeffnet die Steuerung, die dieses Menue ersetzt
+        }
+        super.onClose();
+    }
+
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
