@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "cosmiccore:block/rune_frame_dormant"
+  }
+}

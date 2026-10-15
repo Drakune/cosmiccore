@@ -1,0 +1,42 @@
+{
+  "values": {
+    "cosmiccore:compressed_star_dust": {
+      "burn_time": 24000,
+      "power": 2600
+    },
+    "cosmiccore:neutron_fragment": {
+      "burn_time": 6000,
+      "heat": 1.4,
+      "power": 8000
+    },
+    "cosmiccore:quasar_essence": {
+      "burn_time": 3000,
+      "heat": 2.0,
+      "power": 20000
+    },
+    "cosmiccore:star_dust": {
+      "burn_time": 2400,
+      "power": 1200
+    },
+    "minecraft:echo_shard": {
+      "burn_time": 3600,
+      "power": 900
+    },
+    "minecraft:ender_eye": {
+      "burn_time": 1800,
+      "power": 700
+    },
+    "minecraft:ender_pearl": {
+      "burn_time": 1200,
+      "power": 400
+    },
+    "minecraft:nether_star": {
+      "burn_time": 12000,
+      "power": 3000
+    },
+    "minecraft:sculk_catalyst": {
+      "burn_time": 2400,
+      "power": 600
+    }
+  }
+}

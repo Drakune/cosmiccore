@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "phase=dormant": {
+      "model": "cosmiccore:block/void_casing_dormant"
+    },
+    "phase=formed": {
+      "model": "cosmiccore:block/void_casing_hidden"
+    },
+    "phase=active": {
+      "model": "cosmiccore:block/void_casing_hidden"
+    },
+    "phase=unstable": {
+      "model": "cosmiccore:block/void_casing_hidden"
+    }
+  }
+}

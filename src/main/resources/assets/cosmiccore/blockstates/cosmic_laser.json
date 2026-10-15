@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "linked=false": {
+      "model": "cosmiccore:block/cosmic_laser"
+    },
+    "linked=true": {
+      "model": "cosmiccore:block/cosmic_laser_hidden"
+    }
+  }
+}

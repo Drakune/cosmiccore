@@ -1,0 +1,97 @@
+# Aufgebaut aus den GitHub-Vorlagen (github/gitignore): Java, Gradle, JetBrains, Eclipse, VisualStudioCode,
+# macOS, Windows, Linux - ergaenzt um Minecraft-Modding (NeoForge MDK) und lokale/interne Dateien.
+
+### Java (github/gitignore: Java.gitignore) ###
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+
+### Gradle (github/gitignore: Gradle.gitignore) ###
+.gradle
+**/build/
+!src/**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+.gradletasknamecache
+local.properties
+
+### JetBrains / IntelliJ IDEA (github/gitignore: Global/JetBrains.gitignore) ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/**/out/
+.run/
+
+### Eclipse (github/gitignore: Global/Eclipse.gitignore) ###
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/**/bin/
+
+### Visual Studio Code (github/gitignore: Global/VisualStudioCode.gitignore) ###
+.vscode/
+*.code-workspace
+
+### Betriebssysteme (github/gitignore: Global/macOS, Windows, Linux) ###
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*~
+.directory
+.Trash-*
+.nfs*
+
+### Minecraft Modding (NeoForge MDK) ###
+# Entwicklungs-Client/-Server: Welten, Optionen, Logs, Screenshots, Absturzberichte
+run/
+run-data/
+!**/src/**/run/
+logs/
+crash-reports/
+screenshots/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+### Python (Ressourcen-Generator in tools/) ###
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+### Lokale / interne Dateien - nie veroeffentlichen ###
+# Zugangsdaten und Umgebungsvariablen
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.jks
+secrets.properties
+# Temporaere Dateien und Vorschaubilder des Generators
+*.tmp
+*.bak
+*.swp
+preview.png

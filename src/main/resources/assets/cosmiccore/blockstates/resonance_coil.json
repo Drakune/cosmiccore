@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "phase=dormant": {
+      "model": "cosmiccore:block/resonance_coil_dormant"
+    },
+    "phase=formed": {
+      "model": "cosmiccore:block/resonance_coil_hidden"
+    },
+    "phase=active": {
+      "model": "cosmiccore:block/resonance_coil_hidden"
+    },
+    "phase=unstable": {
+      "model": "cosmiccore:block/resonance_coil_hidden"
+    }
+  }
+}

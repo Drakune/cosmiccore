@@ -1,0 +1,75 @@
+package dr4kun3.cosmiccore;
+
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+public final class CoreConfig {
+    private static final ModConfigSpec.Builder B = new ModConfigSpec.Builder();
+
+    public static final ModConfigSpec.LongValue BUFFER_PER_TIER = B
+            .comment("RF-Puffer je Baustufe (5x5x5 = 1x, 7x7x7 = 2x, 9x9x9 = 3x) - unabhaengig von der Leistungsstufe")
+            .defineInRange("bufferPerTier", 1_000_000_000L, 1_000L, 1_000_000_000_000L);
+    public static final ModConfigSpec.LongValue ULTIMATE_BUFFER = B
+            .comment("RF-Puffer des ultimativen Kerns (11x11x11)")
+            .defineInRange("ultimateBuffer", 5_000_000_000L, 1_000L, 1_000_000_000_000L);
+    public static final ModConfigSpec.IntValue PORT_TRANSFER = B
+            .comment("Maximale RF pro Tick, die ein Energie-Port abgibt (pro Port)")
+            .defineInRange("portTransferPerTick", 50_000, 1, Integer.MAX_VALUE);
+    public static final ModConfigSpec.DoubleValue OUTPUT_MULTIPLIER = B
+            .comment("Globaler Faktor auf die RF-Erzeugung (Balancing-Hebel fuer Modpacks)")
+            .defineInRange("outputMultiplier", 1.0, 0.0, 1000.0);
+    public static final ModConfigSpec.IntValue RAMP_UP_TICKS = B
+            .comment("Ticks, bis die Resonanz voll aufgebaut ist (Leistung steigt von 20% auf 100%)")
+            .defineInRange("rampUpTicks", 600, 1, 72_000);
+    public static final ModConfigSpec.DoubleValue INSTABILITY_RATE = B
+            .comment("Instabilitaet pro Tick bei 1000 RF/t Brennstoffleistung (0-100 Skala)")
+            .defineInRange("instabilityRate", 0.015, 0.0, 10.0);
+    public static final ModConfigSpec.BooleanValue COSMIC_MODIFIERS = B
+            .comment("Kosmische Boni: Nacht/Mondphase im Overworld, The End mit Dauerbonus")
+            .define("cosmicModifiers", true);
+    public static final ModConfigSpec.DoubleValue SKY_LINK_BONUS = B
+            .comment("Leistungsbonus, wenn der Reaktor freie Sicht zum Himmel hat (Sternenlicht-Verbindung). 0.25 = +25%")
+            .defineInRange("skyLinkBonus", 0.25, 0.0, 10.0);
+    public static final ModConfigSpec.DoubleValue SCALE_OUTPUT_EXPONENT = B
+            .comment("Leistung waechst mit Stufe^x. Der Brennstoffverbrauch waechst linear mit der Stufe.")
+            .defineInRange("scaleOutputExponent", 1.15, 0.0, 5.0);
+    public static final ModConfigSpec.DoubleValue SCALE_INSTABILITY_EXPONENT = B
+            .comment("Instabilitaet waechst mit Stufe^x (vor dem Stabilitaetsfaktor der Baugroesse)")
+            .defineInRange("scaleInstabilityExponent", 1.35, 0.0, 5.0);
+    public static final ModConfigSpec.IntValue VACUUM_ENERGY = B
+            .comment("Ultimativer Kern: Vakuum-Energie in RF/t pro Leistungsstufe (mit Himmelssicht, zusaetzlich solange Brennstoff brennt)")
+            .defineInRange("vacuumEnergyPerLevel", 800, 0, 1_000_000);
+    public static final ModConfigSpec.DoubleValue STABILIZER_MULTIPLIER = B
+            .comment("Faktor auf die Kuehlpunkte aller Stabilisatoren (hoeher = halten laenger)")
+            .defineInRange("stabilizerMultiplier", 3.0, 0.1, 100.0);
+    public static final ModConfigSpec.DoubleValue COLLAPSE_DAMAGE = B
+            .comment("Schaden an Lebewesen bei einem Kollaps (0 = aus). Der Radius waechst mit der Baugroesse")
+            .defineInRange("collapseDamage", 6.0, 0.0, 1000.0);
+    public static final ModConfigSpec.BooleanValue COLLAPSE_DESTROYS_BLOCKS = B
+            .comment("Wenn true, zerstoert ein Kollaps zusaetzlich Bloecke (Explosion). Standard: aus")
+            .define("collapseDestroysBlocks", false);
+    public static final ModConfigSpec.BooleanValue COLLAPSE_DESTROYS_CORE = B
+            .comment("Wenn true, wird der Singularitaetskern bei einem Kollaps zerstoert (ohne Drop)")
+            .define("collapseDestroysCore", true);
+    public static final ModConfigSpec.IntValue COLLAPSE_COOLDOWN = B
+            .comment("Ticks, die der Kern nach einem Kollaps ausfaellt")
+            .defineInRange("collapseCooldownTicks", 600, 0, 72_000);
+    public static final ModConfigSpec.BooleanValue ASTEROIDS = B
+            .comment("Kosmische Asteroiden ziehen nachts (und im End) ueber gebildete Reaktoren hinweg und koennen mit dem Kosmos-Laser abgebaut werden")
+            .define("asteroids", true);
+    public static final ModConfigSpec.DoubleValue ASTEROID_CHANCE = B
+            .comment("Chance pro Reaktor (mit Spieler in der Naehe) alle 5 Sekunden, dass ein Asteroid erscheint (max. 3 gleichzeitig)")
+            .defineInRange("asteroidChance", 0.12, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue ANTI_ASTEROID_RADIUS = B
+            .comment("Radius in Bloecken, in dem ein aktives Anti-Asteroiden-Modul das Erscheinen von Asteroiden verhindert")
+            .defineInRange("antiAsteroidRadius", 160, 16, 1024);
+    public static final ModConfigSpec.IntValue REACTOR_ASTEROID_RADIUS = B
+            .comment("Asteroiden erscheinen nur, wenn ein Spieler hoechstens so weit von einem gebildeten Reaktor entfernt ist")
+            .defineInRange("reactorAsteroidRadius", 128, 16, 1024);
+    public static final ModConfigSpec.IntValue VALIDATION_INTERVAL = B
+            .comment("Alle wie viele Ticks die Struktur neu geprueft wird")
+            .defineInRange("validationIntervalTicks", 20, 1, 200);
+
+    public static final ModConfigSpec SPEC = B.build();
+
+    private CoreConfig() {}
+}

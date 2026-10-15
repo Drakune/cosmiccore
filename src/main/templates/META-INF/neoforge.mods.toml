@@ -1,0 +1,41 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="DR4KUN3"
+logoFile="logo.png"
+description='''
+Ein kosmischer Multiblock-Reaktor (5x5x5 bis 11x11x11) mit einem Schwarzen Loch im Herzen.
+Verbrenne Sternenstaub und Neutronen-Fragmente, halte die Instabilitaet mit Stabilisatoren und Modulen in Schach,
+fange mit dem Sternentrichter kosmische Energie ein und schiesse mit dem Laser-Array naechtliche Asteroiden fuer Beute ab.
+Overdrive, Ultimativer Kern mit globalem Erwachen und ein Handbuch mit 3D-Bauplaenen inklusive.
+
+A cosmic multiblock reactor (5x5x5 up to 11x11x11) with a black hole at its heart: burn star fuels, tame instability,
+harvest asteroids with a laser array and awaken the Ultimate Core.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# GeckoLib ist optional: nur fuer die Void-Titan-Cutscene beim Erwachen des ultimativen Kerns
+[[dependencies.${mod_id}]]
+    modId="geckolib"
+    type="optional"
+    versionRange="[4.9,)"
+    ordering="NONE"
+    side="CLIENT"

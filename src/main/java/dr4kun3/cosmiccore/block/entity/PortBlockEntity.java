@@ -1,0 +1,103 @@
+package dr4kun3.cosmiccore.block.entity;
+
+import java.util.Objects;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
+
+/** Gemeinsame Basis der Ports: kennt den Controller, zu dessen Struktur sie gehoeren. */
+public abstract class PortBlockEntity extends BlockEntity {
+    @Nullable
+    private BlockPos controllerPos;
+    /** Nur Client: Zeitpunkt, an dem die Struktur als gebildet gesehen wurde (fuer die Einblend-Animation). */
+    public long clientAppear = Long.MIN_VALUE;
+    /** Nur Client: Seiten, an denen etwas angedockt ist (Bitmaske), und wann zuletzt geprueft. */
+    public int clientConnMask;
+    public long clientConnTick = Long.MIN_VALUE;
+
+
+    protected PortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+    }
+
+    /**
+     * Client: Wechsel inaktiv -> gebildet merken (beim Laden einer fertigen Struktur gibt es keinen Wechsel,
+     * dann ist die Dose sofort da). Unabhaengig davon, ob der Port gerade gezeichnet wurde.
+     */
+    @Override
+    @SuppressWarnings("deprecation")
+    public void setBlockState(BlockState state) {
+        BlockState old = getBlockState();
+        super.setBlockState(state);
+        if (level == null || !level.isClientSide || !old.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)
+                || !state.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)) {
+            return;
+        }
+        dr4kun3.cosmiccore.block.CorePhase before = old.getValue(dr4kun3.cosmiccore.block.ModProperties.PHASE);
+        dr4kun3.cosmiccore.block.CorePhase now = state.getValue(dr4kun3.cosmiccore.block.ModProperties.PHASE);
+        if (before == dr4kun3.cosmiccore.block.CorePhase.DORMANT && now != dr4kun3.cosmiccore.block.CorePhase.DORMANT) {
+            clientAppear = level.getGameTime();
+        } else if (now == dr4kun3.cosmiccore.block.CorePhase.DORMANT) {
+            clientAppear = Long.MIN_VALUE;
+        }
+    }
+
+    public void link(@Nullable BlockPos pos) {
+        if (!Objects.equals(controllerPos, pos)) {
+            controllerPos = pos;
+            setChanged();
+            // der Client braucht den Controller fuer das Timing der Einblend-Animation
+            if (level != null && !level.isClientSide) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+            }
+        }
+    }
+
+    /** Client: Position des Controllers, zu dem der Port gehoert (oder null). */
+    @Nullable
+    public BlockPos getControllerPos() {
+        return controllerPos;
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        if (controllerPos != null) tag.putLong("controller", controllerPos.asLong());
+        return tag;
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    /** Oeffentlicher Zugriff auf den angeschlossenen Controller (nur bei gebildeter Struktur). */
+    @Nullable
+    public ControllerBlockEntity linkedController() {
+        return controller();
+    }
+
+    /** Liefert den Controller nur, wenn die Struktur gerade vollstaendig gebildet ist. */
+    @Nullable
+    protected ControllerBlockEntity controller() {
+        if (controllerPos == null || level == null || !level.hasChunkAt(controllerPos)) return null;
+        if (level.getBlockEntity(controllerPos) instanceof ControllerBlockEntity c && c.isFormed()) return c;
+        return null;
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        if (controllerPos != null) tag.putLong("controller", controllerPos.asLong());
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        controllerPos = tag.contains("controller") ? BlockPos.of(tag.getLong("controller")) : null;
+    }
+}

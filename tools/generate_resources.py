@@ -1,0 +1,1606 @@
+#!/usr/bin/env python3
+"""
+Erzeugt alle Texturen (inkl. Animationen), Modelle, Blockstates, Sprachdateien und das Mod-Logo fuer Cosmic Core.
+Rezepte, Loot-Tables, Tags, Data Maps kommen aus der NeoForge-Datengenerierung (./gradlew runData). Braucht nur Pillow:  pip install pillow
+Aufruf (im Projektordner):  python3 tools/generate_resources.py
+Alles hier ist absichtlich in einer Datei, damit du Farben/Texte/Zahlen leicht anpassen kannst.
+"""
+import json
+import math
+import os
+import random
+import sys
+
+from PIL import Image
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+RES = os.path.join(HERE, '..', 'src', 'main', 'resources')
+ASSETS = os.path.join(RES, 'assets', 'cosmiccore')
+MOD = 'cosmiccore'
+
+PHASES = ['dormant', 'formed', 'active', 'unstable']
+FRAMES = {'dormant': 1, 'formed': 8, 'active': 16, 'unstable': 12}
+FRAMETIME = {'formed': 4, 'active': 2, 'unstable': 2}
+
+
+def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+
+def wjson(path, obj):
+    write(path, json.dumps(obj, indent=2, ensure_ascii=False) + '\n')
+
+
+# ----------------------------------------------------------------- Farb-Helfer
+def clamp(v):
+    return max(0, min(255, int(v)))
+
+
+def lerp(a, b, t):
+    t = max(0.0, min(1.0, t))
+    return tuple(clamp(a[i] + (b[i] - a[i]) * t) for i in range(len(a)))
+
+
+def put(px, x, y, c):
+    if 0 <= x < 16 and 0 <= y < 16:
+        px[x, y] = c if len(c) == 4 else (c[0], c[1], c[2], 255)
+
+
+def plate(seed, base=(24, 17, 38), noise=5):
+    rnd = random.Random(seed)
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            n = rnd.randint(-noise, noise)
+            px[x, y] = (clamp(base[0] + n), clamp(base[1] + n), clamp(base[2] + n * 1.4), 255)
+    for i in range(16):  # Fase: oben/links hell, unten/rechts dunkel
+        px[i, 0] = lerp(px[i, 0][:3], (70, 55, 105), 0.55) + (255,)
+        px[0, i] = lerp(px[0, i][:3], (70, 55, 105), 0.45) + (255,)
+        px[i, 15] = lerp(px[i, 15][:3], (5, 3, 10), 0.6) + (255,)
+        px[15, i] = lerp(px[15, i][:3], (5, 3, 10), 0.5) + (255,)
+    return img
+
+
+def glow_color(phase, k, n, f, nf, rnd):
+    """Farbe eines Leuchtpixels: k = Position entlang des Pfads, f = Frame."""
+    ph = f / nf
+    if phase == 'dormant':
+        return (46, 34, 78)
+    if phase == 'formed':   # langsame violette Welle
+        i = 0.30 + 0.45 * (0.5 + 0.5 * math.sin(2 * math.pi * (ph - k / max(n, 1))))
+        return lerp((50, 28, 105), (160, 100, 255), i)
+    if phase == 'active':   # schneller Lichtpuls, Cyan <-> Violett
+        pulse = max(0.0, math.cos(2 * math.pi * (ph - k / max(n, 1)))) ** 2
+        mix = 0.5 + 0.5 * math.sin(2 * math.pi * (ph + k / max(n, 1)))
+        col = lerp((130, 80, 255), (70, 235, 255), mix)
+        return lerp((38, 30, 90), col, 0.25 + 0.75 * pulse)
+    # unstable: rotes Flackern + vereinzelte weisse Funken
+    r = rnd.random()
+    if r < 0.07:
+        return (255, 225, 230)
+    if r < 0.60:
+        return lerp((110, 12, 26), (255, 50, 70), rnd.random())
+    return (60, 10, 20)
+
+
+def glow_path(px, path, phase, f, nf, seed):
+    rnd = random.Random(seed * 7919 + f * 31)
+    for k, (x, y) in enumerate(path):
+        put(px, x, y, glow_color(phase, k, len(path), f, nf, rnd))
+
+
+# ----------------------------------------------------------------- Block-Painter
+def draw_casing(phase, f, nf, seed=1):
+    img = plate(seed)
+    px = img.load()
+    dark = (10, 6, 18)
+    for i in range(2, 14):
+        put(px, i, 2, dark); put(px, i, 13, dark); put(px, 2, i, dark); put(px, 13, i, dark)
+    for (x, y) in [(3, 3), (12, 3), (3, 12), (12, 12)]:
+        put(px, x, y, (78, 64, 112))
+    rnd = random.Random(seed + 99)
+    for _ in range(4):
+        put(px, rnd.randint(3, 12), rnd.randint(3, 12), (52, 44, 86))
+    p1 = [(4, 8), (5, 8), (6, 8), (7, 8), (7, 7), (7, 6), (7, 5), (8, 5), (9, 5), (10, 5), (11, 5)]
+    p2 = [(7, 9), (7, 10), (7, 11), (8, 11), (9, 11), (10, 11)]
+    p3 = [(4, 5), (4, 6), (5, 6), (5, 7)]
+    for k, p in enumerate((p1, p2, p3)):
+        glow_path(px, p, phase, f, nf, seed + k)
+    return img
+
+
+def draw_frame(phase, f, nf, seed=2):
+    img = plate(seed, base=(18, 12, 30), noise=4)
+    px = img.load()
+    for y in range(16):  # Pfosten links/rechts
+        for x in (1, 14):
+            put(px, x, y, (44, 34, 72))
+        for x in (0, 15):
+            put(px, x, y, (12, 8, 22))
+    for x in range(2, 14):  # Rillen oben/unten
+        put(px, x, 1, (46, 36, 76)); put(px, x, 14, (8, 5, 14))
+        put(px, x, 2, (10, 6, 18)); put(px, x, 13, (10, 6, 18))
+    rune = ["..XX..",
+            ".X..X.",
+            "X.XX.X",
+            "X.XX.X",
+            ".X..X.",
+            "X.XXXX",
+            "..XX.."]
+    path = []
+    for ry, row in enumerate(rune):
+        for rx, ch in enumerate(row):
+            if ch == 'X':
+                path.append((5 + rx, 4 + ry))
+    glow_path(px, path, phase, f, nf, seed)
+    return img
+
+
+def draw_coil(phase, f, nf, seed=3):
+    img = plate(seed, base=(14, 22, 34), noise=3)
+    px = img.load()
+    for wy in (1, 5, 9, 13):  # Wicklungen
+        for x in range(1, 15):
+            put(px, x, wy, (62, 100, 126))
+            put(px, x, wy + 1, (26, 44, 62))
+        put(px, 0, wy, (20, 30, 44)); put(px, 15, wy, (20, 30, 44))
+    for wy in (3, 7, 11):  # leuchtender Draht zwischen den Wicklungen
+        path = [(x, wy) for x in range(1, 15)]
+        glow_path(px, path, phase, f, nf, seed + wy)
+        for x in range(1, 15):
+            put(px, x, wy + 1, (8, 12, 20))
+    return img
+
+
+def eye_params(phase, f, nf, rnd):
+    ph = f / nf
+    if phase == 'dormant':
+        return 0.0, (60, 40, 110), 0.5
+    if phase == 'formed':
+        return 0.45 + 0.12 * math.sin(2 * math.pi * ph), (115, 75, 235), 0.6
+    if phase == 'active':
+        mix = 0.5 + 0.5 * math.sin(2 * math.pi * ph)
+        return 0.92 + 0.08 * math.sin(4 * math.pi * ph), lerp((70, 225, 255), (170, 100, 255), mix), 0.7 + 0.5 * math.sin(2 * math.pi * ph) ** 2
+    return 0.65 + 0.35 * rnd.random(), (255, 50, 70), 1.2 + 0.6 * rnd.random()
+
+
+def paint_eye(px, phase, f, nf, cx=7.5, cy=7.5, half_w=6.0, max_h=4.2, seed=0):
+    rnd = random.Random(seed * 131 + f)
+    open_, iris, pupil_w = eye_params(phase, f, nf, rnd)
+    lid = (88, 60, 150) if phase != 'unstable' else (150, 30, 50)
+    if open_ <= 0.01:
+        for x in range(2, 14):
+            put(px, x, 8, lid)
+        for x in (3, 12):
+            put(px, x, 9, lid)
+        return
+    for y in range(16):
+        for x in range(16):
+            dx = (x - cx) / half_w
+            if abs(dx) > 1.0:
+                continue
+            h = open_ * max_h * math.sqrt(max(0.0, 1 - dx * dx))
+            dy = abs(y - cy)
+            if dy > h + 0.4:
+                continue
+            if dy > h - 0.7:
+                put(px, x, y, lid)          # Lidrand
+                continue
+            d = math.hypot(x - cx, y - cy)
+            if d <= 2.9:
+                shade = 1.15 - d / 3.6
+                c = tuple(clamp(v * shade) for v in iris)
+                if abs(x - cx) <= pupil_w * 0.5 + 0.1:
+                    c = (3, 0, 8)           # senkrechter Schlitz
+                put(px, x, y, c)
+            else:
+                put(px, x, y, (26, 15, 48))
+    put(px, 6, 6, (230, 225, 255))
+
+
+def draw_crystal(phase, f, nf, seed=4):
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            diag = (x + y) % 6 == 0 or (x - y) % 6 == 0
+            px[x, y] = (46, 26, 86, 255) if diag else (22, 11, 42, 255)
+    for i in range(16):
+        for (x, y) in ((i, 0), (0, i), (i, 15), (15, i)):
+            px[x, y] = (12, 6, 24, 255)
+    paint_eye(px, phase, f, nf, seed=seed)
+    return img
+
+
+def draw_glass(phase, f, nf, seed=5):
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    inner_a = {'dormant': 60, 'formed': 80, 'active': 105, 'unstable': 105}[phase]
+    tint = {'dormant': (34, 20, 70), 'formed': (44, 26, 96), 'active': (40, 60, 120), 'unstable': (90, 20, 40)}[phase]
+    for y in range(16):
+        for x in range(16):
+            edge = x in (0, 15) or y in (0, 15)
+            if edge:
+                px[x, y] = (54, 28, 100, 240) if phase != 'unstable' else (96, 24, 48, 240)
+            else:
+                px[x, y] = (tint[0], tint[1], tint[2], inner_a)
+    for (x, y) in [(1, 1), (14, 1), (1, 14), (14, 14)]:
+        px[x, y] = (86, 54, 150, 220)
+    stars = [(4, 4), (11, 6), (7, 11), (12, 12), (3, 10), (9, 3)]
+    rnd = random.Random(seed * 17 + f)
+    for k, (x, y) in enumerate(stars):
+        if phase == 'dormant':
+            a = 120
+        else:
+            a = int(110 + 140 * (0.5 + 0.5 * math.sin(2 * math.pi * (f / nf) * (1 + k % 2) + k)))
+            if phase == 'unstable' and rnd.random() < 0.4:
+                a = 40
+        col = (200, 185, 255) if phase != 'unstable' else (255, 150, 160)
+        px[x, y] = (col[0], col[1], col[2], clamp(a))
+    return img
+
+
+def draw_controller_front(phase, f, nf, seed=6):
+    img = plate(seed, base=(20, 13, 34), noise=4)
+    px = img.load()
+    for i in range(2, 14):
+        put(px, i, 2, (8, 5, 14)); put(px, i, 13, (8, 5, 14)); put(px, 2, i, (8, 5, 14)); put(px, 13, i, (8, 5, 14))
+    for y in range(4, 12):  # Linsenfassung
+        for x in range(2, 14):
+            if (x in (2, 13)) or (y in (4, 11)):
+                put(px, x, y, (60, 48, 96))
+            else:
+                put(px, x, y, (10, 6, 20))
+    paint_eye(px, phase, f, nf, cx=7.5, cy=7.5, half_w=5.0, max_h=3.0, seed=seed)
+    ph = f / nf
+    leds = [(1, 1), (14, 1), (1, 14), (14, 14)]
+    for k, (x, y) in enumerate(leds):
+        if phase == 'dormant':
+            c = (30, 24, 44)
+        elif phase == 'formed':
+            c = lerp((60, 40, 120), (170, 110, 255), 0.5 + 0.5 * math.sin(2 * math.pi * ph + k))
+        elif phase == 'active':
+            on = int(ph * 4) % 4 == k
+            c = (70, 255, 210) if on else (24, 90, 90)
+        else:
+            c = (255, 40, 50) if (f + k) % 2 == 0 else (70, 10, 16)
+        put(px, x, y, c)
+    return img
+
+
+def draw_energy_port(phase, f, nf, seed=7):
+    img = draw_casing_base(seed)
+    px = img.load()
+    inset(px)
+    bolt = [(9, 4), (8, 5), (7, 6), (6, 7), (7, 7), (8, 7), (9, 7), (8, 8), (7, 9), (6, 10)]
+    glow_path(px, bolt, phase, f, nf, seed)
+    return img
+
+
+def draw_item_port(phase, f, nf, seed=8):
+    img = draw_casing_base(seed)
+    px = img.load()
+    inset(px)
+    chev = [(5, 5), (6, 6), (7, 7), (8, 7), (9, 6), (10, 5), (5, 8), (6, 9), (7, 10), (8, 10), (9, 9), (10, 8)]
+    glow_path(px, chev, phase, f, nf, seed)
+    return img
+
+
+def draw_casing_base(seed):
+    img = plate(seed)
+    px = img.load()
+    for (x, y) in [(1, 1), (14, 1), (1, 14), (14, 14)]:
+        put(px, x, y, (78, 64, 112))
+    return img
+
+
+def inset(px):
+    for y in range(3, 13):
+        for x in range(3, 13):
+            if x in (3, 12) or y in (3, 12):
+                put(px, x, y, (58, 46, 92))
+            else:
+                put(px, x, y, (9, 5, 18))
+
+
+def draw_core_dormant():
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = (14, 8, 26, 255)
+    for y in range(4, 12):
+        for x in range(4, 12):
+            ring = max(abs(x - 7.5), abs(y - 7.5))
+            px[x, y] = (30, 18, 52, 255) if ring > 2.8 else (6, 3, 12, 255)
+    for i in range(4, 12):
+        px[i, 4] = px[i, 11] = px[4, i] = px[11, i] = (70, 48, 118, 255)
+    px[7, 7] = px[8, 8] = (150, 95, 255, 255)
+    return img
+
+
+def draw_star_dust(f, nf):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    pile = [(7, 8), (8, 8), (6, 9), (7, 9), (8, 9), (9, 9), (5, 10), (6, 10), (7, 10), (8, 10), (9, 10), (10, 10),
+            (4, 11), (5, 11), (6, 11), (7, 11), (8, 11), (9, 11), (10, 11), (11, 11)]
+    rnd = random.Random(11)
+    for (x, y) in pile:
+        t = rnd.random()
+        put(px, x, y, lerp((70, 40, 150), (150, 110, 255), t))
+    for (x, y) in [(5, 11), (9, 10), (7, 8)]:
+        put(px, x, y, (90, 230, 255))
+    sparkles = [(3, 5), (11, 4), (6, 3), (12, 8), (8, 6), (4, 9)]
+    for k, (x, y) in enumerate(sparkles):
+        a = 0.5 + 0.5 * math.sin(2 * math.pi * f / nf + k * 1.3)
+        if a > 0.55:
+            put(px, x, y, (255, 255, 255))
+            if a > 0.85:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    put(px, x + dx, y + dy, (160, 230, 255))
+    return img
+
+
+def draw_funnel_side(f=0, nf=1):
+    """Seite des Sternentrichters: Energiekanaele, in denen Licht nach oben pulst, und ein gluehender Rand."""
+    img = plate(21, base=(18, 12, 34), noise=4)
+    px = img.load()
+    for x in range(16):  # Stufenkanten passend zum Modell
+        for y in (3, 4, 8, 9):
+            put(px, x, y, (58, 44, 98) if y in (3, 8) else (10, 6, 18))
+    for k, x in enumerate((2, 6, 9, 13)):
+        path = [(x, y) for y in range(14, 0, -1) if y not in (3, 4, 8, 9)]
+        glow_path(px, path, 'active', f, nf, 21 + k)
+    ph = f / nf
+    for x in range(1, 15):  # oberer Rand: Lichtwelle laeuft rundum
+        i = 0.5 + 0.5 * math.sin(2 * math.pi * (ph - x / 15.0))
+        put(px, x, 1, lerp((60, 120, 220), (200, 240, 255), i))
+    return img
+
+
+def draw_funnel_top(f=0, nf=1):
+    """Oberseite des Sternentrichters: drehender Spiralwirbel um eine dunkle Oeffnung mit pulsierendem Ring."""
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    ph = f / nf
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x - 7.5, y - 7.5
+            d = math.hypot(dx, dy)
+            ang = math.atan2(dy, dx)
+            if d < 2.2:
+                px[x, y] = (3, 1, 8, 255)
+            elif d < 7.6:
+                arm = 0.5 + 0.5 * math.sin(3 * ang + d * 1.1 - 2 * math.pi * ph)
+                arm = arm ** 3
+                base = lerp((22, 12, 44), (12, 6, 26), (d - 2.2) / 5.4)
+                col = lerp((90, 200, 255), (170, 110, 255), (d - 2.2) / 5.4)
+                px[x, y] = lerp(base, col, arm * (1.0 - (d - 2.2) / 7.0)) + (255,)
+            else:
+                px[x, y] = (60, 46, 100, 255)
+    ring = 0.5 + 0.5 * math.sin(2 * math.pi * ph * 2)
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if 2.2 <= d < 3.0:
+                put(px, x, y, lerp((120, 200, 255), (240, 250, 255), ring))
+    for (x, y) in [(3, 3), (12, 3), (3, 12), (12, 12)]:
+        put(px, x, y, lerp((120, 160, 255), (230, 240, 255), ring))
+    return img
+
+
+def draw_laser_side():
+    img = plate(31, base=(16, 20, 34), noise=4)
+    px = img.load()
+    for x in range(16):
+        put(px, x, 10, (60, 90, 130)); put(px, x, 11, (12, 16, 28))
+    for y in range(2, 10):
+        for x in (6, 9):
+            put(px, x, y, (40, 60, 100))
+        put(px, 7, y, lerp((90, 220, 255), (170, 120, 255), y / 10))
+        put(px, 8, y, lerp((90, 220, 255), (170, 120, 255), y / 10))
+    for x in range(2, 14, 3):
+        put(px, x, 13, (120, 220, 255))
+    return img
+
+
+def draw_laser_top():
+    img = plate(32, base=(16, 20, 34), noise=4)
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if 3.5 < d < 4.6:
+                put(px, x, y, (90, 200, 255))
+            elif d <= 1.6:
+                put(px, x, y, (230, 245, 255))
+    return img
+
+
+def draw_port_socket():
+    img = plate(41, base=(18, 14, 30), noise=3)
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if 5.2 < d < 6.6:
+                put(px, x, y, (70, 58, 110))
+            elif 4.2 < d <= 5.2:
+                put(px, x, y, (110, 210, 255))
+            elif d <= 4.2:
+                put(px, x, y, (6, 4, 12))
+    for (x, y) in [(7, 5), (5, 9), (10, 9)]:  # Kontaktstifte
+        put(px, x, y, (200, 200, 220)); put(px, x + 1, y, (150, 150, 170))
+    return img
+
+
+def draw_overdrive_particle(f, nf):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if d < 3.2:
+                put(px, x, y, lerp((255, 250, 230), (255, 190, 80), d / 3.2))
+            elif d < 5.0:
+                a = 0.5 + 0.5 * math.sin(2 * math.pi * ph + math.atan2(y - 7.5, x - 7.5) * 3)
+                if a > 0.35:
+                    put(px, x, y, lerp((255, 120, 40), (200, 60, 255), (d - 3.2) / 1.8))
+    for k in range(4):  # Strahlen
+        ang = 2 * math.pi * (ph + k / 4)
+        for r in range(5, 8):
+            x, y = int(round(7.5 + math.cos(ang) * r)), int(round(7.5 + math.sin(ang) * r))
+            put(px, x, y, (255, 230, 160))
+    return img
+
+
+def draw_book_cover():
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = lerp((70, 34, 130), (24, 12, 52), (x + y) / 30) + (255,)
+    for i in range(16):  # Goldrand
+        for (x, y) in ((i, 0), (i, 15), (0, i), (15, i)):
+            put(px, x, y, (200, 165, 80))
+    for (x, y) in [(2, 2), (13, 2), (2, 13), (13, 13)]:
+        put(px, x, y, (240, 210, 120))
+    star = [(7, 3), (8, 3), (7, 4), (8, 4), (3, 7), (4, 7), (11, 7), (12, 7), (3, 8), (4, 8), (11, 8), (12, 8),
+            (7, 11), (8, 11), (7, 12), (8, 12), (6, 6), (9, 6), (6, 9), (9, 9)]
+    for (x, y) in star:
+        put(px, x, y, (150, 230, 255))
+    for x in range(5, 11):
+        for y in range(5, 11):
+            if math.hypot(x - 7.5, y - 7.5) < 2.4:
+                put(px, x, y, (230, 245, 255))
+    return img
+
+
+def draw_book_pages():
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            c = (232, 224, 205) if y % 2 == 0 else (205, 196, 176)
+            px[x, y] = c + (255,)
+    return img
+
+
+def draw_book_spine():
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = (40, 18, 80, 255)
+    for x in range(16):
+        for y in (3, 12):
+            put(px, x, y, (200, 165, 80))
+    for x in range(16):
+        put(px, x, 7, (120, 220, 255)); put(px, x, 8, (160, 120, 255))
+    return img
+
+
+def draw_compressed_star_dust(f, nf):
+    """Verdichteter Sternenstaub: kompakter leuchtender Kristallblock mit Funkeln."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    for y in range(3, 14):
+        for x in range(3, 14):
+            if abs(x - 8) + abs(y - 8) <= 6:
+                t = (abs(x - 8) + abs(y - 8)) / 6
+                put(px, x, y, lerp((200, 170, 255), (60, 30, 140), t))
+    for (x, y) in [(8, 4), (5, 8), (11, 8), (8, 12), (8, 8)]:
+        a = 0.5 + 0.5 * math.sin(2 * math.pi * ph + x + y)
+        put(px, x, y, lerp((120, 200, 255), (255, 255, 255), a))
+    return img
+
+
+def draw_neutron_fragment(f, nf):
+    """Neutronenstern-Fragment: dichter heller Splitter mit pulsierendem Kern und blauen Strahlen."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    shard = [(7, 2), (8, 2), (6, 3), (7, 3), (8, 3), (9, 3), (6, 4), (7, 4), (8, 4), (9, 4), (5, 5), (6, 5), (7, 5), (8, 5),
+             (9, 5), (10, 5), (5, 6), (6, 6), (7, 6), (8, 6), (9, 6), (10, 6), (6, 7), (7, 7), (8, 7), (9, 7), (6, 8), (7, 8),
+             (8, 8), (9, 8), (7, 9), (8, 9), (7, 10), (8, 10), (7, 11), (8, 11), (8, 12)]
+    for (x, y) in shard:
+        put(px, x, y, lerp((180, 220, 255), (40, 70, 140), (x + y - 9) / 12))
+    pulse = 0.5 + 0.5 * math.sin(2 * math.pi * ph)
+    for (x, y) in [(7, 5), (8, 5), (7, 6), (8, 6)]:
+        put(px, x, y, lerp((200, 240, 255), (255, 255, 255), pulse))
+    for k in range(4):
+        ang = 2 * math.pi * (k / 4 + ph * 0.25)
+        for r in (6, 7):
+            put(px, int(round(7.5 + math.cos(ang) * r)), int(round(6.5 + math.sin(ang) * r)), (120, 200, 255))
+    return img
+
+
+def draw_quasar_essence(f, nf):
+    """Quasar-Essenz: gleissende Kugel mit zwei Jets und rotierender Scheibe."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    ph = f / nf
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x - 7.5, y - 7.5
+            d = math.hypot(dx, dy)
+            if d < 2.6:
+                put(px, x, y, lerp((255, 255, 255), (255, 200, 120), d / 2.6))
+            elif abs(dy) < 1.0 and d < 6.5:
+                a = 0.5 + 0.5 * math.sin(math.atan2(dy, dx) * 2 + d - 2 * math.pi * ph)
+                put(px, x, y, lerp((200, 80, 255), (255, 170, 80), a))
+    for y in range(0, 16):
+        if abs(y - 7.5) > 2.6:
+            a = 0.5 + 0.5 * math.sin(2 * math.pi * ph * 2 + y)
+            put(px, 7, y, lerp((120, 200, 255), (230, 245, 255), a)); put(px, 8, y, lerp((120, 200, 255), (230, 245, 255), a))
+    return img
+
+
+def draw_module(f, nf, accent, symbol):
+    """Controller-Modul: dunkle Platine mit Goldkontakten, leuchtendem Kern und Symbol."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(2, 14):
+        for x in range(2, 14):
+            put(px, x, y, (30, 22, 48))
+    for i in range(2, 14):
+        for (x, y) in ((i, 2), (i, 13), (2, i), (13, i)):
+            put(px, x, y, (70, 56, 110))
+    for x in range(4, 13, 2):  # Kontakte
+        put(px, x, 14, (220, 180, 80)); put(px, x, 1, (220, 180, 80))
+    pulse = 0.5 + 0.5 * math.sin(2 * math.pi * f / nf)
+    for (x, y) in symbol:
+        put(px, x, y, lerp(accent, (255, 255, 255), pulse * 0.6))
+    return img
+
+
+EFF_SYMBOL = [(6, 5), (7, 5), (8, 5), (9, 5), (6, 6), (6, 7), (7, 7), (8, 7), (6, 8), (6, 9), (6, 10), (7, 10), (8, 10), (9, 10)]
+STAB_SYMBOL = [(7, 4), (8, 4), (6, 5), (9, 5), (5, 6), (10, 6), (5, 7), (10, 7), (5, 8), (10, 8), (6, 9), (9, 9), (7, 10), (8, 10),
+               (7, 7), (8, 7)]
+# durchgestrichener Asteroid (Ring mit Schraegstrich)
+ANTI_SYMBOL = [(7, 4), (8, 4), (5, 5), (6, 5), (9, 5), (10, 5), (4, 6), (11, 6), (4, 7), (11, 7), (4, 8), (11, 8), (4, 9), (11, 9),
+               (5, 10), (6, 10), (9, 10), (10, 10), (7, 11), (8, 11), (10, 6), (9, 7), (8, 8), (7, 8), (6, 9)]
+# Farbrad (Ring) fuer das Farb-Modul
+COLOR_SYMBOL = [(7, 4), (8, 4), (5, 5), (6, 5), (9, 5), (10, 5), (4, 6), (11, 6), (4, 7), (11, 7), (4, 8), (11, 8), (4, 9), (11, 9),
+                (5, 10), (6, 10), (9, 10), (10, 10), (7, 11), (8, 11), (7, 7), (8, 7), (7, 8), (8, 8)]
+
+
+def hue_rgb(h):
+    import colorsys
+    r, g, b = colorsys.hsv_to_rgb(h % 1.0, 0.7, 1.0)
+    return (int(r * 255), int(g * 255), int(b * 255))
+
+
+def draw_color_module(f, nf):
+    """Farb-Modul: Platine wie die anderen Module, das Farbrad durchlaeuft den Farbkreis."""
+    img = draw_module(f, nf, hue_rgb(f / nf), COLOR_SYMBOL)
+    px = img.load()
+    for (x, y) in COLOR_SYMBOL:  # jedes Ringsegment in seinem eigenen Farbton
+        ang = math.atan2(y - 7.5, x - 7.5) / (2 * math.pi)
+        put(px, x, y, hue_rgb(ang + f / nf))
+    return img
+
+
+def draw_guide_book():
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(2, 15):
+        for x in range(3, 14):
+            px[x, y] = lerp((60, 30, 120), (25, 12, 55), (x + y) / 26) + (255,)
+    for y in range(2, 15):  # Buchruecken
+        put(px, 3, y, (110, 70, 200)); put(px, 4, y, (40, 20, 80))
+    for x in range(5, 14):  # Seiten
+        put(px, x, 14, (225, 215, 240))
+    for (x, y) in [(5, 2), (13, 2), (5, 13), (13, 13)]:
+        put(px, x, y, (200, 170, 90))
+    for (x, y) in [(9, 5), (9, 6), (9, 9), (9, 10), (7, 8), (8, 8), (10, 8), (11, 8)]:  # Stern
+        put(px, x, y, (150, 230, 255))
+    put(px, 9, 8, (255, 255, 255)); put(px, 9, 7, (220, 245, 255))
+    for (x, y) in [(6, 4), (12, 11), (12, 4)]:
+        put(px, x, y, (230, 200, 255))
+    return img
+
+
+# ----------------------------------------------------------------- Steuerkonsole (Item-Port | Controller | Energie-Port)
+def terminal_tile(part, phase, f, nf):
+    """Ein Drittel der durchgehenden Konsolenfront (part 0 = links/Item, 1 = Mitte/Controller, 2 = rechts/Energie)."""
+    rnd = random.Random(60 + part)
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            n = rnd.randint(-4, 4)
+            px[x, y] = (clamp(22 + n), clamp(15 + n), clamp(36 + n * 1.4), 255)
+    for x in range(16):  # durchgehende Leisten oben und unten
+        put(px, x, 0, (70, 55, 105)); put(px, x, 1, (40, 31, 64)); put(px, x, 2, (60, 48, 96))
+        put(px, x, 13, (60, 48, 96)); put(px, x, 14, (16, 11, 28)); put(px, x, 15, (6, 4, 12))
+    for y in range(3, 13):  # Bildschirmflaeche ueber alle drei Bloecke
+        for x in range(16):
+            put(px, x, y, (9, 5, 18))
+    edge = 0 if part == 0 else 15 if part == 2 else None
+    if edge is not None:  # nur die Aussenkanten der Konsole bekommen einen Rahmen
+        for y in range(16):
+            put(px, edge, y, (70, 55, 105) if edge == 0 else (6, 4, 12))
+            put(px, 1 if edge == 0 else 14, y, (60, 48, 96) if 2 <= y <= 13 else (40, 31, 64))
+    # Leitung am unteren Bildschirmrand: von den Ports zur Mitte
+    if part == 0:
+        line = [(x, 11) for x in range(3, 16)]
+    elif part == 2:
+        line = [(x, 11) for x in range(12, -1, -1)]
+    else:
+        line = [(x, 11) for x in range(0, 16)]
+    glow_path(px, line, phase, f, nf, 61 + part)
+    if part == 1:
+        tmp = Image.new('RGBA', (16, 16), (9, 5, 18, 255))
+        tp = tmp.load()
+        paint_eye(tp, phase, f, nf, cx=7.5, cy=6.5, half_w=5.5, max_h=2.9, seed=6)
+        for y in range(3, 11):
+            for x in range(1, 15):
+                if tp[x, y][:3] != (9, 5, 18):
+                    put(px, x, y, tp[x, y])
+        leds = [(3, 1), (6, 1), (9, 1), (12, 1)]
+    else:
+        icon = ([(9, 4), (8, 5), (7, 6), (6, 7), (7, 7), (8, 7), (9, 7), (8, 8), (7, 9), (6, 10)] if part == 2 else
+                [(5, 4), (6, 5), (7, 6), (8, 6), (9, 5), (10, 4), (5, 7), (6, 8), (7, 9), (8, 9), (9, 8), (10, 7)])
+        if part == 2:
+            icon = [(x - 1, y - 1) for x, y in icon]
+        else:
+            icon = [(x + 1, y - 1) for x, y in icon]
+        glow_path(px, icon, phase, f, nf, 64 + part)
+        leds = [(5, 1), (10, 1)]
+    ph = f / max(nf, 1)
+    for k, (x, y) in enumerate(leds):
+        if phase == 'dormant':
+            c = (34, 26, 50)
+        elif phase == 'unstable':
+            c = (255, 40, 50) if (f + k + part) % 2 == 0 else (70, 10, 16)
+        else:
+            c = lerp((60, 40, 120), (120, 240, 255) if phase == 'active' else (170, 110, 255),
+                     0.5 + 0.5 * math.sin(2 * math.pi * ph + k + part * 2))
+        put(px, x, y, c)
+    return img
+
+
+def draw_terminal_left(phase, f, nf):
+    return terminal_tile(0, phase, f, nf)
+
+
+def draw_terminal_center(phase, f, nf):
+    return terminal_tile(1, phase, f, nf)
+
+
+def draw_terminal_right(phase, f, nf):
+    return terminal_tile(2, phase, f, nf)
+
+
+def draw_terminal_trim(phase, f, nf):
+    """Zierleiste fuer Pult und Blende: dunkles Metall mit durchgehender Leuchtlinie in der Mitte (Zeile 7)."""
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = (30, 22, 48, 255) if y < 7 else (14, 9, 24, 255)
+    glow_path(px, [(x, 7) for x in range(16)], phase, f, nf, 70)
+    for x in range(16):
+        put(px, x, 6, (70, 55, 105)); put(px, x, 8, (8, 5, 14))
+    return img
+
+
+# ----------------------------------------------------------------- Ausgabe der Texturen
+PAINTERS = {
+    'void_casing': draw_casing,
+    'rune_frame': draw_frame,
+    'resonance_coil': draw_coil,
+    'focus_crystal': draw_crystal,
+    'focus_glass': draw_glass,
+    'controller_front': draw_controller_front,
+    'energy_port': draw_energy_port,
+    'item_port': draw_item_port,
+    'terminal_left': draw_terminal_left,
+    'terminal_center': draw_terminal_center,
+    'terminal_right': draw_terminal_right,
+    'terminal_trim': draw_terminal_trim,
+}
+
+
+def save_strip(name, frames, frametime, folder='block'):
+    w, h = frames[0].size
+    strip = Image.new('RGBA', (w, h * len(frames)))
+    for i, fr in enumerate(frames):
+        strip.paste(fr, (0, i * h))
+    out = os.path.join(ASSETS, 'textures', folder, name + '.png')
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    strip.save(out)
+    if len(frames) > 1:
+        wjson(out + '.mcmeta', {'animation': {'frametime': frametime}})
+
+
+def textures():
+    sheets = {}
+    for name, painter in PAINTERS.items():
+        for phase in PHASES:
+            nf = FRAMES[phase]
+            frames = [painter(phase, f, nf) for f in range(nf)]
+            save_strip(f'{name}_{phase}', frames, FRAMETIME.get(phase, 1))
+            sheets[(name, phase)] = frames
+    save_strip('singularity_core_dormant', [draw_core_dormant()], 1)
+    save_strip('star_dust', [draw_star_dust(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('guide_book', [draw_guide_book()], 1, folder='item')
+    save_strip('efficiency_module', [draw_module(f, 8, (255, 190, 60), EFF_SYMBOL) for f in range(8)], 3, folder='item')
+    save_strip('stability_module', [draw_module(f, 8, (90, 220, 255), STAB_SYMBOL) for f in range(8)], 3, folder='item')
+    save_strip('anti_asteroid_module', [draw_module(f, 8, (255, 90, 140), ANTI_SYMBOL) for f in range(8)], 3, folder='item')
+    save_strip('color_module', [draw_color_module(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('compressed_star_dust', [draw_compressed_star_dust(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('neutron_fragment', [draw_neutron_fragment(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('quasar_essence', [draw_quasar_essence(f, 8) for f in range(8)], 2, folder='item')
+    save_strip('book_cover', [draw_book_cover()], 1, folder='item')
+    save_strip('book_pages', [draw_book_pages()], 1, folder='item')
+    save_strip('book_spine', [draw_book_spine()], 1, folder='item')
+    save_strip('cosmic_laser_side', [draw_laser_side()], 1)
+    save_strip('port_socket', [draw_port_socket()], 1)
+    save_strip('overdrive_particle', [draw_overdrive_particle(f, 8) for f in range(8)], 3, folder='item')
+    save_strip('cosmic_laser_top', [draw_laser_top()], 1)
+    save_strip('star_funnel_side', [draw_funnel_side(f, 16) for f in range(16)], 2)
+    save_strip('star_funnel_top', [draw_funnel_top(f, 16) for f in range(16)], 2)
+    return sheets
+
+
+def preview(sheets):
+    names = list(PAINTERS.keys())
+    scale = 6
+    cols = len(PHASES) * 2
+    img = Image.new('RGBA', (cols * 17 * scale, len(names) * 17 * scale), (60, 60, 70, 255))
+    for r, name in enumerate(names):
+        c = 0
+        for phase in PHASES:
+            frames = sheets[(name, phase)]
+            for fr in (frames[0], frames[len(frames) // 2]):
+                big = fr.resize((16 * scale, 16 * scale), Image.NEAREST)
+                img.paste(big, (c * 17 * scale, r * 17 * scale), big)
+                c += 1
+    img.save('/tmp/preview.png')
+
+
+# ----------------------------------------------------------------- Modelle / Blockstates
+# Ports bleiben sichtbar (Andockpunkte fuer Rohre/Kabel), der Rest geht in der runden Kammer auf
+COSMIC = ['resonance_coil', 'focus_crystal', 'rune_frame', 'void_casing']
+SIMPLE = ['void_casing', 'rune_frame', 'resonance_coil', 'focus_crystal', 'energy_port', 'item_port']
+
+
+def models():
+    for b in SIMPLE:
+        for p in PHASES:
+            wjson(f'{ASSETS}/models/block/{b}_{p}.json',
+                  {'parent': 'minecraft:block/cube_all', 'textures': {'all': f'{MOD}:block/{b}_{p}'}})
+        if b in COSMIC:
+            # gebildete Struktur: Modell ausblenden, ResonatorRenderer zeichnet den Sternenfeld-Koerper
+            wjson(f'{ASSETS}/models/block/{b}_hidden.json', {'textures': {'particle': f'{MOD}:block/{b}_formed'}})
+            variants = {f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'} for p in PHASES}
+        else:
+            variants = {f'phase={p}': {'model': f'{MOD}:block/{b}_{p}'} for p in PHASES}
+        wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
+        wjson(f'{ASSETS}/models/item/{b}.json', {'parent': f'{MOD}:block/{b}_formed'})
+
+    # Ports: bei gebildeter Struktur eine Anschlussdose mit Steckbuchsen auf allen Seiten
+    def plug(core_tex):
+        socket = f'{MOD}:block/port_socket'
+        def el(a, b, tex):
+            return {'from': a, 'to': b, 'faces': {d: {'texture': tex} for d in ('down', 'up', 'north', 'south', 'west', 'east')}}
+        return {'parent': 'minecraft:block/block', 'textures': {'particle': core_tex, 'core': core_tex, 'socket': socket},
+                'elements': [el([2, 2, 2], [14, 14, 14], '#core'),
+                             el([0, 4, 4], [2, 12, 12], '#socket'), el([14, 4, 4], [16, 12, 12], '#socket'),
+                             el([4, 0, 4], [12, 2, 12], '#socket'), el([4, 14, 4], [12, 16, 12], '#socket'),
+                             el([4, 4, 0], [12, 12, 2], '#socket'), el([4, 4, 14], [12, 12, 16], '#socket')]}
+    for b in ('energy_port', 'item_port'):
+        for p in PHASES[1:]:
+            wjson(f'{ASSETS}/models/block/{b}_plug_{p}.json', plug(f'{MOD}:block/{b}_{p}'))
+        # gebildet: Blockmodell leer, die Dose zeichnet der PortRenderer (mit Einblend-Animation)
+        wjson(f'{ASSETS}/models/block/{b}_hidden.json', {'textures': {'particle': f'{MOD}:block/{b}_formed'}})
+        wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': {
+            f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'} for p in PHASES}})
+
+    # Steuerkonsole: Controller + Item-Port links + Energie-Port rechts (Modelle mit Front nach Norden).
+    # Durchgehende Bildschirmfront, unten ein Pult, oben eine Blende; aussen an den Ports die Anschlussbuchse.
+    def terminal(front, p, socket_side=None):
+        casing = f'{MOD}:block/void_casing_{p}'
+        trim = f'{MOD}:block/terminal_trim_{p}'
+        tex = {'particle': casing, 'casing': casing, 'front': f'{MOD}:block/{front}_{p}', 'trim': trim,
+               'socket': f'{MOD}:block/port_socket'}
+        def face(t, uv=None, cull=None):
+            d = {'texture': t}
+            if uv:
+                d['uv'] = uv
+            if cull:
+                d['cullface'] = cull
+            return d
+        body = {d: face('#casing', cull=d) for d in ('down', 'up', 'south', 'east', 'west')}
+        body['north'] = face('#front', cull='north')
+        if socket_side:
+            body[socket_side] = face('#socket', cull=socket_side)
+        def strip(y0, y1, depth):
+            return {'from': [0, y0, -depth], 'to': [16, y1, 0], 'faces': {
+                'north': face('#trim', [0, 7 - (y1 - y0) // 2, 16, 7 - (y1 - y0) // 2 + (y1 - y0)]),
+                'up': face('#casing', [0, 0, 16, depth]), 'down': face('#casing', [0, 0, 16, depth]),
+                'east': face('#casing', [0, 0, depth, y1 - y0]), 'west': face('#casing', [0, 0, depth, y1 - y0])}}
+        return {'parent': 'minecraft:block/block', 'textures': tex,
+                'elements': [{'from': [0, 0, 0], 'to': [16, 16, 16], 'faces': body},
+                             strip(0, 3, 3),     # Pult
+                             strip(14, 16, 2)]}  # Blende
+    for p in PHASES:
+        wjson(f'{ASSETS}/models/block/controller_terminal_{p}.json', terminal('terminal_center', p))
+        # Energie-Port rechts vom Controller (von vorn) = im Modell westlich, Item-Port links = oestlich
+        wjson(f'{ASSETS}/models/block/energy_port_terminal_{p}.json', terminal('terminal_right', p, 'west'))
+        wjson(f'{ASSETS}/models/block/item_port_terminal_{p}.json', terminal('terminal_left', p, 'east'))
+        # ohne angedocktes Rohr: Aussenseite schlicht (Gehaeuse), die Buchse erscheint erst beim Andocken
+        wjson(f'{ASSETS}/models/block/energy_port_terminal_plain_{p}.json', terminal('terminal_right', p))
+        wjson(f'{ASSETS}/models/block/item_port_terminal_plain_{p}.json', terminal('terminal_left', p))
+    sides = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
+    for b in ('energy_port', 'item_port'):
+        variants = {}
+        for p in PHASES:
+            for dock in ('false', 'true'):
+                variants[f'console=none,docked={dock},phase={p}'] = {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'}
+                for side, y in sides.items():
+                    # gebildet: Station bzw. Konsolenfluegel werden gerendert
+                    name = f'{b}_terminal_dormant' if dock == 'true' else f'{b}_terminal_plain_dormant'
+                    e = {'model': f'{MOD}:block/{name}' if p == 'dormant' else f'{MOD}:block/{b}_hidden'}
+                    if y and p == 'dormant':
+                        e['y'] = y
+                    variants[f'console={side},docked={dock},phase={p}'] = e
+        wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
+
+    # Glas (transluzent)
+    for p in PHASES:
+        wjson(f'{ASSETS}/models/block/focus_glass_{p}.json',
+              {'parent': 'minecraft:block/cube_all', 'render_type': 'minecraft:translucent',
+               'textures': {'all': f'{MOD}:block/focus_glass_{p}'}})
+    wjson(f'{ASSETS}/models/block/focus_glass_hidden.json', {'textures': {'particle': f'{MOD}:block/focus_glass_formed'}})
+    wjson(f'{ASSETS}/blockstates/focus_glass.json',
+          {'variants': {f'phase={p}': {'model': f'{MOD}:block/focus_glass_{p if p == "dormant" else "hidden"}'} for p in PHASES}})
+    wjson(f'{ASSETS}/models/item/focus_glass.json', {'parent': f'{MOD}:block/focus_glass_formed'})
+
+    # Controller: Front (north) mit Auge, Rest wie Gehaeuse
+    rot = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
+    for p in PHASES:
+        side = f'{MOD}:block/void_casing_{p}'
+        wjson(f'{ASSETS}/models/block/controller_{p}.json',
+              {'parent': 'minecraft:block/cube',
+               'textures': {'particle': side, 'down': side, 'up': side, 'north': f'{MOD}:block/controller_front_{p}',
+                            'east': side, 'south': side, 'west': side}})
+    # gebildet: der Controller schwebt als Interface-Knoten (wird gerendert), das Blockmodell verschwindet
+    wjson(f'{ASSETS}/models/block/controller_hidden.json', {'textures': {'particle': f'{MOD}:block/void_casing_formed'}})
+    variants = {}
+    for facing, y in rot.items():
+        for p in PHASES:
+            for term in ('false', 'true'):
+                base = 'controller_terminal' if term == 'true' else 'controller'
+                entry = {'model': f'{MOD}:block/{base}_{p}' if p == 'dormant' else f'{MOD}:block/controller_hidden'}
+                if y:
+                    entry['y'] = y
+                variants[f'facing={facing},phase={p},terminal={term}'] = entry
+    wjson(f'{ASSETS}/blockstates/controller.json', {'variants': variants})
+    wjson(f'{ASSETS}/models/item/controller.json', {'parent': f'{MOD}:block/controller_formed'})
+
+    # Singularitaetskern: inaktiv = kleiner dunkler Wuerfel, sonst unsichtbar (der Renderer uebernimmt)
+    faces = {d: {'texture': '#core'} for d in ('down', 'up', 'north', 'south', 'west', 'east')}
+    wjson(f'{ASSETS}/models/block/singularity_core_dormant.json',
+          {'parent': 'minecraft:block/block',
+           'textures': {'particle': f'{MOD}:block/singularity_core_dormant', 'core': f'{MOD}:block/singularity_core_dormant'},
+           'elements': [{'from': [4, 4, 4], 'to': [12, 12, 12], 'faces': faces}]})
+    wjson(f'{ASSETS}/models/block/singularity_core_hidden.json',
+          {'textures': {'particle': f'{MOD}:block/singularity_core_dormant'}})
+    wjson(f'{ASSETS}/blockstates/singularity_core.json',
+          {'variants': {
+              'phase=dormant': {'model': f'{MOD}:block/singularity_core_dormant'},
+              'phase=formed': {'model': f'{MOD}:block/singularity_core_hidden'},
+              'phase=active': {'model': f'{MOD}:block/singularity_core_hidden'},
+              'phase=unstable': {'model': f'{MOD}:block/singularity_core_hidden'}}})
+    wjson(f'{ASSETS}/models/item/singularity_core.json', {'parent': f'{MOD}:block/singularity_core_dormant'})
+
+    # Sternentrichter: drei gestufte Quader, unten schmal, oben breit
+    side, top = f'{MOD}:block/star_funnel_side', f'{MOD}:block/star_funnel_top'
+    def box(a, b):
+        return {'from': a, 'to': b, 'faces': {
+            'down': {'texture': '#side'}, 'up': {'texture': '#top'}, 'north': {'texture': '#side'},
+            'south': {'texture': '#side'}, 'west': {'texture': '#side'}, 'east': {'texture': '#side'}}}
+    wjson(f'{ASSETS}/models/block/star_funnel.json', {
+        'parent': 'minecraft:block/block', 'textures': {'particle': side, 'side': side, 'top': top},
+        'elements': [box([4, 0, 4], [12, 4, 12]), box([2, 4, 2], [14, 9, 14]), box([0, 9, 0], [16, 13, 16])]})
+    # verbunden mit einem gebildeten Reaktor: Modell aus, der animierte Trichter wird gerendert
+    wjson(f'{ASSETS}/models/block/star_funnel_hidden.json', {'textures': {'particle': side}})
+    wjson(f'{ASSETS}/blockstates/star_funnel.json', {'variants': {
+        'linked=false': {'model': f'{MOD}:block/star_funnel'},
+        'linked=true': {'model': f'{MOD}:block/star_funnel_hidden'}}})
+    wjson(f'{ASSETS}/models/item/star_funnel.json', {'parent': f'{MOD}:block/star_funnel'})
+    lside, ltop = f'{MOD}:block/cosmic_laser_side', f'{MOD}:block/cosmic_laser_top'
+    def lbox(a, b):
+        return {'from': a, 'to': b, 'faces': {
+            'down': {'texture': '#top'}, 'up': {'texture': '#top'}, 'north': {'texture': '#side'},
+            'south': {'texture': '#side'}, 'west': {'texture': '#side'}, 'east': {'texture': '#side'}}}
+    wjson(f'{ASSETS}/models/block/cosmic_laser.json', {
+        'parent': 'minecraft:block/block', 'textures': {'particle': lside, 'side': lside, 'top': ltop},
+        'elements': [lbox([1, 0, 1], [15, 5, 15]), lbox([5, 5, 5], [11, 11, 11]), lbox([7, 11, 7], [9, 16, 9])]})
+    wjson(f'{ASSETS}/models/block/cosmic_laser_hidden.json', {'textures': {'particle': lside}})
+    wjson(f'{ASSETS}/blockstates/cosmic_laser.json', {'variants': {
+        'linked=false': {'model': f'{MOD}:block/cosmic_laser'},
+        'linked=true': {'model': f'{MOD}:block/cosmic_laser_hidden'}}})
+    wjson(f'{ASSETS}/models/item/cosmic_laser.json', {'parent': f'{MOD}:block/cosmic_laser'})
+    # animierte 3D-Items (gezeichnet von CosmicItemRenderer)
+    floating = {
+        'gui': {'rotation': [20, 30, 0], 'translation': [0, 0, 0], 'scale': [1.0, 1.0, 1.0]},
+        'ground': {'rotation': [0, 0, 0], 'translation': [0, 3, 0], 'scale': [0.5, 0.5, 0.5]},
+        'fixed': {'rotation': [0, 0, 0], 'translation': [0, 0, 0], 'scale': [0.9, 0.9, 0.9]},
+        'head': {'rotation': [0, 0, 0], 'translation': [0, 10, 0], 'scale': [0.8, 0.8, 0.8]},
+        'thirdperson_righthand': {'rotation': [0, 0, 0], 'translation': [0, 2.5, 1], 'scale': [0.5, 0.5, 0.5]},
+        'thirdperson_lefthand': {'rotation': [0, 0, 0], 'translation': [0, 2.5, 1], 'scale': [0.5, 0.5, 0.5]},
+        'firstperson_righthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]},
+        'firstperson_lefthand': {'rotation': [0, 0, 0], 'translation': [1.13, 3.2, 1.13], 'scale': [0.6, 0.6, 0.6]}}
+    for it in ('overdrive_particle', 'star_dust', 'compressed_star_dust', 'neutron_fragment', 'quasar_essence', 'efficiency_module',
+               'stability_module', 'anti_asteroid_module', 'color_module'):
+        wjson(f'{ASSETS}/models/item/{it}.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
+                                                  'textures': {'particle': f'{MOD}:item/{it}'}, 'display': floating})
+    # Quasar-Overdrive-Partikel: ebenfalls 3D (CosmicItemRenderer), Bruchpartikel von der Quasar-Essenz
+    wjson(f'{ASSETS}/models/item/quasar_overdrive_particle.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
+                                                                  'textures': {'particle': f'{MOD}:item/quasar_essence'},
+                                                                  'display': floating})
+    # 3D-Handbuch: Buchdeckel, Seitenblock, Ruecken und Sternen-Juwel
+    cover, pages, spine = f'{MOD}:item/book_cover', f'{MOD}:item/book_pages', f'{MOD}:item/book_spine'
+    def el(a, b, faces):
+        return {'from': a, 'to': b, 'faces': faces}
+    allf = lambda tex: {d: {'texture': tex} for d in ('down', 'up', 'north', 'south', 'west', 'east')}
+    wjson(f'{ASSETS}/models/item/guide_book.json', {
+        'textures': {'particle': cover, 'cover': cover, 'pages': pages, 'spine': spine},
+        'elements': [
+            el([2, 0, 1], [14, 1, 15], {**allf('#spine'), 'down': {'texture': '#cover'}, 'up': {'texture': '#pages'}}),
+            el([2.5, 1, 1.5], [13.5, 4, 14.5], allf('#pages')),
+            el([2, 4, 1], [14, 5, 15], {**allf('#spine'), 'up': {'texture': '#cover'}, 'down': {'texture': '#pages'}}),
+            el([1, 0, 1], [2, 5, 15], allf('#spine')),
+            el([7, 5, 7], [9, 5.6, 9], allf('#spine'))],
+        'display': {
+            'gui': {'rotation': [35, 210, 0], 'translation': [0, 1, 0], 'scale': [0.85, 0.85, 0.85]},
+            'ground': {'rotation': [0, 0, 0], 'translation': [0, 2, 0], 'scale': [0.5, 0.5, 0.5]},
+            'fixed': {'rotation': [90, 0, 0], 'translation': [0, 0, -3], 'scale': [0.8, 0.8, 0.8]},
+            'thirdperson_righthand': {'rotation': [60, 0, 0], 'translation': [0, 3, 1], 'scale': [0.55, 0.55, 0.55]},
+            'thirdperson_lefthand': {'rotation': [60, 0, 0], 'translation': [0, 3, 1], 'scale': [0.55, 0.55, 0.55]},
+            'firstperson_righthand': {'rotation': [20, -20, 10], 'translation': [1.1, 3.5, 1], 'scale': [0.6, 0.6, 0.6]},
+            'firstperson_lefthand': {'rotation': [20, 20, -10], 'translation': [1.1, 3.5, 1], 'scale': [0.6, 0.6, 0.6]}}})
+
+
+
+# ----------------------------------------------------------------- Sprache
+DE = {
+    'itemGroup.cosmiccore': 'Kosmischer Kern',
+    'block.cosmiccore.void_casing': 'Leerengehäuse',
+    'block.cosmiccore.rune_frame': 'Runenrahmen',
+    'block.cosmiccore.focus_glass': 'Fokusglas',
+    'block.cosmiccore.resonance_coil': 'Resonanzschild-Emitter',
+    'block.cosmiccore.focus_crystal': 'Fokuskristall',
+    'block.cosmiccore.singularity_core': 'Singularitätskern',
+    'block.cosmiccore.controller': 'Kerngenerator-Controller',
+    'block.cosmiccore.energy_port': 'Energie-Port',
+    'block.cosmiccore.item_port': 'Item-Port',
+    'item.cosmiccore.star_dust': 'Sternenstaub',
+    'message.cosmiccore.status.header': '--- Kerngenerator ---',
+    'message.cosmiccore.status.pending': 'Struktur kann gerade nicht geprüft werden (Chunks nicht geladen?).',
+    'message.cosmiccore.status.invalid': 'Struktur unvollständig: %s Fehler.',
+    'message.cosmiccore.status.error_at': 'Erster Fehler bei %s %s %s: erwartet %s',
+    'message.cosmiccore.status.formed': 'Struktur gebildet.',
+    'message.cosmiccore.status.energy': 'Energie: %s / %s RF',
+    'message.cosmiccore.status.output': 'Leistung: %s RF/t (Resonanz %s%%)',
+    'message.cosmiccore.status.instability': 'Instabilität: %s%%',
+    'message.cosmiccore.status.fuel': 'Brennstoff: %s im Slot, aktuelle Ladung noch %s s',
+    'message.cosmiccore.status.stabilizer': 'Stabilisator: %s im Slot, Wirkung noch %s s',
+    'message.cosmiccore.status.cosmic': 'Kosmischer Faktor: x%s',
+    'message.cosmiccore.status.collapsed': 'Der Kern ist kollabiert - Neustart in %s s.',
+    'message.cosmiccore.expected_air': 'Luft (die Kammer muss leer sein)',
+    'message.cosmiccore.expected_hull': 'Leerengehäuse oder Port',
+    'message.cosmiccore.missing_energy_port': 'einen Energie-Port in der Hülle (Pflicht)',
+    'message.cosmiccore.missing_item_port': 'einen Item-Port in der Hülle (Pflicht)',
+    'gui.cosmiccore.status.no_energy_port': 'Energie-Port fehlt',
+    'gui.cosmiccore.status.no_item_port': 'Item-Port fehlt',
+    'gui.cosmiccore.tab.open': 'Klicken zum Ausklappen',
+    'gui.cosmiccore.storage': 'Beutelager',
+    'gui.cosmiccore.storage.hint': 'Öffnet das Lager des Item-Ports - Schließen führt zurück',
+    'gui.cosmiccore.tab.close': 'Klicken zum Einklappen',
+    'message.cosmiccore.expected_slot': 'Leerengehäuse, Port oder Controller (Mitte einer Bodenkante)',
+    'tooltip.cosmiccore.fuel': 'Kerngenerator-Brennstoff: %s RF/t, %s s',
+    'tooltip.cosmiccore.stabilizer': 'Kerngenerator-Stabilisator: kühlt %s Instabilität',
+    'message.cosmiccore.status.no_size': 'Noch keine Reaktorgröße gewählt - Rechtsklick öffnet die Auswahl.',
+    'gui.cosmiccore.choose_size': 'Reaktorgröße wählen',
+    'gui.cosmiccore.size_button': '%sx%sx%s',
+    'gui.cosmiccore.size_info': '%s – %s RF/t',
+    'gui.cosmiccore.confirm': 'Mit %sx%sx%s bauen',
+    'gui.cosmiccore.with_funnel': '+ Trichter',
+    'gui.cosmiccore.output_label': 'Leistung',
+    'gui.cosmiccore.max_level': 'Max. Stufe',
+    'gui.cosmiccore.blocks_label': 'Benötigte Blöcke',
+    'gui.cosmiccore.build': 'Bauen',
+    'gui.cosmiccore.start': 'Zünden',
+    'gui.cosmiccore.stop': 'Stopp',
+    'gui.cosmiccore.preview_on': 'Vorschau ✔',
+    'gui.cosmiccore.preview_off': 'Vorschau',
+    'gui.cosmiccore.output': 'Leistung: %s RF/t',
+    'gui.cosmiccore.energy': 'Energie: %s / %s RF',
+    'gui.cosmiccore.instability': 'Instabilität: %s %%',
+    'gui.cosmiccore.cosmic': 'Kosmos-Faktor: x%s',
+    'gui.cosmiccore.fuel_label': 'Brennstoff',
+    'gui.cosmiccore.stab_label': 'Stabilisator',
+    'gui.cosmiccore.out_label': 'Leistung',
+    'gui.cosmiccore.buf_label': 'Puffer',
+    'gui.cosmiccore.sky_on': '✦ Himmel: frei',
+    'gui.cosmiccore.sky_off': '✧ Himmel: verdeckt',
+    'gui.cosmiccore.size': 'Reaktor: %sx%sx%s',
+    'gui.cosmiccore.scale': 'Leistungsstufe',
+    'gui.cosmiccore.status.incomplete': 'Unvollständig (%s Fehler)',
+    'gui.cosmiccore.status.collapsed': 'Kollabiert! (%s s)',
+    'gui.cosmiccore.status.off': 'Abgeschaltet',
+    'gui.cosmiccore.status.idle': 'Bereit - kein Brennstoff',
+    'gui.cosmiccore.status.full': 'Puffer voll - pausiert',
+    'gui.cosmiccore.status.meltdown': 'KRITISCH! Kollaps in %s s',
+    'message.cosmiccore.meltdown': '⚠ KERN KRITISCH - Kollaps in %s s! Stabilisator nachlegen oder Stopp!',
+    'gui.cosmiccore.status.starting': 'Zündet...',
+    'gui.cosmiccore.status.unstable': 'INSTABIL!',
+    'gui.cosmiccore.status.active': 'Aktiv',
+    'gui.cosmiccore.tip.energy': 'Energiepuffer',
+    'gui.cosmiccore.tip.instability': 'Instabilität',
+    'gui.cosmiccore.tip.field': 'Eindämmungsfeld',
+    'gui.cosmiccore.tip.resonance': 'Resonanz',
+    'item.cosmiccore.guide_book': 'Kosmisches Handbuch',
+    'guide.cosmiccore.page.1': '§5§lKosmischer Kern§r\n§8Handbuch für Reaktorbauer§r\n\nDer Kerngenerator bündelt Sternenlicht in einer Singularität und wandelt es in RF um.\n\nEs gilt: mehr Leistung bedeutet mehr Risiko.',
+    'guide.cosmiccore.page.2': '§5§lAufbau§r\n\n1. Controller platzieren.\n2. Größe wählen: 5x5x5, 7x7x7 oder 9x9x9. Die Wahl ist endgültig!\n3. In der GUI die §dVorschau§r einschalten: Geisterblöcke zeigen, was wohin gehört, rot = falscher Block.',
+    'guide.cosmiccore.page.3': '§5§lBlöcke§r\n§lGehäuse:§r Boden, Decke\n§lRunenrahmen:§r Ecken\n§lFokusglas:§r Deckenring\n§lSchild-Emitter:§r unter dem Kern\n§lKristall:§r über dem Kern\n§lKern:§r Mitte\n\nDas Innere muss leer sein. Die Vorschau zeigt alles genau.',
+    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nJeder Reaktor braucht §cmindestens einen Energie-Port und einen Item-Port§r - sie ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an und hat ein Lager für 27 Stapel Beute (Rechtsklick).\n\n§d§lSteuerkonsole:§r Item-Port links und Energie-Port rechts neben dem Controller verschmelzen zu einer Konsole. Rohre und Kabel docken außen an - diese beiden Plätze bleiben frei.',
+    'guide.cosmiccore.page.5': '§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...',
+    'guide.cosmiccore.page.6': '§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.',
+    'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen: 5er 4, 7er 6, 9er 8, ultimativ 10. Jede neue Stufe einmalig freischalten: §e5er§r Sternenstaub, §e7er§r verd. Sternenstaub, §e9er§r Neutronenstern, §eUltimativ§r Quasar-Essenz.',
+    'guide.cosmiccore.page.8': '§5§lInstabilität§r\n\nBrennstoff erhitzt den Kern. Ab 20 % hält das Feld ihn dort und verbraucht dafür Stabilisatoren - je höher die Stufe, desto mehr.\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: 10 s Countdown - unter 95 % gerettet, sonst §lKollaps§r!',
+    'guide.cosmiccore.page.9': '§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.',
+    'guide.cosmiccore.page.10': '§5§lTipps§r\n\n- Erst auf Stufe 1 testen.\n- Ohne Stabilisatoren steigt die Instabilität!\n- Bei Alarm: Stufe runter oder Stopp.\n- Kreativ: §dBauen§r setzt die Struktur sofort.\n\n§8Viel Glück, Sternenschmied.§r',
+    'block.cosmiccore.star_funnel': 'Sternentrichter',
+    'block.cosmiccore.cosmic_laser': 'Kosmos-Laser',
+    'gui.cosmiccore.laser_on': '✦ Laser-Array: aktiv',
+    'entity.cosmiccore.small_asteroid': 'Kleiner Asteroid',
+    'entity.cosmiccore.medium_asteroid': 'Mittlerer Asteroid',
+    'entity.cosmiccore.large_asteroid': 'Großer Asteroid',
+    'entity.cosmiccore.huge_asteroid': 'Sehr großer Asteroid',
+    'jei.cosmiccore.loot.huge': 'Sehr großer Asteroid',
+    'gui.cosmiccore.funnel_on': '✦ Trichter: aktiv',
+    'guide.cosmiccore.page.11': '§5§lSternentrichter§r\n\nSetze ihn direkt auf die Mitte der Decke.\n\nMit freiem Himmel saugt er kosmische Energie aus dem All und §bverdoppelt§r den Himmelsbonus.',
+    'guide.cosmiccore.page.12': '§5§lAsteroiden§r\n\nNachts ziehen Asteroiden über Reaktoren hinweg - klein, mittel, groß und selten sehr groß.\n\nSie liefern keine Energie, sondern Beute: Rohstoffe und Brennstoffe für den Controller.',
+    'guide.cosmiccore.page.13': '§5§lKosmos-Laser§r\n\nBaue §d4 Laser§r auf die Decke: je einen nördlich, östlich, südlich und westlich der Mitte.\n\nSie werden zu kreisenden Energiepartikeln, die Asteroiden heranziehen und ihre Beute sammeln - auch ohne Brennstoff.',
+    'item.cosmiccore.overdrive_particle': 'Overdrive-Partikel',
+    'gui.cosmiccore.with_lasers': '+ Laser',
+    'message.cosmiccore.not_running': 'Erst den Generator zünden - Stufe und Overdrive sind nur im Betrieb einstellbar',
+    'gui.cosmiccore.overdrive': 'Overdrive',
+    'gui.cosmiccore.overdrive_up': 'Overdrive +',
+    'gui.cosmiccore.overdrive_down': 'Entfernen',
+    'gui.cosmiccore.overdrive.confirm_up': '⚠ Overdrive aktivieren?',
+    'gui.cosmiccore.overdrive.confirm_down': 'Overdrive-Stufe entfernen?',
+    'gui.cosmiccore.overdrive.warning_up': 'Pro Stufe: RF-Erzeugung x2, Instabilität x3! Ein Overdrive-Partikel aus deinem Inventar wird verbraucht und beim Deaktivieren oder Abbau des Reaktors NICHT zurückgegeben.',
+    'gui.cosmiccore.overdrive.warning_down': 'Die Stufe wird deaktiviert. Das Overdrive-Partikel ist dabei verloren.',
+    'message.cosmiccore.overdrive.missing': 'Du brauchst ein Overdrive-Partikel im Inventar',
+    'tooltip.cosmiccore.overdrive.effect': 'Im Controller des gebildeten Reaktors installieren: RF x2, Instabilität x3',
+    'tooltip.cosmiccore.overdrive.limit': 'Max. 1 / 2 / 3 Stufen (5x5x5 / 7x7x7 / 9x9x9)',
+    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nIm Controller lassen sich Overdrive-Partikel installieren: §bRF x2§r, aber §cInstabilität x3§r pro Stufe.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9 und ultimativ: 3 Stufen.\n§6★ Ultimate-Modus:§r ultimativ nach Stufe 3 mit 4 Quasar-Overdrive-Partikeln.\nNur am gebildeten Reaktor. Zerfällt er, ist der Overdrive weg.',
+    'console.cosmiccore.title': 'KOSMISCHER KERN',
+    'console.cosmiccore.meltdown': 'KOLLAPS IN %s s',
+    'console.cosmiccore.full': 'PUFFER VOLL',
+    'console.cosmiccore.unstable': 'INSTABIL',
+    'console.cosmiccore.active': 'AKTIV',
+    'console.cosmiccore.output': 'Leistung',
+    'console.cosmiccore.buffer': 'Puffer',
+    'console.cosmiccore.instability': 'Instabilität',
+    'console.cosmiccore.level': 'Leistungsstufe',
+    'console.cosmiccore.overdrive': 'Overdrive',
+    'console.cosmiccore.field': 'Eindämmungsfeld',
+    'console.cosmiccore.wing_energy': 'ENERGIE',
+    'console.cosmiccore.wing_items': 'ITEMS',
+    'console.cosmiccore.capacity': 'Kapazität',
+    'console.cosmiccore.stored': 'Gespeichert',
+    'console.cosmiccore.fuel': 'Brennstoff',
+    'console.cosmiccore.stabilizer': 'Stabilisator',
+    'console.cosmiccore.loot': 'Beute',
+    'console.cosmiccore.slots': 'Plätze',
+    'console.cosmiccore.paused': 'pausiert',
+    'console.cosmiccore.off': 'aus',
+    'console.cosmiccore.empty': 'leer',
+    'gui.cosmiccore.ultimate': '✦ ULTIMATIVER KERN ✦',
+    'guide.cosmiccore.page.15': '§6§lUltimativer Kern§r\n\n11x11x11, Stufen 1-10, am stärksten und stabilsten.\n\n§6Kostet 4 Kerne§r rund um die freie Mitte - sie verschmelzen dort zum Kern.\n\n§bVakuum-Energie:§r mit freiem Himmel erzeugt er zusätzlich Strom, solange Brennstoff brennt.\n\nSein erster Ultimate-Modus weckt den Void-Titanen in einem anderen Universum - solange der Modus läuft, fällt sein Strahl in den Trichter.',
+    'item.cosmiccore.compressed_star_dust': 'Verdichteter Sternenstaub',
+    'item.cosmiccore.neutron_fragment': 'Neutronenstern-Fragment',
+    'item.cosmiccore.quasar_essence': 'Quasar-Essenz',
+    'tooltip.cosmiccore.fuel_heat': 'Hitze x%s',
+    'item.cosmiccore.efficiency_module': 'Effizienz-Modul',
+    'item.cosmiccore.stability_module': 'Stabilitäts-Modul',
+    'tooltip.cosmiccore.efficiency_module': 'Je Modul -15 % Brennstoffverbrauch (max. 4)',
+    'tooltip.cosmiccore.stability_module': 'Je Modul -12 % Instabilität, Feld hält tiefer (max. 4)',
+    'gui.cosmiccore.loot': 'Asteroiden-Beute',
+    'gui.cosmiccore.modules': 'Module',
+    'guide.cosmiccore.contents': 'Inhalt',
+    'guide.cosmiccore.chapter.intro': 'Einleitung',
+    'guide.cosmiccore.chapter.building': 'Aufbau',
+    'guide.cosmiccore.chapter.structures': 'Strukturen',
+    'guide.cosmiccore.chapter.operation': 'Betrieb',
+    'guide.cosmiccore.chapter.fuels': 'Brennstoffe',
+    'guide.cosmiccore.chapter.cosmos': 'Der Kosmos',
+    'guide.cosmiccore.chapter.asteroids': 'Asteroiden & Laser',
+    'guide.cosmiccore.chapter.overdrive': 'Overdrive & Ultimativ',
+    'guide.cosmiccore.chapter.tips': 'Tipps',
+    'guide.cosmiccore.levels': 'Leistungsstufen 1-%s',
+    'guide.cosmiccore.stabilizers': 'Stabilisatoren',
+    'guide.cosmiccore.cooling': 'kühlt %s Instabilität',
+    'guide.cosmiccore.stabilizer_note': 'Ab 20 % hält das Feld die Instabilität und verbraucht dafür Stabilisatoren.',
+    'guide.cosmiccore.modules': '§5§lModule§r\n\n§6Effizienz-Modul:§r je -15 % Brennstoffverbrauch.\n\n§3Stabilitäts-Modul:§r je -12 % Instabilität, das Feld hält 3 % tiefer.\n\nBis zu 4 je Slot - im Modul-Tab rechts am Controller-Menü.\n\n§dAnti-Asteroiden-Modul:§r hält Asteroiden fern (Schalter).\n§bFarb-Modul:§r eigenes Farbschema für den Kern. Asteroiden erscheinen nur in der Nähe gebildeter Reaktoren.',
+    'guide.cosmiccore.loot': '§5§lAsteroiden-Beute§r\n\nDer Laser zieht Asteroiden bis zum oberen Ende des Sternentrichters, wo sie zerbrechen. Ihre Bruchstücke spiralen in den Trichter: Sternenstaub, Erze, Diamanten - große sogar Neutronenstern-Fragmente. Die seltenen sehr großen Asteroiden (11 Blöcke!) bringen reichlich davon und mit Glück einen Netherstern. Quasar-Essenz ist eine echte Rarität: nur große (1 %) und sehr große Asteroiden (5 %) tragen sie.\n\nSie landet im Lager des Item-Ports (27 Plätze, Rechtsklick) und kann dort per Rohr entnommen werden.',
+    'jei.cosmiccore.category.fuel': 'Kern-Brennstoffe',
+    'jei.cosmiccore.category.stabilizer': 'Kern-Stabilisatoren',
+    'jei.cosmiccore.category.loot': 'Asteroiden-Beute',
+    'jei.cosmiccore.fuel.power': '%s RF/t',
+    'jei.cosmiccore.fuel.time': 'Brenndauer %s s',
+    'jei.cosmiccore.fuel.heat': 'Hitze ×%s',
+    'jei.cosmiccore.stabilizer.points': 'Kühlt %s Instabilität',
+    'jei.cosmiccore.stabilizer.time': 'Wirkt %s s',
+    'jei.cosmiccore.loot.small': 'Kleiner Asteroid',
+    'jei.cosmiccore.loot.medium': 'Mittlerer Asteroid',
+    'jei.cosmiccore.loot.large': 'Großer Asteroid',
+    'jei.cosmiccore.info.controller': 'Herz des Kerngenerators. Beim Platzieren wählst du die Baugröße (5x5x5 bis 11x11x11) und optional Sternentrichter und Laser. Rechtsklick öffnet die Steuerung; im Kreativmodus baut "Bauen" die Struktur automatisch. Alles weitere steht im Kosmischen Handbuch.',
+    'jei.cosmiccore.info.core': 'Die Singularität in der Mitte der Struktur. Wächst mit der Leistungsstufe, kollabiert bei 100 % Instabilität.',
+    'jei.cosmiccore.info.funnel': 'Optional über der Struktur: fängt kosmische Energie aus dem Himmel ein und bündelt sie in den Kern (Himmelsbonus).',
+    'jei.cosmiccore.info.laser': 'Vier Laser um den Sternentrichter bilden einen Traktorstrahl, der nachts Asteroiden heranzieht. Sie zerbrechen am oberen Trichterrand, die Beute landet im Lager des Item-Ports.',
+    'jei.cosmiccore.info.efficiency_module': 'Im Controller eingesetzt: je Modul -15 % Brennstoffverbrauch (max. 4).',
+    'jei.cosmiccore.info.stability_module': 'Im Controller eingesetzt: je Modul -12 % Instabilität, das Feld hält 3 % tiefer (max. 4).',
+    'jei.cosmiccore.info.overdrive_particle': 'Wird für jede Overdrive-Stufe verbraucht: doppelte Leistung, dreifache Instabilität.',
+    'jei.cosmiccore.info.energy_port': 'Pflichtteil jedes Reaktors. Gibt die erzeugte Energie (RF/FE) an angrenzende Kabel ab.',
+    'jei.cosmiccore.info.item_port': 'Pflichtteil jedes Reaktors. Nimmt Brennstoff, Stabilisatoren und Module per Rohr auf. Die Asteroiden-Beute landet in seinem Lager (27 Plätze, Rechtsklick) und kann per Rohr entnommen werden.',
+    'item.cosmiccore.anti_asteroid_module': 'Anti-Asteroiden-Modul',
+    'tooltip.cosmiccore.anti_asteroid_module': 'Verhindert Asteroiden im Umkreis von %s Blöcken (Schalter im Controller)',
+    'gui.cosmiccore.anti.title': 'Asteroiden-Abwehr',
+    'gui.cosmiccore.anti.on': 'Eingeschaltet – keine Asteroiden in der Nähe',
+    'gui.cosmiccore.anti.off': 'Ausgeschaltet – Asteroiden erscheinen',
+    'gui.cosmiccore.anti.missing': 'Gesperrt – erst das Anti-Asteroiden-Modul einsetzen',
+    'jei.cosmiccore.info.anti_asteroid_module': 'Im Controller einsetzen und mit dem Schalter darunter aktivieren: Im Umkreis des Reaktors erscheinen keine Asteroiden mehr. Ohne Modul ist der Schalter gesperrt und die Abwehr aus.',
+    'gui.cosmiccore.ultimate_title': 'ULTIMATE CORE',
+    'gui.cosmiccore.ultimate_cost': 'benötigt 4 Singularitätskerne',
+    'message.cosmiccore.expected_satellite': 'Singularitätskern (Satellit)',
+    'gui.cosmiccore.unlock.title': 'Stufe %s freischalten',
+    'gui.cosmiccore.unlock.cost': 'Kostet einmalig 1× %s – danach dauerhaft frei',
+    'gui.cosmiccore.unlock.free': 'Stufe %s ist bereits freigeschaltet',
+    'gui.cosmiccore.unlock.status': 'Freigeschaltet: Stufe 1–%s von %s',
+    'message.cosmiccore.unlock.missing': 'Dir fehlt 1× %s, um Stufe %s freizuschalten',
+    'message.cosmiccore.unlock.done': 'Stufe %s dauerhaft freigeschaltet!',
+    'gui.cosmiccore.base_output': 'Basis-Leistung',
+    'gui.cosmiccore.max_output': 'Max-Leistung',
+    'gui.cosmiccore.info_head': 'Kennwerte',
+    'gui.cosmiccore.info_levels': 'Stufen',
+    'gui.cosmiccore.info_buffer': 'Puffer',
+    'gui.cosmiccore.info_overdrive': 'Overdrive',
+    'gui.cosmiccore.info_unlock': 'Je Stufe',
+    'gui.cosmiccore.info_unlock_tip': 'Wird je neuer Leistungsstufe einmalig verbraucht',
+    'gui.cosmiccore.controls': 'Steuerung',
+    'gui.cosmiccore.size_head': 'Größe',
+    'gui.cosmiccore.options_head': 'Optionen',
+    'item.cosmiccore.quasar_overdrive_particle': 'Quasar-Overdrive-Partikel',
+    'tooltip.cosmiccore.quasar_overdrive.effect': 'Ultimativer Kern nach Overdrive 3: 4 Stück entfesseln den ★ Ultimate-Modus',
+    'tooltip.cosmiccore.quasar_overdrive.limit': 'Nur craftbar – extrem selten',
+    'gui.cosmiccore.ultimate_mode_btn': '★ Ultimate',
+    'gui.cosmiccore.ultimate_mode.confirm_up': '★ Ultimate-Modus entfesseln?',
+    'gui.cosmiccore.ultimate_mode.warning_up': 'Der ultimative Kern entfaltet seine volle Kraft: RF-Erzeugung nochmals x2, Instabilität x2. Es werden %s Quasar-Overdrive-Partikel verbraucht und NICHT zurückgegeben.',
+    'gui.cosmiccore.ultimate_mode.confirm_down': 'Ultimate-Modus beenden?',
+    'gui.cosmiccore.ultimate_mode.warning_down': 'Die %s Quasar-Overdrive-Partikel sind verbraucht und kommen nicht zurück.',
+    'message.cosmiccore.ultimate.missing': 'Du brauchst %s Quasar-Overdrive-Partikel im Inventar',
+    'jei.cosmiccore.info.quasar_overdrive_particle': 'Nur craftbar: ein Overdrive-Partikel in der Mitte, umgeben von vier Quasar-Essenzen. Vier davon entfesseln beim ultimativen Kern nach Overdrive 3 den Ultimate-Modus.',
+    'item.cosmiccore.color_module': 'Farb-Modul',
+    'tooltip.cosmiccore.color_module': 'Färbt Scheibe, Jets und Licht des Kerns – Farbschema im Controller wählen',
+    'gui.cosmiccore.color.title': 'Farbschema',
+    'gui.cosmiccore.color.hint': 'Klick: Farbmenü öffnen',
+    'gui.cosmiccore.color.missing': 'Gesperrt – erst das Farb-Modul einsetzen',
+    'jei.cosmiccore.info.color_module': 'Im Controller einsetzen und auf das Farbfeld darunter klicken: Im Farbmenü bekommt jeder Effekt (Scheibe, Jets, Kammer, Haltefeld, Laser, Partikel) eine eigene Farbe - oder eine der Vorgaben. Jede Kombination hat einen Code, den man teilen und bei anderen laden kann.',
+    'gui.cosmiccore.color.0': 'Standard',
+    'gui.cosmiccore.color.1': 'Karmesin',
+    'gui.cosmiccore.color.2': 'Smaragd',
+    'gui.cosmiccore.color.3': 'Azur',
+    'gui.cosmiccore.color.4': 'Gold',
+    'gui.cosmiccore.color.5': 'Rosé',
+    'gui.cosmiccore.color.6': 'Frost',
+    'gui.cosmiccore.color.7': 'Leere',
+    'gui.cosmiccore.colors.title': 'Farben des Kerns',
+    'gui.cosmiccore.colors.presets': 'Vorgaben',
+    'gui.cosmiccore.colors.effects': 'Effekte',
+    'gui.cosmiccore.colors.reset': 'Auf Standard',
+    'gui.cosmiccore.colors.std': 'Std.',
+    'gui.cosmiccore.colors.std_long': 'Standardfarbe',
+    'gui.cosmiccore.colors.own': 'Eigene Farbe',
+    'gui.cosmiccore.colors.preview': 'Vorschau',
+    'gui.cosmiccore.colors.code': 'Teilen (Code)',
+    'gui.cosmiccore.colors.copy': 'Kopieren',
+    'gui.cosmiccore.colors.load': 'Laden',
+    'gui.cosmiccore.colors.copied': 'Code kopiert!',
+    'gui.cosmiccore.colors.loaded': 'Farben übernommen',
+    'gui.cosmiccore.colors.invalid': 'Ungültiger Code',
+    'gui.cosmiccore.channel.disk_inner': 'Scheibe innen',
+    'gui.cosmiccore.channel.disk_mid': 'Scheibe Mitte',
+    'gui.cosmiccore.channel.disk_outer': 'Scheibe außen',
+    'gui.cosmiccore.channel.jets': 'Jets & Lichthof',
+    'gui.cosmiccore.channel.seams': 'Kammer & Netz',
+    'gui.cosmiccore.channel.field': 'Haltefeld',
+    'gui.cosmiccore.channel.laser': 'Laser',
+    'gui.cosmiccore.channel.particles': 'Partikel',
+    'cutscene.cosmiccore.line1': 'Der Kern brennt im Ultimate-Modus - und sendet einen Ruf hinaus ins All ...',
+    'cutscene.cosmiccore.boss_name': 'VOID-TITAN',
+    'cutscene.cosmiccore.boss_title': 'Wächter des Universums jenseits der Leere',
+    'cutscene.cosmiccore.line2': 'Höher und höher - bis die Welt nur noch ein Punkt ist.',
+    'cutscene.cosmiccore.line3': 'Schneller als das Licht, über die Grenzen des Universums hinaus ...',
+    'cutscene.cosmiccore.line4': 'In einem anderen Universum erwacht der Void-Titan.',
+    'cutscene.cosmiccore.line5': 'Er sammelt die Energie seines ganzen Kosmos ...',
+    'cutscene.cosmiccore.skip': '[Schleichen halten] Überspringen',
+    'message.cosmiccore.cutscene.none': 'Kein erwachter ultimativer Kern in der Nähe (64 Blöcke)',
+    'cutscene.cosmiccore.line6': '... und schleudert sie mit Lichtgeschwindigkeit zurück zur Erde.',
+    'cutscene.cosmiccore.line7': 'Solange der Ultimate-Modus brennt, nährt sein Strahl deinen Kern.',
+    'entity.cosmiccore.void_titan': 'Void-Titan',
+}
+EN = {
+    'itemGroup.cosmiccore': 'Cosmic Core',
+    'block.cosmiccore.void_casing': 'Void Casing',
+    'block.cosmiccore.rune_frame': 'Rune Frame',
+    'block.cosmiccore.focus_glass': 'Focus Glass',
+    'block.cosmiccore.resonance_coil': 'Resonance Shield Emitter',
+    'block.cosmiccore.focus_crystal': 'Focus Crystal',
+    'block.cosmiccore.singularity_core': 'Singularity Core',
+    'block.cosmiccore.controller': 'Core Generator Controller',
+    'block.cosmiccore.energy_port': 'Energy Port',
+    'block.cosmiccore.item_port': 'Item Port',
+    'item.cosmiccore.star_dust': 'Star Dust',
+    'message.cosmiccore.status.header': '--- Core Generator ---',
+    'message.cosmiccore.status.pending': 'Structure cannot be checked right now (chunks not loaded?).',
+    'message.cosmiccore.status.invalid': 'Structure incomplete: %s errors.',
+    'message.cosmiccore.status.error_at': 'First error at %s %s %s: expected %s',
+    'message.cosmiccore.status.formed': 'Structure formed.',
+    'message.cosmiccore.status.energy': 'Energy: %s / %s RF',
+    'message.cosmiccore.status.output': 'Output: %s RF/t (resonance %s%%)',
+    'message.cosmiccore.status.instability': 'Instability: %s%%',
+    'message.cosmiccore.status.fuel': 'Fuel: %s in slot, current charge %s s left',
+    'message.cosmiccore.status.stabilizer': 'Stabilizer: %s in slot, effect %s s left',
+    'message.cosmiccore.status.cosmic': 'Cosmic factor: x%s',
+    'message.cosmiccore.status.collapsed': 'The core has collapsed - restarting in %s s.',
+    'message.cosmiccore.expected_air': 'air (the chamber must be empty)',
+    'message.cosmiccore.expected_hull': 'Void Casing or port',
+    'message.cosmiccore.missing_energy_port': 'an energy port in the casing (required)',
+    'message.cosmiccore.missing_item_port': 'an item port in the casing (required)',
+    'gui.cosmiccore.status.no_energy_port': 'Energy port missing',
+    'gui.cosmiccore.status.no_item_port': 'Item port missing',
+    'gui.cosmiccore.tab.open': 'Click to expand',
+    'gui.cosmiccore.storage': 'Loot storage',
+    'gui.cosmiccore.storage.hint': 'Opens the item port storage - closing returns here',
+    'gui.cosmiccore.tab.close': 'Click to collapse',
+    'message.cosmiccore.expected_slot': 'Void Casing, port or controller (middle of a bottom edge)',
+    'tooltip.cosmiccore.fuel': 'Core generator fuel: %s RF/t, %s s',
+    'tooltip.cosmiccore.stabilizer': 'Core generator stabilizer: cools %s instability',
+    'message.cosmiccore.status.no_size': 'No reactor size chosen yet - right-click to open the selection.',
+    'gui.cosmiccore.choose_size': 'Choose reactor size',
+    'gui.cosmiccore.size_button': '%sx%sx%s',
+    'gui.cosmiccore.size_info': '%s – %s RF/t',
+    'gui.cosmiccore.confirm': 'Build as %sx%sx%s',
+    'gui.cosmiccore.with_funnel': '+ Funnel',
+    'gui.cosmiccore.output_label': 'Output',
+    'gui.cosmiccore.max_level': 'Max level',
+    'gui.cosmiccore.blocks_label': 'Required blocks',
+    'gui.cosmiccore.build': 'Build',
+    'gui.cosmiccore.start': 'Ignite',
+    'gui.cosmiccore.stop': 'Stop',
+    'gui.cosmiccore.preview_on': 'Preview ✔',
+    'gui.cosmiccore.preview_off': 'Preview',
+    'gui.cosmiccore.output': 'Output: %s RF/t',
+    'gui.cosmiccore.energy': 'Energy: %s / %s RF',
+    'gui.cosmiccore.instability': 'Instability: %s %%',
+    'gui.cosmiccore.cosmic': 'Cosmic factor: x%s',
+    'gui.cosmiccore.fuel_label': 'Fuel',
+    'gui.cosmiccore.stab_label': 'Stabilizer',
+    'gui.cosmiccore.out_label': 'Output',
+    'gui.cosmiccore.buf_label': 'Buffer',
+    'gui.cosmiccore.sky_on': '✦ Sky: clear',
+    'gui.cosmiccore.sky_off': '✧ Sky: blocked',
+    'gui.cosmiccore.size': 'Reactor: %sx%sx%s',
+    'gui.cosmiccore.scale': 'Power level',
+    'gui.cosmiccore.status.incomplete': 'Incomplete (%s errors)',
+    'gui.cosmiccore.status.collapsed': 'Collapsed! (%s s)',
+    'gui.cosmiccore.status.off': 'Shut down',
+    'gui.cosmiccore.status.idle': 'Ready - no fuel',
+    'gui.cosmiccore.status.full': 'Buffer full - paused',
+    'gui.cosmiccore.status.meltdown': 'CRITICAL! Collapse in %s s',
+    'message.cosmiccore.meltdown': '⚠ CORE CRITICAL - collapse in %s s! Add stabilizer or stop!',
+    'gui.cosmiccore.status.starting': 'Igniting...',
+    'gui.cosmiccore.status.unstable': 'UNSTABLE!',
+    'gui.cosmiccore.status.active': 'Active',
+    'gui.cosmiccore.tip.energy': 'Energy buffer',
+    'gui.cosmiccore.tip.instability': 'Instability',
+    'gui.cosmiccore.tip.field': 'Containment field',
+    'gui.cosmiccore.tip.resonance': 'Resonance',
+    'item.cosmiccore.guide_book': 'Cosmic Handbook',
+    'guide.cosmiccore.page.1': "§5§lCosmic Core§r\n§8A reactor builder's guide§r\n\nThe core generator focuses starlight into a singularity and turns it into RF.\n\nThe rule: more power means more risk.",
+    'guide.cosmiccore.page.2': '§5§lBuilding§r\n\n1. Place the controller.\n2. Choose a size: 5x5x5, 7x7x7 or 9x9x9. This choice is final!\n3. Turn on the §dPreview§r in the GUI: ghost blocks show what goes where, red = wrong block.',
+    'guide.cosmiccore.page.3': '§5§lBlocks§r\n§lCasing:§r floor, ceiling\n§lRune Frame:§r corners\n§lFocus Glass:§r ceiling ring\n§lShield Emitter:§r below the core\n§lCrystal:§r above the core\n§lCore:§r center\n\nThe inside must be empty. The preview shows everything.',
+    'guide.cosmiccore.page.4': '§5§lPorts§r\n\nEvery reactor needs §cat least one energy port and one item port§r - they replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes and stores 27 stacks of loot (right-click).\n\n§d§lControl console:§r item port left and energy port right of the controller merge into one console. Pipes and cables dock on the outside - those two spots stay free.',
+    'guide.cosmiccore.page.5': '§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...',
+    'guide.cosmiccore.page.6': '§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.',
+    'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels: 5x 4, 7x 6, 9x 8, ultimate 10. Unlock each new level once: §e5x§r star dust, §e7x§r compressed star dust, §e9x§r neutron star, §eUltimate§r quasar essence.',
+    'guide.cosmiccore.page.8': '§5§lInstability§r\n\nFuel heats the core. From 20 % the field holds it there, using stabilizers - the higher the level, the more.\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: 10 s countdown - below 95 % saved, else §lcollapse§r!',
+    'guide.cosmiccore.page.9': '§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output, with a Star Funnel §b+50 %§r.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.',
+    'guide.cosmiccore.page.10': '§5§lTips§r\n\n- Test on level 1 first.\n- Never run out of stabilizers.\n- On alarm, lower the level or press Stop.\n- In creative, §dBuild§r places the structure instantly.\n\n§8Good luck, starsmith.§r',
+    'block.cosmiccore.star_funnel': 'Star Funnel',
+    'block.cosmiccore.cosmic_laser': 'Cosmic Energy Laser',
+    'gui.cosmiccore.laser_on': '✦ Laser array: active',
+    'entity.cosmiccore.small_asteroid': 'Small Asteroid',
+    'entity.cosmiccore.medium_asteroid': 'Medium Asteroid',
+    'entity.cosmiccore.large_asteroid': 'Large Asteroid',
+    'entity.cosmiccore.huge_asteroid': 'Huge Asteroid',
+    'jei.cosmiccore.loot.huge': 'Huge Asteroid',
+    'gui.cosmiccore.funnel_on': '✦ Star funnel: active',
+    'guide.cosmiccore.page.11': '§5§lStar Funnel§r\n\nPlace it right on the center of the ceiling.\n\nWith a clear sky it draws cosmic energy from space and §bdoubles§r the sky bonus.',
+    'guide.cosmiccore.page.12': '§5§lAsteroids§r\n\nAt night asteroids drift over reactors - small, medium, large and rarely huge.\n\nThey give no energy but loot: resources and fuels for the controller.',
+    'guide.cosmiccore.page.13': '§5§lCosmic Energy Laser§r\n\nBuild §d4 lasers§r on the ceiling: one north, east, south and west of the center.\n\nThey become orbiting energy particles that pull in asteroids and collect their loot - even without fuel.',
+    'item.cosmiccore.overdrive_particle': 'Cosmic Core Overdrive Particle',
+    'gui.cosmiccore.with_lasers': '+ Lasers',
+    'message.cosmiccore.not_running': 'Ignite the generator first - level and overdrive can only be changed while running',
+    'gui.cosmiccore.overdrive': 'Overdrive',
+    'gui.cosmiccore.overdrive_up': 'Overdrive +',
+    'gui.cosmiccore.overdrive_down': 'Remove',
+    'gui.cosmiccore.overdrive.confirm_up': '⚠ Activate overdrive?',
+    'gui.cosmiccore.overdrive.confirm_down': 'Remove an overdrive level?',
+    'gui.cosmiccore.overdrive.warning_up': 'Per level: RF generation x2, instability x3! One Overdrive Particle from your inventory is consumed and NOT returned when deactivated or when the reactor is dismantled.',
+    'gui.cosmiccore.overdrive.warning_down': 'The level is deactivated. The Overdrive Particle is lost.',
+    'message.cosmiccore.overdrive.missing': 'You need an Overdrive Particle in your inventory',
+    'tooltip.cosmiccore.overdrive.effect': 'Install in a formed reactor: RF x2, instability x3',
+    'tooltip.cosmiccore.overdrive.limit': 'Max 1 / 2 / 3 levels (5x5x5 / 7x7x7 / 9x9x9)',
+    'guide.cosmiccore.page.14': '§5§lOverdrive§r\n\nInstall Overdrive Particles in the controller: §bRF x2§r but §cinstability x3§r per level.\n\n5x5x5: 1, 7x7x7: 2, 9x9x9 and ultimate: 3 levels.\n§6★ Ultimate mode:§r ultimate core after level 3 with 4 Quasar Overdrive Particles.\nOnly on a formed reactor. If it breaks, overdrive is lost.',
+    'console.cosmiccore.title': 'COSMIC CORE',
+    'console.cosmiccore.meltdown': 'COLLAPSE IN %s s',
+    'console.cosmiccore.full': 'BUFFER FULL',
+    'console.cosmiccore.unstable': 'UNSTABLE',
+    'console.cosmiccore.active': 'ACTIVE',
+    'console.cosmiccore.output': 'Output',
+    'console.cosmiccore.buffer': 'Buffer',
+    'console.cosmiccore.instability': 'Instability',
+    'console.cosmiccore.level': 'Power level',
+    'console.cosmiccore.overdrive': 'Overdrive',
+    'console.cosmiccore.field': 'Containment field',
+    'console.cosmiccore.wing_energy': 'ENERGY',
+    'console.cosmiccore.wing_items': 'ITEMS',
+    'console.cosmiccore.capacity': 'Capacity',
+    'console.cosmiccore.stored': 'Stored',
+    'console.cosmiccore.fuel': 'Fuel',
+    'console.cosmiccore.stabilizer': 'Stabilizer',
+    'console.cosmiccore.loot': 'Loot',
+    'console.cosmiccore.slots': 'Slots',
+    'console.cosmiccore.paused': 'paused',
+    'console.cosmiccore.off': 'off',
+    'console.cosmiccore.empty': 'empty',
+    'gui.cosmiccore.ultimate': '✦ ULTIMATE CORE ✦',
+    'guide.cosmiccore.page.15': '§6§lUltimate Core§r\n\n11x11x11, levels 1-10, the strongest output and the most stable.\n\n§6Costs 4 cores§r around the empty center - they fuse into its core.\n\n§bVacuum energy:§r with a clear sky it generates extra power while fuel burns.\n\nIts first Ultimate mode awakens the Void Titan in another universe - while the mode runs, its beam falls into the funnel.',
+    'item.cosmiccore.compressed_star_dust': 'Compressed Star Dust',
+    'item.cosmiccore.neutron_fragment': 'Neutron Star Fragment',
+    'item.cosmiccore.quasar_essence': 'Quasar Essence',
+    'tooltip.cosmiccore.fuel_heat': 'Heat x%s',
+    'item.cosmiccore.efficiency_module': 'Efficiency Module',
+    'item.cosmiccore.stability_module': 'Stability Module',
+    'tooltip.cosmiccore.efficiency_module': 'Each module -15 % fuel use (max 4)',
+    'tooltip.cosmiccore.stability_module': 'Each module -12 % instability, field holds lower (max 4)',
+    'gui.cosmiccore.loot': 'Asteroid loot',
+    'gui.cosmiccore.modules': 'Modules',
+    'guide.cosmiccore.contents': 'Contents',
+    'guide.cosmiccore.chapter.intro': 'Introduction',
+    'guide.cosmiccore.chapter.building': 'Building',
+    'guide.cosmiccore.chapter.structures': 'Structures',
+    'guide.cosmiccore.chapter.operation': 'Operation',
+    'guide.cosmiccore.chapter.fuels': 'Fuels',
+    'guide.cosmiccore.chapter.cosmos': 'The Cosmos',
+    'guide.cosmiccore.chapter.asteroids': 'Asteroids & Lasers',
+    'guide.cosmiccore.chapter.overdrive': 'Overdrive & Ultimate',
+    'guide.cosmiccore.chapter.tips': 'Tips',
+    'guide.cosmiccore.levels': 'Power levels 1-%s',
+    'guide.cosmiccore.stabilizers': 'Stabilizers',
+    'guide.cosmiccore.cooling': 'cools %s instability',
+    'guide.cosmiccore.stabilizer_note': 'From 20 % the field holds instability and uses stabilizers for it.',
+    'guide.cosmiccore.modules': '§5§lModules§r\n\n§6Efficiency Module:§r -15 % fuel use each.\n\n§3Stability Module:§r -12 % instability each, the field holds 3 % lower.\n\nUp to 4 per slot - in the module tab on the right of the controller menu.\n\n§dAnti-Asteroid Module:§r keeps asteroids away (switch).\n§bColor Module:§r a custom color scheme for the core. Asteroids only appear near formed reactors.',
+    'guide.cosmiccore.loot': '§5§lAsteroid Loot§r\n\nThe laser pulls asteroids down to the top of the star funnel, where they burst. Their fragments spiral down into the funnel: star dust, ores, diamonds - large ones even neutron star fragments. The rare huge asteroids (11 blocks!) carry plenty of them and, with luck, a nether star. Quasar essence is a true rarity: only large (1 %) and huge asteroids (5 %) carry it.\n\nThe loot goes into the item port storage (27 slots, right-click) and can be piped out there.',
+    'jei.cosmiccore.category.fuel': 'Core Fuels',
+    'jei.cosmiccore.category.stabilizer': 'Core Stabilizers',
+    'jei.cosmiccore.category.loot': 'Asteroid Loot',
+    'jei.cosmiccore.fuel.power': '%s RF/t',
+    'jei.cosmiccore.fuel.time': 'Burns %s s',
+    'jei.cosmiccore.fuel.heat': 'Heat ×%s',
+    'jei.cosmiccore.stabilizer.points': 'Cools %s instability',
+    'jei.cosmiccore.stabilizer.time': 'Lasts %s s',
+    'jei.cosmiccore.loot.small': 'Small Asteroid',
+    'jei.cosmiccore.loot.medium': 'Medium Asteroid',
+    'jei.cosmiccore.loot.large': 'Large Asteroid',
+    'jei.cosmiccore.info.controller': 'Heart of the core generator. When placing it you pick the size (5x5x5 to 11x11x11) and optionally star funnel and lasers. Right-click opens the controls; in creative "Build" places the structure automatically. Everything else is in the Cosmic Handbook.',
+    'jei.cosmiccore.info.core': 'The singularity at the center of the structure. Grows with the power level and collapses at 100 % instability.',
+    'jei.cosmiccore.info.funnel': 'Optional above the structure: catches cosmic energy from the sky and focuses it into the core (sky bonus).',
+    'jei.cosmiccore.info.laser': 'Four lasers around the star funnel form a tractor beam that pulls asteroids down at night. They burst at the top of the funnel and their loot goes into the item port storage.',
+    'jei.cosmiccore.info.efficiency_module': 'Inserted in the controller: -15 % fuel use per module (max 4).',
+    'jei.cosmiccore.info.stability_module': 'Inserted in the controller: -12 % instability per module, the field holds 3 % lower (max 4).',
+    'jei.cosmiccore.info.overdrive_particle': 'Consumed for each overdrive stage: double power, triple instability.',
+    'jei.cosmiccore.info.energy_port': 'Required in every reactor. Outputs the generated energy (RF/FE) to adjacent cables.',
+    'jei.cosmiccore.info.item_port': 'Required in every reactor. Accepts fuel, stabilizers and modules via pipes. Asteroid loot goes into its storage (27 slots, right-click) and can be piped out.',
+    'item.cosmiccore.anti_asteroid_module': 'Anti-Asteroid Module',
+    'tooltip.cosmiccore.anti_asteroid_module': 'Prevents asteroids within %s blocks (switch in the controller)',
+    'gui.cosmiccore.anti.title': 'Asteroid Defense',
+    'gui.cosmiccore.anti.on': 'On – no asteroids nearby',
+    'gui.cosmiccore.anti.off': 'Off – asteroids appear',
+    'gui.cosmiccore.anti.missing': 'Locked – insert an Anti-Asteroid Module first',
+    'jei.cosmiccore.info.anti_asteroid_module': 'Insert it into the controller and turn it on with the switch below: no more asteroids appear around the reactor. Without a module the switch is locked and the defense is off.',
+    'gui.cosmiccore.ultimate_title': 'ULTIMATE CORE',
+    'gui.cosmiccore.ultimate_cost': 'requires 4 singularity cores',
+    'message.cosmiccore.expected_satellite': 'Singularity Core (satellite)',
+    'gui.cosmiccore.unlock.title': 'Unlock level %s',
+    'gui.cosmiccore.unlock.cost': 'Costs 1× %s once – unlocked permanently',
+    'gui.cosmiccore.unlock.free': 'Level %s is already unlocked',
+    'gui.cosmiccore.unlock.status': 'Unlocked: level 1–%s of %s',
+    'message.cosmiccore.unlock.missing': 'You need 1× %s to unlock level %s',
+    'message.cosmiccore.unlock.done': 'Level %s unlocked permanently!',
+    'gui.cosmiccore.base_output': 'Base output',
+    'gui.cosmiccore.max_output': 'Max output',
+    'gui.cosmiccore.info_head': 'Specs',
+    'gui.cosmiccore.info_levels': 'Levels',
+    'gui.cosmiccore.info_buffer': 'Buffer',
+    'gui.cosmiccore.info_overdrive': 'Overdrive',
+    'gui.cosmiccore.info_unlock': 'Per level',
+    'gui.cosmiccore.info_unlock_tip': 'Consumed once for each new power level',
+    'gui.cosmiccore.controls': 'Controls',
+    'gui.cosmiccore.size_head': 'Size',
+    'gui.cosmiccore.options_head': 'Options',
+    'item.cosmiccore.quasar_overdrive_particle': 'Quasar Overdrive Particle',
+    'tooltip.cosmiccore.quasar_overdrive.effect': 'Ultimate core after overdrive 3: 4 of them unleash ★ Ultimate mode',
+    'tooltip.cosmiccore.quasar_overdrive.limit': 'Craft only – extremely rare',
+    'gui.cosmiccore.ultimate_mode_btn': '★ Ultimate',
+    'gui.cosmiccore.ultimate_mode.confirm_up': '★ Unleash Ultimate mode?',
+    'gui.cosmiccore.ultimate_mode.warning_up': 'The ultimate core unleashes its full power: RF generation x2 again, instability x2. %s Quasar Overdrive Particles are consumed and NOT returned.',
+    'gui.cosmiccore.ultimate_mode.confirm_down': 'End Ultimate mode?',
+    'gui.cosmiccore.ultimate_mode.warning_down': 'The %s Quasar Overdrive Particles are consumed and will not come back.',
+    'message.cosmiccore.ultimate.missing': 'You need %s Quasar Overdrive Particles in your inventory',
+    'jei.cosmiccore.info.quasar_overdrive_particle': 'Craft only: an Overdrive Particle in the center surrounded by four Quasar Essences. Four of them unleash Ultimate mode on the ultimate core after overdrive 3.',
+    'item.cosmiccore.color_module': 'Color Module',
+    'tooltip.cosmiccore.color_module': 'Recolors the core disk, jets and light – pick a scheme in the controller',
+    'gui.cosmiccore.color.title': 'Color scheme',
+    'gui.cosmiccore.color.hint': 'Click: open color menu',
+    'gui.cosmiccore.color.missing': 'Locked – insert a Color Module first',
+    'jei.cosmiccore.info.color_module': 'Insert it into the controller and click the swatch below: the color menu gives every effect (disk, jets, chamber, holding field, laser, particles) its own color - or use a preset. Each combination has a code you can share and load elsewhere.',
+    'gui.cosmiccore.color.0': 'Standard',
+    'gui.cosmiccore.color.1': 'Crimson',
+    'gui.cosmiccore.color.2': 'Emerald',
+    'gui.cosmiccore.color.3': 'Azure',
+    'gui.cosmiccore.color.4': 'Gold',
+    'gui.cosmiccore.color.5': 'Rose',
+    'gui.cosmiccore.color.6': 'Frost',
+    'gui.cosmiccore.color.7': 'Void',
+    'gui.cosmiccore.colors.title': 'Core colors',
+    'gui.cosmiccore.colors.presets': 'Presets',
+    'gui.cosmiccore.colors.effects': 'Effects',
+    'gui.cosmiccore.colors.reset': 'Reset to default',
+    'gui.cosmiccore.colors.std': 'Def.',
+    'gui.cosmiccore.colors.std_long': 'Default color',
+    'gui.cosmiccore.colors.own': 'Custom color',
+    'gui.cosmiccore.colors.preview': 'Preview',
+    'gui.cosmiccore.colors.code': 'Share (code)',
+    'gui.cosmiccore.colors.copy': 'Copy',
+    'gui.cosmiccore.colors.load': 'Load',
+    'gui.cosmiccore.colors.copied': 'Code copied!',
+    'gui.cosmiccore.colors.loaded': 'Colors applied',
+    'gui.cosmiccore.colors.invalid': 'Invalid code',
+    'gui.cosmiccore.channel.disk_inner': 'Disk inner',
+    'gui.cosmiccore.channel.disk_mid': 'Disk middle',
+    'gui.cosmiccore.channel.disk_outer': 'Disk outer',
+    'gui.cosmiccore.channel.jets': 'Jets & halo',
+    'gui.cosmiccore.channel.seams': 'Chamber & net',
+    'gui.cosmiccore.channel.field': 'Holding field',
+    'gui.cosmiccore.channel.laser': 'Laser',
+    'gui.cosmiccore.channel.particles': 'Particles',
+    'cutscene.cosmiccore.line1': 'The core burns in Ultimate mode - and sends a call out into space ...',
+    'cutscene.cosmiccore.boss_name': 'VOID TITAN',
+    'cutscene.cosmiccore.boss_title': 'Warden of the Universe Beyond the Void',
+    'cutscene.cosmiccore.line2': 'Higher and higher - until the world is just a speck.',
+    'cutscene.cosmiccore.line3': 'Faster than light, beyond the edge of the universe ...',
+    'cutscene.cosmiccore.line4': 'In another universe, the Void Titan awakens.',
+    'cutscene.cosmiccore.line5': 'It gathers the energy of its entire cosmos ...',
+    'cutscene.cosmiccore.skip': '[Hold sneak] Skip',
+    'message.cosmiccore.cutscene.none': 'No awakened ultimate core nearby (64 blocks)',
+    'cutscene.cosmiccore.line6': '... and hurls it back to Earth at the speed of light.',
+    'cutscene.cosmiccore.line7': 'As long as Ultimate mode burns, its beam feeds your core.',
+    'entity.cosmiccore.void_titan': 'Void Titan',
+}
+
+
+def lang():
+    wjson(f'{ASSETS}/lang/de_de.json', DE)
+    wjson(f'{ASSETS}/lang/en_us.json', EN)
+
+
+# ----------------------------------------------------------------- Daten
+
+
+# ----------------------------------------------------------------- Mod-Logo
+def draw_logo(size=256):
+    """Mod-Icon: Schwarzes Loch mit leuchtender Akkretionsscheibe vor einem Sternfeld (logoFile in neoforge.mods.toml)."""
+    rnd = random.Random(42)
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    px = img.load()
+    c = size / 2
+    stars = [(rnd.random() * size, rnd.random() * size, rnd.random()) for _ in range(140)]
+    for y in range(size):
+        for x in range(size):
+            dx, dy = x + 0.5 - c, y + 0.5 - c
+            r = math.hypot(dx, dy) / c
+            if r > 1.0:
+                continue
+            # Hintergrund: tiefer Nebel
+            neb = 0.5 + 0.5 * math.sin(dx * 0.045 + math.cos(dy * 0.03) * 2.0)
+            col = [12 + 30 * neb * (1 - r), 6 + 10 * neb * (1 - r), 28 + 50 * neb * (1 - r)]
+            # Akkretionsscheibe (geneigte Ellipse)
+            ey = dy / 0.32
+            er = math.hypot(dx, ey) / c
+            ang = math.atan2(ey, dx)
+            if 0.34 < er < 0.92:
+                band = math.sin((er - 0.34) / 0.58 * math.pi)
+                swirl = 0.6 + 0.4 * math.sin(ang * 3 + er * 14)
+                k = band * swirl * (1.25 if dy > 0 else 0.9)
+                hot = max(0.0, 1 - (er - 0.34) / 0.3)
+                col[0] += 255 * k * (0.75 + 0.25 * hot)
+                col[1] += 255 * k * (0.32 + 0.55 * hot)
+                col[2] += 255 * k * (0.95 - 0.2 * hot)
+            # Gravitationslinse: Lichtring
+            ring = math.exp(-((r - 0.33) / 0.035) ** 2)
+            col = [col[0] + 255 * ring * 0.9, col[1] + 200 * ring, col[2] + 255 * ring]
+            # Ereignishorizont (vor der hinteren Scheibenhaelfte)
+            if r < 0.3 and not (dy > 0 and 0.34 < er):
+                col = [0, 0, 0]
+            # Rand: goldener Reif
+            edge = math.exp(-((r - 0.97) / 0.02) ** 2)
+            col = [col[0] + 230 * edge, col[1] + 170 * edge, col[2] + 70 * edge]
+            alpha = 255 if r < 0.995 else int(255 * (1 - (r - 0.995) / 0.005))
+            px[x, y] = (clamp(col[0]), clamp(col[1]), clamp(col[2]), alpha)
+    for sx, sy, b in stars:
+        dx, dy = sx - c, sy - c
+        r = math.hypot(dx, dy) / c
+        if 0.4 < r < 0.93 and abs(dy) > c * 0.32 * 0.95:
+            x, y = int(sx), int(sy)
+            v = int(150 + 105 * b)
+            cur = px[x, y]
+            px[x, y] = (max(cur[0], v), max(cur[1], v), max(cur[2], 255), cur[3])
+    img.save(os.path.join(RES, 'logo.png'))
+
+
+if __name__ == '__main__':
+    sheets = textures()
+    models()
+    lang()
+    draw_logo()
+    import generate_titan  # Void-Titan der Erwachen-Cutscene (GeckoLib-Assets)
+    generate_titan.main()
+    if '--preview' in sys.argv:
+        preview(sheets)
+    print('Resources generated.')

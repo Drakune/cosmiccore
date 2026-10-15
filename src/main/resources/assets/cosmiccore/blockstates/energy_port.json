@@ -1,0 +1,130 @@
+{
+  "variants": {
+    "console=none,docked=false,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_dormant"
+    },
+    "console=north,docked=false,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_plain_dormant"
+    },
+    "console=east,docked=false,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_plain_dormant",
+      "y": 90
+    },
+    "console=south,docked=false,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_plain_dormant",
+      "y": 180
+    },
+    "console=west,docked=false,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_plain_dormant",
+      "y": 270
+    },
+    "console=none,docked=true,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_dormant"
+    },
+    "console=north,docked=true,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_dormant"
+    },
+    "console=east,docked=true,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_dormant",
+      "y": 90
+    },
+    "console=south,docked=true,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_dormant",
+      "y": 180
+    },
+    "console=west,docked=true,phase=dormant": {
+      "model": "cosmiccore:block/energy_port_terminal_dormant",
+      "y": 270
+    },
+    "console=none,docked=false,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=north,docked=false,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=east,docked=false,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=south,docked=false,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=west,docked=false,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=none,docked=true,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=north,docked=true,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=east,docked=true,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=south,docked=true,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=west,docked=true,phase=formed": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=none,docked=false,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=north,docked=false,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=east,docked=false,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=south,docked=false,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=west,docked=false,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=none,docked=true,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=north,docked=true,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=east,docked=true,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=south,docked=true,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=west,docked=true,phase=active": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=none,docked=false,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=north,docked=false,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=east,docked=false,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=south,docked=false,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=west,docked=false,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=none,docked=true,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=north,docked=true,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=east,docked=true,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=south,docked=true,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    },
+    "console=west,docked=true,phase=unstable": {
+      "model": "cosmiccore:block/energy_port_hidden"
+    }
+  }
+}
