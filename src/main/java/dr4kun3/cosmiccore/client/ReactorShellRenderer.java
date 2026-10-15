@@ -322,8 +322,8 @@ public final class ReactorShellRenderer {
             PortStation.glow(new Matrix4f(cm).translate(x, 0, 0), vc, energy, conn, yaw, -side * 0.28F * out, out, data);
             // Verbindung zur Konsole: Lichtleitung vom Fluegelsockel zur Mitte
             segment(vc, cm, x, -0.42F, 0, 0, -0.42F, 0, 0.02F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
-            float s = Mth.frac(p.t() * 0.04F + (energy ? 0.0F : 0.5F));
-            float ps = energy ? s : 1.0F - s; // Energie fliesst nach aussen, Items nach innen
+            // Lichtimpuls laeuft auf beiden Seiten von der Konsolenmitte nach aussen zum Fluegel
+            float ps = Mth.frac(p.t() * 0.04F + (energy ? 0.0F : 0.5F));
             cube(vc, cm, ps * x, -0.42F, 0, 0.022F, 1.0F, 1.0F, 1.0F, e * Mth.sin(ps * Mth.PI));
         }
     }
