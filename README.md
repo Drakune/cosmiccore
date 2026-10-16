@@ -20,6 +20,7 @@ Cosmic Core adds a reactor you build block by block. Once it's complete, the blo
 
 - [What you get](#en-features)
 - [Requirements](#en-requirements)
+- [Downloads for each Minecraft version](#en-versions)
 - [Installation](#en-install)
 - [Your first reactor](#en-first)
 - [Reactor sizes](#en-sizes)
@@ -51,11 +52,35 @@ Cosmic Core adds a reactor you build block by block. Once it's complete, the blo
 
 | What | Version |
 |------|---------|
-| Minecraft | 1.21.1 |
+| Minecraft | 1.21.1 (other versions: see below) |
 | NeoForge | 21.1.x |
-| Java | 21 |
+| Java | 21 (25 from Minecraft 26.1) |
 | GeckoLib *(optional)* | 4.9.x, only needed for the Void Titan cutscene |
 | JEI / EMI / REI *(optional)* | any version for 1.21.1 |
+
+<a id="en-versions"></a>
+
+### Downloads for each Minecraft version
+
+Every Minecraft version has its own file on the [Releases page](https://github.com/Drakune/cosmiccore/releases/latest). Pick the one that matches your game.
+
+| Minecraft | File | NeoForge (required) | Java | GeckoLib *(optional)* | Recipe viewer *(optional)* | Source |
+|---|---|---|---|---|---|---|
+| 1.21.1 | `cosmiccore-1.21.1-1.2.1.jar` | 21.1.259 or newer | 21 | 4.9.x | JEI, EMI, REI | `main` |
+| 1.21.3 | `cosmiccore-1.21.3-1.2.1.jar` | 21.3.100 or newer | 21 | 4.7.x | REI 17.x | `mc/1.21.3` |
+| 1.21.4 | `cosmiccore-1.21.4-1.2.1.jar` | 21.4.161 or newer | 21 | 4.8.x | JEI 20.x, REI 18.x | `mc/1.21.4` |
+| 1.21.5 | `cosmiccore-1.21.5-1.2.1.jar` | 21.5.101 or newer | 21 | 5.1.x | JEI 21.x, REI 19.x | `mc/1.21.5` |
+| 1.21.8 | `cosmiccore-1.21.8-1.2.1.jar` | 21.8.57 or newer | 21 | 5.2.x | JEI 24.x, REI 20.x | `mc/1.21.8` |
+| 1.21.10 | `cosmiccore-1.21.10-1.2.1.jar` | 21.10.64 or newer | 21 | 5.3.x | JEI 26.x, REI 21.9.x | `mc/1.21.10` |
+| 1.21.11 | `cosmiccore-1.21.11-1.2.1.jar` | 21.11.48 or newer | 21 | 5.4.x | JEI 27.x, REI 21.11.x | `mc/1.21.11` |
+| 26.1.2 | `cosmiccore-26.1.2-1.2.1.jar` | 26.1.2.122 or newer | 25 | 5.5.2+ | JEI 29.x, REI 26.1.x | `mc/26.1.2` |
+| 26.2 | `cosmiccore-26.2-1.2.1.jar` | 26.2.0.93 or newer | 25 | 5.5.6+ | JEI 30.x, REI 26.2.x | `mc/26.2` |
+| 26.3 | `cosmiccore-26.3-1.2.1.jar` | 26.3.0.85 or newer | 25 | 5.5.7+ | JEI 31.x, REI 26.3.x | `mc/26.3` |
+
+- **NeoForge** is the only required dependency.
+- **GeckoLib** is only needed for the Void Titan cutscene. Without it the mod works the same, there is just no cutscene.
+- **JEI, REI or EMI** show the reactor fuels and stabilizers. Use whichever you like, or none. EMI is only available up to 1.21.1.
+- Worlds can be moved to a newer Minecraft version: reactors, settings and stored items carry over.
 
 <a id="en-install"></a>
 
@@ -179,6 +204,8 @@ python3 tools/generate_resources.py   # regenerates textures, models and languag
 
 You can run the test client with a recipe viewer (`-Pviewer=jei` or `-Pviewer=emi`) or without GeckoLib (`-Pgeckolib=off`).
 
+The other Minecraft versions live in their own branches (`mc/1.21.3` … `mc/26.3`), see the table above.
+
 <a id="en-license"></a>
 
 ### License
@@ -199,6 +226,7 @@ Mit Cosmic Core baust du einen Reaktor Block für Block zusammen. Ist er fertig,
 
 - [Was dich erwartet](#de-features)
 - [Voraussetzungen](#de-requirements)
+- [Downloads für jede Minecraft-Version](#de-versions)
 - [Installation](#de-install)
 - [Dein erster Reaktor](#de-first)
 - [Reaktorgrößen](#de-sizes)
@@ -230,11 +258,35 @@ Mit Cosmic Core baust du einen Reaktor Block für Block zusammen. Ist er fertig,
 
 | Was | Version |
 |-----|---------|
-| Minecraft | 1.21.1 |
+| Minecraft | 1.21.1 (other versions: see below) |
 | NeoForge | 21.1.x |
-| Java | 21 |
+| Java | 21 (25 from Minecraft 26.1) |
 | GeckoLib *(optional)* | 4.9.x, nur für die Void-Titan-Zwischensequenz |
 | JEI / EMI / REI *(optional)* | jede Version für 1.21.1 |
+
+<a id="de-versions"></a>
+
+### Downloads für jede Minecraft-Version
+
+Für jede Minecraft-Version gibt es eine eigene Datei auf der [Release-Seite](https://github.com/Drakune/cosmiccore/releases/latest). Nimm die, die zu deinem Spiel passt.
+
+| Minecraft | Datei | NeoForge (Pflicht) | Java | GeckoLib *(optional)* | Rezeptanzeige *(optional)* | Quellcode |
+|---|---|---|---|---|---|---|
+| 1.21.1 | `cosmiccore-1.21.1-1.2.1.jar` | 21.1.259 oder neuer | 21 | 4.9.x | JEI, EMI, REI | `main` |
+| 1.21.3 | `cosmiccore-1.21.3-1.2.1.jar` | 21.3.100 oder neuer | 21 | 4.7.x | REI 17.x | `mc/1.21.3` |
+| 1.21.4 | `cosmiccore-1.21.4-1.2.1.jar` | 21.4.161 oder neuer | 21 | 4.8.x | JEI 20.x, REI 18.x | `mc/1.21.4` |
+| 1.21.5 | `cosmiccore-1.21.5-1.2.1.jar` | 21.5.101 oder neuer | 21 | 5.1.x | JEI 21.x, REI 19.x | `mc/1.21.5` |
+| 1.21.8 | `cosmiccore-1.21.8-1.2.1.jar` | 21.8.57 oder neuer | 21 | 5.2.x | JEI 24.x, REI 20.x | `mc/1.21.8` |
+| 1.21.10 | `cosmiccore-1.21.10-1.2.1.jar` | 21.10.64 oder neuer | 21 | 5.3.x | JEI 26.x, REI 21.9.x | `mc/1.21.10` |
+| 1.21.11 | `cosmiccore-1.21.11-1.2.1.jar` | 21.11.48 oder neuer | 21 | 5.4.x | JEI 27.x, REI 21.11.x | `mc/1.21.11` |
+| 26.1.2 | `cosmiccore-26.1.2-1.2.1.jar` | 26.1.2.122 oder neuer | 25 | 5.5.2+ | JEI 29.x, REI 26.1.x | `mc/26.1.2` |
+| 26.2 | `cosmiccore-26.2-1.2.1.jar` | 26.2.0.93 oder neuer | 25 | 5.5.6+ | JEI 30.x, REI 26.2.x | `mc/26.2` |
+| 26.3 | `cosmiccore-26.3-1.2.1.jar` | 26.3.0.85 oder neuer | 25 | 5.5.7+ | JEI 31.x, REI 26.3.x | `mc/26.3` |
+
+- **NeoForge** ist die einzige Pflicht-Abhängigkeit.
+- **GeckoLib** braucht es nur für die Void-Titan-Zwischensequenz. Ohne funktioniert die Mod genauso, es gibt dann nur keine Zwischensequenz.
+- **JEI, REI oder EMI** zeigen die Brennstoffe und Stabilisatoren des Reaktors. Nimm, was dir gefällt, oder keine. EMI gibt es nur bis 1.21.1.
+- Welten lassen sich in eine neuere Minecraft-Version mitnehmen: Reaktoren, Einstellungen und gelagerte Items bleiben erhalten.
 
 <a id="de-install"></a>
 
@@ -357,6 +409,8 @@ python3 tools/generate_resources.py   # erzeugt Texturen, Modelle und Sprachdate
 ```
 
 Den Test-Client kannst du mit einem Rezept-Viewer starten (`-Pviewer=jei` oder `-Pviewer=emi`) oder ohne GeckoLib (`-Pgeckolib=off`).
+
+Die anderen Minecraft-Versionen liegen in eigenen Zweigen (`mc/1.21.3` … `mc/26.3`), siehe Tabelle oben.
 
 <a id="de-license"></a>
 
