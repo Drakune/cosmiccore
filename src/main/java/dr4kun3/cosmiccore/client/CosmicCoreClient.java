@@ -67,7 +67,7 @@ public final class CosmicCoreClient {
             }
         }, ModItems.STAR_DUST.get(), ModItems.COMPRESSED_STAR_DUST.get(), ModItems.OVERDRIVE_PARTICLE.get(), ModItems.NEUTRON_FRAGMENT.get(),
                 ModItems.QUASAR_ESSENCE.get(), ModItems.QUASAR_OVERDRIVE_PARTICLE.get(), ModItems.EFFICIENCY_MODULE.get(), ModItems.STABILITY_MODULE.get(),
-                ModItems.ANTI_ASTEROID_MODULE.get(), ModItems.COLOR_MODULE.get());
+                ModItems.ANTI_ASTEROID_MODULE.get(), ModItems.COLOR_MODULE.get(), ModItems.GUIDE_BOOK.get());
     }
 
     @SubscribeEvent

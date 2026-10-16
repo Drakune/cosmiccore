@@ -71,6 +71,7 @@ neoForge {
             systemProperty 'cosmiccore.cutsceneEvery', project.findProperty('every') ?: '15'
             if (project.findProperty('console')) systemProperty 'cosmiccore.consoleTest', 'true'
             if (project.findProperty('guide')) systemProperty 'cosmiccore.guideTest', 'true'
+            if (project.findProperty('book')) systemProperty 'cosmiccore.bookTest', 'true'
             programArguments.addAll '--quickPlaySingleplayer', 'CutsceneTest'
         }
 

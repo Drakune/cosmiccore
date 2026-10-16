@@ -3,6 +3,7 @@ package dr4kun3.cosmiccore.client;
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -31,9 +32,45 @@ public final class CutsceneTestHarness {
     private static int guideShot;
     private static net.minecraft.core.BlockPos consoleAt;
     private static final boolean GUIDE = System.getProperty("cosmiccore.guideTest") != null;
+    private static final boolean BOOK = System.getProperty("cosmiccore.bookTest") != null;
     private static final boolean CONSOLE = System.getProperty("cosmiccore.consoleTest") != null;
 
     private CutsceneTestHarness() {}
+
+    /** Buch-Test: Handbuch in der Hand (Aufklappen, Blaettern), von aussen und im Inventar. */
+    private static void bookTest(Minecraft mc) {
+        var server = mc.getSingleplayerServer();
+        if (server == null) return;
+        int t = worldTicks;
+        if (t == 20) {
+            mc.options.hideGui = false;
+            mc.player.getInventory().selected = 0;
+            server.execute(() -> {
+                var sp = server.getPlayerList().getPlayers().get(0);
+                sp.getInventory().selected = 0;
+                sp.getInventory().setItem(0, ItemStack.EMPTY);
+                sp.getInventory().setItem(1, new ItemStack(dr4kun3.cosmiccore.ModItems.GUIDE_BOOK.get()));
+                sp.setXRot(10);
+            });
+        }
+        if (t == 40) mc.player.getInventory().selected = 1; // Buch nehmen -> klappt auf
+        if (t == 40) server.execute(() -> server.getPlayerList().getPlayers().get(0).getInventory().selected = 1);
+        int[] shots = {41, 43, 45, 47, 50, 60, 70, 72, 74, 76, 78};
+        for (int k = 0; k < shots.length; k++) {
+            if (t == shots[k]) Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", k), mc.getMainRenderTarget(), msg -> {});
+        }
+        if (t == 100) mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+        if (t == 120) Screenshot.grab(mc.gameDirectory, "cutscene_b20.png", mc.getMainRenderTarget(), msg -> {});
+        if (t == 125) {
+            mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+        }
+        if (t == 140) Screenshot.grab(mc.gameDirectory, "cutscene_b21.png", mc.getMainRenderTarget(), msg -> {});
+        if (t == 150) {
+            finished = true;
+            mc.stop();
+        }
+    }
 
     /** Konsolen-Test: Kreativ-Bau (gebildet, mit Trichter am Item-Port), einzelne Ports, eine ruhende Konsole und das Menue. */
     private static void consoleTest(Minecraft mc) {
@@ -150,6 +187,10 @@ public final class CutsceneTestHarness {
         worldTicks++;
         if (CONSOLE) {
             consoleTest(mc);
+            return;
+        }
+        if (BOOK) {
+            bookTest(mc);
             return;
         }
         if (GUIDE) {

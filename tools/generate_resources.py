@@ -711,6 +711,130 @@ def draw_terminal_trim(phase, f, nf):
     return img
 
 
+# ----------------------------------------------------------------- Kosmisches Handbuch (3D-Buch, eine Atlas-Textur 128x64)
+BOOK_ATLAS = {
+    # Bereich: (x, y, Breite, Hoehe) - muss zu client/GuideBookRenderer.java passen
+    'cover': (0, 0, 30, 40), 'page': (30, 0, 30, 40), 'fore': (60, 0, 6, 40), 'spine': (66, 0, 10, 40),
+    'inside': (76, 0, 30, 40), 'edge': (0, 40, 30, 6), 'violet': (30, 40, 4, 4), 'gold': (34, 40, 4, 4),
+}
+
+
+def draw_cosmic_book():
+    img = Image.new('RGBA', (128, 64), (0, 0, 0, 0))
+    px = img.load()
+    rnd = random.Random(77)
+
+    def area(name):
+        return BOOK_ATLAS[name]
+
+    def fill(name, fn):
+        x0, y0, w, h = area(name)
+        for y in range(h):
+            for x in range(w):
+                px[x0 + x, y0 + y] = fn(x, y, w, h)
+
+    gold, gold_dark, gold_hi = (200, 156, 64), (122, 88, 30), (250, 214, 120)
+    def leather(x, y, w, h):
+        n = rnd.randint(-6, 6)
+        base = (46 + n, 24 + n // 2, 92 + n)
+        # Vignette zum Rand hin
+        d = min(x, y, w - 1 - x, h - 1 - y)
+        k = 0.78 + 0.22 * min(1.0, d / 5.0)
+        return (clamp(base[0] * k), clamp(base[1] * k), clamp(base[2] * k), 255)
+
+    # Vorderdeckel: Leder, doppelte Goldkante, Ecknieten, Stern-Emblem, Zierlinie
+    fill('cover', leather)
+    x0, y0, w, h = area('cover')
+    for i in range(w):
+        for yy in (1, h - 2):
+            px[x0 + i, y0 + yy] = gold + (255,)
+        for yy in (3, h - 4):
+            if 3 <= i <= w - 4:
+                px[x0 + i, y0 + yy] = gold_dark + (255,)
+    for j in range(h):
+        for xx in (1, w - 2):
+            px[x0 + xx, y0 + j] = gold + (255,)
+        for xx in (3, w - 4):
+            if 3 <= j <= h - 4:
+                px[x0 + xx, y0 + j] = gold_dark + (255,)
+    for (cx, cy) in ((1, 1), (w - 2, 1), (1, h - 2), (w - 2, h - 2)):
+        for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            xx, yy = cx + (dx if cx < w // 2 else -dx), cy + (dy if cy < h // 2 else -dy)
+            px[x0 + xx, y0 + yy] = gold_hi + (255,)
+    ecx, ecy = w / 2 - 0.5, 15.5
+    for y in range(h):
+        for x in range(w):
+            d = abs(x - ecx) + abs(y - ecy)          # Raute
+            r = math.hypot(x - ecx, y - ecy)
+            if 6.5 <= d <= 7.5:
+                px[x0 + x, y0 + y] = gold + (255,)
+            elif d < 6.5 and (abs(x - ecx) < 0.6 or abs(y - ecy) < 0.6):
+                px[x0 + x, y0 + y] = gold_hi + (255,)  # Strahlenkreuz
+            elif 3.6 <= r <= 4.4:
+                px[x0 + x, y0 + y] = (170, 120, 255, 255)  # violetter Ring
+    for (sx, sy) in ((int(ecx), int(ecy)), (int(ecx) + 1, int(ecy)), (int(ecx), int(ecy) + 1), (int(ecx) + 1, int(ecy) + 1)):
+        px[x0 + sx, y0 + sy] = (255, 246, 210, 255)
+    for x in range(7, w - 7):                         # Titelbalken
+        px[x0 + x, y0 + 28] = gold_dark + (255,)
+        px[x0 + x, y0 + 31] = gold_dark + (255,)
+        if x % 2 == 1:
+            px[x0 + x, y0 + 29] = gold + (255,)
+            px[x0 + x, y0 + 30] = gold + (255,)
+
+    # Seite: Pergament mit Textzeilen und einem kleinen Diagramm
+    def parchment(x, y, w, h):
+        n = rnd.randint(-5, 5)
+        edge = min(x, w - 1 - x) < 1
+        base = (236 + n, 224 + n, 196 + n) if not edge else (214, 198, 164)
+        return base + (255,)
+    fill('page', parchment)
+    x0, y0, w, h = area('page')
+    ink = (70, 52, 96)
+    for row in range(5, 37, 3):
+        if 15 <= row <= 24:
+            continue
+        L = 3 + rnd.randint(0, 2)
+        R = w - 3 - rnd.randint(0, 6)
+        for x in range(L, R):
+            if rnd.random() < 0.82:
+                px[x0 + x, y0 + row] = ink + (255,)
+    dcx, dcy = w / 2 - 0.5, 19.5                    # Diagramm: Kern mit Ring
+    for y in range(14, 26):
+        for x in range(3, w - 3):
+            r = math.hypot(x - dcx, (y - dcy) * 1.2)
+            if 4.2 <= r <= 5.0:
+                px[x0 + x, y0 + y] = (122, 74, 192, 255)
+            elif r < 2.2:
+                px[x0 + x, y0 + y] = (30, 16, 52, 255)
+    # Seitenschnitt (Vorderkante) und Kopf-/Fusschnitt: feine Blattlagen mit Goldschnitt
+    def fore(x, y, w, h):
+        return ((226, 204, 150, 255) if x % 2 == 0 else (196, 168, 110, 255)) if y % 9 else (200, 156, 64, 255)
+    fill('fore', fore)
+    def edge(x, y, w, h):
+        return (226, 204, 150, 255) if y % 2 == 0 else (190, 160, 104, 255)
+    fill('edge', edge)
+    # Ruecken: Leder mit vier Goldbuenden
+    def spine(x, y, w, h):
+        c = leather(x, y, w, h)
+        if y in (5, 6, 15, 16, 24, 25, 34, 35):
+            return gold + (255,)
+        if 9 <= y <= 12 and 2 <= x <= w - 3:
+            return gold_dark + (255,)
+        return c
+    fill('spine', spine)
+    # Innendeckel: dunkles Violett mit Sternstaub und Goldkante
+    def inside(x, y, w, h):
+        if x in (0, w - 1) or y in (0, h - 1):
+            return gold_dark + (255,)
+        if rnd.random() < 0.04:
+            return (230, 210, 255, 255)
+        return (32, 18, 62, 255)
+    fill('inside', inside)
+    fill('violet', lambda x, y, w, h: (52, 28, 100, 255))
+    fill('gold', lambda x, y, w, h: gold + (255,))
+    return img
+
+
 # ----------------------------------------------------------------- Ausgabe der Texturen
 PAINTERS = {
     'void_casing': draw_casing,
@@ -758,9 +882,7 @@ def textures():
     save_strip('compressed_star_dust', [draw_compressed_star_dust(f, 8) for f in range(8)], 3, folder='item')
     save_strip('neutron_fragment', [draw_neutron_fragment(f, 8) for f in range(8)], 3, folder='item')
     save_strip('quasar_essence', [draw_quasar_essence(f, 8) for f in range(8)], 2, folder='item')
-    save_strip('book_cover', [draw_book_cover()], 1, folder='item')
-    save_strip('book_pages', [draw_book_pages()], 1, folder='item')
-    save_strip('book_spine', [draw_book_spine()], 1, folder='item')
+    save_strip('cosmic_book', [draw_cosmic_book()], 1, folder='item')
     save_strip('cosmic_laser_side', [draw_laser_side()], 1)
     save_strip('port_socket', [draw_port_socket()], 1)
     save_strip('overdrive_particle', [draw_overdrive_particle(f, 8) for f in range(8)], 3, folder='item')
@@ -968,27 +1090,19 @@ def models():
     wjson(f'{ASSETS}/models/item/quasar_overdrive_particle.json', {'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
                                                                   'textures': {'particle': f'{MOD}:item/quasar_essence'},
                                                                   'display': floating})
-    # 3D-Handbuch: Buchdeckel, Seitenblock, Ruecken und Sternen-Juwel
-    cover, pages, spine = f'{MOD}:item/book_cover', f'{MOD}:item/book_pages', f'{MOD}:item/book_spine'
-    def el(a, b, faces):
-        return {'from': a, 'to': b, 'faces': faces}
-    allf = lambda tex: {d: {'texture': tex} for d in ('down', 'up', 'north', 'south', 'west', 'east')}
+    # 3D-Handbuch: wird vom GuideBookRenderer gezeichnet (Textur cosmic_book) - klappt in der Hand auf
     wjson(f'{ASSETS}/models/item/guide_book.json', {
-        'textures': {'particle': cover, 'cover': cover, 'pages': pages, 'spine': spine},
-        'elements': [
-            el([2, 0, 1], [14, 1, 15], {**allf('#spine'), 'down': {'texture': '#cover'}, 'up': {'texture': '#pages'}}),
-            el([2.5, 1, 1.5], [13.5, 4, 14.5], allf('#pages')),
-            el([2, 4, 1], [14, 5, 15], {**allf('#spine'), 'up': {'texture': '#cover'}, 'down': {'texture': '#pages'}}),
-            el([1, 0, 1], [2, 5, 15], allf('#spine')),
-            el([7, 5, 7], [9, 5.6, 9], allf('#spine'))],
+        'parent': 'minecraft:builtin/entity', 'gui_light': 'front',
+        'textures': {'particle': f'{MOD}:item/cosmic_book'},
         'display': {
-            'gui': {'rotation': [35, 210, 0], 'translation': [0, 1, 0], 'scale': [0.85, 0.85, 0.85]},
+            'gui': {'rotation': [20, -60, 0], 'translation': [1, 0, 0], 'scale': [1.0, 1.0, 1.0]},
             'ground': {'rotation': [0, 0, 0], 'translation': [0, 2, 0], 'scale': [0.5, 0.5, 0.5]},
-            'fixed': {'rotation': [90, 0, 0], 'translation': [0, 0, -3], 'scale': [0.8, 0.8, 0.8]},
-            'thirdperson_righthand': {'rotation': [60, 0, 0], 'translation': [0, 3, 1], 'scale': [0.55, 0.55, 0.55]},
-            'thirdperson_lefthand': {'rotation': [60, 0, 0], 'translation': [0, 3, 1], 'scale': [0.55, 0.55, 0.55]},
-            'firstperson_righthand': {'rotation': [20, -20, 10], 'translation': [1.1, 3.5, 1], 'scale': [0.6, 0.6, 0.6]},
-            'firstperson_lefthand': {'rotation': [20, 20, -10], 'translation': [1.1, 3.5, 1], 'scale': [0.6, 0.6, 0.6]}}})
+            'fixed': {'rotation': [0, -90, 0], 'translation': [0, 0, 0], 'scale': [0.9, 0.9, 0.9]},
+            'head': {'rotation': [0, 0, 0], 'translation': [0, 10, 0], 'scale': [0.8, 0.8, 0.8]},
+            'thirdperson_righthand': {'rotation': [-20, 0, 0], 'translation': [0, 3, 2], 'scale': [0.55, 0.55, 0.55]},
+            'thirdperson_lefthand': {'rotation': [-20, 0, 0], 'translation': [0, 3, 2], 'scale': [0.55, 0.55, 0.55]},
+            'firstperson_righthand': {'rotation': [-25, -15, 0], 'translation': [-2.5, 2.5, -4], 'scale': [0.4, 0.4, 0.4]},
+            'firstperson_lefthand': {'rotation': [-25, 15, 0], 'translation': [-2.5, 2.5, -4], 'scale': [0.4, 0.4, 0.4]}}})
 
 
 

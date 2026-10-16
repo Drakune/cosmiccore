@@ -54,7 +54,9 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         float t = time();
         pose.pushPose();
         pose.translate(0.5, 0.5, 0.5);
-        if (stack.is(ModItems.OVERDRIVE_PARTICLE.get())) {
+        if (stack.is(ModItems.GUIDE_BOOK.get())) {
+            GuideBookRenderer.render(ctx, pose, buffers, light, overlay, t);
+        } else if (stack.is(ModItems.OVERDRIVE_PARTICLE.get())) {
             renderParticle(pose, buffers, t);
         } else if (stack.is(ModItems.QUASAR_OVERDRIVE_PARTICLE.get())) {
             renderQuasarParticle(pose, buffers, t);
