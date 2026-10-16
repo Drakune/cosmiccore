@@ -62,7 +62,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         pose.pushPose();
         pose.translate(0.5, 0.0, 0.5);
         pose.pushPose();
-        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(t * 0.6F));
+        pose.rotate(com.mojang.math.Axis.YP.rotationDegrees(t * 0.6F));
         RenderUtil.starTrumpet(buffers.getBuffer(RenderTypes.endPortal()), pose.last().pose(), y0, y1, r0, r1, exp, 24, 6);
         pose.popPose();
         VertexConsumer vc = buffers.getBuffer(CosmicRenderTypes.glow());

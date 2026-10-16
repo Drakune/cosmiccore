@@ -176,8 +176,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
 
         float tilt = 8.0F + (heat > 0.5F ? (heat - 0.5F) * 18.0F * Mth.sin(t * 0.21F) : 0.0F);
         pose.pushPose();
-        pose.mulPose(Axis.XP.rotationDegrees(tilt));
-        pose.mulPose(Axis.ZP.rotationDegrees(tilt * 0.4F * Mth.sin(t * 0.013F)));
+        pose.rotate(Axis.XP.rotationDegrees(tilt));
+        pose.rotate(Axis.ZP.rotationDegrees(tilt * 0.4F * Mth.sin(t * 0.013F)));
         Matrix4f dm = pose.last().pose();
         // drei Lagen fuer Volumen
         int layers = RenderQuality.detail() < 0.5F ? 0 : 1; // bei wenig Detail nur die mittlere Lage
@@ -196,8 +196,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         if (od >= 1) {
             // Ueberladung: zweite, steil gekippte Scheibe im Gegenlauf
             pose.pushPose();
-            pose.mulPose(Axis.ZP.rotationDegrees(62.0F));
-            pose.mulPose(Axis.YP.rotationDegrees(t * 0.3F));
+            pose.rotate(Axis.ZP.rotationDegrees(62.0F));
+            pose.rotate(Axis.YP.rotationDegrees(t * 0.3F));
             // inneres Band (radial getrennt von der dritten Scheibe)
             accretionDisk(pose.last().pose(), glow, inner * 1.1F, Mth.lerp(0.45F, inner, outer), t, -spin * 1.3F, e * 0.35F, heat, camYaw, 0, 0);
             pose.popPose();
@@ -205,8 +205,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         if (od >= 4) {
             // Ultimate-Modus: dritte, goldene Scheibe quer zu den anderen beiden
             pose.pushPose();
-            pose.mulPose(Axis.XP.rotationDegrees(-62.0F));
-            pose.mulPose(Axis.YP.rotationDegrees(-t * 0.45F));
+            pose.rotate(Axis.XP.rotationDegrees(-62.0F));
+            pose.rotate(Axis.YP.rotationDegrees(-t * 0.45F));
             // aeusseres Band - schneidet die zweite Scheibe nicht im selben Radius
             accretionDisk(pose.last().pose(), glow, Mth.lerp(0.55F, inner, outer), outer * 0.95F, t, spin * 1.6F, e * 0.22F, heat, camYaw, 0, 0);
             pose.popPose();
@@ -371,8 +371,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     private static void lensing(PoseStack pose, VertexConsumer vc, float rh, float inner, float t, float energy, float heat,
                                 float camYaw, float camPitch, float beat) {
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotation(camYaw));
-        pose.mulPose(Axis.XP.rotation(-camPitch));
+        pose.rotate(Axis.YP.rotation(camYaw));
+        pose.rotate(Axis.XP.rotation(-camPitch));
         Matrix4f m = pose.last().pose();
         final int seg = RenderQuality.scale(72, 32);
         float[] ringCol = lerp(pHot, CRITICAL, heat * heat * 0.6F);

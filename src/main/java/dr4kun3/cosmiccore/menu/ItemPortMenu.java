@@ -1,5 +1,7 @@
 package dr4kun3.cosmiccore.menu;
 
+import dr4kun3.cosmiccore.transfer.*;
+
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -10,9 +12,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
 
 /** Lager des Item-Ports: 27 Plaetze Asteroiden-Beute (nur entnehmen) plus Spielerinventar. */
 public class ItemPortMenu extends AbstractContainerMenu {
@@ -27,7 +26,7 @@ public class ItemPortMenu extends AbstractContainerMenu {
 
     /** Client. */
     public ItemPortMenu(int id, Inventory inv, RegistryFriendlyByteBuf buf) {
-        this(id, inv, buf.readBlockPos(), new ItemStackHandler(ItemPortBlockEntity.STORAGE_SLOTS), buf.readBoolean() ? buf.readBlockPos() : null);
+        this(id, inv, buf.readBlockPos(), new StackHandler(ItemPortBlockEntity.STORAGE_SLOTS), buf.readBoolean() ? buf.readBlockPos() : null);
     }
 
     /** Server. */
@@ -35,14 +34,14 @@ public class ItemPortMenu extends AbstractContainerMenu {
         this(id, inv, be.getBlockPos(), be.getStorage(), returnTo);
     }
 
-    private ItemPortMenu(int id, Inventory inv, BlockPos pos, IItemHandler storage, @org.jetbrains.annotations.Nullable BlockPos returnTo) {
+    private ItemPortMenu(int id, Inventory inv, BlockPos pos, ItemHandler storage, @org.jetbrains.annotations.Nullable BlockPos returnTo) {
         super(ModMenus.ITEM_PORT.get(), id);
         this.pos = pos;
         this.returnTo = returnTo;
         this.access = ContainerLevelAccess.create(inv.player.level(), pos);
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new SlotItemHandler(storage, col + row * 9, STORE_X + col * 18, STORE_Y + row * 18) {
+                addSlot(new HandlerSlot(storage, col + row * 9, STORE_X + col * 18, STORE_Y + row * 18) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
                         return false; // Beute kann nur entnommen werden

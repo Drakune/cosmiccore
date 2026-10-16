@@ -1,5 +1,7 @@
 package dr4kun3.cosmiccore.block.entity;
 
+import dr4kun3.cosmiccore.transfer.*;
+
 import dr4kun3.cosmiccore.menu.ItemPortMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -14,8 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider {
     public static final int STORAGE_SLOTS = 27;
 
-    private final ItemStackHandler storage = new ItemStackHandler(STORAGE_SLOTS) {
+    private final StackHandler storage = new StackHandler(STORAGE_SLOTS) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
@@ -36,7 +36,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
             }
         }
     };
-    private final IItemHandler itemView = new View();
+    private final ItemHandler itemView = new View();
     private int syncedUsed;
     /** Nur Client: belegte Lagerplaetze (fuer das Hologramm). */
     private int clientUsed;
@@ -45,11 +45,11 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         super(ModBlockEntities.ITEM_PORT.get(), pos, state);
     }
 
-    public IItemHandler getItemView() {
+    public ItemHandler getItemView() {
         return itemView;
     }
 
-    public ItemStackHandler getStorage() {
+    public StackHandler getStorage() {
         return storage;
     }
 
@@ -125,11 +125,11 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
      * Sicht fuer Rohre: zuerst die Eingaenge des Controllers (nur einfuegen), dahinter das Lager (nur entnehmen).
      * Ohne gebildete Struktur bleibt das Lager trotzdem leerbar.
      */
-    private final class View implements IItemHandler {
+    private final class View implements ItemHandler {
         private static final int INPUTS = ControllerBlockEntity.INVENTORY_SIZE;
 
         @Nullable
-        private IItemHandler target() {
+        private ItemHandler target() {
             ControllerBlockEntity c = controller();
             return c == null ? null : c.getItemView();
         }
@@ -142,14 +142,14 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         @Override
         public ItemStack getStackInSlot(int slot) {
             if (slot >= INPUTS) return storage.getStackInSlot(slot - INPUTS);
-            IItemHandler t = target();
+            ItemHandler t = target();
             return t == null ? ItemStack.EMPTY : t.getStackInSlot(slot);
         }
 
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
             if (slot >= INPUTS) return stack;
-            IItemHandler t = target();
+            ItemHandler t = target();
             return t == null ? stack : t.insertItem(slot, stack, simulate);
         }
 
@@ -161,14 +161,14 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         @Override
         public int getSlotLimit(int slot) {
             if (slot >= INPUTS) return storage.getSlotLimit(slot - INPUTS);
-            IItemHandler t = target();
+            ItemHandler t = target();
             return t == null ? 64 : t.getSlotLimit(slot);
         }
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             if (slot >= INPUTS) return false;
-            IItemHandler t = target();
+            ItemHandler t = target();
             return t != null && t.isItemValid(slot, stack);
         }
     }

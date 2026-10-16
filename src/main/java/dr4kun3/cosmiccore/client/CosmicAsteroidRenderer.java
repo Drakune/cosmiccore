@@ -88,8 +88,8 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
 
         // ---------------------------------------------------------------- Gestein (deckend, schattiert)
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotationDegrees(t * (0.8F + (seed & 3) * 0.4F)));
-        pose.mulPose(Axis.XP.rotationDegrees(t * 0.5F + (seed & 63)));
+        pose.rotate(Axis.YP.rotationDegrees(t * (0.8F + (seed & 3) * 0.4F)));
+        pose.rotate(Axis.XP.rotationDegrees(t * 0.5F + (seed & 63)));
         Matrix4f m = new Matrix4f(pose.last().pose());
         Matrix3f nm = new Matrix3f(pose.last().normal());
         float[][][] pts = surface(r, seed, GRID[variant][0], GRID[variant][1]);

@@ -106,7 +106,7 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         pose.pushPose();
         pose.translate(0.0, -0.35 * dir, 0.0);
-        if (dir < 0) pose.mulPose(Axis.XP.rotationDegrees(180.0F));
+        if (dir < 0) pose.rotate(Axis.XP.rotationDegrees(180.0F));
         Matrix4f m = pose.last().pose();
         float[] a = lerp(FUNNEL_A, CRITICAL, heat * 0.8F), b = lerp(FUNNEL_B, CRITICAL, heat * 0.6F);
         final float height = 0.85F;
@@ -180,7 +180,7 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
     private static void renderCrystal(PoseStack pose, MultiBufferSource buffers, float t, float speed, float energy,
                                       boolean unstable) {
         pose.translate(0.0, 0.04 * Mth.sin(t * 0.06F), 0.0);
-        pose.mulPose(Axis.YP.rotationDegrees(t * 0.8F * speed));
+        pose.rotate(Axis.YP.rotationDegrees(t * 0.8F * speed));
         float breathe = 1.0F + 0.04F * Mth.sin(t * 0.15F * speed);
 
         RenderUtil.starOctahedron(buffers.getBuffer(RenderTypes.endGateway()), pose.last().pose(), 0.42F * breathe, 0.6F * breathe);

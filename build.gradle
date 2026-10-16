@@ -150,6 +150,8 @@ sourceSets.main.java {
     ['jei', 'emi', 'rei', 'geckolib'].each { mod ->
         if (!hasCompat(mod)) exclude "dr4kun3/cosmiccore/compat/${mod}/**"
     }
+    // Ab 26.3 laeuft die Datengenerierung ueber Registry-Bootstraps - die erzeugten Daten liegen fertig in src/generated
+    exclude 'dr4kun3/cosmiccore/datagen/**'
 }
 
 dependencies {

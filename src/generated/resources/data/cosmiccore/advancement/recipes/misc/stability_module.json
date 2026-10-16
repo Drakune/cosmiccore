@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:stability_module"
+        "recipes": "cosmiccore:stability_module"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

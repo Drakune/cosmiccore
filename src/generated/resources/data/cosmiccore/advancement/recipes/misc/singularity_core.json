@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:singularity_core"
+        "recipes": "cosmiccore:singularity_core"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

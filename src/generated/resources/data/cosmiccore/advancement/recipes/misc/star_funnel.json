@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:star_funnel"
+        "recipes": "cosmiccore:star_funnel"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

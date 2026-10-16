@@ -86,8 +86,8 @@ public final class StructurePreview {
             BlockPos controller = new BlockPos(0, -half, half);
             ps.translate(st.offX(), st.offY(), 0);
             ps.scale(scale, -scale, -scale); // der Bild-im-Bild-Renderer spiegelt Z bereits
-            ps.mulPose(Axis.XP.rotationDegrees(22.0F + st.pitch()));
-            ps.mulPose(Axis.YP.rotationDegrees(st.yaw()));
+            ps.rotate(Axis.XP.rotationDegrees(22.0F + st.pitch()));
+            ps.rotate(Axis.YP.rotationDegrees(st.yaw()));
             var buffers = new dr4kun3.cosmiccore.client.render.DeferredBuffers(collector);
             p.forEach(BlockPos.ZERO, Direction.SOUTH, (pos, cell) -> {
                 if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei fuer Rohre

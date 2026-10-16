@@ -197,6 +197,12 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         }
 
         @Override
+        public VertexConsumer setUv3(float u, float v) {
+            delegate.setUv3(u, v);
+            return this;
+        }
+
+        @Override
         public VertexConsumer setLineWidth(float width) {
             delegate.setLineWidth(width);
             return this;

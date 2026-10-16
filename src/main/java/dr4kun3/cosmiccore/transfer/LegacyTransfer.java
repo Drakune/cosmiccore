@@ -2,8 +2,6 @@ package dr4kun3.cosmiccore.transfer;
 
 import java.util.Arrays;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.TransferPreconditions;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
@@ -16,27 +14,26 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * Innerhalb einer Transaktion wird nur vorgemerkt und mit Simulation geprueft; ausgefuehrt wird erst, wenn die
  * aeusserste Transaktion abgeschlossen wird. Bricht sie ab, bleibt alles unveraendert.
  */
-@SuppressWarnings("removal")
 public final class LegacyTransfer {
     private LegacyTransfer() {}
 
     /** Eine Huelle je Sicht, damit alle Abfragen in einer Transaktion dieselben Vormerkungen sehen. */
     private static final java.util.Map<Object, Object> CACHE = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
-    public static EnergyHandler energy(IEnergyStorage storage) {
-        return (EnergyHandler) CACHE.computeIfAbsent(storage, s -> new Energy((IEnergyStorage) s));
+    public static EnergyHandler energy(EnergyStore storage) {
+        return (EnergyHandler) CACHE.computeIfAbsent(storage, s -> new Energy((EnergyStore) s));
     }
 
     @SuppressWarnings("unchecked")
-    public static ResourceHandler<ItemResource> items(IItemHandler handler) {
-        return (ResourceHandler<ItemResource>) CACHE.computeIfAbsent(handler, h -> new Items((IItemHandler) h));
+    public static ResourceHandler<ItemResource> items(ItemHandler handler) {
+        return (ResourceHandler<ItemResource>) CACHE.computeIfAbsent(handler, h -> new Items((ItemHandler) h));
     }
 
     private static final class Energy extends SnapshotJournal<int[]> implements EnergyHandler {
-        private final IEnergyStorage storage;
+        private final EnergyStore storage;
         private int pendingIn, pendingOut;
 
-        Energy(IEnergyStorage storage) {
+        Energy(EnergyStore storage) {
             this.storage = storage;
         }
 
@@ -103,10 +100,10 @@ public final class LegacyTransfer {
     }
 
     private static final class Items extends SnapshotJournal<Pending> implements ResourceHandler<ItemResource> {
-        private final IItemHandler handler;
+        private final ItemHandler handler;
         private Pending pending = new Pending(new ItemStack[0], new int[0]);
 
-        Items(IItemHandler handler) {
+        Items(ItemHandler handler) {
             this.handler = handler;
         }
 

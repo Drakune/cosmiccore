@@ -33,7 +33,7 @@ public class CosmicCore {
         modEventBus.addListener(CosmicCore::registerDataMaps);
         modEventBus.addListener(dr4kun3.cosmiccore.network.ModNetwork::register);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, CoreConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.LOCAL, CoreConfig.SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
     }
 

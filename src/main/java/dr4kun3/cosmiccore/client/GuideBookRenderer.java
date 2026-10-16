@@ -80,7 +80,7 @@ public final class GuideBookRenderer {
         VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutout(TEX));
         pose.pushPose();
         // Buch steht auf dem Ruecken-Gelenk (lokales Y = Hoehe), die Seiten zeigen zum Betrachter
-        pose.mulPose(Axis.YP.rotationDegrees(-90.0F));
+        pose.rotate(Axis.YP.rotationDegrees(-90.0F));
         pose.translate(-0.12F * open, 0.0F, 0.0F);
         // Ruecken
         box(vc, pose, -C, -H / 2, -(P + C), 0.0F, H / 2, P + C, light, overlay,
@@ -96,7 +96,7 @@ public final class GuideBookRenderer {
                 float a = Mth.lerp(e, ang, -ang);
                 float lift = Mth.sin(e * Mth.PI) * 0.06F;
                 pose.pushPose();
-                pose.mulPose(Axis.YP.rotationDegrees(a));
+                pose.rotate(Axis.YP.rotationDegrees(a));
                 pose.translate(0, 0, lift);
                 // Blatt leicht gewoelbt: zwei Segmente
                 sheet(vc, pose, light, overlay, e);
@@ -108,13 +108,13 @@ public final class GuideBookRenderer {
         // Leuchten: Emblem (geschlossen) bzw. Siegel und Funken (offen)
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotationDegrees(-90.0F));
+        pose.rotate(Axis.YP.rotationDegrees(-90.0F));
         pose.translate(-0.12F * open, 0.0F, 0.0F);
         float pulse = 0.6F + 0.4F * Mth.sin(t * 0.12F);
         if (open < 0.5F) {
             // Emblem auf dem Vorderdeckel: Raute und Kernpunkt glimmen
             pose.pushPose();
-            pose.mulPose(Axis.YP.rotationDegrees(-ang));
+            pose.rotate(Axis.YP.rotationDegrees(-ang));
             Matrix4f m = new Matrix4f(pose.last().pose()).translate(W / 2, H / 2 - 15.5F / 40.0F * H, P + C + 0.004F);
             float r = 7.0F / 30.0F * W, a = (1.0F - open * 2.0F) * pulse;
             float[][] d = {{0, r}, {r, 0}, {0, -r}, {-r, 0}};
@@ -148,7 +148,7 @@ public final class GuideBookRenderer {
     /** Eine Buchhaelfte: Deckel aussen, Seitenblock innen; side = +1 vorn, -1 hinten. */
     private static void half(VertexConsumer vc, PoseStack pose, float angle, int side, int light, int overlay) {
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotationDegrees(angle));
+        pose.rotate(Axis.YP.rotationDegrees(angle));
         float zIn = 0.0F, zPage = side * P, zOut = side * (P + C);
         float z0 = Math.min(zIn, zPage), z1 = Math.max(zIn, zPage);
         // Seitenblock (etwas kleiner als der Deckel)

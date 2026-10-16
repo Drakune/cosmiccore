@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:quasar_overdrive_particle"
+        "recipes": "cosmiccore:quasar_overdrive_particle"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

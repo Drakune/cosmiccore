@@ -404,7 +404,17 @@ public final class TitanCutscene {
     public static void onSubmitGeometry(net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent event) {
         if (!active) return;
         var sky = new dr4kun3.cosmiccore.client.render.DeferredBuffers(event.getSubmitNodeCollector(), -1000);
-        onRenderLevel(event.getPoseStack(), sky, true);
+        onRenderLevel(event.getPoseStack(), new MultiBufferSource() {
+            @Override
+            public VertexConsumer getBuffer(net.minecraft.client.renderer.rendertype.RenderType type) {
+                return sky.getBuffer(CosmicRenderTypes.sky(type));
+            }
+
+            @Override
+            public void endBatch(net.minecraft.client.renderer.rendertype.RenderType type) {
+                sky.endBatch(CosmicRenderTypes.sky(type));
+            }
+        }, true);
         sky.submit();
         var front = new dr4kun3.cosmiccore.client.render.DeferredBuffers(event.getSubmitNodeCollector(), 1000);
         onRenderLevel(event.getPoseStack(), front, false);

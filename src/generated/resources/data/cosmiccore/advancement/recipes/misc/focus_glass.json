@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:focus_glass"
+        "recipes": "cosmiccore:focus_glass"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

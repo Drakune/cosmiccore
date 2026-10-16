@@ -14,9 +14,9 @@ public final class RenderUtil {
     public static void ring(PoseStack pose, VertexConsumer vc, float radius, float halfWidth, float spin,
                             float tiltX, float tiltZ, float t, float[] col, float intensity) {
         pose.pushPose();
-        pose.mulPose(Axis.ZP.rotationDegrees(tiltZ));
-        pose.mulPose(Axis.XP.rotationDegrees(tiltX));
-        pose.mulPose(Axis.YP.rotationDegrees(spin));
+        pose.rotate(Axis.ZP.rotationDegrees(tiltZ));
+        pose.rotate(Axis.XP.rotationDegrees(tiltX));
+        pose.rotate(Axis.YP.rotationDegrees(spin));
         Matrix4f m = pose.last().pose();
         final int n = 56;
         for (int i = 0; i < n; i++) {

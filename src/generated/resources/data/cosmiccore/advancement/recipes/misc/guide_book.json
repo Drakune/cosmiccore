@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:guide_book"
+        "recipes": "cosmiccore:guide_book"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

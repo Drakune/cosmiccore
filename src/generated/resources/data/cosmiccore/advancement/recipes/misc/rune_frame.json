@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:rune_frame"
+        "recipes": "cosmiccore:rune_frame"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

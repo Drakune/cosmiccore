@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:item_port"
+        "recipes": "cosmiccore:item_port"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

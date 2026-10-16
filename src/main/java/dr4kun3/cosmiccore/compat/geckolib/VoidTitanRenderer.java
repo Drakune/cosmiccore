@@ -34,7 +34,7 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
 
     /** Der Titan ist riesig: weit ueber seine Hitbox hinaus sichtbar halten. */
     @Override
-    protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(VoidTitanEntity entity) {
+    protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(VoidTitanEntity entity, float partialTicks) {
         return entity.getBoundingBox().inflate(70.0);
     }
 
@@ -64,7 +64,7 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
         state.cinematic = entity.scriptTime >= 0;
         state.ticks = entity.animTime(partialTick);
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotation(yawRad));
+        pose.rotate(Axis.YP.rotation(yawRad));
         // GeckoLib verschiebt Objekte nach dem Skalieren um (0.5, 0.51, 0.5) - hier ausgleichen
         float k = VoidTitanEntity.SCALE;
         // Bis GeckoLib 5.2 kam dieser Versatz unskaliert dazu - die Zwischensequenz ist auf diese Lage abgestimmt
@@ -93,9 +93,9 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
             float s = VoidTitanEntity.SCALE * part.scale;
             pose.pushPose();
             pose.translate(p.x, p.y, p.z);
-            pose.mulPose(Axis.YP.rotation(yawRad));
-            pose.mulPose(Axis.YP.rotationDegrees(py));
-            pose.mulPose(Axis.XP.rotationDegrees(-pitch));
+            pose.rotate(Axis.YP.rotation(yawRad));
+            pose.rotate(Axis.YP.rotationDegrees(py));
+            pose.rotate(Axis.XP.rotationDegrees(-pitch));
             // Segmentmodell haengt nach unten (0 bis -11 px) - auf die Teilmitte zentrieren
             pose.translate(0, VoidTitanEntity.SEGMENT_PX / 16.0F * s * 0.5F, 0);
             pose.scale(s, s, s);

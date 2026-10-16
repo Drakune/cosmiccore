@@ -137,6 +137,11 @@ public final class DeferredBuffers implements MultiBufferSource {
         }
 
         @Override
+        public VertexConsumer setUv3(float u, float v) {
+            return this; // vierte Texturkoordinate nutzen die eigenen Formate nicht
+        }
+
+        @Override
         public VertexConsumer setLineWidth(float width) {
             data[base() + 12] = width;
             mark(32);

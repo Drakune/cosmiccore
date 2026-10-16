@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:anti_asteroid_module"
+        "recipes": "cosmiccore:anti_asteroid_module"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

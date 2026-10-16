@@ -1,5 +1,7 @@
 package dr4kun3.cosmiccore.menu;
 
+import dr4kun3.cosmiccore.transfer.*;
+
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -13,8 +15,6 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -78,7 +78,7 @@ public class ControllerMenu extends AbstractContainerMenu {
         this(id, playerInv, be.getBlockPos(), be.getInventory(), data, be);
     }
 
-    private ControllerMenu(int id, Inventory playerInv, BlockPos pos, IItemHandler machine, ContainerData data,
+    private ControllerMenu(int id, Inventory playerInv, BlockPos pos, ItemHandler machine, ContainerData data,
                            @Nullable ControllerBlockEntity be) {
         super(ModMenus.CONTROLLER.get(), id);
         this.pos = pos;
@@ -257,8 +257,8 @@ public class ControllerMenu extends AbstractContainerMenu {
 
     /** Solange die Baugroesse nicht gewaehlt ist, zeigt der Screen nur die Auswahl - Slots sind dann aus. */
     /** Modul-Slot im Seiten-Tab: auf dem Client nur sichtbar und klickbar, solange der Tab ausgeklappt ist. */
-    private final class ModuleSlot extends SlotItemHandler {
-        ModuleSlot(IItemHandler handler, int index, int x, int y) {
+    private final class ModuleSlot extends HandlerSlot {
+        ModuleSlot(ItemHandler handler, int index, int x, int y) {
             super(handler, index, x, y);
         }
 
@@ -268,8 +268,8 @@ public class ControllerMenu extends AbstractContainerMenu {
         }
     }
 
-    private final class MachineSlot extends SlotItemHandler {
-        MachineSlot(IItemHandler handler, int index, int x, int y) {
+    private final class MachineSlot extends HandlerSlot {
+        MachineSlot(ItemHandler handler, int index, int x, int y) {
             super(handler, index, x, y);
         }
 

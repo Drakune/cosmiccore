@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:overdrive_particle"
+        "recipes": "cosmiccore:overdrive_particle"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

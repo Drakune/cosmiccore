@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:controller"
+        "recipes": "cosmiccore:controller"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

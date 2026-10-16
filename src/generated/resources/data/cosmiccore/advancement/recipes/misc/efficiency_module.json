@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:efficiency_module"
+        "recipes": "cosmiccore:efficiency_module"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:color_module"
+        "recipes": "cosmiccore:color_module"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

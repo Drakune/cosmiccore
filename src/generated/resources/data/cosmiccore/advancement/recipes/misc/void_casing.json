@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:void_casing"
+        "recipes": "cosmiccore:void_casing"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

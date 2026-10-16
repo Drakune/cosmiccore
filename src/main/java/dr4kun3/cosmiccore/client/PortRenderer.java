@@ -118,7 +118,7 @@ public class PortRenderer<T extends PortBlockEntity> extends dr4kun3.cosmiccore.
         pose.translate(0.5F, 0.0F, 0.5F);
         pose.scale(sc, sc, sc);
         pose.translate(0.0F, 0.5F, 0.0F);
-        pose.mulPose(Axis.YP.rotation(yaw));
+        pose.rotate(Axis.YP.rotation(yaw));
         PortStation.solid(pose, buffers, level, state, energy, conn, yaw, 0.0F, Math.min(1.0F, st), data, true, true);
         PortStation.glow(new Matrix4f(pose.last().pose()), buffers.getBuffer(CosmicRenderTypes.glow()), energy, conn, yaw, 0.0F,
                 Math.min(1.0F, st), data, true, true);

@@ -131,7 +131,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     private static void renderParticle(PoseStack pose, MultiBufferSource buffers, float t) {
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.2F);
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotationDegrees(t * 2.0F));
+        pose.rotate(Axis.YP.rotationDegrees(t * 2.0F));
         RenderUtil.sphere(buffers.getBuffer(RenderTypes.endGateway()), pose.last().pose(), 0.17F + 0.015F * pulse, 10, 14);
         pose.popPose();
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
@@ -154,10 +154,10 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         for (int i = 0; i < shards.length; i++) {
             float[] s = shards[i];
             pose.pushPose();
-            pose.mulPose(Axis.YP.rotationDegrees(t * 1.2F));
+            pose.rotate(Axis.YP.rotationDegrees(t * 1.2F));
             pose.translate(s[0], s[1] + 0.03F * Mth.sin(t * 0.1F + i), s[2]);
-            pose.mulPose(Axis.YP.rotationDegrees(t * (2.0F + i)));
-            pose.mulPose(Axis.ZP.rotationDegrees(20.0F * i));
+            pose.rotate(Axis.YP.rotationDegrees(t * (2.0F + i)));
+            pose.rotate(Axis.ZP.rotationDegrees(20.0F * i));
             RenderUtil.starOctahedron(gateway, pose.last().pose(), s[3], s[3] * 1.6F);
             pose.popPose();
         }
@@ -166,10 +166,10 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         for (int i = 0; i < shards.length; i++) {
             float[] s = shards[i];
             pose.pushPose();
-            pose.mulPose(Axis.YP.rotationDegrees(t * 1.2F));
+            pose.rotate(Axis.YP.rotationDegrees(t * 1.2F));
             pose.translate(s[0], s[1] + 0.03F * Mth.sin(t * 0.1F + i), s[2]);
-            pose.mulPose(Axis.YP.rotationDegrees(t * (2.0F + i)));
-            pose.mulPose(Axis.ZP.rotationDegrees(20.0F * i));
+            pose.rotate(Axis.YP.rotationDegrees(t * (2.0F + i)));
+            pose.rotate(Axis.ZP.rotationDegrees(20.0F * i));
             RenderUtil.octahedron(glow, pose.last().pose(), s[3] * 1.05F, s[3] * 1.7F, 0.006F, i % 2 == 0 ? VIOLET : CYAN, 0.8F);
             pose.popPose();
         }
@@ -189,8 +189,8 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         float press = 0.5F + 0.5F * Mth.sin(t * 0.12F);
         float squeeze = press * press;
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotationDegrees(t * 1.6F));
-        pose.mulPose(Axis.ZP.rotationDegrees(12.0F));
+        pose.rotate(Axis.YP.rotationDegrees(t * 1.6F));
+        pose.rotate(Axis.ZP.rotationDegrees(12.0F));
         float w = 0.17F - 0.015F * squeeze, h = 0.27F - 0.03F * squeeze;
         RenderUtil.starOctahedron(buffers.getBuffer(RenderTypes.endGateway()), pose.last().pose(), w, h);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
@@ -234,7 +234,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         float flash = 0.5F + 0.5F * Mth.sin(t * 0.06F); // weicher, langsamer Puls statt Stroboskop
         flash *= 0.5F;
         pose.pushPose();
-        pose.mulPose(Axis.ZP.rotationDegrees(18.0F));
+        pose.rotate(Axis.ZP.rotationDegrees(18.0F));
         RenderUtil.solidSphere(buffers.getBuffer(RenderTypes.debugQuads()), pose.last().pose(), 0.1F, 8, 12, 0.82F, 0.92F, 1.0F);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f core = pose.last().pose();
@@ -242,8 +242,8 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         RenderUtil.glowSphere(glow, core, 0.2F, 8, 12, CYAN, 0.18F + 0.25F * flash);
         RenderUtil.glowSphere(glow, core, 0.3F, 8, 12, VIOLET, 0.05F + 0.1F * flash);
         // Magnetachse um 30 Grad gegen die Drehachse geneigt - die Strahlen streichen wie ein Leuchtturm herum
-        pose.mulPose(Axis.YP.rotation(spin));
-        pose.mulPose(Axis.XP.rotationDegrees(30.0F));
+        pose.rotate(Axis.YP.rotation(spin));
+        pose.rotate(Axis.XP.rotationDegrees(30.0F));
         Matrix4f m = pose.last().pose();
         for (int dir = -1; dir <= 1; dir += 2) {
             RenderUtil.segment(glow, m, 0, 0.09F * dir, 0, 0, 0.62F * dir, 0, 0.06F, CYAN[0], CYAN[1], CYAN[2], 0.7F, 0.0F);
@@ -289,16 +289,16 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         VertexConsumer gateway = buffers.getBuffer(RenderTypes.endGateway());
         for (int k = 0; k < 2; k++) {
             pose.pushPose();
-            pose.mulPose(Axis.YP.rotationDegrees(t * (k == 0 ? 1.4F : -1.0F) + k * 45.0F));
-            pose.mulPose(Axis.XP.rotationDegrees(k * 90.0F));
+            pose.rotate(Axis.YP.rotationDegrees(t * (k == 0 ? 1.4F : -1.0F) + k * 45.0F));
+            pose.rotate(Axis.XP.rotationDegrees(k * 90.0F));
             RenderUtil.starOctahedron(gateway, pose.last().pose(), 0.11F, 0.2F);
             pose.popPose();
         }
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         for (int k = 0; k < 2; k++) {
             pose.pushPose();
-            pose.mulPose(Axis.YP.rotationDegrees(t * (k == 0 ? 1.4F : -1.0F) + k * 45.0F));
-            pose.mulPose(Axis.XP.rotationDegrees(k * 90.0F));
+            pose.rotate(Axis.YP.rotationDegrees(t * (k == 0 ? 1.4F : -1.0F) + k * 45.0F));
+            pose.rotate(Axis.XP.rotationDegrees(k * 90.0F));
             RenderUtil.octahedron(glow, pose.last().pose(), 0.115F, 0.21F, 0.006F, k == 0 ? GOLD : WHITE, 0.85F);
             pose.popPose();
         }
@@ -309,8 +309,8 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         // Spiralgalaxie: zwei Arme aus Lichtpunkten, leicht gekippt, langsam drehend
         pose.pushPose();
         pose.translate(0.0F, -0.04F, 0.0F);
-        pose.mulPose(Axis.XP.rotationDegrees(18.0F));
-        pose.mulPose(Axis.YP.rotationDegrees(t * 0.9F));
+        pose.rotate(Axis.XP.rotationDegrees(18.0F));
+        pose.rotate(Axis.YP.rotationDegrees(t * 0.9F));
         Matrix4f gm = pose.last().pose();
         for (int arm = 0; arm < 2; arm++) {
             for (int i = 0; i < 22; i++) {
@@ -344,8 +344,8 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     private static void renderQuasar(PoseStack pose, MultiBufferSource buffers, float t) {
         float beat = 0.5F + 0.5F * Mth.sin(t * 0.25F);
         pose.pushPose();
-        pose.mulPose(Axis.XP.rotationDegrees(18.0F));
-        pose.mulPose(Axis.ZP.rotationDegrees(-10.0F));
+        pose.rotate(Axis.XP.rotationDegrees(18.0F));
+        pose.rotate(Axis.ZP.rotationDegrees(-10.0F));
         RenderUtil.solidSphere(buffers.getBuffer(RenderTypes.debugQuads()), pose.last().pose(), 0.075F, 8, 12, 0.0F, 0.0F, 0.0F);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
@@ -377,7 +377,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.18F);
         pose.pushPose();
         pose.translate(0.0F, -0.12F + bob, 0.0F);
-        pose.mulPose(Axis.YP.rotationDegrees(t * 1.5F));
+        pose.rotate(Axis.YP.rotationDegrees(t * 1.5F));
         Matrix4f m = pose.last().pose();
         // Platine (deckend): dunkle Platte mit hellerem Rand und Goldkontakten
         VertexConsumer solid = buffers.getBuffer(RenderTypes.debugQuads());
@@ -408,7 +408,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         // Hologramm-Symbol schwebt ueber der Platine
         pose.pushPose();
         pose.translate(0.0F, 0.14F + bob * 1.5F, 0.0F);
-        pose.mulPose(Axis.YP.rotationDegrees(-t * 2.5F));
+        pose.rotate(Axis.YP.rotationDegrees(-t * 2.5F));
         Matrix4f hm = pose.last().pose();
         float a = 0.6F + 0.4F * pulse;
         RenderUtil.segment(glow, new Matrix4f(m), 0, 0.08F, 0, 0, 0.26F + bob, 0, 0.04F, accent[0], accent[1], accent[2], 0.25F, 0.0F);

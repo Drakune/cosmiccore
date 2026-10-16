@@ -27,8 +27,8 @@ public final class OverdriveFx {
         float breath = 0.5F + 0.5F * Mth.sin(t * 0.06F);
 
         pose.pushPose();
-        pose.mulPose(Axis.YP.rotation(camYaw));
-        pose.mulPose(Axis.XP.rotation(-camPitch));
+        pose.rotate(Axis.YP.rotation(camYaw));
+        pose.rotate(Axis.XP.rotation(-camPitch));
         Matrix4f m = pose.last().pose();
 
         // Korona: feine Entladungen am Horizont, dichter mit jeder Stufe

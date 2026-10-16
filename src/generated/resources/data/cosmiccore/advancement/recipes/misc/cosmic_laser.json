@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:cosmic_laser"
+        "recipes": "cosmiccore:cosmic_laser"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

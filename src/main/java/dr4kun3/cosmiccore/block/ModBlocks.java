@@ -39,7 +39,7 @@ public final class ModBlocks {
                     .isValidSpawn((s, l, p, e) -> false)
                     .isRedstoneConductor((s, l, p) -> false)
                     .isSuffocating((s, l, p) -> false)
-                    .isViewBlocking((s, l, p) -> false)
+                    .isViewBlocking((s, l, p, a) -> false)
                     .lightLevel(light(3, 6, 6)));
 
     public static final DeferredBlock<SingularityCoreBlock> SINGULARITY_CORE = block("singularity_core",
@@ -47,7 +47,7 @@ public final class ModBlocks {
                     .mapColor(MapColor.COLOR_BLACK).strength(5.0F, 1200.0F).sound(SoundType.AMETHYST)
                     .requiresCorrectToolForDrops().noOcclusion()
                     .isRedstoneConductor((s, l, p) -> false)
-                    .isViewBlocking((s, l, p) -> false)
+                    .isViewBlocking((s, l, p, a) -> false)
                     .lightLevel(light(10, 15, 15)));
 
     public static final DeferredBlock<ControllerBlock> CONTROLLER = block("controller",

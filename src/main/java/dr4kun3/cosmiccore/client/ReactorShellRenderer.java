@@ -426,7 +426,7 @@ public final class ReactorShellRenderer {
             int conn = PortStation.connections(p.level(), ep.be(), ep.energy());
             pose.pushPose();
             pose.translate(c.dx(), c.dy(), c.dz());
-            pose.mulPose(com.mojang.math.Axis.YP.rotation(yaw));
+            pose.rotate(com.mojang.math.Axis.YP.rotation(yaw));
             pose.translate(ep.k() * out, 0, 0);
             PortStation.solid(pose, buffers, p.level(), ep.be().getBlockState(), ep.energy(), conn, yaw, 0.0F, out, data.withPort(ep.be()), true, false);
             pose.popPose();
@@ -571,7 +571,7 @@ public final class ReactorShellRenderer {
                 // Sockel: echte Gehaeuse-Saeule auf einer dunklen Bodenplatte (verdeckt die ausgeblendeten Bloecke darunter)
                 pose.pushPose();
                 pose.translate(c.dx(), c.dy(), c.dz());
-                pose.mulPose(com.mojang.math.Axis.YP.rotation((float) Math.atan2(c.dx(), c.dz())));
+                pose.rotate(com.mojang.math.Axis.YP.rotation((float) Math.atan2(c.dx(), c.dz())));
                 pose.translate(-0.17F, -0.5F, -0.17F);
                 pose.scale(0.34F, 0.44F, 0.34F);
                 dr4kun3.cosmiccore.client.render.BlockQuads.render(ModBlocks.VOID_CASING.get().defaultBlockState(), pose,
@@ -603,8 +603,8 @@ public final class ReactorShellRenderer {
                 float scale = (float) Math.pow(1.0F - k, 0.7);
                 pose.pushPose();
                 pose.translate(q[0], q[1], q[2]);
-                pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(k * k * 540.0F));
-                pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(k * 200.0F * (c.dx() % 2 == 0 ? 1 : -1)));
+                pose.rotate(com.mojang.math.Axis.YP.rotationDegrees(k * k * 540.0F));
+                pose.rotate(com.mojang.math.Axis.XP.rotationDegrees(k * 200.0F * (c.dx() % 2 == 0 ? 1 : -1)));
                 pose.scale(scale, scale, scale);
                 pose.translate(-0.5F, -0.5F, -0.5F);
                 BlockState fly = s.getBlock().defaultBlockState();

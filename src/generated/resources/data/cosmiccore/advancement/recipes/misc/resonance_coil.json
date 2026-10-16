@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "cosmiccore:resonance_coil"
+        "recipes": "cosmiccore:resonance_coil"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

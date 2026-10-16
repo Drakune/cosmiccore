@@ -1,5 +1,7 @@
 package dr4kun3.cosmiccore.block.entity;
 
+import dr4kun3.cosmiccore.transfer.*;
+
 import dr4kun3.cosmiccore.CoreConfig;
 import dr4kun3.cosmiccore.ModItems;
 import dr4kun3.cosmiccore.block.ControllerBlock;
@@ -46,9 +48,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -100,8 +99,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private boolean energyPort;
     /** Sonderwerte der Restlaufzeit: nicht berechenbar, pausiert (Puffer voll), abgeschaltet. 0 = leer. */
     public static final int TIME_NONE = -1, TIME_PAUSED = -2, TIME_OFF = -3;
-    private final IItemHandler itemView = new InsertOnlyView();
-    private final IEnergyStorage energyView = new EnergyView();
+    private final ItemHandler itemView = new InsertOnlyView();
+    private final EnergyStore energyView = new EnergyView();
     private final ContainerData dataAccess = new DataAccess();
 
     /** null = Baugroesse noch nicht gewaehlt (frisch platziert). */
@@ -285,15 +284,15 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return size == null ? CoreConfig.BUFFER_PER_TIER.get() : size.buffer();
     }
 
-    public ItemStackHandler getInventory() {
+    public StackHandler getInventory() {
         return inventory;
     }
 
-    public IEnergyStorage getEnergyView() {
+    public EnergyStore getEnergyView() {
         return energyView;
     }
 
-    public IItemHandler getItemView() {
+    public ItemHandler getItemView() {
         return itemView;
     }
 
@@ -1600,7 +1599,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      * Brennstoff, Stabilisator, zwei Modul-Slots und die Beute-Slots. Auch clientseitig im Menue benutzt
      * (dort ohne Block-Entity).
      */
-    public static class CoreInventory extends ItemStackHandler {
+    public static class CoreInventory extends StackHandler {
         private final Runnable onChange;
 
         public CoreInventory(Runnable onChange) {
@@ -1712,7 +1711,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /** Fuer Trichter/Rohre: Brennstoff, Stabilisator und Module einfuegen, Asteroiden-Beute entnehmen. */
-    private final class InsertOnlyView implements IItemHandler {
+    private final class InsertOnlyView implements ItemHandler {
         @Override
         public int getSlots() {
             return inventory.getSlots();
@@ -1744,7 +1743,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    private final class EnergyView implements IEnergyStorage {
+    private final class EnergyView implements EnergyStore {
         @Override
         public int receiveEnergy(int toReceive, boolean simulate) {
             return 0;
