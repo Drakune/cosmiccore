@@ -310,7 +310,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         int wanted = menu.sizeChosen() ? H_MAIN : H;
         if (imageHeight != wanted && minecraft != null) { // nach der Groessenwahl wird das Fenster kompakter
             imageHeight = wanted;
-            init(minecraft, width, height);
+            init(width, height);
             return;
         }
         updateWidgets();

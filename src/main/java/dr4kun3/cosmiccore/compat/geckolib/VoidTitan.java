@@ -3,7 +3,7 @@ package dr4kun3.cosmiccore.compat.geckolib;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animatable.manager.AnimatableManager;
-import software.bernie.geckolib.animatable.processing.AnimationController;
+import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -26,8 +26,4 @@ public class VoidTitan implements GeoAnimatable {
         return cache;
     }
 
-    @Override
-    public double getTick(Object object) {
-        return ticks;
-    }
 }

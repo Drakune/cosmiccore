@@ -12,7 +12,8 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -36,8 +37,8 @@ import org.joml.Matrix4f;
 public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     /** Umriss fuer Halterungen und Rahmen: der volle Item-Block. */
     @Override
-    public void getExtents(java.util.Set<org.joml.Vector3f> extents) {
-        for (int c = 0; c < 8; c++) extents.add(new org.joml.Vector3f(c & 1, (c >> 1) & 1, (c >> 2) & 1));
+    public void getExtents(java.util.function.Consumer<org.joml.Vector3fc> extents) {
+        for (int c = 0; c < 8; c++) extents.accept(new org.joml.Vector3f(c & 1, (c >> 1) & 1, (c >> 2) & 1));
     }
 
     private static final float[] GOLD = {1.0F, 0.75F, 0.25F};
@@ -119,7 +120,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.2F);
         pose.pushPose();
         pose.mulPose(Axis.YP.rotationDegrees(t * 2.0F));
-        RenderUtil.sphere(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), 0.17F + 0.015F * pulse, 10, 14);
+        RenderUtil.sphere(buffers.getBuffer(RenderTypes.endGateway()), pose.last().pose(), 0.17F + 0.015F * pulse, 10, 14);
         pose.popPose();
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
@@ -135,7 +136,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     }
 
     private static void renderStarDust(PoseStack pose, MultiBufferSource buffers, float t) {
-        VertexConsumer gateway = buffers.getBuffer(RenderType.endGateway());
+        VertexConsumer gateway = buffers.getBuffer(RenderTypes.endGateway());
         float[][] shards = {{0.0F, -0.05F, 0.0F, 0.14F}, {0.18F, -0.12F, 0.08F, 0.09F}, {-0.16F, -0.14F, -0.06F, 0.1F},
                 {0.06F, 0.12F, -0.14F, 0.07F}, {-0.08F, 0.08F, 0.16F, 0.06F}};
         for (int i = 0; i < shards.length; i++) {
@@ -179,7 +180,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         pose.mulPose(Axis.YP.rotationDegrees(t * 1.6F));
         pose.mulPose(Axis.ZP.rotationDegrees(12.0F));
         float w = 0.17F - 0.015F * squeeze, h = 0.27F - 0.03F * squeeze;
-        RenderUtil.starOctahedron(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), w, h);
+        RenderUtil.starOctahedron(buffers.getBuffer(RenderTypes.endGateway()), pose.last().pose(), w, h);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
         RenderUtil.octahedron(glow, m, w * 1.04F, h * 1.04F, 0.008F, VIOLET, 0.9F);
@@ -222,7 +223,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         flash *= 0.5F;
         pose.pushPose();
         pose.mulPose(Axis.ZP.rotationDegrees(18.0F));
-        RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), 0.1F, 8, 12, 0.82F, 0.92F, 1.0F);
+        RenderUtil.solidSphere(buffers.getBuffer(RenderTypes.debugQuads()), pose.last().pose(), 0.1F, 8, 12, 0.82F, 0.92F, 1.0F);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f core = pose.last().pose();
         RenderUtil.glowSphere(glow, core, 0.13F, 8, 12, WHITE, 0.45F + 0.4F * flash);
@@ -273,7 +274,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     private static void renderQuasarParticle(PoseStack pose, MultiBufferSource buffers, float t) {
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.1F);
         // Sternkristall aus Sternenfeld
-        VertexConsumer gateway = buffers.getBuffer(RenderType.endGateway());
+        VertexConsumer gateway = buffers.getBuffer(RenderTypes.endGateway());
         for (int k = 0; k < 2; k++) {
             pose.pushPose();
             pose.mulPose(Axis.YP.rotationDegrees(t * (k == 0 ? 1.4F : -1.0F) + k * 45.0F));
@@ -333,7 +334,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         pose.pushPose();
         pose.mulPose(Axis.XP.rotationDegrees(18.0F));
         pose.mulPose(Axis.ZP.rotationDegrees(-10.0F));
-        RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), 0.075F, 8, 12, 0.0F, 0.0F, 0.0F);
+        RenderUtil.solidSphere(buffers.getBuffer(RenderTypes.debugQuads()), pose.last().pose(), 0.075F, 8, 12, 0.0F, 0.0F, 0.0F);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
         // Photonenring und Akkretionsscheibe: innen weissgluehend, aussen violett
@@ -367,7 +368,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         pose.mulPose(Axis.YP.rotationDegrees(t * 1.5F));
         Matrix4f m = pose.last().pose();
         // Platine (deckend): dunkle Platte mit hellerem Rand und Goldkontakten
-        VertexConsumer solid = buffers.getBuffer(RenderType.debugQuads());
+        VertexConsumer solid = buffers.getBuffer(RenderTypes.debugQuads());
         box(solid, m, -0.3F, -0.03F, -0.3F, 0.3F, 0.03F, 0.3F, 0.12F, 0.09F, 0.2F);
         box(solid, m, -0.3F, 0.03F, -0.3F, 0.3F, 0.036F, -0.27F, 0.3F, 0.24F, 0.45F);
         box(solid, m, -0.3F, 0.03F, 0.27F, 0.3F, 0.036F, 0.3F, 0.3F, 0.24F, 0.45F);

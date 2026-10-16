@@ -403,9 +403,9 @@ public final class TitanCutscene {
         Minecraft mc = Minecraft.getInstance();
         float t = tick + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         net.minecraft.client.Camera camera = mc.gameRenderer.getMainCamera();
-        Vec3 cam = camera.getPosition();
-        Vector3f right = new Vector3f(camera.getLeftVector()).negate();
-        Vector3f up = new Vector3f(camera.getUpVector());
+        Vec3 cam = camera.position();
+        Vector3f right = new Vector3f(camera.leftVector()).negate();
+        Vector3f up = new Vector3f(camera.upVector());
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack pose = event.getPoseStack();
         pose.pushPose();

@@ -17,7 +17,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 /** EMI: Kategorien fuer Brennstoffe, Stabilisatoren und Asteroiden-Beute plus Info-Seiten. */
@@ -56,7 +56,7 @@ public class CosmicEmiPlugin implements EmiPlugin {
         }
 
         @Override
-        public ResourceLocation getId() {
+        public Identifier getId() {
             return CosmicCore.id("/" + entry.id());
         }
 

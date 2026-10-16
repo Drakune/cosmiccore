@@ -6,7 +6,7 @@ import dr4kun3.cosmiccore.block.entity.ModBlockEntities;
 import dr4kun3.cosmiccore.data.ModDataMaps;
 import dr4kun3.cosmiccore.entity.ModEntities;
 import dr4kun3.cosmiccore.menu.ModMenus;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -37,8 +37,8 @@ public class CosmicCore {
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MODID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MODID, path);
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {

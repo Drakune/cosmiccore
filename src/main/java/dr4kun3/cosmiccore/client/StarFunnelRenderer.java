@@ -11,7 +11,8 @@ import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.StarFunnelBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.Mth;
@@ -62,7 +63,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         pose.translate(0.5, 0.0, 0.5);
         pose.pushPose();
         pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(t * 0.6F));
-        RenderUtil.starTrumpet(buffers.getBuffer(RenderType.endPortal()), pose.last().pose(), y0, y1, r0, r1, exp, 24, 6);
+        RenderUtil.starTrumpet(buffers.getBuffer(RenderTypes.endPortal()), pose.last().pose(), y0, y1, r0, r1, exp, 24, 6);
         pose.popPose();
         VertexConsumer vc = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();

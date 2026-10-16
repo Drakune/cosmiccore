@@ -5,7 +5,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 
 /**
@@ -52,7 +53,7 @@ public final class DeferredBuffers implements MultiBufferSource {
 
     /** Speichert Vertices mit allen gesetzten Attributen. */
     private static final class Recorder implements VertexConsumer {
-        private static final int STRIDE = 12; // x y z | Farbe | u v | Overlay | Licht | nx ny nz | Maske
+        private static final int STRIDE = 13; // x y z | Farbe | u v | Overlay | Licht | nx ny nz | Maske | Linienbreite
         private float[] data = new float[STRIDE * 64];
         private int count;
 
@@ -82,6 +83,11 @@ public final class DeferredBuffers implements MultiBufferSource {
             data[base() + 3] = Float.intBitsToFloat((a & 0xFF) << 24 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | (b & 0xFF));
             mark(1);
             return this;
+        }
+
+        @Override
+        public VertexConsumer setColor(int argb) {
+            return setColor(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24);
         }
 
         @Override
@@ -115,6 +121,13 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        @Override
+        public VertexConsumer setLineWidth(float width) {
+            data[base() + 12] = width;
+            mark(32);
+            return this;
+        }
+
         void replay(VertexConsumer vc) {
             for (int i = 0; i < count; i++) {
                 int b = i * STRIDE;
@@ -134,6 +147,7 @@ public final class DeferredBuffers implements MultiBufferSource {
                     vc.setUv2(l & 0xFFFF, l >>> 16);
                 }
                 if ((mask & 16) != 0) vc.setNormal(data[b + 8], data[b + 9], data[b + 10]);
+                if ((mask & 32) != 0) vc.setLineWidth(data[b + 12]);
             }
         }
     }

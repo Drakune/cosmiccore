@@ -13,7 +13,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -140,11 +141,12 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
 
         // 2) falsche Bloecke rot markieren
         if (!wrong.isEmpty()) {
-            VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+            VertexConsumer lines = buffers.getBuffer(RenderTypes.lines());
             for (BlockPos pos : wrong) {
                 double ox = pos.getX() - origin.getX(), oy = pos.getY() - origin.getY(), oz = pos.getZ() - origin.getZ();
-                net.minecraft.client.renderer.ShapeRenderer.renderLineBox(pose.last(), lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01),
-                        1.0F, 0.2F, 0.25F, 1.0F);
+                net.minecraft.client.renderer.ShapeRenderer.renderShape(pose, lines,
+                        net.minecraft.world.phys.shapes.Shapes.create(new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01)),
+                        0, 0, 0, 0xFFFF3340, 2.0F);
             }
         }
     }
@@ -164,6 +166,11 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         }
 
         @Override
+        public VertexConsumer setColor(int argb) {
+            return setColor(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24);
+        }
+
+        @Override
         public VertexConsumer setUv(float u, float v) {
             delegate.setUv(u, v);
             return this;
@@ -178,6 +185,12 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         @Override
         public VertexConsumer setUv2(int u, int v) {
             delegate.setUv2(u, v);
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setLineWidth(float width) {
+            delegate.setLineWidth(width);
             return this;
         }
 

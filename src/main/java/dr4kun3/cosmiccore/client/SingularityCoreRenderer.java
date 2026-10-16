@@ -16,7 +16,8 @@ import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -160,11 +161,11 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         }
 
         // 2) Ereignishorizont: animiertes End-Sternenfeld statt reinem Schwarz
-        RenderUtil.sphere(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), rh, 16, 24);
+        RenderUtil.sphere(buffers.getBuffer(RenderTypes.endGateway()), pose.last().pose(), rh, 16, 24);
 
         // 3) Licht
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
-        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().position();
         Vec3 center = Vec3.atCenterOf(be.getBlockPos());
         double dx = cam.x - center.x, dy = cam.y - center.y, dz = cam.z - center.z;
         float camYaw = (float) Math.atan2(dx, dz);

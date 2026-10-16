@@ -148,7 +148,7 @@ public class CosmicAsteroid extends Entity {
         // vom Traktorstrahl erfasst: schwebt still, falls der Strahl kurz abreisst
         if (pullStart != null && tickCount - lastHit > 1 && getDeltaMovement().lengthSqr() > 0) {
             setDeltaMovement(Vec3.ZERO);
-            hasImpulse = true;
+            needsSync = true;
         }
         // unter Beschuss bleibt der Asteroid am Himmel, bis er zerbricht
         if (tickCount - lastHit < 20) return;
@@ -179,7 +179,7 @@ public class CosmicAsteroid extends Entity {
         Vec3 dest = hold.subtract(0, getBbHeight() / 2, 0);
         Vec3 next = pullStart.add(dest.subtract(pullStart).scale(e));
         setDeltaMovement(next.subtract(position()));
-        hasImpulse = true;
+        needsSync = true;
         setPos(next.x, next.y, next.z);
         if (level() instanceof ServerLevel sl && progress > PULL_PART && progress < 1000) {
             // Ueberladung: ansteigendes Summen und Knistern

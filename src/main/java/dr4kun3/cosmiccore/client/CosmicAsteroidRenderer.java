@@ -10,11 +10,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.entity.CosmicAsteroid;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
@@ -92,7 +93,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
         Matrix4f m = new Matrix4f(pose.last().pose());
         Matrix3f nm = new Matrix3f(pose.last().normal());
         float[][][] pts = surface(r, seed, GRID[variant][0], GRID[variant][1]);
-        VertexConsumer solid = buffers.getBuffer(RenderType.debugQuads());
+        VertexConsumer solid = buffers.getBuffer(RenderTypes.debugQuads());
         rock(solid, m, nm, pts, ROCK[variant], harvest, overload, seed, GRID[variant][0], GRID[variant][1]);
         // abplatzende Splitter (in Weltrichtung nach unten, dem Strahl entgegen)
         int chips = harvest > 0.2F ? 6 : 0;

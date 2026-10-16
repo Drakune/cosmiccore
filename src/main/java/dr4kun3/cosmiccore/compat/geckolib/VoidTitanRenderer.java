@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.renderer.GeoObjectRenderer;
@@ -21,14 +21,15 @@ import software.bernie.geckolib.renderer.GeoObjectRenderer;
  * Wird nur registriert, wenn GeckoLib installiert ist.
  */
 public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity>> {
-    private final GeoObjectRenderer<VoidTitan, Void, software.bernie.geckolib.renderer.base.GeoRenderState> body;
+    private final Body body;
     private final GeoObjectRenderer<VoidTitanTail, Void, software.bernie.geckolib.renderer.base.GeoRenderState> tail;
     private final VoidTitanTail tailAnimatable = new VoidTitanTail();
     private final Map<VoidTitanEntity, VoidTitan> states = new WeakHashMap<>();
 
     public VoidTitanRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
-        body = new GeoObjectRenderer<VoidTitan, Void, software.bernie.geckolib.renderer.base.GeoRenderState>(new VoidTitanModel()).withScale(VoidTitanEntity.SCALE);
+        body = new Body();
+        body.withScale(VoidTitanEntity.SCALE);
         tail = new GeoObjectRenderer<>(new VoidTitanTail.Model());
     }
 
@@ -67,20 +68,23 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
         pose.mulPose(Axis.YP.rotation(yawRad));
         // GeckoLib verschiebt Objekte nach dem Skalieren um (0.5, 0.51, 0.5) - hier ausgleichen
         float k = VoidTitanEntity.SCALE;
-        pose.translate(-0.5F * k, -0.51F * k, -0.5F * k);
-        VoidTitanModel.current = state;
-        body.submit(pose, state, null, collector, camera, full, partialTick, null);
+        // Bis GeckoLib 5.2 kam dieser Versatz unskaliert dazu - die Zwischensequenz ist auf diese Lage abgestimmt
+        float legacy = k - 1.0F;
+        pose.translate(-0.5F * (k + legacy), -0.51F * (k + legacy), -0.5F * (k + legacy));
+        // Lage der Markierungs-Knochen fuer die Leuchteffekte der Cutscene (relativ zur Entity): GeckoLib meldet sie
+        // beim Zeichnen, also mit einem Bild Verzoegerung
+        body.performRenderPass(state, null, pose, collector, camera, full, 0, (info, snapshots) -> {
+            VoidTitanModel.adjust(snapshots, state.ticks, state.cinematic);
+            for (String name : VoidTitanModel.TRACKED) {
+                info.addBonePositionListener(name, (world, model, local) -> {
+                    if (local == null) return;
+                    org.joml.Vector3f v = new org.joml.Vector3f((float) local.x, (float) local.y, (float) local.z);
+                    v.add(-0.5F * (k + legacy), -0.51F * (k + legacy), -0.5F * (k + legacy)).rotateY(yawRad);
+                    entity.bones.put(name, new Vec3(v.x, v.y, v.z));
+                });
+            }
+        });
         pose.popPose();
-        // Lage der Markierungs-Knochen fuer die Leuchteffekte der Cutscene (relativ zur Entity)
-        for (String name : VoidTitanModel.TRACKED) {
-            body.getGeoModel().getBone(name).ifPresent(b -> {
-                // Drehpunkt des Knochens durch seine (animierte) Matrix
-                org.joml.Vector3f v = b.getLocalSpaceMatrix().transformPosition(
-                        new org.joml.Vector3f(b.getPivotX() / 16.0F, b.getPivotY() / 16.0F, b.getPivotZ() / 16.0F));
-                v.add(-0.5F * k, -0.51F * k, -0.5F * k).rotateY(yawRad);
-                entity.bones.put(name, new Vec3(v.x, v.y, v.z));
-            });
-        }
         // Schweifsegmente an ihren Teilen
         Vec3 origin = entity.getPosition(partialTick);
         for (VoidTitanPart part : entity.tail) {
@@ -97,8 +101,20 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
             pose.translate(0, VoidTitanEntity.SEGMENT_PX / 16.0F * s * 0.5F, 0);
             pose.scale(s, s, s);
             pose.translate(-0.5F, -0.51F, -0.5F); // GeckoLib-Versatz ausgleichen
-            tail.submit(pose, tailAnimatable, null, collector, camera, full, partialTick, null);
+            tail.performRenderPass(tailAnimatable, null, pose, collector, camera, full, 0);
             pose.popPose();
+        }
+    }
+
+    /** Oberkoerper: die Animationszeit kommt von der Entity (Zwischensequenz), nicht aus der Spielzeit. */
+    private static final class Body extends GeoObjectRenderer<VoidTitan, Void, software.bernie.geckolib.renderer.base.GeoRenderState> {
+        Body() {
+            super(new VoidTitanModel());
+        }
+
+        @Override
+        public void addRenderData(VoidTitan animatable, Void relatedObject, software.bernie.geckolib.renderer.base.GeoRenderState renderState, float partialTick) {
+            renderState.addGeckolibData(software.bernie.geckolib.constant.DataTickets.TICK, animatable.ticks);
         }
     }
 

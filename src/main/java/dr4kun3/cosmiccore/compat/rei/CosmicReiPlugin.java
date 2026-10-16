@@ -67,7 +67,7 @@ public class CosmicReiPlugin implements REIClientPlugin {
 
     public record CosmicDisplay(Entry entry) implements Display {
         @Override
-        public java.util.Optional<net.minecraft.resources.ResourceLocation> getDisplayLocation() {
+        public java.util.Optional<net.minecraft.resources.Identifier> getDisplayLocation() {
             return java.util.Optional.empty();
         }
 

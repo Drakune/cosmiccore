@@ -14,11 +14,12 @@ import net.minecraft.core.BlockPos;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.block.model.BlockStateModel;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -53,8 +54,8 @@ public class PortRenderer<T extends PortBlockEntity> extends dr4kun3.cosmiccore.
     }
 
     /** Modell-Datei hinter einem Schluessel (fuer die Registrierung). */
-    public static net.minecraft.resources.ResourceLocation modelId(net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key) {
-        return net.minecraft.resources.ResourceLocation.parse(key.getName());
+    public static net.minecraft.resources.Identifier modelId(net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key) {
+        return net.minecraft.resources.Identifier.parse(key.getName());
     }
 
     /** Materialisieren 0..1 aus dem Kern des zugehoerigen Reaktors; unbekannt = eigener Zeitpunkt des Formens. */

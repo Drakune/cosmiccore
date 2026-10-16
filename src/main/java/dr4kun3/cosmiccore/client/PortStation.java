@@ -16,7 +16,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -112,14 +113,14 @@ public final class PortStation {
             pose.translate(c.x, c.y, c.z);
             pose.scale(0.36F * grow, 0.36F * grow, 0.36F * grow);
             pose.translate(-0.5F, -0.5F, -0.5F);
-            net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), buffers.getBuffer(RenderType.cutout()), model,
+            net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), buffers.getBuffer(net.minecraft.client.renderer.Sheets.cutoutBlockSheet()), model,
                     1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         }
         Matrix4f base = pose.last().pose();
         // Bodenfeld wie ein Portal (bei den Konsolenfluegeln zeichnet die Konsole ein gemeinsames Feld)
         if (ownBase) portalCapsule(buffers, new Matrix4f(base).translate(0, -0.495F, 0), 0.0F, 0.34F * Math.max(0.05F, grow));
-        VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
+        VertexConsumer dq = buffers.getBuffer(RenderTypes.debugQuads());
         if (!screen) return; // Port direkt am Controller: seine Anzeige liegt auf dem breiten Konsolenbildschirm
         Matrix4f sm = new Matrix4f(base).rotateY(screenYaw).translate(0, (1.0F - grow) * -0.4F, 0);
         float[] b0 = screen(-1.04F, -0.04F), b1 = screen(1.04F, -0.04F), b2 = screen(1.04F, 1.04F), b3 = screen(-1.04F, 1.04F);
@@ -267,7 +268,7 @@ public final class PortStation {
      * Radius r (halfLen = 0: runde Scheibe). Verbindet Controller und Ports der Steuerkonsole zu einer Flaeche.
      */
     public static void portalCapsule(MultiBufferSource buffers, Matrix4f m, float halfLen, float r) {
-        VertexConsumer vc = buffers.getBuffer(RenderType.endPortal());
+        VertexConsumer vc = buffers.getBuffer(RenderTypes.endPortal());
         int seg = 16;
         // Mittelteil
         if (halfLen > 0) twoSided(vc, m, -halfLen, -r, halfLen, -r, halfLen, r, -halfLen, r);

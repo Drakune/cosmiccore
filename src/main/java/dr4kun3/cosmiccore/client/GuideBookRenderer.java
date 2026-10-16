@@ -5,11 +5,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.ModItems;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -30,7 +31,7 @@ import org.joml.Vector3f;
 public final class GuideBookRenderer {
     private GuideBookRenderer() {}
 
-    private static final ResourceLocation TEX = CosmicCore.id("textures/item/cosmic_book.png");
+    private static final Identifier TEX = CosmicCore.id("textures/item/cosmic_book.png");
     private static final float TW = 128.0F, TH = 64.0F;
     // Atlas-Bereiche (x, y, Breite, Hoehe) - wie BOOK_ATLAS im Generator
     private static final int[] COVER = {0, 0, 30, 40}, PAGE = {30, 0, 30, 40}, FORE = {60, 0, 6, 40}, SPINE = {66, 0, 10, 40},
@@ -76,7 +77,7 @@ public final class GuideBookRenderer {
     public static void render(ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay, float t) {
         float open = openness(ctx);
         float ang = open * 78.0F; // Oeffnungswinkel je Haelfte
-        VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(TEX));
+        VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(TEX));
         pose.pushPose();
         // Buch steht auf dem Ruecken-Gelenk (lokales Y = Hoehe), die Seiten zeigen zum Betrachter
         pose.mulPose(Axis.YP.rotationDegrees(-90.0F));

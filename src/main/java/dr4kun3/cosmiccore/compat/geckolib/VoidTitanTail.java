@@ -1,7 +1,7 @@
 package dr4kun3.cosmiccore.compat.geckolib;
 
 import dr4kun3.cosmiccore.CosmicCore;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animatable.manager.AnimatableManager;
@@ -20,24 +20,20 @@ public class VoidTitanTail implements GeoAnimatable {
         return cache;
     }
 
-    @Override
-    public double getTick(Object object) {
-        return 0;
-    }
 
     public static class Model extends GeoModel<VoidTitanTail> {
         @Override
-        public ResourceLocation getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+        public Identifier getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
             return CosmicCore.id("void_titan_tail");
         }
 
         @Override
-        public ResourceLocation getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+        public Identifier getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
             return CosmicCore.id("textures/entity/void_titan.png");
         }
 
         @Override
-        public ResourceLocation getAnimationResource(VoidTitanTail animatable) {
+        public Identifier getAnimationResource(VoidTitanTail animatable) {
             return CosmicCore.id("void_titan");
         }
     }

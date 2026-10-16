@@ -1,10 +1,9 @@
 package dr4kun3.cosmiccore.compat.geckolib;
 
 import dr4kun3.cosmiccore.CosmicCore;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.animatable.processing.AnimationState;
-import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.renderer.base.BoneSnapshots;
 import software.bernie.geckolib.model.GeoModel;
 
 /**
@@ -17,45 +16,38 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
     @Override
-    public ResourceLocation getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+    public Identifier getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
         return CosmicCore.id("void_titan");
     }
 
     @Override
-    public ResourceLocation getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+    public Identifier getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 
     @Override
-    public ResourceLocation getAnimationResource(VoidTitan animatable) {
+    public Identifier getAnimationResource(VoidTitan animatable) {
         return CosmicCore.id("void_titan");
     }
 
     /**
-     * Zustand des gerade gezeichneten Titanen. GeckoLib 5 reicht das Objekt nicht mehr an die Zusatzbewegungen
-     * weiter - der Renderer setzt es vor dem Zeichnen (es gibt immer nur einen Titanen gleichzeitig).
+     * Prozedurale Zusatzbewegung (ab GeckoLib 5.4 ueber Bone-Snapshots): Fluegelspeichen fachern, Finger kruemmen sich
+     * beim Aufladen. Die Werte ersetzen die Keyframe-Drehung dieser Knochen (wie zuvor: Ruhelage + Zusatz).
      */
-    static VoidTitan current;
-
-    @Override
-    public void setCustomAnimations(AnimationState<VoidTitan> state) {
-        VoidTitan animatable = current;
-        if (animatable == null) return;
-        float t = (float) (animatable.ticks / 20.0);
-        for (String name : TRACKED) getBone(name).ifPresent(b -> b.setTrackingMatrices(true));
+    static void adjust(BoneSnapshots snapshots, double ticks, boolean cinematic) {
+        float t = (float) (ticks / 20.0);
         for (String side : new String[]{"l", "r"}) {
             float sgn = side.equals("l") ? 1.0F : -1.0F;
             for (int i = 0; i < 5; i++) {
                 final int k = i;
-                getBone("wing_" + side + i).ifPresent(b -> b.setRotZ(b.getInitialSnapshot().getRotZ()
-                        + sgn * 0.08F * Mth.sin(t * 1.6F + k * 0.8F)));
+                snapshots.ifPresent("wing_" + side + i, b -> b.setRotZ(sgn * 0.08F * Mth.sin(t * 1.6F + k * 0.8F)));
             }
-            float grip = animatable.cinematic ? window(t, 6.5F, 9.6F) : 0.0F;
+            float grip = cinematic ? window(t, 6.5F, 9.6F) : 0.0F;
             for (int j = 0; j < FINGERS; j++) {
                 for (int g = 0; g < FINGER_SEGS; g++) {
                     final float idle = 0.05F * Mth.sin(t * 2.0F + j + g);
                     final float curl = -(0.5F + 0.3F * g) * grip;
-                    getBone("f" + side + j + "_" + g).ifPresent(b -> b.setRotX(b.getInitialSnapshot().getRotX() + curl + idle));
+                    snapshots.ifPresent("f" + side + j + "_" + g, b -> b.setRotX(curl + idle));
                 }
             }
         }
@@ -65,7 +57,4 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
         if (t <= a || t >= b) return 0.0F;
         return Mth.sin((t - a) / (b - a) * Mth.PI);
     }
-
-    @SuppressWarnings("unused")
-    private static void unused(GeoBone b) {}
 }

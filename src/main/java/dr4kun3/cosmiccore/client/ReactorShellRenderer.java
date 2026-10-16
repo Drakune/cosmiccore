@@ -20,7 +20,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
@@ -579,7 +580,7 @@ public final class ReactorShellRenderer {
                 pose.popPose();
                 // Portalfeld unter dem Controller
                 PortStation.portalCapsule(buffers, new Matrix4f(cm).translate(0, -0.495F, 0), 0.0F, 0.44F);
-                VertexConsumer dq = buffers.getBuffer(RenderType.debugQuads());
+                VertexConsumer dq = buffers.getBuffer(RenderTypes.debugQuads());
                 // undurchsichtiger Bildschirmhintergrund - mit Ports direkt daneben ein breiter Bildschirm ueber allen
                 float[] lr = screenLR(p, c);
                 float[] b0 = screenAt(lr[0] - 0.014F, -0.03F), b1 = screenAt(lr[1] + 0.014F, -0.03F), b2 = screenAt(lr[1] + 0.014F, 1.03F),

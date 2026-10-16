@@ -44,7 +44,7 @@ public final class RenderUtil {
         return new float[]{x * Mth.cos(node) - z1 * Mth.sin(node), y1, x * Mth.sin(node) + z1 * Mth.cos(node)};
     }
 
-    /** Kugel (nur Position, fuer RenderType.endGateway()). */
+    /** Kugel (nur Position, fuer RenderTypes.endGateway()). */
     public static void sphere(VertexConsumer vc, Matrix4f m, float r, int lat, int lon) {
         for (int i = 0; i < lat; i++) {
             float p0 = (float) (Math.PI * i / lat - Math.PI / 2);
@@ -66,7 +66,7 @@ public final class RenderUtil {
         }
     }
 
-    /** Undurchsichtige einfarbige Kugel (fuer RenderType.debugQuads(), z. B. den schwarzen Ereignishorizont). */
+    /** Undurchsichtige einfarbige Kugel (fuer RenderTypes.debugQuads(), z. B. den schwarzen Ereignishorizont). */
     public static void solidSphere(VertexConsumer vc, Matrix4f m, float r, int lat, int lon, float red, float green, float blue) {
         for (int i = 0; i < lat; i++) {
             float p0 = (float) (Math.PI * i / lat - Math.PI / 2);

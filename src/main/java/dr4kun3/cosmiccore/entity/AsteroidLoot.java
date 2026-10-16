@@ -16,7 +16,7 @@ public final class AsteroidLoot {
     public record Drop(Supplier<? extends Item> item, int min, int max, float chance) {}
 
     public record Table(String name, List<Drop> drops) {
-        public net.minecraft.resources.ResourceLocation id() {
+        public net.minecraft.resources.Identifier id() {
             return CosmicCore.id("asteroid/" + name);
         }
     }

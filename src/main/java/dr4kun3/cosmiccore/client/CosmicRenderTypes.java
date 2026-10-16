@@ -7,8 +7,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -80,8 +80,8 @@ public final class CosmicRenderTypes {
 
     // ------------------------------------------------------------------ Render-Typen
 
-    private static final RenderType GLOW = RenderType.create("cosmiccore_glow", 1536, GLOW_PIPELINE,
-            RenderType.CompositeState.builder().setOutputState(RenderStateShard.WEATHER_TARGET).createCompositeState(false));
+    private static final RenderType GLOW = RenderType.create("cosmiccore_glow",
+            net.minecraft.client.renderer.rendertype.RenderSetup.builder(GLOW_PIPELINE).setOutputTarget(net.minecraft.client.renderer.rendertype.OutputTarget.WEATHER_TARGET).bufferSize(1536).createRenderSetup());
 
     public static RenderType glow() {
         return GLOW;
@@ -91,45 +91,39 @@ public final class CosmicRenderTypes {
      * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten (Culling). Die leuchtenden Effekte schreiben
      * keine Tiefe - ohne diesen Abschluss wuerden spaeter gezeichnete Wolken/Regen hinter der Kammer davor erscheinen.
      */
-    private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", 1536, DEPTH_BACK_PIPELINE,
-            RenderType.CompositeState.builder().createCompositeState(false));
+    private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", net.minecraft.client.renderer.rendertype.RenderSetup.builder(DEPTH_BACK_PIPELINE).bufferSize(1536).createRenderSetup());
 
     public static RenderType depthBack() {
         return DEPTH_BACK;
     }
 
     /** Sternenfeld-Kuppel eines fremden Universums: End-Sternenfeld ohne Tiefentest (liegt hinter allem, Himmels-Phase). */
-    private static final RenderType SPACE_DOME = RenderType.create("cosmiccore_space_dome", 1536, SPACE_DOME_PIPELINE,
-            RenderType.CompositeState.builder()
-                    .setTextureState(RenderStateShard.MultiTextureStateShard.builder()
-                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_SKY_LOCATION, false)
-                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_PORTAL_LOCATION, false)
-                            .build())
-                    .createCompositeState(false));
+    private static final RenderType SPACE_DOME = RenderType.create("cosmiccore_space_dome",
+            net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_DOME_PIPELINE)
+                    .withTexture("Sampler0", net.minecraft.client.renderer.blockentity.AbstractEndPortalRenderer.END_SKY_LOCATION)
+                    .withTexture("Sampler1", net.minecraft.client.renderer.blockentity.AbstractEndPortalRenderer.END_PORTAL_LOCATION)
+                    .bufferSize(1536).createRenderSetup());
 
     public static RenderType spaceDome() {
         return SPACE_DOME;
     }
 
     /** Deckende Farbkuppel ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel). */
-    private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", 1536, SPACE_SOLID_PIPELINE,
-            RenderType.CompositeState.builder().createCompositeState(false));
+    private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_SOLID_PIPELINE).bufferSize(1536).createRenderSetup());
 
     public static RenderType spaceSolid() {
         return SPACE_SOLID;
     }
 
     /** Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */
-    private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", 1536, SPACE_TINT_PIPELINE,
-            RenderType.CompositeState.builder().createCompositeState(false));
+    private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_TINT_PIPELINE).bufferSize(1536).createRenderSetup());
 
     public static RenderType spaceTint() {
         return SPACE_TINT;
     }
 
     /** Additives Licht ohne Tiefentest (Sterne, Nebel und Lichtreflexe der Kulissen - liegen immer vorn). */
-    private static final RenderType SPACE_GLOW = RenderType.create("cosmiccore_space_glow", 1536, SPACE_GLOW_PIPELINE,
-            RenderType.CompositeState.builder().createCompositeState(false));
+    private static final RenderType SPACE_GLOW = RenderType.create("cosmiccore_space_glow", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_GLOW_PIPELINE).bufferSize(1536).createRenderSetup());
 
     public static RenderType spaceGlow() {
         return SPACE_GLOW;

@@ -15,7 +15,8 @@ import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.ResonatorBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.Mth;
@@ -183,7 +184,7 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
         pose.mulPose(Axis.YP.rotationDegrees(t * 0.8F * speed));
         float breathe = 1.0F + 0.04F * Mth.sin(t * 0.15F * speed);
 
-        RenderUtil.starOctahedron(buffers.getBuffer(RenderType.endGateway()), pose.last().pose(), 0.42F * breathe, 0.6F * breathe);
+        RenderUtil.starOctahedron(buffers.getBuffer(RenderTypes.endGateway()), pose.last().pose(), 0.42F * breathe, 0.6F * breathe);
 
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         float[] edge = unstable ? CRITICAL : lerp(COOL, JET, 0.5F + 0.5F * Mth.sin(t * 0.05F));

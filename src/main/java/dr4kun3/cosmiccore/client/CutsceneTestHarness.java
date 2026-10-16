@@ -200,7 +200,7 @@ public final class CutsceneTestHarness {
                 mc.resizeDisplay();
                 mc.setScreen(new GuideScreen());
                 guidePhase = "o";
-                guideMs = net.minecraft.Util.getMillis();
+                guideMs = net.minecraft.util.Util.getMillis();
             }
             if (worldTicks == 60 && mc.screen instanceof GuideScreen gs0) {
                 gs0.turn(1); // zur Doppelseite vor den Multiblock-Seiten
@@ -211,12 +211,12 @@ public final class CutsceneTestHarness {
             if (worldTicks == 80 && mc.screen instanceof GuideScreen gs) {
                 gs.turn(1); // umblaettern auf die Seiten mit 3D-Vorschau und Item-Symbolen
                 guidePhase = "t";
-                guideMs = net.minecraft.Util.getMillis();
+                guideMs = net.minecraft.util.Util.getMillis();
             }
             if (worldTicks == 110 && mc.screen instanceof GuideScreen gs) {
                 gs.onClose();
                 guidePhase = "c";
-                guideMs = net.minecraft.Util.getMillis();
+                guideMs = net.minecraft.util.Util.getMillis();
             }
             if (worldTicks == 140) {
                 finished = true;
@@ -255,7 +255,7 @@ public final class CutsceneTestHarness {
     @SubscribeEvent
     public static void onFrame(RenderFrameEvent.Post event) {
         if (GUIDE && guidePhase != null && !finished) {
-            long now = net.minecraft.Util.getMillis(), since = now - guideMs;
+            long now = net.minecraft.util.Util.getMillis(), since = now - guideMs;
             long window = guidePhase.equals("o") ? 1300 : 700, step = guidePhase.equals("o") ? 110 : 70;
             if (since <= window && now - guideLastShot >= step) {
                 guideLastShot = now;

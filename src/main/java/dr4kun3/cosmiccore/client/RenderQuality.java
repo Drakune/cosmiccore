@@ -20,7 +20,7 @@ public final class RenderQuality {
             case MEDIUM -> 0.65F;
             case HIGH -> 1.0F;
         };
-        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().position();
         double dist = cam.distanceTo(Vec3.atCenterOf(pos));
         if (dist > ClientConfig.DETAIL_DISTANCE.get()) base *= 0.5F; // weit weg: vereinfacht
         detail = base;
