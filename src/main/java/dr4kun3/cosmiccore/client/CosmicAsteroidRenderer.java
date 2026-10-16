@@ -9,7 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.entity.CosmicAsteroid;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.entity.EntityRenderer;

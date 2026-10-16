@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.ClientInput;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -87,10 +87,10 @@ public final class TitanCutscene {
         core = corePos.immutable();
         tick = 0;
         skipHeld = 0;
-        camera = EntityType.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+        camera = net.minecraft.world.entity.EntityTypes.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
         if (camera == null) return;
         spawnTitan(mc.level);
-        mc.setScreen(null);
+        mc.gui.setScreen(null);
         active = true;
         placeCamera(0.0F);
         mc.setCameraEntity(camera);
@@ -388,26 +388,37 @@ public final class TitanCutscene {
 
     // ------------------------------------------------------------------ Welt
 
+    /** Im Weltall keine Wolken: sie wuerden ab 26.2 nach den Kulissen gezeichnet und davor liegen. */
     @SubscribeEvent
-    public static void onRenderSky(RenderLevelStageEvent.AfterSky event) {
-        onRenderLevel(event, true);
+    public static void onExtractLevel(net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent event) {
+        if (!active) return;
+        float t = tick + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        if (in(t, SPACE, ATMO)) event.getRenderState().cloudColor = 0;
     }
 
+    /**
+     * Ab 26.2 wird Geometrie in der Welt eingereicht statt sofort gezeichnet: die Kulisse des fremden Universums mit
+     * sehr frueher Reihenfolge (hinter dem Titanen), alles Uebrige mit sehr spaeter (ueber der Welt).
+     */
     @SubscribeEvent
-    public static void onRenderWeather(RenderLevelStageEvent.AfterWeather event) {
-        onRenderLevel(event, false);
+    public static void onSubmitGeometry(net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent event) {
+        if (!active) return;
+        var sky = new dr4kun3.cosmiccore.client.render.DeferredBuffers(event.getSubmitNodeCollector(), -1000);
+        onRenderLevel(event.getPoseStack(), sky, true);
+        sky.submit();
+        var front = new dr4kun3.cosmiccore.client.render.DeferredBuffers(event.getSubmitNodeCollector(), 1000);
+        onRenderLevel(event.getPoseStack(), front, false);
+        front.submit();
     }
 
-    private static void onRenderLevel(RenderLevelStageEvent event, boolean sky) {
+    private static void onRenderLevel(PoseStack pose, MultiBufferSource buffers, boolean sky) {
         if (!active) return;
         Minecraft mc = Minecraft.getInstance();
         float t = tick + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        net.minecraft.client.Camera camera = mc.gameRenderer.getMainCamera();
+        net.minecraft.client.Camera camera = mc.gameRenderer.mainCamera();
         Vec3 cam = camera.position();
         Vector3f right = new Vector3f(camera.leftVector()).negate();
         Vector3f up = new Vector3f(camera.upVector());
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        PoseStack pose = event.getPoseStack();
         pose.pushPose();
         pose.translate(core.getX() + 0.5 - cam.x, core.getY() + 0.5 - cam.y, core.getZ() + 0.5 - cam.z);
         Vector3f camRel = new Vector3f((float) (cam.x - core.getX() - 0.5), (float) (cam.y - core.getY() - 0.5), (float) (cam.z - core.getZ() - 0.5));
@@ -431,7 +442,7 @@ public final class TitanCutscene {
     }
 
     /** Der Ruf: ein Lichtimpuls schiesst aus dem Trichter senkrecht in den Himmel. */
-    private static void callPulse(Matrix4f m, MultiBufferSource.BufferSource buffers, float t) {
+    private static void callPulse(Matrix4f m, MultiBufferSource buffers, float t) {
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         float f = easeIn(span(t, CALL + 20, SPACE));
         float y = mouthY() + 2.0F + 720.0F * f;
@@ -451,7 +462,7 @@ public final class TitanCutscene {
     }
 
     /** Die Erde aus dem All: schrumpfend (Hinflug) bzw. wachsend (Rueckflug), dazu Mond, Sonne und Sterne. */
-    private static void earthView(Matrix4f cm, MultiBufferSource.BufferSource buffers, Vector3f right, Vector3f up, float t, boolean back) {
+    private static void earthView(Matrix4f cm, MultiBufferSource buffers, Vector3f right, Vector3f up, float t, boolean back) {
         float f = back ? span(t, HOME, ATMO) : span(t, SPACE, WARP + 20);
         float near = back ? (float) Math.pow(f, 2.2) : 1.0F - (float) Math.pow(f, 0.45);
         float radius = Mth.lerp(near, 5.0F, 62.0F);
@@ -479,7 +490,7 @@ public final class TitanCutscene {
     }
 
     /** Lichtgeschwindigkeits-Tunnel (Hinflug nach vorn, Rueckflug nach unten mit dem Strahl voraus). */
-    private static void warpView(Matrix4f cm, MultiBufferSource.BufferSource buffers, float t, boolean back) {
+    private static void warpView(Matrix4f cm, MultiBufferSource buffers, float t, boolean back) {
         float local = back ? t - RETURN : t - WARP;
         float total = back ? ATMO - RETURN : UNIVERSE - WARP;
         float speed = back ? 1.0F - 0.5F * span(local, total - 20, total) : easeIn(span(local, 0, 40));
@@ -506,7 +517,7 @@ public final class TitanCutscene {
     }
 
     /** Himmel des fremden Universums: Farbverlauf, Sterne, Nebel, Galaxie, Doppelsonne und ein beringter Gasriese. */
-    private static void universeSky(Matrix4f cm, MultiBufferSource.BufferSource buffers, Vector3f right, Vector3f up, float t) {
+    private static void universeSky(Matrix4f cm, MultiBufferSource buffers, Vector3f right, Vector3f up, float t) {
         VertexConsumer solid = buffers.getBuffer(CosmicRenderTypes.spaceSolid());
         CutsceneScenery.gradientDome(solid, cm, 90.0F, 0xFF06041A, 0xFF1A0A30, 0xFF03020C);
         buffers.endBatch(CosmicRenderTypes.spaceSolid());
@@ -539,7 +550,7 @@ public final class TitanCutscene {
     }
 
     /** Im fremden Universum: Aura, Augen, Herzkern, Bruell-Schockwelle, Aufladen und Schuss. */
-    private static void universeFx(Matrix4f m, MultiBufferSource.BufferSource buffers, Vector3f right, Vector3f up, float t) {
+    private static void universeFx(Matrix4f m, MultiBufferSource buffers, Vector3f right, Vector3f up, float t) {
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         // Aura: violette Lichtpunkte steigen spiralfoermig um den Titanen auf
         for (int k = 0; k < 70; k++) {
@@ -620,7 +631,7 @@ public final class TitanCutscene {
     }
 
     /** Zurueck auf der Erde: der Strahl faellt vom Tor am Himmel in den Trichter, Einschlag mit Bodenwelle. */
-    private static void earthBeam(Matrix4f m, MultiBufferSource.BufferSource buffers, Vector3f camRel, float t) {
+    private static void earthBeam(Matrix4f m, MultiBufferSource buffers, Vector3f camRel, float t) {
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         float gs = TitanBeam.skyScale(TitanBeam.SKY_TOP, camRel);
         TitanBeam.skyGate(TitanBeam.skyFrame(m, camRel, gs), glow, t, 1.0F, camRel);

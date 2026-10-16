@@ -7,7 +7,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="DR4KUN3"
-logoFile="logo.png"
+iconFile="logo.png"
 description='''
 Ein kosmischer Multiblock-Reaktor (5x5x5 bis 11x11x11) mit einem Schwarzen Loch im Herzen.
 Verbrenne Sternenstaub und Neutronen-Fragmente, halte die Instabilitaet mit Stabilisatoren und Modulen in Schach,

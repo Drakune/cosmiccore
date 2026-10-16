@@ -18,7 +18,7 @@ import java.util.Map;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -256,7 +256,7 @@ public final class ReactorShellRenderer {
     /** Abschnitt eines Ports auf dem breiten Bildschirm: Energie (Leistung, Puffer, Kapazitaet) bzw. Lager (Plaetze). */
     private static void sectionText(Font font, Matrix4f tm, MultiBufferSource buffers, EdgePort ep, Params p) {
         String title = "\u25C6 " + tr(ep.energy() ? "console.cosmiccore.wing_energy" : "console.cosmiccore.wing_items") + " \u25C6";
-        font.drawInBatch(title, (SECTION_PX - font.width(title)) / 2.0F, ROW_TITLE, 0xFF000000 | (ep.energy() ? 0x7AE8FF : 0xFFC070), false, tm, buffers,
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, title, (SECTION_PX - font.width(title)) / 2.0F, ROW_TITLE, 0xFF000000 | (ep.energy() ? 0x7AE8FF : 0xFFC070), false, tm, buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         if (ep.energy()) {
             SingularityCoreBlockEntity core = p.core();
@@ -274,8 +274,8 @@ public final class ReactorShellRenderer {
     }
 
     private static void secRow(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int color) {
-        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
-        font.drawInBatch(value, SECTION_PX - 6 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, value, SECTION_PX - 6 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
@@ -285,12 +285,12 @@ public final class ReactorShellRenderer {
 
     private static void center(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
         float x = (PANEL_PX - font.width(text)) / 2.0F;
-        font.drawInBatch(text, x, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, text, x, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
     private static void row(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int valueColor) {
-        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
-        font.drawInBatch(value, PANEL_PX - 6 - font.width(value), y, 0xFF000000 | valueColor, false, tm, buffers,
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, value, PANEL_PX - 6 - font.width(value), y, 0xFF000000 | valueColor, false, tm, buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 

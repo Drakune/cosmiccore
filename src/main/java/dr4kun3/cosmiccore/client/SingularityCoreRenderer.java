@@ -15,7 +15,7 @@ import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
@@ -165,7 +165,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
 
         // 3) Licht
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
-        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 cam = Minecraft.getInstance().gameRenderer.mainCamera().position();
         Vec3 center = Vec3.atCenterOf(be.getBlockPos());
         double dx = cam.x - center.x, dy = cam.y - center.y, dz = cam.z - center.z;
         float camYaw = (float) Math.atan2(dx, dz);

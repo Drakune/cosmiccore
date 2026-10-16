@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -20,8 +20,22 @@ public final class DeferredBuffers implements MultiBufferSource {
     private final List<RenderType> types = new ArrayList<>();
     private final List<Recorder> recorders = new ArrayList<>();
 
+    private final int orderBase;
+    private boolean closed;
+
+    @Override
+    public void endBatch(RenderType type) {
+        closed = true;
+    }
+
     public DeferredBuffers(SubmitNodeCollector collector) {
+        this(collector, 0);
+    }
+
+    /** @param orderBase Zeichenreihenfolge des ersten Abschnitts (kleiner = frueher, z. B. Kulissen hinter allem) */
+    public DeferredBuffers(SubmitNodeCollector collector, int orderBase) {
         this.collector = collector;
+        this.orderBase = orderBase;
     }
 
     /** Fuer Dinge, die eigene Einreichungen brauchen (Items, Blockmodelle). */
@@ -32,7 +46,8 @@ public final class DeferredBuffers implements MultiBufferSource {
     @Override
     public VertexConsumer getBuffer(RenderType type) {
         int last = types.size() - 1;
-        if (last >= 0 && types.get(last) == type) return recorders.get(last);
+        if (last >= 0 && types.get(last) == type && !closed) return recorders.get(last);
+        closed = false;
         Recorder r = new Recorder();
         types.add(type);
         recorders.add(r);
@@ -45,7 +60,7 @@ public final class DeferredBuffers implements MultiBufferSource {
         for (int i = 0; i < types.size(); i++) {
             Recorder r = recorders.get(i);
             if (r.count == 0) continue;
-            collector.order(i).submitCustomGeometry(identity, types.get(i), (pose, vc) -> r.replay(vc));
+            collector.order(orderBase + i).submitCustomGeometry(identity, types.get(i), (pose, vc) -> r.replay(vc));
         }
         types.clear();
         recorders.clear();

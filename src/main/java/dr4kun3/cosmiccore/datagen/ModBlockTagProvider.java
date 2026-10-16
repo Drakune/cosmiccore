@@ -18,8 +18,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
     protected void addTags(HolderLookup.Provider provider) {
         for (var entry : ModBlocks.BLOCKS.getEntries()) {
             Block b = entry.value();
-            tag(BlockTags.MINEABLE_WITH_PICKAXE).add(b);
-            tag(BlockTags.NEEDS_IRON_TOOL).add(b);
+            tag(BlockTags.MINEABLE_WITH_PICKAXE).add(b.builtInRegistryHolder().key());
+            tag(BlockTags.NEEDS_IRON_TOOL).add(b.builtInRegistryHolder().key());
         }
     }
 }

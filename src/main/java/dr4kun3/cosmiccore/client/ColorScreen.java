@@ -291,7 +291,7 @@ public class ColorScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     @Override

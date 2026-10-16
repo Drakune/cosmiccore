@@ -14,7 +14,7 @@ import dr4kun3.cosmiccore.block.entity.PortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -111,7 +111,7 @@ public final class PortStation {
             pose.translate(c.x, c.y, c.z);
             pose.scale(0.36F * grow, 0.36F * grow, 0.36F * grow);
             pose.translate(-0.5F, -0.5F, -0.5F);
-            dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), buffers.getBuffer(net.minecraft.client.renderer.Sheets.cutoutBlockSheet()), model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), buffers.getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.cutoutMovingBlock()), model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         }
         Matrix4f base = pose.last().pose();
@@ -166,9 +166,9 @@ public final class PortStation {
     static void itemRow(Font font, Matrix4f tm, MultiBufferSource buffers, Level level, String label, ItemStack stack, int seconds,
                         int y, int color, float width) {
         String value = (stack.isEmpty() ? "0" : Integer.toString(stack.getCount())) + " · " + duration(seconds);
-        font.drawInBatch(label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         float vx = width - 5 - font.width(value);
-        font.drawInBatch(value, vx, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, value, vx, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         if (!stack.isEmpty()) icon(tm, buffers, level, stack, vx - 11, y);
     }
 
@@ -197,13 +197,13 @@ public final class PortStation {
     }
 
     private static void center(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
-        font.drawInBatch(text, (PX - font.width(text)) / 2.0F, y, 0xFF000000 | color, false, tm, buffers,
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, text, (PX - font.width(text)) / 2.0F, y, 0xFF000000 | color, false, tm, buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
     private static void row(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int color) {
-        font.drawInBatch(label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
-        font.drawInBatch(value, PX - 5 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        dr4kun3.cosmiccore.client.render.WorldText.draw(font, value, PX - 5 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 

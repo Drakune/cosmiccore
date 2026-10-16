@@ -13,7 +13,7 @@ import dr4kun3.cosmiccore.block.entity.PortBlockEntity;
 import net.minecraft.core.BlockPos;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;

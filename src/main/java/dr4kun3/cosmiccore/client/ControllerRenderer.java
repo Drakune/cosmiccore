@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.Sheets;
@@ -138,11 +138,25 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
             VertexConsumer lines = buffers.getBuffer(RenderTypes.lines());
             for (BlockPos pos : wrong) {
                 double ox = pos.getX() - origin.getX(), oy = pos.getY() - origin.getY(), oz = pos.getZ() - origin.getZ();
-                net.minecraft.client.renderer.ShapeRenderer.renderShape(pose, lines,
-                        net.minecraft.world.phys.shapes.Shapes.create(new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01)),
-                        0, 0, 0, 0xFFFF3340, 2.0F);
+                lineBox(pose.last(), lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01), 0xFFFF3340, 2.0F);
             }
         }
+    }
+
+    /** Rote Kanten eines Blocks (ab 26.2 gibt es keinen fertigen ShapeRenderer mehr). */
+    private static void lineBox(PoseStack.Pose pose, VertexConsumer vc, AABB b, int color, float width) {
+        float[] xs = {(float) b.minX, (float) b.maxX}, ys = {(float) b.minY, (float) b.maxY}, zs = {(float) b.minZ, (float) b.maxZ};
+        for (int i = 0; i < 2; i++) for (int j = 0; j < 2; j++) {
+            line(pose, vc, xs[0], ys[i], zs[j], xs[1], ys[i], zs[j], color, width);
+            line(pose, vc, xs[i], ys[0], zs[j], xs[i], ys[1], zs[j], color, width);
+            line(pose, vc, xs[i], ys[j], zs[0], xs[i], ys[j], zs[1], color, width);
+        }
+    }
+
+    private static void line(PoseStack.Pose pose, VertexConsumer vc, float x0, float y0, float z0, float x1, float y1, float z1, int color, float width) {
+        org.joml.Vector3f n = new org.joml.Vector3f(x1 - x0, y1 - y0, z1 - z0).normalize();
+        vc.addVertex(pose, x0, y0, z0).setColor(color).setNormal(pose, n.x, n.y, n.z).setLineWidth(width);
+        vc.addVertex(pose, x1, y1, z1).setColor(color).setNormal(pose, n.x, n.y, n.z).setLineWidth(width);
     }
 
     /** Leitet alles weiter, multipliziert aber den Alphakanal (fuer die Geisterbloecke). */

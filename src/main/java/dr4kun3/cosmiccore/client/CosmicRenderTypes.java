@@ -31,40 +31,43 @@ public final class CosmicRenderTypes {
             .withLocation(CosmicCore.id("pipeline/glow"))
             .withVertexShader("core/rendertype_lightning").withFragmentShader("core/rendertype_lightning")
             .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.LIGHTNING))
-            .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.LESS_THAN_OR_EQUAL, false)).withCull(false)
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
+            .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.GREATER_THAN_OR_EQUAL, false)).withCull(false)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.QUADS).build();
 
     /**
      * Schreibt nur Tiefe, nur Rueckseiten. Ab 26.1 zeichnet Minecraft erst alles Undurchsichtige, dann alles
      * Durchscheinende - mit einer (wirkungslosen) Mischfunktion laeuft der Abschluss im zweiten Durchgang und damit wie
      * frueher nach den Leuchteffekten.
      */
-    private static final RenderPipeline DEPTH_BACK_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+    private static final RenderPipeline DEPTH_BACK_PIPELINE = RenderPipeline.builder(RenderPipelines.GLOBALS_SNIPPET).withBindGroupLayout(net.minecraft.client.renderer.BindGroupLayouts.MATRICES_PROJECTION)
             .withLocation(CosmicCore.id("pipeline/depth_back"))
             .withVertexShader("core/position").withFragmentShader("core/position")
-            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(java.util.Optional.of(BlendFunction.TRANSLUCENT), com.mojang.blaze3d.pipeline.ColorTargetState.WRITE_NONE))
+            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(java.util.Optional.of(BlendFunction.TRANSLUCENT), com.mojang.blaze3d.GpuFormat.RGBA8_UNORM, com.mojang.blaze3d.pipeline.ColorTargetState.WRITE_NONE))
             .withDepthStencilState(com.mojang.blaze3d.pipeline.DepthStencilState.DEFAULT).withCull(true)
-            .withVertexFormat(DefaultVertexFormat.POSITION, VertexFormat.Mode.QUADS).build();
+            .withVertexBinding(0, DefaultVertexFormat.POSITION).withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.QUADS).build();
 
     /** End-Sternenfeld ohne Tiefentest. */
     private static final RenderPipeline SPACE_DOME_PIPELINE = RenderPipeline.builder(RenderPipelines.END_PORTAL_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_dome")).withShaderDefine("PORTAL_LAYERS", 16)
+            // ab 26.2: deckend, aber mit Mischfunktion - so bleibt die Zeichenreihenfolge mit den Leuchteffekten erhalten
+            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.TRANSLUCENT))
             .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false).build();
 
     /** Deckende Farbe ohne Tiefentest. */
-    private static final RenderPipeline SPACE_SOLID_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+    private static final RenderPipeline SPACE_SOLID_PIPELINE = RenderPipeline.builder(RenderPipelines.GLOBALS_SNIPPET).withBindGroupLayout(net.minecraft.client.renderer.BindGroupLayouts.MATRICES_PROJECTION)
             .withLocation(CosmicCore.id("pipeline/space_solid"))
             .withVertexShader("core/position_color").withFragmentShader("core/position_color")
+            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.TRANSLUCENT))
             .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false)
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.QUADS).build();
 
     /** Halbtransparente Farbe ohne Tiefentest. */
-    private static final RenderPipeline SPACE_TINT_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+    private static final RenderPipeline SPACE_TINT_PIPELINE = RenderPipeline.builder(RenderPipelines.GLOBALS_SNIPPET).withBindGroupLayout(net.minecraft.client.renderer.BindGroupLayouts.MATRICES_PROJECTION)
             .withLocation(CosmicCore.id("pipeline/space_tint"))
             .withVertexShader("core/position_color").withFragmentShader("core/position_color")
             .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.TRANSLUCENT))
             .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false)
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.QUADS).build();
 
     /** Additives Licht ohne Tiefentest. */
     private static final RenderPipeline SPACE_GLOW_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
@@ -72,7 +75,7 @@ public final class CosmicRenderTypes {
             .withVertexShader("core/rendertype_lightning").withFragmentShader("core/rendertype_lightning")
             .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.LIGHTNING))
             .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false)
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR).withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.QUADS).build();
 
     /** NeoForge muss eigene Pipelines vorab kennen (Shader werden dabei vorbereitet). */
     @SubscribeEvent
@@ -86,7 +89,7 @@ public final class CosmicRenderTypes {
     // ------------------------------------------------------------------ Render-Typen
 
     private static final RenderType GLOW = RenderType.create("cosmiccore_glow",
-            net.minecraft.client.renderer.rendertype.RenderSetup.builder(GLOW_PIPELINE).setOutputTarget(net.minecraft.client.renderer.rendertype.OutputTarget.WEATHER_TARGET).bufferSize(1536).createRenderSetup());
+            net.minecraft.client.renderer.rendertype.RenderSetup.builder(GLOW_PIPELINE).setOutputTarget(net.minecraft.client.renderer.rendertype.OutputTarget.WEATHER_TARGET).createRenderSetup());
 
     public static RenderType glow() {
         return GLOW;
@@ -96,7 +99,7 @@ public final class CosmicRenderTypes {
      * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten (Culling). Die leuchtenden Effekte schreiben
      * keine Tiefe - ohne diesen Abschluss wuerden spaeter gezeichnete Wolken/Regen hinter der Kammer davor erscheinen.
      */
-    private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", net.minecraft.client.renderer.rendertype.RenderSetup.builder(DEPTH_BACK_PIPELINE).bufferSize(1536).createRenderSetup());
+    private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", net.minecraft.client.renderer.rendertype.RenderSetup.builder(DEPTH_BACK_PIPELINE).createRenderSetup());
 
     public static RenderType depthBack() {
         return DEPTH_BACK;
@@ -107,28 +110,28 @@ public final class CosmicRenderTypes {
             net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_DOME_PIPELINE)
                     .withTexture("Sampler0", net.minecraft.client.renderer.blockentity.AbstractEndPortalRenderer.END_SKY_LOCATION)
                     .withTexture("Sampler1", net.minecraft.client.renderer.blockentity.AbstractEndPortalRenderer.END_PORTAL_LOCATION)
-                    .bufferSize(1536).createRenderSetup());
+                    .createRenderSetup());
 
     public static RenderType spaceDome() {
         return SPACE_DOME;
     }
 
     /** Deckende Farbkuppel ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel). */
-    private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_SOLID_PIPELINE).bufferSize(1536).createRenderSetup());
+    private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_SOLID_PIPELINE).createRenderSetup());
 
     public static RenderType spaceSolid() {
         return SPACE_SOLID;
     }
 
     /** Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */
-    private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_TINT_PIPELINE).bufferSize(1536).createRenderSetup());
+    private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_TINT_PIPELINE).createRenderSetup());
 
     public static RenderType spaceTint() {
         return SPACE_TINT;
     }
 
     /** Additives Licht ohne Tiefentest (Sterne, Nebel und Lichtreflexe der Kulissen - liegen immer vorn). */
-    private static final RenderType SPACE_GLOW = RenderType.create("cosmiccore_space_glow", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_GLOW_PIPELINE).bufferSize(1536).createRenderSetup());
+    private static final RenderType SPACE_GLOW = RenderType.create("cosmiccore_space_glow", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_GLOW_PIPELINE).createRenderSetup());
 
     public static RenderType spaceGlow() {
         return SPACE_GLOW;

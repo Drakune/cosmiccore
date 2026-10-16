@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -58,8 +58,7 @@ public final class StructurePreview {
 
     /** Rendert die Struktur in eine Textur (Bild im Bild). */
     public static final class Renderer extends net.minecraft.client.gui.render.pip.PictureInPictureRenderer<State> {
-        public Renderer(MultiBufferSource.BufferSource buffers) {
-            super(buffers);
+        public Renderer() {
         }
 
         @Override
@@ -78,9 +77,9 @@ public final class StructurePreview {
         }
 
         @Override
-        protected void renderToTexture(State st, PoseStack ps) {
+        protected void renderToTexture(State st, PoseStack ps, net.minecraft.client.renderer.SubmitNodeCollector collector) {
             Minecraft mc = Minecraft.getInstance();
-            mc.gameRenderer.getLighting().setupFor(Lighting.Entry.ITEMS_3D);
+            mc.gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_3D);
             CorePattern p = st.size().pattern();
             int half = p.half();
             float scale = st.fit() / (st.size().size() * 1.75F);
@@ -89,7 +88,7 @@ public final class StructurePreview {
             ps.scale(scale, -scale, -scale); // der Bild-im-Bild-Renderer spiegelt Z bereits
             ps.mulPose(Axis.XP.rotationDegrees(22.0F + st.pitch()));
             ps.mulPose(Axis.YP.rotationDegrees(st.yaw()));
-            MultiBufferSource buffers = bufferSource;
+            var buffers = new dr4kun3.cosmiccore.client.render.DeferredBuffers(collector);
             p.forEach(BlockPos.ZERO, Direction.SOUTH, (pos, cell) -> {
                 if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei fuer Rohre
                 BlockState state = CorePattern.blockFor(cell);
@@ -116,6 +115,7 @@ public final class StructurePreview {
             if (st.funnel()) {
                 block(ps, buffers, ModBlocks.STAR_FUNNEL.get().defaultBlockState(), -0.5F, half + 0.5F, -0.5F);
             }
+            buffers.submit();
         }
     }
 

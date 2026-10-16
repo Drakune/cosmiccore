@@ -43,7 +43,7 @@ public final class CutsceneTestHarness {
         if (server == null) return;
         int t = worldTicks;
         if (t == 20) {
-            mc.options.hideGui = false;
+            setHudHidden(mc, false);
             mc.player.getInventory().setSelectedSlot(0);
             server.execute(() -> {
                 var sp = server.getPlayerList().getPlayers().get(0);
@@ -57,15 +57,15 @@ public final class CutsceneTestHarness {
         if (t == 40) server.execute(() -> server.getPlayerList().getPlayers().get(0).getInventory().setSelectedSlot(1));
         int[] shots = {41, 43, 45, 47, 50, 60, 70, 72, 74, 76, 78};
         for (int k = 0; k < shots.length; k++) {
-            if (t == shots[k]) Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", k), mc.getMainRenderTarget(), 1, msg -> {});
+            if (t == shots[k]) Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", k), mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         }
         if (t == 100) mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
-        if (t == 120) Screenshot.grab(mc.gameDirectory, "cutscene_b20.png", mc.getMainRenderTarget(), 1, msg -> {});
+        if (t == 120) Screenshot.grab(mc.gameDirectory, "cutscene_b20.png", mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         if (t == 125) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
-            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+            mc.gui.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
         }
-        if (t == 140) Screenshot.grab(mc.gameDirectory, "cutscene_b21.png", mc.getMainRenderTarget(), 1, msg -> {});
+        if (t == 140) Screenshot.grab(mc.gameDirectory, "cutscene_b21.png", mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         if (t == 150) {
             finished = true;
             mc.stop();
@@ -122,7 +122,7 @@ public final class CutsceneTestHarness {
             int v = worldTicks == 15 ? 0 : (worldTicks - 300) / 40;
             if (v < views.length) {
                 int[] view = views[v];
-                if (cam == null) cam = net.minecraft.world.entity.EntityType.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+                if (cam == null) cam = net.minecraft.world.entity.EntityTypes.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
                 double x = at.getX() + 0.5 + view[0], y = at.getY() + view[1] + 0.2, z = at.getZ() + 0.5 + view[2];
                 cam.setPos(x, y, z);
                 cam.xo = cam.xOld = x;
@@ -136,11 +136,11 @@ public final class CutsceneTestHarness {
             } else {
                 int step = v - views.length;
                 // Lager-Knopf im Controller-Menue druecken bzw. das Lager schliessen (Rueckweg pruefen)
-                if (step == 2 && mc.screen instanceof ControllerScreen cs && mc.gameMode != null) {
+                if (step == 2 && mc.gui.screen() instanceof ControllerScreen cs && mc.gameMode != null) {
                     mc.gameMode.handleInventoryButtonClick(cs.getMenu().containerId, dr4kun3.cosmiccore.menu.ControllerMenu.BTN_STORAGE);
                     return;
                 }
-                if (step == 3 && mc.screen instanceof ItemPortScreen ips) {
+                if (step == 3 && mc.gui.screen() instanceof ItemPortScreen ips) {
                     ips.onClose();
                     return;
                 }
@@ -158,24 +158,29 @@ public final class CutsceneTestHarness {
                 });
             }
         }
-        if (worldTicks == 300 + 40 * (views.length + 1) + 10 && mc.screen instanceof ControllerScreen) {
+        if (worldTicks == 300 + 40 * (views.length + 1) + 10 && mc.gui.screen() instanceof ControllerScreen) {
             // zweites Bild: Modul-Tab ausgeklappt
-            ((dr4kun3.cosmiccore.menu.ControllerMenu) ((ControllerScreen) mc.screen).getMenu()).modulesOpen = true;
+            ((dr4kun3.cosmiccore.menu.ControllerMenu) ((ControllerScreen) mc.gui.screen()).getMenu()).modulesOpen = true;
         }
         if (worldTicks >= 24 && worldTicks < 300 && worldTicks % 8 == 0) {
-            mc.options.hideGui = true;
-            Screenshot.grab(mc.gameDirectory, String.format("cutscene_a%03d.png", worldTicks), mc.getMainRenderTarget(), 1, msg -> {});
+            setHudHidden(mc, true);
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_a%03d.png", worldTicks), mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         }
         if (worldTicks >= 330 && (worldTicks - 330) % 40 == 0) {
             int v = (worldTicks - 330) / 40;
-            mc.options.hideGui = v < views.length;
-            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.getMainRenderTarget(), 1, msg -> {});
-            CosmicCore.LOGGER.info("[ConsoleTest] Bild {}: Bildschirm = {}", v, mc.screen == null ? "-" : mc.screen.getClass().getSimpleName());
+            setHudHidden(mc, v < views.length);
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
+            CosmicCore.LOGGER.info("[ConsoleTest] Bild {}: Bildschirm = {}", v, mc.gui.screen() == null ? "-" : mc.gui.screen().getClass().getSimpleName());
             if (v >= views.length + 3) {
                 finished = true;
                 mc.stop();
             }
         }
+    }
+
+    /** Ab 26.2 liegt das Ausblenden der Oberflaeche (F1) im Hud und laesst sich nur umschalten. */
+    private static void setHudHidden(Minecraft mc, boolean hidden) {
+        if (mc.gui.hud.isHidden() != hidden) mc.gui.hud.toggle();
     }
 
     /**
@@ -184,7 +189,7 @@ public final class CutsceneTestHarness {
      */
     private static void skipBackupWarning(Minecraft mc) {
         // ab 26.1: nach dem Welt-Upgrade "Jetzt beitreten" bestaetigen
-        if (mc.screen instanceof net.minecraft.client.gui.screens.ConfirmScreen confirm
+        if (mc.gui.screen() instanceof net.minecraft.client.gui.screens.ConfirmScreen confirm
                 && confirm.getTitle().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
                 && tc.getKey().equals("upgradeWorld.done")) {
             try {
@@ -196,7 +201,7 @@ public final class CutsceneTestHarness {
             }
             return;
         }
-        if (!(mc.screen instanceof net.minecraft.client.gui.screens.BackupConfirmScreen screen)) return;
+        if (!(mc.gui.screen() instanceof net.minecraft.client.gui.screens.BackupConfirmScreen screen)) return;
         try {
             var field = net.minecraft.client.gui.screens.BackupConfirmScreen.class.getDeclaredField("onProceed");
             field.setAccessible(true);
@@ -227,22 +232,22 @@ public final class CutsceneTestHarness {
             if (worldTicks == 30) {
                 mc.options.guiScale().set(2);
                 mc.resizeGui();
-                mc.setScreen(new GuideScreen());
+                mc.gui.setScreen(new GuideScreen());
                 guidePhase = "o";
                 guideMs = net.minecraft.util.Util.getMillis();
             }
-            if (worldTicks == 60 && mc.screen instanceof GuideScreen gs0) {
+            if (worldTicks == 60 && mc.gui.screen() instanceof GuideScreen gs0) {
                 gs0.turn(1); // zur Doppelseite vor den Multiblock-Seiten
             }
-            if (worldTicks == 70 && mc.screen instanceof GuideScreen gs1) {
+            if (worldTicks == 70 && mc.gui.screen() instanceof GuideScreen gs1) {
                 gs1.turn(1);
             }
-            if (worldTicks == 80 && mc.screen instanceof GuideScreen gs) {
+            if (worldTicks == 80 && mc.gui.screen() instanceof GuideScreen gs) {
                 gs.turn(1); // umblaettern auf die Seiten mit 3D-Vorschau und Item-Symbolen
                 guidePhase = "t";
                 guideMs = net.minecraft.util.Util.getMillis();
             }
-            if (worldTicks == 110 && mc.screen instanceof GuideScreen gs) {
+            if (worldTicks == 110 && mc.gui.screen() instanceof GuideScreen gs) {
                 gs.onClose();
                 guidePhase = "c";
                 guideMs = net.minecraft.util.Util.getMillis();
@@ -289,7 +294,7 @@ public final class CutsceneTestHarness {
             if (since <= window && now - guideLastShot >= step) {
                 guideLastShot = now;
                 Minecraft mc = Minecraft.getInstance();
-                Screenshot.grab(mc.gameDirectory, String.format("cutscene_%s%02d.png", guidePhase, guideShot++ % 100), mc.getMainRenderTarget(), 1, msg -> {});
+                Screenshot.grab(mc.gameDirectory, String.format("cutscene_%s%02d.png", guidePhase, guideShot++ % 100), mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
             }
             if (since > window) guideShot = 0;
             return;
@@ -299,7 +304,7 @@ public final class CutsceneTestHarness {
         if (t != lastShot && t % EVERY == 0) {
             lastShot = t;
             Minecraft mc = Minecraft.getInstance();
-            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", t), mc.getMainRenderTarget(), 1, msg -> {});
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", t), mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         }
     }
 }

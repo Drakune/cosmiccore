@@ -161,7 +161,7 @@ public class GuideScreen extends Screen {
     public void tick() {
         super.tick();
         updateButtons();
-        if (closeStart >= 0 && Util.getMillis() - closeStart >= CLOSE_MS && minecraft != null) minecraft.setScreen(null);
+        if (closeStart >= 0 && Util.getMillis() - closeStart >= CLOSE_MS && minecraft != null) minecraft.gui.setScreen(null);
     }
 
     /** Schliessen: das Buch klappt erst zu. */

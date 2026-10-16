@@ -14,7 +14,7 @@ import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.multiblock.CorePattern;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -149,8 +149,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         String k = ultimateStep ? "gui.cosmiccore.ultimate_mode" : "gui.cosmiccore.overdrive";
         Component title = Component.translatable(k + (up ? ".confirm_up" : ".confirm_down")).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
         Component message = Component.translatable(k + (up ? ".warning_up" : ".warning_down"), ControllerBlockEntity.ULTIMATE_COST);
-        minecraft.setScreen(new ConfirmScreen(ok -> {
-            minecraft.setScreen(this);
+        minecraft.gui.setScreen(new ConfirmScreen(ok -> {
+            minecraft.gui.setScreen(this);
             if (ok) press(up ? ControllerMenu.BTN_OVERDRIVE_UP : ControllerMenu.BTN_OVERDRIVE_DOWN);
         }, title, message));
     }
@@ -272,7 +272,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             if (minecraft != null) {
                 minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
                         net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
-                minecraft.setScreen(new ColorScreen(this, menu.getPos(), menu.colorConfig()));
+                minecraft.gui.setScreen(new ColorScreen(this, menu.getPos(), menu.colorConfig()));
             }
             return true;
         }
@@ -306,7 +306,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         int wanted = menu.sizeChosen() ? H_MAIN : H;
         if (imageHeight != wanted && minecraft != null && minecraft.player != null) {
             // nach der Groessenwahl wird das Fenster kompakter - die Hoehe ist ab 26.1 fest, also neu oeffnen
-            minecraft.setScreen(new ControllerScreen(menu, minecraft.player.getInventory(), title));
+            minecraft.gui.setScreen(new ControllerScreen(menu, minecraft.player.getInventory(), title));
             return;
         }
         updateWidgets();

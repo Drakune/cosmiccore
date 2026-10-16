@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "G": "cosmiccore:focus_glass",
     "S": "cosmiccore:star_dust",

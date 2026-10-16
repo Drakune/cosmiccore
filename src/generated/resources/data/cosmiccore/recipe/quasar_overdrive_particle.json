@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "O": "cosmiccore:overdrive_particle",
     "Q": "cosmiccore:quasar_essence"

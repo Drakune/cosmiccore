@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.StarFunnelBlockEntity;
-import net.minecraft.client.renderer.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;

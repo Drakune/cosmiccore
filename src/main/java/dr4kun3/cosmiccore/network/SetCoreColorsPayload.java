@@ -29,7 +29,7 @@ public record SetCoreColorsPayload(BlockPos pos, int mask, List<Integer> colors)
     public static void handle(SetCoreColorsPayload p, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (!(ctx.player() instanceof ServerPlayer player)) return;
-            if (player.distanceToSqr(p.pos().getCenter()) > 64.0 || !player.level().isLoaded(p.pos())) return;
+            if (player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(p.pos())) > 64.0 || !player.level().isLoaded(p.pos())) return;
             if (!(player.level().getBlockEntity(p.pos()) instanceof ControllerBlockEntity c) || !c.hasColorModule()) return;
             int[] colors = new int[CoreColors.CHANNELS];
             for (int i = 0; i < Math.min(colors.length, p.colors().size()); i++) colors[i] = p.colors().get(i);
