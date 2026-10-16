@@ -178,10 +178,26 @@ public final class CutsceneTestHarness {
         }
     }
 
+    /**
+     * Die Testwelt stammt aus einer aelteren Minecraft-Version. Neuere Versionen fragen beim Oeffnen nach einer Sicherung
+     * ("Ich weiss, was ich tue") - im Test ohne Sicherung fortfahren, damit der Lauf nicht haengen bleibt.
+     */
+    private static void skipBackupWarning(Minecraft mc) {
+        if (!(mc.screen instanceof net.minecraft.client.gui.screens.BackupConfirmScreen screen)) return;
+        try {
+            var field = net.minecraft.client.gui.screens.BackupConfirmScreen.class.getDeclaredField("onProceed");
+            field.setAccessible(true);
+            ((net.minecraft.client.gui.screens.BackupConfirmScreen.Listener) field.get(screen)).proceed(false, false);
+        } catch (ReflectiveOperationException e) {
+            CosmicCore.LOGGER.warn("[CutsceneTest] Sicherungsabfrage konnte nicht bestaetigt werden", e);
+        }
+    }
+
     @SubscribeEvent
     public static void onTick(ClientTickEvent.Post event) {
         if (!ENABLED || finished) return;
         Minecraft mc = Minecraft.getInstance();
+        skipBackupWarning(mc);
         if (mc.level == null || mc.player == null) return;
         mc.options.pauseOnLostFocus = false;
         worldTicks++;
