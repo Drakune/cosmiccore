@@ -33,7 +33,7 @@ public abstract class PortBlockEntity extends BlockEntity {
     public void setBlockState(BlockState state) {
         BlockState old = getBlockState();
         super.setBlockState(state);
-        if (level == null || !level.isClientSide || !old.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)
+        if (level == null || !level.isClientSide() || !old.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)
                 || !state.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)) {
             return;
         }
@@ -51,7 +51,7 @@ public abstract class PortBlockEntity extends BlockEntity {
             controllerPos = pos;
             setChanged();
             // der Client braucht den Controller fuer das Timing der Einblend-Animation
-            if (level != null && !level.isClientSide) {
+            if (level != null && !level.isClientSide()) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
             }
         }

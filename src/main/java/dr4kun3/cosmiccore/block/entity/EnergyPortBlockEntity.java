@@ -26,7 +26,8 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
         int rate = CoreConfig.PORT_TRANSFER.get();
         for (Direction dir : Direction.values()) {
             if (c.extractEnergy(rate, true) <= 0) return;
-            IEnergyStorage target = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos.relative(dir), dir.getOpposite());
+            var handler = level.getCapability(Capabilities.Energy.BLOCK, pos.relative(dir), dir.getOpposite());
+            IEnergyStorage target = handler == null ? null : IEnergyStorage.of(handler);
             if (target == null || !target.canReceive()) continue;
             int offered = c.extractEnergy(rate, true);
             int accepted = target.receiveEnergy(offered, false);

@@ -48,7 +48,7 @@ public class EnergyPortBlock extends Block implements EntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide || type != ModBlockEntities.ENERGY_PORT.get()) return null;
+        if (level.isClientSide() || type != ModBlockEntities.ENERGY_PORT.get()) return null;
         return (lvl, pos, st, be) -> EnergyPortBlockEntity.serverTick(lvl, pos, st, (EnergyPortBlockEntity) be);
     }
 }

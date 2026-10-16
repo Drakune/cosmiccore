@@ -46,8 +46,8 @@ public final class Terminal {
         if (ns.equals(dr4kun3.cosmiccore.CosmicCore.MODID)) return false;
         if (!ns.equals("minecraft")) return true;
         if (level instanceof net.minecraft.world.level.Level l) {
-            return energy ? l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, n, out.getOpposite()) != null
-                    : l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, n, out.getOpposite()) != null;
+            return energy ? l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Energy.BLOCK, n, out.getOpposite()) != null
+                    : l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, n, out.getOpposite()) != null;
         }
         return false;
     }

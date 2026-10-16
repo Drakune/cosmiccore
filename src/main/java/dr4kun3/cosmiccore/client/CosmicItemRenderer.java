@@ -52,7 +52,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         public static final MapCodec<Unbaked> CODEC = MapCodec.unit(new Unbaked());
 
         @Override
-        public SpecialModelRenderer<?> bake(EntityModelSet models) {
+        public SpecialModelRenderer<?> bake(SpecialModelRenderer.BakingContext context) {
             return new CosmicItemRenderer();
         }
 
@@ -68,8 +68,12 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     }
 
     @Override
-    public void render(ItemStack stack, ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay, boolean foil) {
-        if (stack != null) renderByItem(stack, ctx, pose, buffers, light, overlay);
+    public void submit(ItemStack stack, ItemDisplayContext ctx, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+                       int light, int overlay, boolean foil, int outlineColor) {
+        if (stack == null) return;
+        var buffers = new dr4kun3.cosmiccore.client.render.DeferredBuffers(collector);
+        renderByItem(stack, ctx, pose, buffers, light, overlay);
+        buffers.submit();
     }
 
     private static float time() {

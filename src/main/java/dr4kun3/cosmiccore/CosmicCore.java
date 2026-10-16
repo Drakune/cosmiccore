@@ -42,10 +42,10 @@ public class CosmicCore {
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModBlockEntities.ENERGY_PORT.get(), (be, side) -> be.getEnergyView());
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> be.getEnergyView());
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.ITEM_PORT.get(), (be, side) -> be.getItemView());
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> be.getItemView());
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ModBlockEntities.ENERGY_PORT.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.energy(be.getEnergyView()));
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.energy(be.getEnergyView()));
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.ITEM_PORT.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.items(be.getItemView()));
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.items(be.getItemView()));
     }
 
     private static void registerDataMaps(RegisterDataMapTypesEvent event) {

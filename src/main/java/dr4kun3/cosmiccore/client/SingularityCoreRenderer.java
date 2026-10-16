@@ -41,7 +41,7 @@ import org.joml.Matrix4f;
  * </ul>
  * Reihenfolge der Puffer beachten: ein getBuffer() mit anderem RenderType schliesst den vorherigen Puffer ab.
  */
-public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityCoreBlockEntity> {
+public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<SingularityCoreBlockEntity> {
     private static final float[] HOT = {1.0F, 0.95F, 0.85F};
     private static final float[] WARM = {1.0F, 0.55F, 0.2F};
     private static final float[] COOL = {0.62F, 0.28F, 0.95F};
@@ -117,8 +117,10 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
             float[] jc = lerp(pJet, CRITICAL, heat * heat);
             int color = ARGB.color(255, (int) (jc[0] * 255), (int) (jc[1] * 255), (int) (jc[2] * 255));
             float w = 0.12F + 0.1F * growth + 0.06F * Math.max(0.0F, be.getCosmic() - 1.0F);
-            BeaconRenderer.renderBeaconBeam(pose, buffers, BeaconRenderer.BEAM_LOCATION, partialTick, 1.0F,
-                    level.getGameTime(), half + (be.hasFunnel() ? 2 : 1), 1024, color, w, w + 0.15F);
+            if (buffers instanceof dr4kun3.cosmiccore.client.render.DeferredBuffers d) {
+                BeaconRenderer.submitBeaconBeam(pose, d.collector(), BeaconRenderer.BEAM_LOCATION, 1.0F,
+                        Math.floorMod(level.getGameTime(), 40) + partialTick, half + (be.hasFunnel() ? 2 : 1), 1024, color, w, w + 0.15F);
+            }
         }
 
         pose.pushPose();

@@ -482,18 +482,22 @@ public class GuideScreen extends Screen {
     // ------------------------------------------------------------------ Eingabe
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         for (int[] h : tocHits) {
             if (mouseX >= h[0] && mouseX < h[2] && mouseY >= h[1] && mouseY < h[3]) {
                 goTo(h[4] / 2);
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         dragYaw += (float) dragX * 1.5F;
         dragPitch = Mth.clamp(dragPitch + (float) dragY, -40.0F, 50.0F);
         return true;

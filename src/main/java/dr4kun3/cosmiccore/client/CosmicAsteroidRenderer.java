@@ -56,9 +56,14 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
     }
 
     @Override
-    public void render(EntityRefState<CosmicAsteroid> state, PoseStack pose, MultiBufferSource buffers, int light) {
-        if (state.entity != null) render(state.entity, 0.0F, state.partialTick, pose, buffers, light);
-        super.render(state, pose, buffers, light);
+    public void submit(EntityRefState<CosmicAsteroid> state, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+                       net.minecraft.client.renderer.state.CameraRenderState camera) {
+        if (state.entity != null) {
+            var buffers = new dr4kun3.cosmiccore.client.render.DeferredBuffers(collector);
+            render(state.entity, 0.0F, state.partialTick, pose, buffers, state.lightCoords);
+            buffers.submit();
+        }
+        super.submit(state, pose, collector, camera);
     }
 
     private void render(CosmicAsteroid a, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {

@@ -375,7 +375,7 @@ public final class TitanCutscene {
     /** Echte Partikel beim Einschlag: Blitz, Explosion, Funkenregen. */
     private static void impactParticles(ClientLevel level) {
         Vec3 c = world(new Vector3f(0, mouthY(), 0));
-        level.addParticle(ParticleTypes.FLASH, c.x, c.y, c.z, 0, 0, 0);
+        level.addParticle(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, -1), c.x, c.y, c.z, 0, 0, 0);
         level.addParticle(ParticleTypes.EXPLOSION_EMITTER, c.x, c.y + 1, c.z, 0, 0, 0);
         level.addParticle(ParticleTypes.SONIC_BOOM, c.x, c.y + 1, c.z, 0, 0, 0);
         for (int i = 0; i < 160; i++) {
@@ -401,10 +401,11 @@ public final class TitanCutscene {
     private static void onRenderLevel(RenderLevelStageEvent event, boolean sky) {
         if (!active) return;
         Minecraft mc = Minecraft.getInstance();
-        float t = tick + event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        Vec3 cam = event.getCamera().getPosition();
-        Vector3f right = new Vector3f(event.getCamera().getLeftVector()).negate();
-        Vector3f up = new Vector3f(event.getCamera().getUpVector());
+        float t = tick + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        net.minecraft.client.Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 cam = camera.getPosition();
+        Vector3f right = new Vector3f(camera.getLeftVector()).negate();
+        Vector3f up = new Vector3f(camera.getUpVector());
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack pose = event.getPoseStack();
         pose.pushPose();

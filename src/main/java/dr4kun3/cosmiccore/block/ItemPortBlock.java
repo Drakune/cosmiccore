@@ -46,7 +46,7 @@ public class ItemPortBlock extends Block implements EntityBlock {
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
                                                                    net.minecraft.world.entity.player.Player player,
                                                                    net.minecraft.world.phys.BlockHitResult hit) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity be) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity be) {
             player.openMenu(be, buf -> {
                 buf.writeBlockPos(pos);
                 buf.writeBoolean(false);

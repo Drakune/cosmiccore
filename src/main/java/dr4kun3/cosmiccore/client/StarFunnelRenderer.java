@@ -25,7 +25,7 @@ import org.joml.Matrix4f;
  * der weit in den Himmel reicht. Spiralarme aus Sternenlicht drehen sich nach unten zum Trichter, Ringe kreisen in mehreren
  * Hoehen. Nur sichtbar, wenn der Reaktor darunter laeuft und der Himmel frei ist.
  */
-public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEntity> {
+public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<StarFunnelBlockEntity> {
     private static final float HEIGHT = dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.FUNNEL_HEIGHT;
     private static final float TOP_RADIUS = dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.FUNNEL_TOP_RADIUS;
     private static final float[] SKY = {0.55F, 0.75F, 1.0F};

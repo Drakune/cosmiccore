@@ -17,7 +17,7 @@ public class GuideBookItem extends Item {
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             GuideBook.open(); // wird auf dem dedizierten Server nie erreicht
         }
         return InteractionResult.SUCCESS;

@@ -235,11 +235,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     @Override
-    protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top) {
         int[] r = tabRect(), sr = storageTabRect();
         if (menu.sizeChosen() && (in((int) mouseX - left, (int) mouseY - top, r[0], r[1], r[2], r[3])
                 || in((int) mouseX - left, (int) mouseY - top, sr[0], sr[1], sr[2], sr[3]))) return false;
-        return super.hasClickedOutside(mouseX, mouseY, left, top, button);
+        return super.hasClickedOutside(mouseX, mouseY, left, top);
     }
 
     /** Bereiche ausserhalb des Fensters (fuer JEI/EMI/REI, damit die Item-Liste den Tab nicht verdeckt). */
@@ -251,7 +251,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         int[] sr = storageTabRect();
         if (menu.sizeChosen() && button == 0 && in((int) mouseX - leftPos, (int) mouseY - topPos, sr[0], sr[1], sr[2], sr[3])) {
             press(ControllerMenu.BTN_STORAGE);
@@ -293,7 +295,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             }
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     private void press(int id) {
@@ -635,9 +637,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         draggingScroll = false;
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     /** Icons der benoetigten Bloecke: buendig unter der Ueberschrift "Benoetigte Bloecke" (x = 8). */
@@ -659,7 +663,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         if (draggingScroll) {
             scrollTo(mouseX);
             return true;
@@ -669,7 +675,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             dragPitch = Mth.clamp(dragPitch + (float) dragY, -40.0F, 50.0F);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     /** Puffer kurz: ganze Gigawerte ohne Nachkommastellen ("5G RF"). */

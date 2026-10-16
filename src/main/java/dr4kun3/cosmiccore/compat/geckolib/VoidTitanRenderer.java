@@ -7,7 +7,6 @@ import dr4kun3.cosmiccore.entity.VoidTitanPart;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -22,14 +21,14 @@ import software.bernie.geckolib.renderer.GeoObjectRenderer;
  * Wird nur registriert, wenn GeckoLib installiert ist.
  */
 public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity>> {
-    private final GeoObjectRenderer<VoidTitan> body;
-    private final GeoObjectRenderer<VoidTitanTail> tail;
+    private final GeoObjectRenderer<VoidTitan, Void, software.bernie.geckolib.renderer.base.GeoRenderState> body;
+    private final GeoObjectRenderer<VoidTitanTail, Void, software.bernie.geckolib.renderer.base.GeoRenderState> tail;
     private final VoidTitanTail tailAnimatable = new VoidTitanTail();
     private final Map<VoidTitanEntity, VoidTitan> states = new WeakHashMap<>();
 
     public VoidTitanRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
-        body = new GeoObjectRenderer<>(new VoidTitanModel()).withScale(VoidTitanEntity.SCALE);
+        body = new GeoObjectRenderer<VoidTitan, Void, software.bernie.geckolib.renderer.base.GeoRenderState>(new VoidTitanModel()).withScale(VoidTitanEntity.SCALE);
         tail = new GeoObjectRenderer<>(new VoidTitanTail.Model());
     }
 
@@ -51,11 +50,13 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
     }
 
     @Override
-    public void render(dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, PoseStack pose, MultiBufferSource buffers, int light) {
-        if (state.entity != null) render(state.entity, 0.0F, state.partialTick, pose, buffers, light);
+    public void submit(dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, PoseStack pose,
+                       net.minecraft.client.renderer.SubmitNodeCollector collector, net.minecraft.client.renderer.state.CameraRenderState camera) {
+        if (state.entity != null) render(state.entity, state.partialTick, pose, collector, camera);
     }
 
-    private void render(VoidTitanEntity entity, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
+    private void render(VoidTitanEntity entity, float partialTick, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+                        net.minecraft.client.renderer.state.CameraRenderState camera) {
         int full = LightTexture.FULL_BRIGHT;
         float yawRad = entity.getYRot() * Mth.DEG_TO_RAD;
         // Oberkoerper
@@ -68,7 +69,7 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
         float k = VoidTitanEntity.SCALE;
         pose.translate(-0.5F * k, -0.51F * k, -0.5F * k);
         VoidTitanModel.current = state;
-        body.render(pose, state, buffers, null, null, full, partialTick);
+        body.submit(pose, state, null, collector, camera, full, partialTick, null);
         pose.popPose();
         // Lage der Markierungs-Knochen fuer die Leuchteffekte der Cutscene (relativ zur Entity)
         for (String name : VoidTitanModel.TRACKED) {
@@ -96,7 +97,7 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
             pose.translate(0, VoidTitanEntity.SEGMENT_PX / 16.0F * s * 0.5F, 0);
             pose.scale(s, s, s);
             pose.translate(-0.5F, -0.51F, -0.5F); // GeckoLib-Versatz ausgleichen
-            tail.render(pose, tailAnimatable, buffers, null, null, full, partialTick);
+            tail.submit(pose, tailAnimatable, null, collector, camera, full, partialTick, null);
             pose.popPose();
         }
     }

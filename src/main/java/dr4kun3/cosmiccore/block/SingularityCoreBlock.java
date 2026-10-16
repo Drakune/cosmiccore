@@ -54,7 +54,7 @@ public class SingularityCoreBlock extends Block implements EntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (!level.isClientSide || type != ModBlockEntities.CORE.get()) return null;
+        if (!level.isClientSide() || type != ModBlockEntities.CORE.get()) return null;
         return (lvl, pos, st, be) -> SingularityCoreBlockEntity.clientTick(lvl, pos, st, (SingularityCoreBlockEntity) be);
     }
 }

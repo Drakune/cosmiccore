@@ -133,8 +133,8 @@ public class CosmicAsteroid extends Entity {
         super.tick();
         Vec3 v = getDeltaMovement();
         // waehrend der Traktorstrahl zieht, setzt der Server die Position selbst
-        if (level().isClientSide || tickCount - lastHit > 1) setPos(getX() + v.x, getY() + v.y, getZ() + v.z);
-        if (level().isClientSide) {
+        if (level().isClientSide() || tickCount - lastHit > 1) setPos(getX() + v.x, getY() + v.y, getZ() + v.z);
+        if (level().isClientSide()) {
             // Staubschweif
             if (random.nextInt(2) == 0) {
                 float s = getSizeBlocks() * 0.4F;
@@ -207,7 +207,7 @@ public class CosmicAsteroid extends Entity {
             Vec3 c = position().add(0, getBbHeight() / 2, 0);
             float s = getSizeBlocks() * 0.3F;
             sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y, c.z, 40 + getVariant() * 20, s, s, s, 0.2);
-            sl.sendParticles(ParticleTypes.FLASH, c.x, c.y, c.z, 1, 0, 0, 0, 0);
+            sl.sendParticles(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, -1), c.x, c.y, c.z, 1, 0, 0, 0, 0);
             sl.sendParticles(ParticleTypes.LAVA, c.x, c.y, c.z, 12, s, s, s, 0.1);
             sl.sendParticles(ParticleTypes.REVERSE_PORTAL, c.x, c.y, c.z, 40, s, s, s, 0.3);
             // Explosion am oberen Trichterrand (hoch oben: groessere Hoerweite) bzw. knapp ueber den Lasern

@@ -41,7 +41,7 @@ import org.joml.Matrix4f;
  * </ul>
  * Erst Sternenfeld, dann Glow: ein getBuffer() mit anderem RenderType schliesst den vorherigen Puffer ab.
  */
-public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEntity> {
+public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<ResonatorBlockEntity> {
     private static final float[] HOT = {1.0F, 0.8F, 0.55F};
     private static final float[] COOL = {0.62F, 0.28F, 0.95F};
     private static final float[] JET = {0.6F, 0.78F, 1.0F};

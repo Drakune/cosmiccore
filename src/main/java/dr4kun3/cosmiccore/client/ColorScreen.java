@@ -221,7 +221,9 @@ public class ColorScreen extends Screen {
     // ------------------------------------------------------------------ Eingabe
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         int mx = (int) mouseX - left, my = (int) mouseY - top;
         for (int i = 0; i < CoreColors.PRESETS.size(); i++) {
             int px = M + 1 + PAD + i * 21, py = PRESET_Y + 1 + PAD + 12;
@@ -247,26 +249,30 @@ public class ColorScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dx, double dy) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         if (dragging >= 0) {
             dragTo(mouseX, false);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dx, dy);
+        return super.mouseDragged(event, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
         if (dragging >= 0) {
             dragTo(mouseX, true); // erst beim Loslassen an den Server
             dragging = -1;
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     private void dragTo(double mouseX, boolean send) {

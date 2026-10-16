@@ -80,8 +80,8 @@ public final class PortStation {
         if (s.isAir()) return false;
         String ns = BuiltInRegistries.BLOCK.getKey(s.getBlock()).getNamespace();
         if (ns.equals(CosmicCore.MODID)) return false; // eigene Strukturbloecke
-        boolean cap = energy ? level.getCapability(Capabilities.EnergyStorage.BLOCK, n, d.getOpposite()) != null
-                : level.getCapability(Capabilities.ItemHandler.BLOCK, n, d.getOpposite()) != null;
+        boolean cap = energy ? level.getCapability(Capabilities.Energy.BLOCK, n, d.getOpposite()) != null
+                : level.getCapability(Capabilities.Item.BLOCK, n, d.getOpposite()) != null;
         return cap || !ns.equals("minecraft");
     }
 
@@ -180,8 +180,10 @@ public final class PortStation {
         // gleichmaessig skaliert (sonst kippen die Normalen und das Symbol wird schwarz), leicht vor der Glasflaeche
         ps.translate(x + 4, y + 3.5F, 1.0F);
         ps.scale(8.0F, -8.0F, 8.0F);
-        Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.GUI, LightTexture.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY, ps, buffers, level, 0);
+        if (!(buffers instanceof dr4kun3.cosmiccore.client.render.DeferredBuffers d)) return;
+        var state = new net.minecraft.client.renderer.item.ItemStackRenderState();
+        Minecraft.getInstance().getItemModelResolver().updateForTopItem(state, stack, ItemDisplayContext.GUI, level, null, 0);
+        state.submit(ps, d.collector(), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
     }
 
     /** Restzeit kompakt: 45s, 12m30s, 3h05m - oder leer/pausiert/aus. */

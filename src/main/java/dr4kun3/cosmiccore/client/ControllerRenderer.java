@@ -32,7 +32,7 @@ import net.minecraft.world.phys.AABB;
  * Block als halbtransparenten "Geist" an seiner Zielposition. Falsche Bloecke (oder Bloecke, wo Luft sein muss)
  * werden rot umrandet.
  */
-public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEntity> {
+public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<ControllerBlockEntity> {
     public ControllerRenderer(BlockEntityRendererProvider.Context context) {}
 
     @Override
@@ -143,7 +143,7 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
             for (BlockPos pos : wrong) {
                 double ox = pos.getX() - origin.getX(), oy = pos.getY() - origin.getY(), oz = pos.getZ() - origin.getZ();
-                net.minecraft.client.renderer.ShapeRenderer.renderLineBox(pose, lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01),
+                net.minecraft.client.renderer.ShapeRenderer.renderLineBox(pose.last(), lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01),
                         1.0F, 0.2F, 0.25F, 1.0F);
             }
         }

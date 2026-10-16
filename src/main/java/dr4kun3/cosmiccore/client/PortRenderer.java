@@ -28,7 +28,7 @@ import org.joml.Matrix4f;
  * Ports einer gebildeten Struktur: die Anschlussdose wird hier gezeichnet (das Blockmodell ist dann leer), damit sie
  * nach dem Formen nicht schlagartig erscheint, sondern sich mit Lichtblitz federnd und drehend materialisiert.
  */
-public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRenderer<T> {
+public class PortRenderer<T extends PortBlockEntity> extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<T> {
     private static final float[] ENERGY = {1.0F, 0.75F, 0.3F};
     private static final float[] ITEM = {0.45F, 0.9F, 1.0F};
 

@@ -244,19 +244,19 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level != null && !level.isClientSide) ReactorRegistry.add(level, worldPosition);
+        if (level != null && !level.isClientSide()) ReactorRegistry.add(level, worldPosition);
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
-        if (level != null && !level.isClientSide) ReactorRegistry.remove(level, worldPosition);
+        if (level != null && !level.isClientSide()) ReactorRegistry.remove(level, worldPosition);
     }
 
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
-        if (level != null && !level.isClientSide) ReactorRegistry.remove(level, worldPosition);
+        if (level != null && !level.isClientSide()) ReactorRegistry.remove(level, worldPosition);
     }
 
     public long getEnergy() {
@@ -1322,7 +1322,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     private void changedAndSync() {
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }

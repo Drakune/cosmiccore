@@ -77,7 +77,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide || type != ModBlockEntities.CONTROLLER.get()) return null;
+        if (level.isClientSide() || type != ModBlockEntities.CONTROLLER.get()) return null;
         return (lvl, pos, st, be) -> ControllerBlockEntity.serverTick(lvl, pos, st, (ControllerBlockEntity) be);
     }
 
@@ -96,7 +96,7 @@ public class ControllerBlock extends Block implements EntityBlock {
                                            Player player, InteractionHand hand, BlockHitResult hit) {
         boolean feedable = ModDataMaps.fuel(stack) != null || ModDataMaps.stabilizer(stack) != null;
         if (!feedable) return InteractionResult.TRY_WITH_EMPTY_HAND;
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
             if (be.getSize() == null) {
                 player.openMenu(be, pos);
                 return InteractionResult.SUCCESS;
@@ -113,7 +113,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     /** Rechtsklick oeffnet die GUI, Schleichen + Rechtsklick zeigt den Status/ersten Baufehler im Chat. */
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
             if (player.isShiftKeyDown()) {
                 be.sendStatus((ServerLevel) level, player);
             } else {

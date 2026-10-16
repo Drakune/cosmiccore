@@ -30,7 +30,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         protected void onContentsChanged(int slot) {
             setChanged();
             int used = usedSlots();
-            if (used != syncedUsed && level != null && !level.isClientSide) {
+            if (used != syncedUsed && level != null && !level.isClientSide()) {
                 syncedUsed = used;
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             }

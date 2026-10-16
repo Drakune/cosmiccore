@@ -37,7 +37,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         if (awakened == this.awakened) return;
         this.awakened = awakened;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
@@ -53,7 +53,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         if (c.equals(colors)) return;
         colors = c;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
@@ -156,7 +156,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         this.skyLink = skyLink;
         this.cosmic = cos;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
@@ -174,7 +174,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         deliverSize = size;
         deliverSource = source.subtract(net.minecraft.world.phys.Vec3.atCenterOf(worldPosition));
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
@@ -199,7 +199,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     public void markFormed(long gameTime) {
         formStart = gameTime;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
