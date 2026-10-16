@@ -202,8 +202,14 @@ public final class CutsceneTestHarness {
                 guidePhase = "o";
                 guideMs = net.minecraft.Util.getMillis();
             }
+            if (worldTicks == 60 && mc.screen instanceof GuideScreen gs0) {
+                gs0.turn(1); // zur Doppelseite vor den Multiblock-Seiten
+            }
+            if (worldTicks == 70 && mc.screen instanceof GuideScreen gs1) {
+                gs1.turn(1);
+            }
             if (worldTicks == 80 && mc.screen instanceof GuideScreen gs) {
-                gs.turn(1);
+                gs.turn(1); // umblaettern auf die Seiten mit 3D-Vorschau und Item-Symbolen
                 guidePhase = "t";
                 guideMs = net.minecraft.Util.getMillis();
             }

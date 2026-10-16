@@ -271,16 +271,25 @@ public class GuideScreen extends Screen {
         int sw = (int) (18 * (1.0F - k));
         if (sw > 0) {
             int a = (int) (90 * (1.0F - k));
+            g.pose().pushPose();
+            g.pose().translate(0, 0, SHEET_Z + 10);
             if (right) g.fillGradient(x1, y, x1 + sw, y + PH, a << 24, 0); // Kante wirft Schatten nach aussen
             else g.fillGradient(x0 - sw, y, x0, y + PH, 0, a << 24);
+            g.pose().popPose();
         }
     }
+
+    /**
+     * Ebene des umklappenden Blatts: ueber allem, was auf den Seiten darunter liegt - Item-Symbole (ca. 150-250) und die
+     * 3D-Vorschau der Multibloecke (um 400) duerfen nicht durch das Blatt scheinen.
+     */
+    private static final float SHEET_Z = 800.0F;
 
     /** Zeichnet etwas zur Mitte hin gestaucht (Blatt im Drehen; factor 1 = flach, 0 = senkrecht). */
     private void squeezed(GuiGraphics g, float spine, float factor, Runnable draw) {
         if (factor <= 0.01F) return;
         g.pose().pushPose();
-        g.pose().translate(spine, 0, 50);
+        g.pose().translate(spine, 0, SHEET_Z);
         g.pose().scale(factor, 1.0F, 1.0F);
         g.pose().translate(-spine, 0, 0);
         draw.run();
@@ -291,7 +300,7 @@ public class GuideScreen extends Screen {
         int a = (int) (110 * Mth.clamp(amount, 0, 1));
         if (a <= 2 || x1 <= x0) return;
         g.pose().pushPose();
-        g.pose().translate(0, 0, 60);
+        g.pose().translate(0, 0, SHEET_Z + 10);
         g.fill(x0, y, x1, y + PH, a << 24);
         g.pose().popPose();
     }
