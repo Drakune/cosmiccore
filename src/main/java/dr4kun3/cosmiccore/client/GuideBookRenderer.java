@@ -77,7 +77,7 @@ public final class GuideBookRenderer {
     public static void render(ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay, float t) {
         float open = openness(ctx);
         float ang = open * 78.0F; // Oeffnungswinkel je Haelfte
-        VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutoutNoCull(TEX));
+        VertexConsumer vc = buffers.getBuffer(RenderTypes.entityCutout(TEX));
         pose.pushPose();
         // Buch steht auf dem Ruecken-Gelenk (lokales Y = Hoehe), die Seiten zeigen zum Betrachter
         pose.mulPose(Axis.YP.rotationDegrees(-90.0F));

@@ -4,7 +4,7 @@ import dr4kun3.cosmiccore.color.CoreColors;
 import dr4kun3.cosmiccore.network.SetCoreColorsPayload;
 import java.awt.Color;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -108,11 +108,11 @@ public class ColorScreen extends Screen {
     // ------------------------------------------------------------------ Zeichnen
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
         int x = left, y = top;
         // Vorgaben
-        g.drawString(font, Component.translatable("gui.cosmiccore.colors.presets"), x + M + 1 + PAD, y + PRESET_Y + 1 + PAD, HEAD, false);
+        g.text(font, Component.translatable("gui.cosmiccore.colors.presets"), x + M + 1 + PAD, y + PRESET_Y + 1 + PAD, HEAD, false);
         Component hovered = null;
         for (int i = 0; i < CoreColors.PRESETS.size(); i++) {
             int px = x + M + 1 + PAD + i * 21, py = y + PRESET_Y + 1 + PAD + 12;
@@ -122,38 +122,38 @@ public class ColorScreen extends Screen {
             }
         }
         // Effekt-Liste
-        g.drawString(font, Component.translatable("gui.cosmiccore.colors.effects"), x + LIST_X + 1 + PAD, y + LIST_Y + 1 + PAD, HEAD, false);
+        g.text(font, Component.translatable("gui.cosmiccore.colors.effects"), x + LIST_X + 1 + PAD, y + LIST_Y + 1 + PAD, HEAD, false);
         for (int i = 0; i < CoreColors.CHANNELS; i++) {
             int rx = x + LIST_X + 1 + PAD, ry = y + LIST_Y + 1 + PAD + 12 + i * ROW_H;
             if (i == selected) g.fill(rx - 2, ry - 1, x + LIST_X + LIST_W - 1 - PAD + 2, ry + ROW_H - 2, 0x553A2468);
             g.fill(rx, ry + 1, rx + 14, ry + 15, 0xFF120A20);
             g.fill(rx + 1, ry + 2, rx + 13, ry + 14, 0xFF000000 | config.rgb(i));
-            g.drawString(font, Component.translatable("gui.cosmiccore.channel." + CoreColors.KEYS[i]), rx + 19, ry + 4,
+            g.text(font, Component.translatable("gui.cosmiccore.channel." + CoreColors.KEYS[i]), rx + 19, ry + 4,
                     i == selected ? 0xFFFFFFFF : 0xFFC8C0E0, false);
             if (!config.custom(i)) {
                 Component std = Component.translatable("gui.cosmiccore.colors.std");
-                g.drawString(font, std, x + LIST_X + LIST_W - 1 - PAD - font.width(std), ry + 4, 0xFF6A6488, false);
+                g.text(font, std, x + LIST_X + LIST_W - 1 - PAD - font.width(std), ry + 4, 0xFF6A6488, false);
             }
         }
         // Farbwaehler fuer den gewaehlten Effekt
         int ex = x + EDIT_X + 1 + PAD, ey = y + LIST_Y + 1 + PAD;
-        g.drawString(font, Component.translatable("gui.cosmiccore.channel." + CoreColors.KEYS[selected]), ex, ey, HEAD, false);
+        g.text(font, Component.translatable("gui.cosmiccore.channel." + CoreColors.KEYS[selected]), ex, ey, HEAD, false);
         int rgb = config.rgb(selected);
         g.fill(ex, ey + 12, ex + 30, ey + 42, 0xFF120A20);
         g.fill(ex + 1, ey + 13, ex + 29, ey + 41, 0xFF000000 | rgb);
-        g.drawString(font, String.format("#%06X", rgb), ex + 36, ey + 17, 0xFFE0E0F0, false);
-        g.drawString(font, Component.translatable(config.custom(selected) ? "gui.cosmiccore.colors.own" : "gui.cosmiccore.colors.std_long"),
+        g.text(font, String.format("#%06X", rgb), ex + 36, ey + 17, 0xFFE0E0F0, false);
+        g.text(font, Component.translatable(config.custom(selected) ? "gui.cosmiccore.colors.own" : "gui.cosmiccore.colors.std_long"),
                 ex + 36, ey + 29, 0xFF908AA8, false);
         String[] labels = {"H", "S", "V"};
         for (int i = 0; i < 3; i++) {
             int sy = y + sliderY(i);
-            g.drawString(font, labels[i], ex, sy, 0xFF908AA8, false);
+            g.text(font, labels[i], ex, sy, 0xFF908AA8, false);
             drawSlider(g, x + SLIDER_X, sy, i);
         }
         // Vorschau: Scheibe von innen nach aussen, darueber der Jet
         int vy = y + sliderY(2) + SLIDER_H + 8 + 18 + 6;
         int vx0 = x + EDIT_X + 1 + PAD, vw = EDIT_W - 2 - 2 * PAD;
-        g.drawString(font, Component.translatable("gui.cosmiccore.colors.preview"), vx0, vy, HEAD, false);
+        g.text(font, Component.translatable("gui.cosmiccore.colors.preview"), vx0, vy, HEAD, false);
         int barY = vy + 11;
         for (int i = 0; i < vw; i++) {
             float f = i / (float) (vw - 1);
@@ -164,14 +164,14 @@ public class ColorScreen extends Screen {
         g.fill(vx0, barY + 10, vx0 + vw, barY + 12, 0xFF000000 | config.rgb(CoreColors.JETS));
         g.fill(vx0, barY + 14, vx0 + vw, barY + 15, 0xFF000000 | config.rgb(CoreColors.SEAMS));
         // Code
-        g.drawString(font, Component.translatable("gui.cosmiccore.colors.code"), x + M + 1 + PAD, y + CODE_Y + 1 + PAD, HEAD, false);
-        g.drawString(font, codeMessage, x + W - M - 1 - PAD - font.width(codeMessage), y + CODE_Y + 1 + PAD, 0xFFFFFFFF, false);
+        g.text(font, Component.translatable("gui.cosmiccore.colors.code"), x + M + 1 + PAD, y + CODE_Y + 1 + PAD, HEAD, false);
+        g.text(font, codeMessage, x + W - M - 1 - PAD - font.width(codeMessage), y + CODE_Y + 1 + PAD, 0xFFFFFFFF, false);
         if (hovered != null) g.setTooltipForNextFrame(font, hovered, mouseX, mouseY);
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(g, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(g, mouseX, mouseY, partialTick);
         int x = left, y = top;
         g.fill(x, y, x + W, y + H, 0xFF3A2468);
         g.fill(x + 1, y + 1, x + W - 1, y + H - 1, 0xFF0A0614);
@@ -181,20 +181,20 @@ public class ColorScreen extends Screen {
         panel(g, x + M, y + CODE_Y, W - 2 * M, CODE_H);
     }
 
-    private static void panel(GuiGraphics g, int px, int py, int pw, int ph) {
+    private static void panel(GuiGraphicsExtractor g, int px, int py, int pw, int ph) {
         g.fill(px, py, px + pw, py + ph, PANEL_BORDER);
         g.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, PANEL_FILL);
         g.fill(px + 3, py + 1, px + pw - 3, py + 2, PANEL_ACCENT);
     }
 
     /** Vorgabe als Kachel: vier Streifen (Scheibe innen/mitte/aussen, Jet). */
-    private static void presetTile(GuiGraphics g, int px, int py, CoreColors.Config c) {
+    private static void presetTile(GuiGraphicsExtractor g, int px, int py, CoreColors.Config c) {
         g.fill(px - 1, py - 1, px + 17, py + 17, 0xFF120A20);
         int[] ch = {CoreColors.DISK_INNER, CoreColors.DISK_MID, CoreColors.DISK_OUTER, CoreColors.JETS};
         for (int i = 0; i < 4; i++) g.fill(px + i * 4, py, px + i * 4 + 4, py + 16, 0xFF000000 | c.rgb(ch[i]));
     }
 
-    private void drawSlider(GuiGraphics g, int sx, int sy, int which) {
+    private void drawSlider(GuiGraphicsExtractor g, int sx, int sy, int which) {
         g.fill(sx - 1, sy - 1, sx + SLIDER_W + 1, sy + SLIDER_H + 1, 0xFF120A20);
         for (int i = 0; i < SLIDER_W; i++) {
             float f = i / (float) (SLIDER_W - 1);

@@ -11,16 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -66,7 +64,6 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
 
         float t = (level.getGameTime() % 24000L) + partialTick;
         float alpha = 0.35F + 0.15F * Mth.sin(t * 0.15F);
-        BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
         VertexConsumer ghost = new AlphaVertexConsumer(buffers.getBuffer(Sheets.translucentItemSheet()), alpha);
         List<BlockPos> wrong = new ArrayList<>();
 
@@ -77,11 +74,11 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
             if (CorePattern.matches(cell, current, false)) return;
             // Steuerkonsole: rechts der Energie-Port, links der Item-Port
             if (pos.equals(origin.relative(dr4kun3.cosmiccore.block.Terminal.right(facing))) && current.isAir()) {
-                ghost(dispatcher, pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState());
+                ghost(pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState());
                 return;
             }
             if (pos.equals(origin.relative(dr4kun3.cosmiccore.block.Terminal.left(facing))) && current.isAir()) {
-                ghost(dispatcher, pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState());
+                ghost(pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState());
                 return;
             }
 
@@ -92,13 +89,12 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
             }
             BlockState target = CorePattern.blockFor(cell);
             if (target == null) return;
-            BlockStateModel model = dispatcher.getBlockModel(target);
+            BlockStateModel model = dr4kun3.cosmiccore.client.render.BlockQuads.model(target);
             pose.pushPose();
             pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
             pose.scale(0.82F, 0.82F, 0.82F);
             pose.translate(-0.5, -0.5, -0.5);
-            net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), ghost, model, 1.0F, 1.0F, 1.0F,
-                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), ghost, model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         });
 
@@ -113,8 +109,7 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
                     BlockState funnel = ModBlocks.STAR_FUNNEL.get().defaultBlockState();
                     pose.pushPose();
                     pose.translate(top.getX() - origin.getX(), top.getY() - origin.getY(), top.getZ() - origin.getZ());
-                    net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), ghost, dispatcher.getBlockModel(funnel),
-                            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                    dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), ghost, dr4kun3.cosmiccore.client.render.BlockQuads.model(funnel), net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                     pose.popPose();
                 }
             }
@@ -133,8 +128,7 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
                 }
                 pose.pushPose();
                 pose.translate(lp.getX() - origin.getX(), lp.getY() - origin.getY(), lp.getZ() - origin.getZ());
-                net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), ghost, dispatcher.getBlockModel(laser),
-                        1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), ghost, dr4kun3.cosmiccore.client.render.BlockQuads.model(laser), net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                 pose.popPose();
             }
         }
@@ -201,14 +195,13 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         }
     }
 
-    private static void ghost(BlockRenderDispatcher dispatcher, PoseStack pose, VertexConsumer vc, BlockPos origin, BlockPos pos, BlockState target) {
-        BlockStateModel model = dispatcher.getBlockModel(target);
+    private static void ghost(PoseStack pose, VertexConsumer vc, BlockPos origin, BlockPos pos, BlockState target) {
+        BlockStateModel model = dr4kun3.cosmiccore.client.render.BlockQuads.model(target);
         pose.pushPose();
         pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
         pose.scale(0.82F, 0.82F, 0.82F);
         pose.translate(-0.5, -0.5, -0.5);
-        net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), vc, model, 1.0F, 1.0F, 1.0F,
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+        dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), vc, model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
         pose.popPose();
     }
 }

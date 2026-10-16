@@ -11,10 +11,8 @@ import dr4kun3.cosmiccore.multiblock.ReactorSize;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,7 +30,7 @@ public final class StructurePreview {
      * @param box     Ausschnitt {x0, y0, x1, y1} in Bildschirmkoordinaten (Scissor)
      * @param fit     Kantenlaenge in Pixeln, in die die Struktur passen soll
      */
-    public static void render(GuiGraphics g, ReactorSize size, int cx, int cy, int[] box, float fit, float yaw, float pitch,
+    public static void render(GuiGraphicsExtractor g, ReactorSize size, int cx, int cy, int[] box, float fit, float yaw, float pitch,
                               boolean funnel, boolean lasers) {
         g.submitPictureInPictureRenderState(new State(size, fit, yaw, pitch, funnel, lasers,
                 cx - (box[0] + box[2]) / 2.0F, cy - (box[1] + box[3]) / 2.0F,
@@ -44,12 +42,12 @@ public final class StructurePreview {
                         org.joml.Matrix3x2f pose, int x0, int y0, int x1, int y1,
                         @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle scissorArea,
                         @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle bounds)
-            implements net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState {
+            implements net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState {
         State(ReactorSize size, float fit, float yaw, float pitch, boolean funnel, boolean lasers, float offX, float offY,
               org.joml.Matrix3x2f pose, int x0, int y0, int x1, int y1,
               @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle scissor) {
             this(size, fit, yaw, pitch, funnel, lasers, offX, offY, pose, x0, y0, x1, y1, scissor,
-                    net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState.getBounds(x0, y0, x1, y1, scissor));
+                    net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState.getBounds(x0, y0, x1, y1, scissor));
         }
 
         @Override
@@ -86,7 +84,6 @@ public final class StructurePreview {
             CorePattern p = st.size().pattern();
             int half = p.half();
             float scale = st.fit() / (st.size().size() * 1.75F);
-            BlockRenderDispatcher dispatcher = mc.getBlockRenderer();
             BlockPos controller = new BlockPos(0, -half, half);
             ps.translate(st.offX(), st.offY(), 0);
             ps.scale(scale, -scale, -scale); // der Bild-im-Bild-Renderer spiegelt Z bereits
@@ -108,24 +105,24 @@ public final class StructurePreview {
                     state = ModBlocks.ITEM_PORT.get().defaultBlockState()
                             .setValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE, dr4kun3.cosmiccore.block.ConsoleSide.SOUTH);
                 }
-                block(dispatcher, ps, buffers, state, pos.getX() - 0.5F, pos.getY() - 0.5F, pos.getZ() - 0.5F);
+                block(ps, buffers, state, pos.getX() - 0.5F, pos.getY() - 0.5F, pos.getZ() - 0.5F);
             });
             if (st.lasers()) {
                 BlockState laser = ModBlocks.COSMIC_LASER.get().defaultBlockState();
                 for (Direction d : Direction.Plane.HORIZONTAL) {
-                    block(dispatcher, ps, buffers, laser, d.getStepX() - 0.5F, half + 0.5F, d.getStepZ() - 0.5F);
+                    block(ps, buffers, laser, d.getStepX() - 0.5F, half + 0.5F, d.getStepZ() - 0.5F);
                 }
             }
             if (st.funnel()) {
-                block(dispatcher, ps, buffers, ModBlocks.STAR_FUNNEL.get().defaultBlockState(), -0.5F, half + 0.5F, -0.5F);
+                block(ps, buffers, ModBlocks.STAR_FUNNEL.get().defaultBlockState(), -0.5F, half + 0.5F, -0.5F);
             }
         }
     }
 
-    private static void block(BlockRenderDispatcher d, PoseStack ps, MultiBufferSource buffers, BlockState state, float x, float y, float z) {
+    private static void block(PoseStack ps, MultiBufferSource buffers, BlockState state, float x, float y, float z) {
         ps.pushPose();
         ps.translate(x, y, z);
-        d.renderSingleBlock(state, ps, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+        dr4kun3.cosmiccore.client.render.BlockQuads.render(state, ps, buffers, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
         ps.popPose();
     }
 

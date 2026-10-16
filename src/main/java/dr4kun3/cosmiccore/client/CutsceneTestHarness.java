@@ -86,7 +86,7 @@ public final class CutsceneTestHarness {
                 var level = server.getLevel(mc.player.level().dimension());
                 if (level == null) return;
                 dr4kun3.cosmiccore.block.entity.ControllerBlockEntity.debugSetupUltimate(level, at);
-                level.setDayTime(6000);
+                server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "time set 6000");
                 // einzelne Ports in der Mitte der gegenueberliegenden Bodenkante, ein Trichter dockt am Item-Port der Konsole an
                 net.minecraft.core.BlockPos south = at.south(10);
                 level.setBlock(south.west(), dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState(), 3);
@@ -146,7 +146,7 @@ public final class CutsceneTestHarness {
                 }
                 mc.setCameraEntity(mc.player);
                 mc.options.guiScale().set(1);
-                mc.resizeDisplay();
+                mc.resizeGui();
                 server.execute(() -> {
                     var sp = server.getPlayerList().getPlayers().get(0);
                     var level = sp.level();
@@ -178,10 +178,39 @@ public final class CutsceneTestHarness {
         }
     }
 
+    /**
+     * Die Testwelt stammt aus einer aelteren Minecraft-Version. Neuere Versionen fragen beim Oeffnen nach einer Sicherung
+     * ("Ich weiss, was ich tue") - im Test ohne Sicherung fortfahren, damit der Lauf nicht haengen bleibt.
+     */
+    private static void skipBackupWarning(Minecraft mc) {
+        // ab 26.1: nach dem Welt-Upgrade "Jetzt beitreten" bestaetigen
+        if (mc.screen instanceof net.minecraft.client.gui.screens.ConfirmScreen confirm
+                && confirm.getTitle().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
+                && tc.getKey().equals("upgradeWorld.done")) {
+            try {
+                var field = net.minecraft.client.gui.screens.ConfirmScreen.class.getDeclaredField("callback");
+                field.setAccessible(true);
+                ((it.unimi.dsi.fastutil.booleans.BooleanConsumer) field.get(confirm)).accept(true);
+            } catch (ReflectiveOperationException e) {
+                CosmicCore.LOGGER.warn("[CutsceneTest] Upgrade-Abfrage konnte nicht bestaetigt werden", e);
+            }
+            return;
+        }
+        if (!(mc.screen instanceof net.minecraft.client.gui.screens.BackupConfirmScreen screen)) return;
+        try {
+            var field = net.minecraft.client.gui.screens.BackupConfirmScreen.class.getDeclaredField("onProceed");
+            field.setAccessible(true);
+            ((net.minecraft.client.gui.screens.BackupConfirmScreen.Listener) field.get(screen)).proceed(false, false);
+        } catch (ReflectiveOperationException e) {
+            CosmicCore.LOGGER.warn("[CutsceneTest] Sicherungsabfrage konnte nicht bestaetigt werden", e);
+        }
+    }
+
     @SubscribeEvent
     public static void onTick(ClientTickEvent.Post event) {
         if (!ENABLED || finished) return;
         Minecraft mc = Minecraft.getInstance();
+        skipBackupWarning(mc);
         if (mc.level == null || mc.player == null) return;
         mc.options.pauseOnLostFocus = false;
         worldTicks++;
@@ -197,7 +226,7 @@ public final class CutsceneTestHarness {
             // Handbuch: Aufklappen, einmal Umblaettern und Zuklappen als Bildfolge
             if (worldTicks == 30) {
                 mc.options.guiScale().set(2);
-                mc.resizeDisplay();
+                mc.resizeGui();
                 mc.setScreen(new GuideScreen());
                 guidePhase = "o";
                 guideMs = net.minecraft.util.Util.getMillis();
@@ -232,7 +261,7 @@ public final class CutsceneTestHarness {
                 var level = server.getLevel(mc.player.level().dimension());
                 if (level != null) {
                     testCore = dr4kun3.cosmiccore.block.entity.ControllerBlockEntity.debugSetupUltimate(level, at);
-                    level.setDayTime(18000); // Nacht - der Kosmos wirkt besser
+                    server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "time set 18000"); // Nacht - der Kosmos wirkt besser
                 }
             });
         }

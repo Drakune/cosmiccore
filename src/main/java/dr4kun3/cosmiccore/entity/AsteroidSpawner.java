@@ -43,7 +43,7 @@ public final class AsteroidSpawner {
         }
         if (reactors.isEmpty()) return;
 
-        RandomSource r = level.random;
+        RandomSource r = level.getRandom();
         double playerRange = CoreConfig.REACTOR_ASTEROID_RADIUS.get();
         double shieldRange = CoreConfig.ANTI_ASTEROID_RADIUS.get();
         for (ControllerBlockEntity c : reactors) {

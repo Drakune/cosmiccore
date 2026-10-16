@@ -3,8 +3,8 @@ package dr4kun3.cosmiccore.compat.geckolib;
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.renderer.base.BoneSnapshots;
-import software.bernie.geckolib.model.GeoModel;
+import com.geckolib.renderer.base.BoneSnapshots;
+import com.geckolib.model.GeoModel;
 
 /**
  * Oberkoerper des Void-Titanen: eine bemalte Textur, normal schattiert. Zur Keyframe-Animation kommt prozedurale
@@ -16,12 +16,12 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
     @Override
-    public Identifier getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+    public Identifier getModelResource(com.geckolib.renderer.base.GeoRenderState state) {
         return CosmicCore.id("void_titan");
     }
 
     @Override
-    public Identifier getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+    public Identifier getTextureResource(com.geckolib.renderer.base.GeoRenderState state) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 

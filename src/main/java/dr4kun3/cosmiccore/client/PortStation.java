@@ -14,7 +14,6 @@ import dr4kun3.cosmiccore.block.entity.PortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -94,13 +93,12 @@ public final class PortStation {
      */
     public static void solid(PoseStack pose, MultiBufferSource buffers, Level level, BlockState port, boolean energy, int connMask,
                              float yaw, float screenYaw, float grow, Data data, boolean ownBase, boolean screen) {
-        var dispatcher = Minecraft.getInstance().getBlockRenderer();
         // Sockel
         pose.pushPose();
         pose.translate(-0.14F, -0.5F, -0.14F);
         pose.scale(0.28F, 0.4F * grow, 0.28F);
-        dispatcher.renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose, buffers, LightTexture.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY);
+        dr4kun3.cosmiccore.client.render.BlockQuads.render(ModBlocks.VOID_CASING.get().defaultBlockState(), pose, buffers, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY, false); // wie bis 1.21.11: feste Flaechen bleiben unsichtbar
         pose.popPose();
         // Anschlussknoten an jeder belegten Seite
         CorePhase phase = port.hasProperty(ModProperties.PHASE) ? port.getValue(ModProperties.PHASE) : CorePhase.FORMED;
@@ -113,8 +111,7 @@ public final class PortStation {
             pose.translate(c.x, c.y, c.z);
             pose.scale(0.36F * grow, 0.36F * grow, 0.36F * grow);
             pose.translate(-0.5F, -0.5F, -0.5F);
-            net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), buffers.getBuffer(net.minecraft.client.renderer.Sheets.cutoutBlockSheet()), model,
-                    1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), buffers.getBuffer(net.minecraft.client.renderer.Sheets.cutoutBlockSheet()), model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         }
         Matrix4f base = pose.last().pose();
@@ -169,9 +166,9 @@ public final class PortStation {
     static void itemRow(Font font, Matrix4f tm, MultiBufferSource buffers, Level level, String label, ItemStack stack, int seconds,
                         int y, int color, float width) {
         String value = (stack.isEmpty() ? "0" : Integer.toString(stack.getCount())) + " · " + duration(seconds);
-        font.drawInBatch(label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         float vx = width - 5 - font.width(value);
-        font.drawInBatch(value, vx, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(value, vx, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         if (!stack.isEmpty()) icon(tm, buffers, level, stack, vx - 11, y);
     }
 
@@ -184,7 +181,7 @@ public final class PortStation {
         if (!(buffers instanceof dr4kun3.cosmiccore.client.render.DeferredBuffers d)) return;
         var state = new net.minecraft.client.renderer.item.ItemStackRenderState();
         Minecraft.getInstance().getItemModelResolver().updateForTopItem(state, stack, ItemDisplayContext.GUI, level, null, 0);
-        state.submit(ps, d.collector(), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+        state.submit(ps, d.collector(), net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
     }
 
     /** Restzeit kompakt: 45s, 12m30s, 3h05m - oder leer/pausiert/aus. */
@@ -201,13 +198,13 @@ public final class PortStation {
 
     private static void center(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
         font.drawInBatch(text, (PX - font.width(text)) / 2.0F, y, 0xFF000000 | color, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
     private static void row(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int color) {
-        font.drawInBatch(label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         font.drawInBatch(value, PX - 5 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
     // ------------------------------------------------------------------ Pass 2: Licht

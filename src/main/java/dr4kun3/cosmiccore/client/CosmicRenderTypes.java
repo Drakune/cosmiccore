@@ -2,7 +2,6 @@ package dr4kun3.cosmiccore.client;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dr4kun3.cosmiccore.CosmicCore;
@@ -31,42 +30,48 @@ public final class CosmicRenderTypes {
     private static final RenderPipeline GLOW_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/glow"))
             .withVertexShader("core/rendertype_lightning").withFragmentShader("core/rendertype_lightning")
-            .withBlend(BlendFunction.LIGHTNING).withDepthWrite(false).withCull(false)
+            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.LIGHTNING))
+            .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.LESS_THAN_OR_EQUAL, false)).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
-    /** Schreibt nur Tiefe, nur Rueckseiten. */
+    /**
+     * Schreibt nur Tiefe, nur Rueckseiten. Ab 26.1 zeichnet Minecraft erst alles Undurchsichtige, dann alles
+     * Durchscheinende - mit einer (wirkungslosen) Mischfunktion laeuft der Abschluss im zweiten Durchgang und damit wie
+     * frueher nach den Leuchteffekten.
+     */
     private static final RenderPipeline DEPTH_BACK_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/depth_back"))
             .withVertexShader("core/position").withFragmentShader("core/position")
-            .withColorWrite(false).withDepthWrite(true).withCull(true)
+            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(java.util.Optional.of(BlendFunction.TRANSLUCENT), com.mojang.blaze3d.pipeline.ColorTargetState.WRITE_NONE))
+            .withDepthStencilState(com.mojang.blaze3d.pipeline.DepthStencilState.DEFAULT).withCull(true)
             .withVertexFormat(DefaultVertexFormat.POSITION, VertexFormat.Mode.QUADS).build();
 
     /** End-Sternenfeld ohne Tiefentest. */
     private static final RenderPipeline SPACE_DOME_PIPELINE = RenderPipeline.builder(RenderPipelines.END_PORTAL_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_dome")).withShaderDefine("PORTAL_LAYERS", 16)
-            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false).build();
+            .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false).build();
 
     /** Deckende Farbe ohne Tiefentest. */
     private static final RenderPipeline SPACE_SOLID_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_solid"))
             .withVertexShader("core/position_color").withFragmentShader("core/position_color")
-            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false)
+            .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
     /** Halbtransparente Farbe ohne Tiefentest. */
     private static final RenderPipeline SPACE_TINT_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_tint"))
             .withVertexShader("core/position_color").withFragmentShader("core/position_color")
-            .withBlend(BlendFunction.TRANSLUCENT)
-            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false)
+            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
     /** Additives Licht ohne Tiefentest. */
     private static final RenderPipeline SPACE_GLOW_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_glow"))
             .withVertexShader("core/rendertype_lightning").withFragmentShader("core/rendertype_lightning")
-            .withBlend(BlendFunction.LIGHTNING)
-            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false)
+            .withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.LIGHTNING))
+            .withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false)).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
     /** NeoForge muss eigene Pipelines vorab kennen (Shader werden dabei vorbereitet). */

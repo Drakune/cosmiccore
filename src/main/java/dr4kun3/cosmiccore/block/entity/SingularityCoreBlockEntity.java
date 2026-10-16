@@ -322,20 +322,20 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         float form = be.getFormProgress(0.0F);
         if (form < 0.55F) {
             // Sog: Teilchen stroemen aus der ganzen Struktur in den Kern
-            RandomSource rr = level.random;
+            RandomSource rr = level.getRandom();
             int half = be.structureSize / 2;
             for (int i = 0; i < 8; i++) {
                 double dx = (rr.nextDouble() - 0.5) * 2 * half, dy = (rr.nextDouble() - 0.5) * 2 * half, dz = (rr.nextDouble() - 0.5) * 2 * half;
                 level.addParticle(ParticleTypes.PORTAL, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, dx, dy, dz);
             }
         } else if (form < 0.6F) {
-            RandomSource rr = level.random;
+            RandomSource rr = level.getRandom();
             for (int i = 0; i < 12; i++) {
                 level.addParticle(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                         (rr.nextDouble() - 0.5) * 0.6, (rr.nextDouble() - 0.5) * 0.6, (rr.nextDouble() - 0.5) * 0.6);
             }
         }
-        RandomSource r = level.random;
+        RandomSource r = level.getRandom();
         double cx = pos.getX() + 0.5, cy = pos.getY() + 0.5, cz = pos.getZ() + 0.5;
         float growth = be.getGrowth();
         float reach = be.getReach();

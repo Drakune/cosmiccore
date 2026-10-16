@@ -2,7 +2,7 @@ package dr4kun3.cosmiccore.client;
 
 import dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity;
 import dr4kun3.cosmiccore.menu.ItemPortMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -14,9 +14,7 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
     private static final int BORDER = 0xFF3A2468, FILL = 0xCC0E0820, ACCENT = 0xFF6A44B8, HEAD = 0xFFB8A8D8;
 
     public ItemPortScreen(ItemPortMenu menu, Inventory inv, Component title) {
-        super(menu, inv, title);
-        imageWidth = ItemPortMenu.W;
-        imageHeight = ItemPortMenu.H;
+        super(menu, inv, title, ItemPortMenu.W, ItemPortMenu.H);
         titleLabelY = 6;
         inventoryLabelY = ItemPortMenu.INV_Y - 11;
     }
@@ -33,13 +31,13 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
-        renderTooltip(g, mouseX, mouseY);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
     }
 
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(g, mouseX, mouseY, partialTick);
         int x = leftPos, y = topPos;
         float t = (minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0) + partialTick;
         g.fill(x, y, x + imageWidth, y + imageHeight, BORDER);
@@ -65,12 +63,12 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(font, title, titleLabelX, titleLabelY, 0xFFFFC070, false);
+    protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        g.text(font, title, titleLabelX, titleLabelY, 0xFFFFC070, false);
         int used = 0;
         for (int i = 0; i < ItemPortBlockEntity.STORAGE_SLOTS; i++) if (menu.slots.get(i).hasItem()) used++;
         String slots = used + " / " + ItemPortBlockEntity.STORAGE_SLOTS;
-        g.drawString(font, slots, imageWidth - 8 - font.width(slots), titleLabelY, used >= ItemPortBlockEntity.STORAGE_SLOTS ? 0xFFFF6060 : HEAD, false);
-        g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, HEAD, false);
+        g.text(font, slots, imageWidth - 8 - font.width(slots), titleLabelY, used >= ItemPortBlockEntity.STORAGE_SLOTS ? 0xFFFF6060 : HEAD, false);
+        g.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, HEAD, false);
     }
 }

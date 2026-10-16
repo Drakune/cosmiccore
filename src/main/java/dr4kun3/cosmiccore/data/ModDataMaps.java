@@ -20,12 +20,12 @@ public final class ModDataMaps {
 
     @Nullable
     public static CoreFuel fuel(ItemStack stack) {
-        return stack.isEmpty() ? null : stack.getItemHolder().getData(CORE_FUEL);
+        return stack.isEmpty() ? null : stack.typeHolder().getData(CORE_FUEL);
     }
 
     @Nullable
     public static CoreStabilizer stabilizer(ItemStack stack) {
-        return stack.isEmpty() ? null : stack.getItemHolder().getData(CORE_STABILIZER);
+        return stack.isEmpty() ? null : stack.typeHolder().getData(CORE_STABILIZER);
     }
 
     private ModDataMaps() {}

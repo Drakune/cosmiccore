@@ -6,14 +6,13 @@ import dr4kun3.cosmiccore.entity.VoidTitanEntity;
 import dr4kun3.cosmiccore.entity.VoidTitanPart;
 import java.util.Map;
 import java.util.WeakHashMap;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.renderer.GeoObjectRenderer;
+import com.geckolib.renderer.GeoObjectRenderer;
 
 /**
  * Zeichnet den mehrteiligen Void-Titanen mit GeckoLib: den animierten Oberkoerper an der Entity-Position und jedes
@@ -22,7 +21,7 @@ import software.bernie.geckolib.renderer.GeoObjectRenderer;
  */
 public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity>> {
     private final Body body;
-    private final GeoObjectRenderer<VoidTitanTail, Void, software.bernie.geckolib.renderer.base.GeoRenderState> tail;
+    private final GeoObjectRenderer<VoidTitanTail, Void, com.geckolib.renderer.base.GeoRenderState> tail;
     private final VoidTitanTail tailAnimatable = new VoidTitanTail();
     private final Map<VoidTitanEntity, VoidTitan> states = new WeakHashMap<>();
 
@@ -52,13 +51,13 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
 
     @Override
     public void submit(dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, PoseStack pose,
-                       net.minecraft.client.renderer.SubmitNodeCollector collector, net.minecraft.client.renderer.state.CameraRenderState camera) {
+                       net.minecraft.client.renderer.SubmitNodeCollector collector, net.minecraft.client.renderer.state.level.CameraRenderState camera) {
         if (state.entity != null) render(state.entity, state.partialTick, pose, collector, camera);
     }
 
     private void render(VoidTitanEntity entity, float partialTick, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
-                        net.minecraft.client.renderer.state.CameraRenderState camera) {
-        int full = LightTexture.FULL_BRIGHT;
+                        net.minecraft.client.renderer.state.level.CameraRenderState camera) {
+        int full = net.minecraft.util.LightCoordsUtil.FULL_BRIGHT;
         float yawRad = entity.getYRot() * Mth.DEG_TO_RAD;
         // Oberkoerper
         VoidTitan state = states.computeIfAbsent(entity, e -> new VoidTitan());
@@ -107,14 +106,14 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
     }
 
     /** Oberkoerper: die Animationszeit kommt von der Entity (Zwischensequenz), nicht aus der Spielzeit. */
-    private static final class Body extends GeoObjectRenderer<VoidTitan, Void, software.bernie.geckolib.renderer.base.GeoRenderState> {
+    private static final class Body extends GeoObjectRenderer<VoidTitan, Void, com.geckolib.renderer.base.GeoRenderState> {
         Body() {
             super(new VoidTitanModel());
         }
 
         @Override
-        public void addRenderData(VoidTitan animatable, Void relatedObject, software.bernie.geckolib.renderer.base.GeoRenderState renderState, float partialTick) {
-            renderState.addGeckolibData(software.bernie.geckolib.constant.DataTickets.TICK, animatable.ticks);
+        public void addRenderData(VoidTitan animatable, Void relatedObject, com.geckolib.renderer.base.GeoRenderState renderState, float partialTick) {
+            renderState.addGeckolibData(com.geckolib.constant.DataTickets.TICK, animatable.ticks);
         }
     }
 

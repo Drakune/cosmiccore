@@ -12,14 +12,19 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(CosmicCore.MODID);
 
+    /** Ab 26.1 erwartet NeoForge die Eigenschaften als Lieferant. */
+    private static <I extends Item> DeferredItem<I> item(String name, java.util.function.Function<Item.Properties, I> factory, Item.Properties properties) {
+        return ITEMS.registerItem(name, factory, () -> properties);
+    }
+
     public static final DeferredItem<Item> STAR_DUST = ITEMS.registerSimpleItem("star_dust");
     // Brennstoff-Stufen
     public static final DeferredItem<Item> COMPRESSED_STAR_DUST = ITEMS.registerSimpleItem("compressed_star_dust");
-    public static final DeferredItem<Item> NEUTRON_FRAGMENT = ITEMS.registerItem("neutron_fragment", Item::new,
+    public static final DeferredItem<Item> NEUTRON_FRAGMENT = item("neutron_fragment", Item::new,
             new Item.Properties().rarity(Rarity.RARE));
-    public static final DeferredItem<Item> QUASAR_ESSENCE = ITEMS.registerItem("quasar_essence", Item::new,
+    public static final DeferredItem<Item> QUASAR_ESSENCE = item("quasar_essence", Item::new,
             new Item.Properties().rarity(Rarity.EPIC));
-    public static final DeferredItem<GuideBookItem> GUIDE_BOOK = ITEMS.registerItem("guide_book",
+    public static final DeferredItem<GuideBookItem> GUIDE_BOOK = item("guide_book",
             GuideBookItem::new, new Item.Properties().stacksTo(1));
 
     public static final DeferredItem<BlockItem> VOID_CASING = ITEMS.registerSimpleBlockItem("void_casing", ModBlocks.VOID_CASING);
@@ -37,21 +42,21 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> COSMIC_LASER = ITEMS.registerSimpleBlockItem("cosmic_laser", ModBlocks.COSMIC_LASER);
 
     // Module fuer den Controller (bis zu 4 je Slot)
-    public static final DeferredItem<Item> EFFICIENCY_MODULE = ITEMS.registerItem("efficiency_module", Item::new,
+    public static final DeferredItem<Item> EFFICIENCY_MODULE = item("efficiency_module", Item::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
-    public static final DeferredItem<Item> STABILITY_MODULE = ITEMS.registerItem("stability_module", Item::new,
+    public static final DeferredItem<Item> STABILITY_MODULE = item("stability_module", Item::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
     /** Haelt Asteroiden im Umkreis des Reaktors fern (im Controller per Schalter an/aus). */
     /** Faerbt Scheibe, Jets und Licht des Kerns um (Farbschema wird im Controller gewaehlt). */
-    public static final DeferredItem<Item> COLOR_MODULE = ITEMS.registerItem("color_module", Item::new,
+    public static final DeferredItem<Item> COLOR_MODULE = item("color_module", Item::new,
             new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
-    public static final DeferredItem<Item> ANTI_ASTEROID_MODULE = ITEMS.registerItem("anti_asteroid_module", Item::new,
+    public static final DeferredItem<Item> ANTI_ASTEROID_MODULE = item("anti_asteroid_module", Item::new,
             new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
 
-    public static final DeferredItem<OverdriveParticleItem> OVERDRIVE_PARTICLE = ITEMS.registerItem("overdrive_particle",
+    public static final DeferredItem<OverdriveParticleItem> OVERDRIVE_PARTICLE = item("overdrive_particle",
             OverdriveParticleItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.EPIC));
     /** Quasar-Overdrive-Partikel: 4 davon schalten beim ultimativen Kern nach Overdrive 3 den Ultimate-Modus frei. */
-    public static final DeferredItem<dr4kun3.cosmiccore.item.QuasarOverdriveItem> QUASAR_OVERDRIVE_PARTICLE = ITEMS.registerItem(
+    public static final DeferredItem<dr4kun3.cosmiccore.item.QuasarOverdriveItem> QUASAR_OVERDRIVE_PARTICLE = item(
             "quasar_overdrive_particle", dr4kun3.cosmiccore.item.QuasarOverdriveItem::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.EPIC));
 

@@ -21,7 +21,7 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
@@ -119,18 +119,18 @@ public class CosmicJeiPlugin implements IModPlugin {
         }
 
         @Override
-        public void draw(Entry entry, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
+        public void draw(Entry entry, IRecipeSlotsView slots, GuiGraphicsExtractor g, double mouseX, double mouseY) {
             Font font = Minecraft.getInstance().font;
             if (entry.kind() == Kind.LOOT) {
-                g.drawString(font, entry.lines().get(0), 0, 1, ViewerEntries.TEXT_COLOR, false);
+                g.text(font, entry.lines().get(0), 0, 1, ViewerEntries.TEXT_COLOR, false);
                 for (int i = 0; i < entry.outputs().size(); i++) {
                     Component c = entry.outputs().get(i).chanceText();
-                    g.drawString(font, c, 9 + i * 22 - font.width(c) / 2, 33, 0xFF606060, false);
+                    g.text(font, c, 9 + i * 22 - font.width(c) / 2, 33, 0xFF606060, false);
                 }
             } else {
                 int y = entry.lines().size() > 2 ? 1 : 6;
                 for (Component line : entry.lines()) {
-                    g.drawString(font, line, 24, y, ViewerEntries.TEXT_COLOR, false);
+                    g.text(font, line, 24, y, ViewerEntries.TEXT_COLOR, false);
                     y += 10;
                 }
             }

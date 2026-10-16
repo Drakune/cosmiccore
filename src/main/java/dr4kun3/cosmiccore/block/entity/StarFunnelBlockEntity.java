@@ -25,7 +25,7 @@ public class StarFunnelBlockEntity extends BlockEntity {
         BlockState below = level.getBlockState(pos.below());
         boolean running = below.hasProperty(ModProperties.PHASE)
                 && (below.getValue(ModProperties.PHASE) == CorePhase.ACTIVE || below.getValue(ModProperties.PHASE) == CorePhase.UNSTABLE);
-        RandomSource r = level.random;
+        RandomSource r = level.getRandom();
         double cx = pos.getX() + 0.5, cy = pos.getY() + 0.9, cz = pos.getZ() + 0.5;
         int count = running ? 4 : 2;
         for (int i = 0; i < count; i++) {

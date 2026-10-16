@@ -14,9 +14,7 @@ import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.multiblock.CorePattern;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -25,7 +23,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.ConfirmScreen;
@@ -92,9 +90,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private float dragYaw, dragPitch;
 
     public ControllerScreen(ControllerMenu menu, Inventory inv, Component title) {
-        super(menu, inv, title);
-        imageWidth = W;
-        imageHeight = menu.sizeChosen() ? H_MAIN : H;
+        super(menu, inv, title, W, menu.sizeChosen() ? H_MAIN : H);
         menu.modulesOpen = tabOpen; // Tab-Zustand bleibt fuer die Sitzung erhalten (wie bei Mekanism)
         inventoryLabelX = ControllerMenu.INV_X;
         inventoryLabelY = ControllerMenu.INV_Y - 11;
@@ -181,7 +177,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return in(mx, my, MTAB_X, TAB_Y0, menu.modulesOpen ? TAB_OPEN_W : TAB_CLOSED, menu.modulesOpen ? 20 : TAB_CLOSED);
     }
 
-    private void drawModuleTab(GuiGraphics g, int x, int y, float t) {
+    private void drawModuleTab(GuiGraphicsExtractor g, int x, int y, float t) {
         if (!menu.sizeChosen()) return;
         int[] r = tabRect();
         int tx = x + r[0], ty = y + r[1];
@@ -197,19 +193,19 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fill(sx, sy + 1, sx + sr[2] - 1, sy + sr[3] - 1, 0xFF120A24);
         g.fill(sx, sy + 1, sx + 1, sy + sr[3] - 1, 0xFF1A0F33);
         g.fill(sx + 3, sy + 1, sx + sr[2] - 3, sy + 2, 0xFFB06A20);
-        g.renderItem(new ItemStack(dr4kun3.cosmiccore.ModItems.ITEM_PORT.get()), sx + 4, sy + 4);
+        g.item(new ItemStack(dr4kun3.cosmiccore.ModItems.ITEM_PORT.get()), sx + 4, sy + 4);
         // Symbol: Effizienz-Modul, darunter ggf. Anzahl installierter Module
-        g.renderItem(new ItemStack(dr4kun3.cosmiccore.ModItems.EFFICIENCY_MODULE.get()), tx + 4, ty + 4);
+        g.item(new ItemStack(dr4kun3.cosmiccore.ModItems.EFFICIENCY_MODULE.get()), tx + 4, ty + 4);
         int installed = 0;
         for (int i = 2; i < ControllerMenu.MACHINE_SLOTS; i++) if (menu.slots.get(i).hasItem()) installed++;
         if (menu.modulesOpen) {
-            g.drawString(font, Component.translatable("gui.cosmiccore.modules"), tx + 22, ty + 8, 0xFFE0C080, false);
+            g.text(font, Component.translatable("gui.cosmiccore.modules"), tx + 22, ty + 8, 0xFFE0C080, false);
         } else if (installed > 0) {
-            g.drawString(font, String.valueOf(installed), tx + r[2] - 7, ty + r[3] - 9, 0xFFFFE080, true);
+            g.text(font, String.valueOf(installed), tx + r[2] - 7, ty + r[3] - 9, 0xFFFFE080, true);
         }
     }
 
-    private void drawColorSwatch(GuiGraphics g, int sx, int sy, float t) {
+    private void drawColorSwatch(GuiGraphicsExtractor g, int sx, int sy, float t) {
         boolean installed = menu.flag(ControllerMenu.F_COLOR_INSTALLED);
         g.fill(sx - 1, sy - 1, sx + ANTI_SW_W + 1, sy + ANTI_SW_H + 1, 0xFF120A20);
         if (!installed) {
@@ -225,7 +221,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (gx >= sx && gx < sx + ANTI_SW_W) g.fill(gx, sy, Math.min(gx + 2, sx + ANTI_SW_W), sy + ANTI_SW_H, 0x60FFFFFF);
     }
 
-    private void drawAntiSwitch(GuiGraphics g, int sx, int sy) {
+    private void drawAntiSwitch(GuiGraphicsExtractor g, int sx, int sy) {
         boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
         int track = !installed ? 0xFF3A3448 : on ? 0xFF2FB872 : 0xFF6A2E3A;
         g.fill(sx - 1, sy - 1, sx + ANTI_SW_W + 1, sy + ANTI_SW_H + 1, 0xFF120A20);
@@ -308,9 +304,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     protected void containerTick() {
         super.containerTick();
         int wanted = menu.sizeChosen() ? H_MAIN : H;
-        if (imageHeight != wanted && minecraft != null) { // nach der Groessenwahl wird das Fenster kompakter
-            imageHeight = wanted;
-            init(width, height);
+        if (imageHeight != wanted && minecraft != null && minecraft.player != null) {
+            // nach der Groessenwahl wird das Fenster kompakter - die Hoehe ist ab 26.1 fest, also neu oeffnen
+            minecraft.setScreen(new ControllerScreen(menu, minecraft.player.getInventory(), title));
             return;
         }
         updateWidgets();
@@ -350,7 +346,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // ------------------------------------------------------------------ Zeichnen
 
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(g, mouseX, mouseY, partialTick);
         int x = leftPos, y = topPos;
         float t = (minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0) + partialTick;
 
@@ -397,9 +394,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         boolean blink = inst >= 0.85f && ((int) (t / 4) % 2 == 0);
         drawVBar(g, x + BAR_INST_X, y + BAR_Y, inst, blink ? 0xFFFFFFFF : instTop, 0xFF603070);
         drawVBar(g, x + BAR_RES_X, y + BAR_Y, menu.resonance() / 100f, 0xFFE070FF, 0xFF5020A0);
-        g.drawCenteredString(font, "E", x + BAR_ENERGY_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFF9AE8FF);
-        g.drawCenteredString(font, "I", x + BAR_INST_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFFFF9AA8);
-        g.drawCenteredString(font, "R", x + BAR_RES_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFFE0A8FF);
+        g.centeredText(font, "E", x + BAR_ENERGY_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFF9AE8FF);
+        g.centeredText(font, "I", x + BAR_INST_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFFFF9AA8);
+        g.centeredText(font, "R", x + BAR_RES_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFFE0A8FF);
 
         // Overdrive-Stufen als Kaestchen
         ReactorSize current = ReactorSize.bySize(menu.size());
@@ -431,10 +428,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         int unlW = Math.round(sw * unl);
         if (unlW > 0) g.fill(x + sx0 + 1, y + ROW_Y + 12, x + sx0 + 1 + unlW, y + ROW_Y + 15, 0xFF4A2A70);
         if (fillW > 0) g.fillGradient(x + sx0 + 1, y + ROW_Y + 12, x + sx0 + 1 + fillW, y + ROW_Y + 15, 0xFFFF60C0, 0xFF8030FF);
-        g.drawCenteredString(font, menu.scale() + "/" + menu.maxScale(), x + (sx0 + sx1) / 2, y + ROW_Y + 3, 0xFFFFFFFF);
+        g.centeredText(font, menu.scale() + "/" + menu.maxScale(), x + (sx0 + sx1) / 2, y + ROW_Y + 3, 0xFFFFFFFF);
     }
 
-    private void drawStars(GuiGraphics g, int x, int y, float t) {
+    private void drawStars(GuiGraphicsExtractor g, int x, int y, float t) {
         for (int i = 0; i < 46; i++) {
             int h = i * 0x9E3779B1;
             int sx = 3 + Math.floorMod(h >>> 7, W - 6);
@@ -447,45 +444,45 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /** Einheitliche Karte: dunkle Flaeche, violetter Rahmen, feine Akzentlinie oben. */
-    private static void drawPanel(GuiGraphics g, int px, int py, int pw, int ph) {
+    private static void drawPanel(GuiGraphicsExtractor g, int px, int py, int pw, int ph) {
         g.fill(px, py, px + pw, py + ph, PANEL_BORDER);
         g.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, PANEL_FILL);
         g.fill(px + 3, py + 1, px + pw - 3, py + 2, PANEL_ACCENT);
     }
 
-    private static void drawSlotBox(GuiGraphics g, int sx, int sy, int border) {
+    private static void drawSlotBox(GuiGraphicsExtractor g, int sx, int sy, int border) {
         g.fill(sx - 1, sy - 1, sx + 17, sy + 17, border);
         g.fill(sx, sy, sx + 16, sy + 16, 0xFF0C0818);
     }
 
-    private static void drawVBar(GuiGraphics g, int bx, int by, float frac, int top, int bottom) {
+    private static void drawVBar(GuiGraphicsExtractor g, int bx, int by, float frac, int top, int bottom) {
         g.fill(bx - 1, by - 1, bx + BAR_W + 1, by + BAR_H + 1, PANEL_BORDER);
         g.fill(bx, by, bx + BAR_W, by + BAR_H, 0xFF0C0818);
         int h = Math.round(BAR_H * Mth.clamp(frac, 0f, 1f));
         if (h > 0) g.fillGradient(bx, by + BAR_H - h, bx + BAR_W, by + BAR_H, top, bottom);
     }
 
-    private static void drawHBar(GuiGraphics g, int bx, int by, int w, float frac, int left, int right) {
+    private static void drawHBar(GuiGraphicsExtractor g, int bx, int by, int w, float frac, int left, int right) {
         g.fill(bx, by, bx + w, by + 3, 0xFF0C0818);
         int fw = Math.round(w * Mth.clamp(frac, 0f, 1f));
         if (fw > 0) g.fillGradient(bx, by, bx + fw, by + 3, left, right);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+    protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         // in der Groessenwahl tragen die Karten eigene Ueberschriften - kein Fenstertitel
-        if (menu.sizeChosen()) g.drawString(font, title, titleLabelX, titleLabelY, 0xFFE0B0FF, false);
+        if (menu.sizeChosen()) g.text(font, title, titleLabelX, titleLabelY, 0xFFE0B0FF, false);
         if (!menu.sizeChosen()) {
             ReactorSize sel = ReactorSize.values()[selected];
             // Info-Karte unter den Reitern: verlaessliche Kennwerte der Baugroesse
-            g.drawString(font, Component.translatable("gui.cosmiccore.size_head"), TAB_X, SIZE_CARD_Y + 1 + PAD, HEAD, false);
-            g.drawString(font, Component.translatable("gui.cosmiccore.options_head"), TAB_X, OPT_Y + 1 + PAD, HEAD, false);
+            g.text(font, Component.translatable("gui.cosmiccore.size_head"), TAB_X, SIZE_CARD_Y + 1 + PAD, HEAD, false);
+            g.text(font, Component.translatable("gui.cosmiccore.options_head"), TAB_X, OPT_Y + 1 + PAD, HEAD, false);
             int ix = TAB_X, iy = SIZE_INFO_Y + 1 + PAD;
-            g.drawString(font, Component.translatable("gui.cosmiccore.info_head"), ix, iy, HEAD, false);
+            g.text(font, Component.translatable("gui.cosmiccore.info_head"), ix, iy, HEAD, false);
             g.fill(ix, iy + 11, TAB_X + TAB_W, iy + 12, 0x663A2468);
             // je Kennwert eine eigene Zeile mit Luft dazwischen: Bezeichnung links, Wert rechtsbuendig
             spec(g, ix, iy + 17, "gui.cosmiccore.info_levels", String.valueOf(sel.maxScale()), 0xFFE0A8FF);
-            g.drawString(font, Component.translatable("gui.cosmiccore.info_unlock"), ix, SIZE_INFO_Y + SPEC_KEY_Y, 0xFF908AA8, false);
+            g.text(font, Component.translatable("gui.cosmiccore.info_unlock"), ix, SIZE_INFO_Y + SPEC_KEY_Y, 0xFF908AA8, false);
             spec(g, ix, iy + 53, "gui.cosmiccore.info_buffer", bufferText(sel.buffer()), 0xFF9AE8FF);
             spec(g, ix, iy + 69, "gui.cosmiccore.info_overdrive",
                     sel.maxOverdrive() + (sel.maxOverdriveTotal() > sel.maxOverdrive() ? " + \u2605" : ""), 0xFFFFB040);
@@ -498,62 +495,62 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                 g.pose().translate(VIEW_X + VIEW_W / 2.0F, VIEW_Y + 7.0F);
                 g.pose().scale(1.5F, 1.5F);
                 int col = ((int) (glowA * 255) << 24) | 0xFFC040;
-                g.drawString(font, head, -font.width(head) / 2, 0, col, true);
+                g.text(font, head, -font.width(head) / 2, 0, col, true);
                 g.pose().popMatrix();
                 Component sub = Component.translatable("gui.cosmiccore.ultimate_cost");
-                g.drawString(font, sub, VIEW_X + (VIEW_W - font.width(sub)) / 2, VIEW_Y + 22, 0xFFE0C080, true);
+                g.text(font, sub, VIEW_X + (VIEW_W - font.width(sub)) / 2, VIEW_Y + 22, 0xFFE0C080, true);
             }
-            g.drawString(font, Component.translatable("gui.cosmiccore.blocks_label"), ICON_LEFT - 1, BLOCKS_Y + 1 + PAD, HEAD, false);
+            g.text(font, Component.translatable("gui.cosmiccore.blocks_label"), ICON_LEFT - 1, BLOCKS_Y + 1 + PAD, HEAD, false);
             return;
         }
-        g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xFFB8A8D8, false);
+        g.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xFFB8A8D8, false);
 
         int ly = TOP_Y + 1 + PAD;
         int statusW = W - M - 1 - PAD - INFO_X;
-        g.drawWordWrap(font, statusLine(), INFO_X, ly, statusW, 0xFFFFFFFF);
+        g.textWithWordWrap(font, statusLine(), INFO_X, ly, statusW, 0xFFFFFFFF);
         ly += 11 * Math.max(1, font.split(statusLine(), statusW).size()) + 4;
 
         // Kern-Karte: neben den Slots Vorrat und Restlaufzeit, darunter Leistung und Puffer
         int tx = ControllerMenu.FUEL_X + 20;
         ItemStack fuel = menu.slots.get(ControllerBlockEntity.SLOT_FUEL).getItem();
         ItemStack stab = menu.slots.get(ControllerBlockEntity.SLOT_STAB).getItem();
-        g.drawString(font, Component.translatable("gui.cosmiccore.fuel_label"), tx, ControllerMenu.FUEL_Y, HEAD, false);
-        g.drawString(font, fuel.getCount() + " \u00B7 " + PortStation.duration(menu.fuelSeconds()), tx, ControllerMenu.FUEL_Y + 10, 0xFFFFC070, false);
-        g.drawString(font, Component.translatable("gui.cosmiccore.stab_label"), tx, ControllerMenu.STAB_Y, HEAD, false);
-        g.drawString(font, stab.getCount() + " \u00B7 " + PortStation.duration(menu.stabSeconds()), tx, ControllerMenu.STAB_Y + 10, 0xFF9AD8FF, false);
+        g.text(font, Component.translatable("gui.cosmiccore.fuel_label"), tx, ControllerMenu.FUEL_Y, HEAD, false);
+        g.text(font, fuel.getCount() + " \u00B7 " + PortStation.duration(menu.fuelSeconds()), tx, ControllerMenu.FUEL_Y + 10, 0xFFFFC070, false);
+        g.text(font, Component.translatable("gui.cosmiccore.stab_label"), tx, ControllerMenu.STAB_Y, HEAD, false);
+        g.text(font, stab.getCount() + " \u00B7 " + PortStation.duration(menu.stabSeconds()), tx, ControllerMenu.STAB_Y + 10, 0xFF9AD8FF, false);
         int cx0 = CORE_X + 1 + PAD, cx1 = CORE_X + CORE_W - 1 - PAD;
         int oy = ControllerMenu.STAB_Y + 25;
         g.fill(cx0, oy - 3, cx1, oy - 2, 0x663A2468);
         String out = PortStation.compact(menu.output()) + " RF/t";
-        g.drawString(font, Component.translatable("gui.cosmiccore.out_label"), cx0, oy, HEAD, false);
-        g.drawString(font, out, cx1 - font.width(out), oy, 0xFF9AE8FF, false);
+        g.text(font, Component.translatable("gui.cosmiccore.out_label"), cx0, oy, HEAD, false);
+        g.text(font, out, cx1 - font.width(out), oy, 0xFF9AE8FF, false);
         String buf = PortStation.compact(menu.energy()) + "/" + PortStation.compact(menu.capacity());
-        g.drawString(font, Component.translatable("gui.cosmiccore.buf_label"), cx0, oy + 10, HEAD, false);
-        g.drawString(font, buf, cx1 - font.width(buf), oy + 10, 0xFFC8B8F0, false);
+        g.text(font, Component.translatable("gui.cosmiccore.buf_label"), cx0, oy + 10, HEAD, false);
+        g.text(font, buf, cx1 - font.width(buf), oy + 10, 0xFFC8B8F0, false);
 
-        g.drawString(font, Component.translatable("gui.cosmiccore.instability", String.format("%.1f", menu.instability())), INFO_X, ly, instColor(), false);
+        g.text(font, Component.translatable("gui.cosmiccore.instability", String.format("%.1f", menu.instability())), INFO_X, ly, instColor(), false);
         ly += 11;
-        g.drawString(font, Component.translatable("gui.cosmiccore.cosmic", String.format("%.2f", menu.cosmic())), INFO_X, ly, 0xFFE0A8FF, false);
+        g.text(font, Component.translatable("gui.cosmiccore.cosmic", String.format("%.2f", menu.cosmic())), INFO_X, ly, 0xFFE0A8FF, false);
         ly += 11;
         boolean sky = menu.flag(ControllerMenu.F_SKY);
         String skyKey = !sky ? "gui.cosmiccore.sky_off" : menu.flag(ControllerMenu.F_FUNNEL) ? "gui.cosmiccore.funnel_on" : "gui.cosmiccore.sky_on";
-        g.drawString(font, Component.translatable(skyKey), INFO_X, ly,
+        g.text(font, Component.translatable(skyKey), INFO_X, ly,
                 sky ? 0xFF80FFD0 : 0xFF807090, false);
         ly += 11;
         if (menu.flag(ControllerMenu.F_LASER)) {
-            g.drawString(font, Component.translatable("gui.cosmiccore.laser_on"), INFO_X, ly, 0xFF80E8FF, false);
+            g.text(font, Component.translatable("gui.cosmiccore.laser_on"), INFO_X, ly, 0xFF80E8FF, false);
         } else {
-            g.drawString(font, Component.translatable("gui.cosmiccore.size", menu.size(), menu.size(), menu.size()), INFO_X, ly, 0xFF908AA8, false);
+            g.text(font, Component.translatable("gui.cosmiccore.size", menu.size(), menu.size(), menu.size()), INFO_X, ly, 0xFF908AA8, false);
         }
 
-        g.drawString(font, Component.translatable("gui.cosmiccore.scale"), COL_A, CTRL_Y + 1 + PAD, HEAD, false);
-        g.drawString(font, Component.translatable("gui.cosmiccore.controls"), COL_B, CTRL_Y + 1 + PAD, HEAD, false);
-        g.drawString(font, Component.translatable("gui.cosmiccore.overdrive"), COL_A, OD_Y + 4, menu.overdrive() > 0 ? 0xFFFFB040 : HEAD, false);
+        g.text(font, Component.translatable("gui.cosmiccore.scale"), COL_A, CTRL_Y + 1 + PAD, HEAD, false);
+        g.text(font, Component.translatable("gui.cosmiccore.controls"), COL_B, CTRL_Y + 1 + PAD, HEAD, false);
+        g.text(font, Component.translatable("gui.cosmiccore.overdrive"), COL_A, OD_Y + 4, menu.overdrive() > 0 ? 0xFFFFB040 : HEAD, false);
     }
 
     // ------------------------------------------------------------------ Groessenwahl
 
-    private void renderSizeSelection(GuiGraphics g, int x, int y, float t) {
+    private void renderSizeSelection(GuiGraphicsExtractor g, int x, int y, float t) {
         // Markierung des gewaehlten Reiters
         int ty = y + TAB_Y + selected * TAB_STEP;
         int glowCol = 0xFF000000 | (0xA060FF);
@@ -577,7 +574,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         drawPanel(g, x + VIEW_X, y + BLOCKS_Y, VIEW_W, BLOCKS_H);
         // Freischalt-Item der gewaehlten Groesse in der Info-Karte
         ItemStack key = new ItemStack(ReactorSize.values()[selected].unlockItem());
-        g.renderItem(key, x + TAB_X + specTab(), y + SIZE_INFO_Y + SPEC_KEY_Y - 4);
+        g.item(key, x + TAB_X + specTab(), y + SIZE_INFO_Y + SPEC_KEY_Y - 4);
         // Vorschaufenster
         g.fill(x + VIEW_X - 1, y + VIEW_Y - 1, x + VIEW_X + VIEW_W + 1, y + VIEW_Y + VIEW_H + 1, PANEL_BORDER);
         g.fillGradient(x + VIEW_X, y + VIEW_Y, x + VIEW_X + VIEW_W, y + VIEW_Y + VIEW_H, 0xFF120A26, 0xFF05030C);
@@ -592,8 +589,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         for (int i = 0; i < icons.size(); i++) {
             int ix = x + iconX(i, icons.size()) - blocksScroll, iy = y + ICON_Y;
             drawSlotBox(g, ix, iy, 0xFF2E2050);
-            g.renderItem(icons.get(i), ix, iy);
-            g.renderItemDecorations(font, icons.get(i), ix, iy);
+            g.item(icons.get(i), ix, iy);
+            g.itemDecorations(font, icons.get(i), ix, iy);
         }
         g.disableScissor();
         if (maxScroll > 0) {
@@ -656,7 +653,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /** Dreht die echte Struktur als 3D-Modell im Vorschaufenster (mit der Maus ziehbar). */
-    private void renderStructure(GuiGraphics g, ReactorSize size, int cx, int cy, float t) {
+    private void renderStructure(GuiGraphicsExtractor g, ReactorSize size, int cx, int cy, float t) {
         StructurePreview.render(g, size, cx, cy,
                 new int[]{leftPos + VIEW_X, topPos + VIEW_Y, leftPos + VIEW_X + VIEW_W, topPos + VIEW_Y + VIEW_H},
                 128.0F, t * 0.8F + 30.0F + dragYaw, dragPitch, withFunnel, withLasers);
@@ -698,9 +695,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /** Kennwert-Zeile: Bezeichnung gedimmt links, Wert an der Tabulatorkante. */
-    private void spec(GuiGraphics g, int ix, int iy, String key, String value, int color) {
-        g.drawString(font, Component.translatable(key), ix, iy, 0xFF908AA8, false);
-        g.drawString(font, value, ix + specTab(), iy, color, false);
+    private void spec(GuiGraphicsExtractor g, int ix, int iy, String key, String value, int color) {
+        g.text(font, Component.translatable(key), ix, iy, 0xFF908AA8, false);
+        g.text(font, value, ix + specTab(), iy, color, false);
     }
 
     private Component statusLine() {
@@ -748,9 +745,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // ------------------------------------------------------------------ Tooltips
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
-        renderTooltip(g, mouseX, mouseY);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
         if (!menu.sizeChosen()) {
             List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers);
             for (int i = 0; i < icons.size(); i++) {

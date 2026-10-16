@@ -383,7 +383,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         boolean running = formed && enabled && collapseCooldown <= 0;
         if (!running && (id == ControllerMenu.BTN_SCALE_DOWN || id == ControllerMenu.BTN_SCALE_UP
                 || id == ControllerMenu.BTN_OVERDRIVE_UP || id == ControllerMenu.BTN_OVERDRIVE_DOWN)) {
-            player.displayClientMessage(Component.translatable("message.cosmiccore.not_running").withStyle(ChatFormatting.YELLOW), true);
+            player.sendOverlayMessage(Component.translatable("message.cosmiccore.not_running").withStyle(ChatFormatting.YELLOW));
             return false;
         }
         switch (id) {
@@ -394,13 +394,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                     // naechste Stufe dauerhaft freischalten: kostet einmalig das Item der Baugroesse
                     ItemStack key = new ItemStack(size.unlockItem());
                     if (!player.getAbilities().instabuild && !consumeOne(player, size.unlockItem())) {
-                        player.displayClientMessage(Component.translatable("message.cosmiccore.unlock.missing",
-                                key.getHoverName(), scale + 1).withStyle(ChatFormatting.RED), true);
+                        player.sendOverlayMessage(Component.translatable("message.cosmiccore.unlock.missing",
+                                key.getHoverName(), scale + 1).withStyle(ChatFormatting.RED));
                         return false;
                     }
                     unlockedScale = scale + 1;
-                    player.displayClientMessage(Component.translatable("message.cosmiccore.unlock.done", unlockedScale)
-                            .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+                    player.sendOverlayMessage(Component.translatable("message.cosmiccore.unlock.done", unlockedScale)
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
                     Vec3 uc = Vec3.atCenterOf(center(sl));
                     sl.playSound(null, uc.x, uc.y, uc.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1.5F, 0.8F + 0.08F * unlockedScale);
                     sl.playSound(null, uc.x, uc.y, uc.z, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.6F, 1.4F);
@@ -415,8 +415,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 if (overdrive >= size.maxOverdrive()) {
                     // Ultimate-Modus: nur der ultimative Kern nach Overdrive 3, kostet 4 Quasar-Overdrive-Partikel
                     if (!player.getAbilities().instabuild && !consumeItems(player, ModItems.QUASAR_OVERDRIVE_PARTICLE.get(), ULTIMATE_COST)) {
-                        player.displayClientMessage(Component.translatable("message.cosmiccore.ultimate.missing", ULTIMATE_COST)
-                                .withStyle(ChatFormatting.RED), true);
+                        player.sendOverlayMessage(Component.translatable("message.cosmiccore.ultimate.missing", ULTIMATE_COST)
+                                .withStyle(ChatFormatting.RED));
                         return false;
                     }
                     overdrive++;
@@ -431,8 +431,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                     break;
                 }
                 if (!player.getAbilities().instabuild && !consumeParticle(player)) {
-                    player.displayClientMessage(Component.translatable("message.cosmiccore.overdrive.missing")
-                            .withStyle(ChatFormatting.RED), true);
+                    player.sendOverlayMessage(Component.translatable("message.cosmiccore.overdrive.missing")
+                            .withStyle(ChatFormatting.RED));
                     return false;
                 }
                 overdrive++;
@@ -667,8 +667,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 Vec3 c = Vec3.atCenterOf(center(level));
                 level.playSound(null, c.x, c.y, c.z, SoundEvents.WARDEN_HEARTBEAT, SoundSource.BLOCKS, 3.0F, 1.2F);
                 for (Player pl : level.getEntitiesOfClass(Player.class, new AABB(c, c).inflate(32))) {
-                    pl.displayClientMessage(Component.translatable("message.cosmiccore.meltdown",
-                            (MELTDOWN_TICKS - meltdown) / 20 + 1).withStyle(ChatFormatting.RED, ChatFormatting.BOLD), true);
+                    pl.sendOverlayMessage(Component.translatable("message.cosmiccore.meltdown",
+                            (MELTDOWN_TICKS - meltdown) / 20 + 1).withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
                 }
             }
             if (meltdown >= MELTDOWN_TICKS) {
@@ -707,7 +707,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             }
             if (t % 47 == 0) {
                 level.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1.0F,
-                        0.5F + level.random.nextFloat() * 0.4F);
+                        0.5F + level.getRandom().nextFloat() * 0.4F);
             }
             // Alarm: Herzschlag wird schneller, je naeher der Kollaps ist
             if (instability >= ALARM_AT) {
@@ -963,13 +963,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     // ------------------------------------------------------------------ Kosmische Modifikatoren
 
     private static boolean isNight(ServerLevel level) {
-        long t = level.getDayTime() % 24000L;
+        long t = level.getOverworldClockTime() % 24000L;
         return t >= 13000L && t < 23000L;
     }
 
     /** Moonphase 0 = Vollmond, 4 = Neumond (gleiche Formel wie Vanilla). */
     private static int moonPhase(ServerLevel level) {
-        return (int) ((level.getDayTime() / 24000L) % 8L);
+        return (int) ((level.getOverworldClockTime() / 24000L) % 8L);
     }
 
     /**
@@ -1277,10 +1277,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     public void sendStatus(ServerLevel level, Player player) {
-        player.displayClientMessage(Component.translatable("message.cosmiccore.status.header")
-                .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD), false);
+        player.sendSystemMessage(Component.translatable("message.cosmiccore.status.header")
+                .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
         if (size == null) {
-            player.displayClientMessage(Component.translatable("message.cosmiccore.status.no_size").withStyle(ChatFormatting.GRAY), false);
+            player.sendSystemMessage(Component.translatable("message.cosmiccore.status.no_size").withStyle(ChatFormatting.GRAY));
             return;
         }
         revalidate(level);
@@ -1288,33 +1288,33 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (!formed) {
             CorePattern.Report r = lastReport;
             if (r == null) {
-                player.displayClientMessage(Component.translatable("message.cosmiccore.status.pending").withStyle(ChatFormatting.GRAY), false);
+                player.sendSystemMessage(Component.translatable("message.cosmiccore.status.pending").withStyle(ChatFormatting.GRAY));
                 return;
             }
-            player.displayClientMessage(Component.translatable("message.cosmiccore.status.invalid", r.mismatches())
-                    .withStyle(ChatFormatting.RED), false);
+            player.sendSystemMessage(Component.translatable("message.cosmiccore.status.invalid", r.mismatches())
+                    .withStyle(ChatFormatting.RED));
             BlockPos e = r.firstError();
             if (e != null) {
-                player.displayClientMessage(Component.translatable("message.cosmiccore.status.error_at",
-                        e.getX(), e.getY(), e.getZ(), r.expected()).withStyle(ChatFormatting.GRAY), false);
+                player.sendSystemMessage(Component.translatable("message.cosmiccore.status.error_at",
+                        e.getX(), e.getY(), e.getZ(), r.expected()).withStyle(ChatFormatting.GRAY));
                 level.sendParticles(ParticleTypes.END_ROD, e.getX() + 0.5, e.getY() + 0.5, e.getZ() + 0.5, 15, 0.3, 0.3, 0.3, 0.02);
             }
             return;
         }
 
-        player.displayClientMessage(Component.translatable("message.cosmiccore.status.formed").withStyle(ChatFormatting.GREEN), false);
-        player.displayClientMessage(Component.translatable("message.cosmiccore.status.energy",
-                fmt(energy), fmt(getCapacity())), false);
-        player.displayClientMessage(Component.translatable("message.cosmiccore.status.output",
-                fmt(lastOutput), Math.round(100f * resonance / CoreConfig.RAMP_UP_TICKS.get())), false);
+        player.sendSystemMessage(Component.translatable("message.cosmiccore.status.formed").withStyle(ChatFormatting.GREEN));
+        player.sendSystemMessage(Component.translatable("message.cosmiccore.status.energy",
+                fmt(energy), fmt(getCapacity())));
+        player.sendSystemMessage(Component.translatable("message.cosmiccore.status.output",
+                fmt(lastOutput), Math.round(100f * resonance / CoreConfig.RAMP_UP_TICKS.get())));
         ChatFormatting color = instability < 40f ? ChatFormatting.GREEN : instability < UNSTABLE_ON ? ChatFormatting.YELLOW : ChatFormatting.RED;
-        player.displayClientMessage(Component.translatable("message.cosmiccore.status.instability",
-                String.format("%.1f", instability)).withStyle(color), false);
-        player.displayClientMessage(Component.translatable("message.cosmiccore.status.cosmic",
-                String.format("%.2f", cosmicOutput(level))), false);
+        player.sendSystemMessage(Component.translatable("message.cosmiccore.status.instability",
+                String.format("%.1f", instability)).withStyle(color));
+        player.sendSystemMessage(Component.translatable("message.cosmiccore.status.cosmic",
+                String.format("%.2f", cosmicOutput(level))));
         if (collapseCooldown > 0) {
-            player.displayClientMessage(Component.translatable("message.cosmiccore.status.collapsed", collapseCooldown / 20)
-                    .withStyle(ChatFormatting.DARK_RED), false);
+            player.sendSystemMessage(Component.translatable("message.cosmiccore.status.collapsed", collapseCooldown / 20)
+                    .withStyle(ChatFormatting.DARK_RED));
         }
     }
 

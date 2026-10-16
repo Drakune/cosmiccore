@@ -1726,6 +1726,14 @@ def client_items():
             model.pop('parent')
             wjson(path, model)
             definition = {'model': {'type': 'minecraft:special', 'base': ref, 'model': {'type': f'{MOD}:cosmic_item'}}}
+            if item == 'guide_book':
+                # ab 26.1 kennt der Spezial-Renderer die Anzeige nicht mehr - das Modell waehlt sie aus (Buch klappt in der Hand auf)
+                hands = ['firstperson_righthand', 'firstperson_lefthand', 'thirdperson_righthand', 'thirdperson_lefthand']
+                definition = {'model': {'type': 'minecraft:select', 'property': 'minecraft:display_context',
+                                        'cases': [{'when': h, 'model': {'type': 'minecraft:special', 'base': ref,
+                                                                         'model': {'type': f'{MOD}:cosmic_item', 'context': h}}}
+                                                  for h in hands],
+                                        'fallback': definition['model']}}
         else:
             definition = {'model': {'type': 'minecraft:model', 'model': ref}}
         wjson(f'{ASSETS}/items/{item}.json', definition)

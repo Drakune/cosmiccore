@@ -48,13 +48,19 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
     private static final float[] ORANGE = {1.0F, 0.5F, 0.15F};
 
-    /** Ab 1.21.4: Spezial-Renderer, den die Item-Definitionen (assets/cosmiccore/items) per Typ cosmiccore:cosmic_item anfordern. */
-    public record Unbaked() implements SpecialModelRenderer.Unbaked {
-        public static final MapCodec<Unbaked> CODEC = MapCodec.unit(new Unbaked());
+    /**
+     * Ab 1.21.4: Spezial-Renderer, den die Item-Definitionen (assets/cosmiccore/items) per Typ cosmiccore:cosmic_item anfordern.
+     * Ab 26.1 kommt die Anzeige (Hand, Inventar ...) nicht mehr mit - die Definition des Handbuchs reicht sie als
+     * Feld "context" durch.
+     */
+    public record Unbaked(ItemDisplayContext context) implements SpecialModelRenderer.Unbaked<ItemStack> {
+        public static final MapCodec<Unbaked> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec(i -> i.group(
+                ItemDisplayContext.CODEC.optionalFieldOf("context", ItemDisplayContext.GUI).forGetter(Unbaked::context)
+        ).apply(i, Unbaked::new));
 
         @Override
-        public SpecialModelRenderer<?> bake(SpecialModelRenderer.BakingContext context) {
-            return new CosmicItemRenderer();
+        public SpecialModelRenderer<ItemStack> bake(SpecialModelRenderer.BakingContext bakingContext) {
+            return new CosmicItemRenderer(context);
         }
 
         @Override
@@ -63,17 +69,23 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         }
     }
 
+    private final ItemDisplayContext context;
+
+    public CosmicItemRenderer(ItemDisplayContext context) {
+        this.context = context;
+    }
+
     @Override
     public ItemStack extractArgument(ItemStack stack) {
         return stack;
     }
 
     @Override
-    public void submit(ItemStack stack, ItemDisplayContext ctx, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+    public void submit(ItemStack stack, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
                        int light, int overlay, boolean foil, int outlineColor) {
         if (stack == null) return;
         var buffers = new dr4kun3.cosmiccore.client.render.DeferredBuffers(collector);
-        renderByItem(stack, ctx, pose, buffers, light, overlay);
+        renderByItem(stack, context, pose, buffers, light, overlay);
         buffers.submit();
     }
 

@@ -18,7 +18,6 @@ import java.util.Map;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -258,7 +257,7 @@ public final class ReactorShellRenderer {
     private static void sectionText(Font font, Matrix4f tm, MultiBufferSource buffers, EdgePort ep, Params p) {
         String title = "\u25C6 " + tr(ep.energy() ? "console.cosmiccore.wing_energy" : "console.cosmiccore.wing_items") + " \u25C6";
         font.drawInBatch(title, (SECTION_PX - font.width(title)) / 2.0F, ROW_TITLE, 0xFF000000 | (ep.energy() ? 0x7AE8FF : 0xFFC070), false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         if (ep.energy()) {
             SingularityCoreBlockEntity core = p.core();
             long cap = ReactorSizeCapacity.capacity(core.getStructureSize());
@@ -275,9 +274,9 @@ public final class ReactorShellRenderer {
     }
 
     private static void secRow(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int color) {
-        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         font.drawInBatch(value, SECTION_PX - 6 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
     private static String tr(String key, Object... args) {
@@ -286,13 +285,13 @@ public final class ReactorShellRenderer {
 
     private static void center(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
         float x = (PANEL_PX - font.width(text)) / 2.0F;
-        font.drawInBatch(text, x, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(text, x, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
     private static void row(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int valueColor) {
-        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+        font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         font.drawInBatch(value, PANEL_PX - 6 - font.width(value), y, 0xFF000000 | valueColor, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
     /** Puffer-Kapazitaet je Baustufe (wie im Controller: ReactorSize.buffer()). */
@@ -575,8 +574,8 @@ public final class ReactorShellRenderer {
                 pose.mulPose(com.mojang.math.Axis.YP.rotation((float) Math.atan2(c.dx(), c.dz())));
                 pose.translate(-0.17F, -0.5F, -0.17F);
                 pose.scale(0.34F, 0.44F, 0.34F);
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose,
-                        buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                dr4kun3.cosmiccore.client.render.BlockQuads.render(ModBlocks.VOID_CASING.get().defaultBlockState(), pose,
+                        buffers, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, false);
                 pose.popPose();
                 // Portalfeld unter dem Controller
                 PortStation.portalCapsule(buffers, new Matrix4f(cm).translate(0, -0.495F, 0), 0.0F, 0.44F);
@@ -595,7 +594,6 @@ public final class ReactorShellRenderer {
 
         // Verwandlung: Kopien aller Strukturbloecke werden spiralfoermig in den Kern gesaugt (die echten Bloecke bleiben)
         if (!p.done()) {
-            var dispatcher = Minecraft.getInstance().getBlockRenderer();
             for (ShellCell c : cells(p.size())) {
                 float k = suck(p, c);
                 if (k >= 1.0F || !flies(p, c)) continue;
@@ -613,8 +611,8 @@ public final class ReactorShellRenderer {
                 if (s.is(ModBlocks.CONTROLLER.get()) || s.hasProperty(dr4kun3.cosmiccore.block.ModProperties.CONSOLE)) {
                     fly = s.setValue(dr4kun3.cosmiccore.block.ModProperties.PHASE, dr4kun3.cosmiccore.block.CorePhase.DORMANT);
                 }
-                dispatcher.renderSingleBlock(fly, pose, buffers, LightTexture.FULL_BRIGHT,
-                        OverlayTexture.NO_OVERLAY);
+                dr4kun3.cosmiccore.client.render.BlockQuads.render(fly, pose, buffers, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT,
+                        OverlayTexture.NO_OVERLAY, false);
                 pose.popPose();
             }
         }

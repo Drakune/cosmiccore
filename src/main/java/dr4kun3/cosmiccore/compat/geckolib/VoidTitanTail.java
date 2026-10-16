@@ -2,11 +2,11 @@ package dr4kun3.cosmiccore.compat.geckolib;
 
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.resources.Identifier;
-import software.bernie.geckolib.animatable.GeoAnimatable;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animatable.manager.AnimatableManager;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.model.GeoModel;
+import com.geckolib.util.GeckoLibUtil;
 
 /** Ein Schweifsegment des Titanen - unbewegtes Modell, die Entity gibt Lage und Groesse vor. */
 public class VoidTitanTail implements GeoAnimatable {
@@ -23,12 +23,12 @@ public class VoidTitanTail implements GeoAnimatable {
 
     public static class Model extends GeoModel<VoidTitanTail> {
         @Override
-        public Identifier getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+        public Identifier getModelResource(com.geckolib.renderer.base.GeoRenderState state) {
             return CosmicCore.id("void_titan_tail");
         }
 
         @Override
-        public Identifier getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+        public Identifier getTextureResource(com.geckolib.renderer.base.GeoRenderState state) {
             return CosmicCore.id("textures/entity/void_titan.png");
         }
 

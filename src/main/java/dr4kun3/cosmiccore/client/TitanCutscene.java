@@ -6,7 +6,7 @@ import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.entity.ModEntities;
 import dr4kun3.cosmiccore.entity.VoidTitanEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.ClientInput;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -673,7 +673,7 @@ public final class TitanCutscene {
     public static void onGui(RenderGuiEvent.Post event) {
         if (!active) return;
         Minecraft mc = Minecraft.getInstance();
-        GuiGraphics g = event.getGuiGraphics();
+        GuiGraphicsExtractor g = event.getGuiGraphics();
         float t = tick + event.getPartialTick().getGameTimeDeltaPartialTick(false);
         int w = g.guiWidth(), h = g.guiHeight();
         // Vignette
@@ -709,7 +709,7 @@ public final class TitanCutscene {
         subtitle(g, mc, t, RETURN + 6, ATMO - 4, "cutscene.cosmiccore.line6", w, h, bh);
         subtitle(g, mc, t, AFTER + 20, LENGTH - 24, "cutscene.cosmiccore.line7", w, h, bh);
         Component skip = Component.translatable("cutscene.cosmiccore.skip");
-        g.drawString(mc.font, skip, w - mc.font.width(skip) - 8, Math.max(4, bh / 2 - 4), 0x70B8A8D8, false);
+        g.text(mc.font, skip, w - mc.font.width(skip) - 8, Math.max(4, bh / 2 - 4), 0x70B8A8D8, false);
     }
 
     /** Glockenkurve: 0 vor a, 1 bei b, 0 ab c. */
@@ -718,13 +718,13 @@ public final class TitanCutscene {
         return t < b ? span(t, a, b) : 1.0F - span(t, b, c);
     }
 
-    private static void fade(GuiGraphics g, int w, int h, int rgb, float a) {
+    private static void fade(GuiGraphicsExtractor g, int w, int h, int rgb, float a) {
         if (a <= 0.003F) return;
         g.fill(0, 0, w, h, ((int) (Mth.clamp(a, 0, 1) * 255) << 24) | rgb);
     }
 
     /** Boss-Vorstellung wie bei grossen Endgegnern: Name gross, Beiname darunter, Zierlinien. */
-    private static void bossTitle(GuiGraphics g, Minecraft mc, float t, int w, int h) {
+    private static void bossTitle(GuiGraphicsExtractor g, Minecraft mc, float t, int w, int h) {
         float a = Math.min(span(t, ROAR + 8, ROAR + 22), 1.0F - span(t, CHARGE + 30, CHARGE + 45));
         if (a <= 0.02F) return;
         Component name = Component.translatable("cutscene.cosmiccore.boss_name");
@@ -735,7 +735,7 @@ public final class TitanCutscene {
         g.pose().translate(w / 2.0F, h * 0.24F);
         g.pose().scale(sc, sc);
         int nw = mc.font.width(name);
-        g.drawString(mc.font, name, -nw / 2, -4, (alpha << 24) | 0xE6D2FF, true);
+        g.text(mc.font, name, -nw / 2, -4, (alpha << 24) | 0xE6D2FF, true);
         g.pose().popMatrix();
         int lineY = (int) (h * 0.24F + 6 * sc);
         int half = (int) (nw * sc / 2 + 10);
@@ -745,11 +745,11 @@ public final class TitanCutscene {
         g.pose().pushMatrix();
         g.pose().translate(w / 2.0F, lineY + 6);
         g.pose().scale(1.4F, 1.4F);
-        g.drawString(mc.font, sub, -mc.font.width(sub) / 2, 0, (alpha << 24) | 0x9FE8FF, true);
+        g.text(mc.font, sub, -mc.font.width(sub) / 2, 0, (alpha << 24) | 0x9FE8FF, true);
         g.pose().popMatrix();
     }
 
-    private static void subtitle(GuiGraphics g, Minecraft mc, float t, float from, float to, String key, int w, int h, int bh) {
+    private static void subtitle(GuiGraphicsExtractor g, Minecraft mc, float t, float from, float to, String key, int w, int h, int bh) {
         if (t < from || t > to) return;
         float a = Math.min(span(t, from, from + 10), 1.0F - span(t, to - 10, to));
         if (a <= 0.02F) return;
@@ -759,7 +759,7 @@ public final class TitanCutscene {
         g.pose().pushMatrix();
         g.pose().translate(w / 2.0F, h - Math.max(bh, 20) / 2.0F - 4 * sc);
         g.pose().scale(sc, sc);
-        g.drawString(mc.font, c, -mc.font.width(c) / 2, 0, (alpha << 24) | 0xEDE6FF, true);
+        g.text(mc.font, c, -mc.font.width(c) / 2, 0, (alpha << 24) | 0xEDE6FF, true);
         g.pose().popMatrix();
     }
 

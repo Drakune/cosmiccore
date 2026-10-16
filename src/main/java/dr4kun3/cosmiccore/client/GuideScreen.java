@@ -11,7 +11,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.util.Util;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.PageButton;
@@ -31,7 +31,7 @@ public class GuideScreen extends Screen {
     private static final int PAPER = 0xFFF3EAD6, PAPER_EDGE = 0xFFE4D6B8, INK = 0xFF2A1A40, GOLD = 0xFFB8903A, COVER = 0xFF2A1450;
 
     private interface Page {
-        void render(GuiGraphics g, int x, int y, int mouseX, int mouseY, float t);
+        void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY, float t);
     }
 
     private record Chapter(String key, int page) {}
@@ -177,8 +177,8 @@ public class GuideScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
         if (openStart < 0) {
             openStart = Util.getMillis();
             if (minecraft != null) minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 0.7F));
@@ -201,11 +201,11 @@ public class GuideScreen extends Screen {
             }
         }
         // Knoepfe erst bei aufgeschlagenem Buch (ueber dem Buch gezeichnet)
-        for (var w : renderables) if (w instanceof net.minecraft.client.gui.components.AbstractWidget aw && aw.visible) aw.render(g, mouseX, mouseY, partialTick);
+        for (var w : renderables) if (w instanceof net.minecraft.client.gui.components.AbstractWidget aw && aw.visible) aw.extractRenderState(g, mouseX, mouseY, partialTick);
     }
 
     /** Oeffnen: geschlossen aus der Tiefe in die Mitte, dann klappt der Einband um den Buchruecken auf. */
-    private void renderOpening(GuiGraphics g, int x, int y, float spine, float o, int mouseX, int mouseY, float t) {
+    private void renderOpening(GuiGraphicsExtractor g, int x, int y, float spine, float o, int mouseX, int mouseY, float t) {
         float fly = smooth(o / 0.4F);              // 0..0.4: heranfliegen
         float open = smooth((o - 0.4F) / 0.6F);    // 0.4..1: aufklappen
         float scale = Mth.lerp(fly, 0.35F, 1.0F);
@@ -239,7 +239,7 @@ public class GuideScreen extends Screen {
     }
 
     /** Blaettern: das Blatt dreht sich um den Buchruecken (vorwaerts von rechts nach links, rueckwaerts umgekehrt). */
-    private void renderTurn(GuiGraphics g, int x, int y, float spine, float p, int mouseX, int mouseY, float t) {
+    private void renderTurn(GuiGraphicsExtractor g, int x, int y, float spine, float p, int mouseX, int mouseY, float t) {
         boolean fwd = spread > turnFrom;
         float e = smooth(p);
         float c = Mth.cos(e * Mth.PI);
@@ -279,7 +279,7 @@ public class GuideScreen extends Screen {
     }
 
     /** Zeichnet etwas zur Mitte hin gestaucht (Blatt im Drehen; factor 1 = flach, 0 = senkrecht). */
-    private void squeezed(GuiGraphics g, float spine, float factor, Runnable draw) {
+    private void squeezed(GuiGraphicsExtractor g, float spine, float factor, Runnable draw) {
         if (factor <= 0.01F) return;
         g.nextStratum(); // Blatt liegt ueber allem, was darunter auf den Seiten ist (auch Items und 3D-Vorschau)
         g.pose().pushMatrix();
@@ -290,7 +290,7 @@ public class GuideScreen extends Screen {
         g.pose().popMatrix();
     }
 
-    private void shade(GuiGraphics g, int x0, int x1, int y, float amount) {
+    private void shade(GuiGraphicsExtractor g, int x0, int x1, int y, float amount) {
         int a = (int) (110 * Mth.clamp(amount, 0, 1));
         if (a <= 2 || x1 <= x0) return;
         g.pose().pushMatrix();
@@ -299,26 +299,26 @@ public class GuideScreen extends Screen {
     }
 
     /** Einband um einen Bereich (Buchdeckel mit Goldkante). */
-    private void frame(GuiGraphics g, int x0, int x1, int y) {
+    private void frame(GuiGraphicsExtractor g, int x0, int x1, int y) {
         g.fill(x0 - 8, y - 8, x1 + 8, y + PH + 8, COVER);
         g.fill(x0 - 6, y - 6, x1 + 6, y + PH + 6, GOLD);
         g.fill(x0 - 5, y - 5, x1 + 5, y + PH + 5, COVER);
     }
 
     /** Linker Deckel, der beim Aufklappen mitwaechst. */
-    private void frameLeft(GuiGraphics g, float spine, float k, int y) {
+    private void frameLeft(GuiGraphicsExtractor g, float spine, float k, int y) {
         int x0 = (int) (spine - (PW + GAP / 2.0F) * k);
         g.fill(x0 - 8, y - 8, (int) spine, y + PH + 8, COVER);
         g.fill(x0 - 6, y - 6, (int) spine, y + PH + 6, GOLD);
         g.fill(x0 - 5, y - 5, (int) spine, y + PH + 5, COVER);
     }
 
-    private void spineLine(GuiGraphics g, float spine, int y) {
+    private void spineLine(GuiGraphicsExtractor g, float spine, int y) {
         g.fill((int) spine - 1, y, (int) spine + 1, y + PH, GOLD);
     }
 
     /** Vorderer Buchdeckel: Titel, Goldrahmen, Sternemblem. */
-    private void cover(GuiGraphics g, int px, int y) {
+    private void cover(GuiGraphicsExtractor g, int px, int y) {
         g.fill(px - GAP / 2, y - 8, px + PW + 8, y + PH + 8, COVER);
         g.fill(px + 2, y + 2, px + PW - 2, y + PH - 2, GOLD);
         g.fill(px + 3, y + 3, px + PW - 3, y + PH - 3, COVER);
@@ -333,13 +333,13 @@ public class GuideScreen extends Screen {
         List<FormattedCharSequence> lines = font.split(title, PW - 24);
         int ly = y + 118;
         for (FormattedCharSequence l : lines) {
-            g.drawString(font, l, cx - font.width(l) / 2, ly, GOLD, false);
+            g.text(font, l, cx - font.width(l) / 2, ly, GOLD, false);
             ly += 11;
         }
     }
 
     /** Eine Seite: Papier, Ecksterne, Inhalt und Seitenzahl. */
-    private void page(GuiGraphics g, int index, int px, int y, int mouseX, int mouseY, float t) {
+    private void page(GuiGraphicsExtractor g, int index, int px, int y, int mouseX, int mouseY, float t) {
         g.fillGradient(px, y, px + PW, y + PH, PAPER, PAPER_EDGE);
         for (int k = 0; k < 4; k++) {
             int sx = px + (k % 2 == 0 ? 6 : PW - 8), sy = y + (k < 2 ? 6 : PH - 8);
@@ -348,22 +348,22 @@ public class GuideScreen extends Screen {
         }
         if (index >= pages.size()) return;
         pages.get(index).render(g, px, y, mouseX, mouseY, t);
-        g.drawString(font, String.valueOf(index + 1), px + PW / 2 - 3, y + PH - 12, GOLD, false);
+        g.text(font, String.valueOf(index + 1), px + PW / 2 - 3, y + PH - 12, GOLD, false);
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderTransparentBackground(g);
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        extractTransparentBackground(g);
     }
 
     // ------------------------------------------------------------------ Seitentypen
 
-    private void title(GuiGraphics g, Component text, int x, int y) {
-        g.drawString(font, text, x + (PW - font.width(text)) / 2, y + 10, INK, false);
+    private void title(GuiGraphicsExtractor g, Component text, int x, int y) {
+        g.text(font, text, x + (PW - font.width(text)) / 2, y + 10, INK, false);
         g.fill(x + 16, y + 21, x + PW - 16, y + 22, GOLD);
     }
 
-    private void toc(GuiGraphics g, int x, int y, int mouseX, int mouseY, float t) {
+    private void toc(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY, float t) {
         title(g, Component.translatable("guide.cosmiccore.contents").withStyle(ChatFormatting.BOLD), x, y);
         int ly = y + 30;
         for (Chapter c : chapters) {
@@ -371,10 +371,10 @@ public class GuideScreen extends Screen {
             String num = String.valueOf(c.page() + 1);
             boolean hover = mouseX >= x + 10 && mouseX < x + PW - 10 && mouseY >= ly - 1 && mouseY < ly + 10;
             int col = hover ? 0xFF7A4AC0 : INK;
-            g.drawString(font, name, x + 12, ly, col, false);
+            g.text(font, name, x + 12, ly, col, false);
             int dotsEnd = x + PW - 14 - font.width(num);
             for (int dx = x + 16 + font.width(name); dx < dotsEnd - 2; dx += 4) g.fill(dx, ly + 7, dx + 1, ly + 8, 0x66000000);
-            g.drawString(font, num, x + PW - 12 - font.width(num), ly, col, false);
+            g.text(font, num, x + PW - 12 - font.width(num), ly, col, false);
             tocHits.add(new int[]{x + 10, ly - 1, x + PW - 10, ly + 10, c.page()});
             ly += 15;
         }
@@ -400,7 +400,7 @@ public class GuideScreen extends Screen {
             out[i] = (g, x, y, mouseX, mouseY, t) -> {
                 int ly = y + 10;
                 for (FormattedCharSequence line : part) {
-                    g.drawString(font, line, x + 10, ly, INK, false);
+                    g.text(font, line, x + 10, ly, INK, false);
                     ly += 10;
                 }
             };
@@ -419,12 +419,12 @@ public class GuideScreen extends Screen {
                 StructurePreview.render(g, size, (bx0 + bx1) / 2, (by0 + by1) / 2 + 4, new int[]{bx0, by0, bx1, by1}, 82.0F,
                         t * 0.8F + 30.0F + dragYaw, dragPitch, false, false);
             }
-            g.drawString(font, Component.translatable("guide.cosmiccore.levels", size.maxScale()), x + 10, y + 126, INK, false);
+            g.text(font, Component.translatable("guide.cosmiccore.levels", size.maxScale()), x + 10, y + 126, INK, false);
             List<ItemStack> icons = StructurePreview.requiredBlocks(size, false, false);
             for (int i = 0; i < icons.size(); i++) {
                 int ix = x + 10 + (i % 7) * 18, iy = y + 138 + (i / 7) * 18;
-                g.renderItem(icons.get(i), ix, iy);
-                g.renderItemDecorations(font, icons.get(i), ix, iy);
+                g.item(icons.get(i), ix, iy);
+                g.itemDecorations(font, icons.get(i), ix, iy);
                 if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {
                     g.setTooltipForNextFrame(font, icons.get(i).getHoverName(), mouseX, mouseY);
                 }
@@ -432,7 +432,7 @@ public class GuideScreen extends Screen {
         };
     }
 
-    private void fuels(GuiGraphics g, int x, int y, int mouseX, int mouseY, float t) {
+    private void fuels(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY, float t) {
         title(g, Component.translatable("guide.cosmiccore.chapter.fuels").withStyle(ChatFormatting.BOLD), x, y);
         int ly = y + 28;
         for (Item item : BuiltInRegistries.ITEM) {
@@ -440,14 +440,14 @@ public class GuideScreen extends Screen {
             CoreFuel f = ModDataMaps.fuel(st);
             if (f == null) continue;
             if (ly > y + PH - 30) break;
-            g.renderItem(st, x + 8, ly - 4);
+            g.item(st, x + 8, ly - 4);
             String line = f.power() + " RF/t · " + f.burnTime() / 20 + " s" + (f.heat() != 1.0F ? " · ♨" + String.format("%.1f", f.heat()) : "");
             // zu breite Zeilen (z. B. mit Hitze-Angabe) werden passend verkleinert statt ueber den Rand zu laufen
             float room = PW - 28 - 8, w = font.width(line), sc = Math.min(1.0F, room / w);
             g.pose().pushMatrix();
             g.pose().translate(x + 28, ly + (1.0F - sc) * 4.0F);
             g.pose().scale(sc, sc);
-            g.drawString(font, line, 0, 0, f.heat() > 1.0F ? 0xFF9A2A2A : INK, false);
+            g.text(font, line, 0, 0, f.heat() > 1.0F ? 0xFF9A2A2A : INK, false);
             g.pose().popMatrix();
             if (mouseX >= x + 8 && mouseX < x + PW - 8 && mouseY >= ly - 4 && mouseY < ly + 12) {
                 g.setTooltipForNextFrame(font, st.getHoverName(), mouseX, mouseY);
@@ -456,7 +456,7 @@ public class GuideScreen extends Screen {
         }
     }
 
-    private void stabilizers(GuiGraphics g, int x, int y, int mouseX, int mouseY, float t) {
+    private void stabilizers(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY, float t) {
         title(g, Component.translatable("guide.cosmiccore.stabilizers").withStyle(ChatFormatting.BOLD), x, y);
         int ly = y + 28;
         for (Item item : BuiltInRegistries.ITEM) {
@@ -464,8 +464,8 @@ public class GuideScreen extends Screen {
             CoreStabilizer s = ModDataMaps.stabilizer(st);
             if (s == null) continue;
             if (ly > y + 110) break;
-            g.renderItem(st, x + 8, ly - 4);
-            g.drawString(font, Component.translatable("guide.cosmiccore.cooling",
+            g.item(st, x + 8, ly - 4);
+            g.text(font, Component.translatable("guide.cosmiccore.cooling",
                     String.format("%.0f", ControllerBlockEntity.stabilizerPoints(s))), x + 28, ly, INK, false);
             if (mouseX >= x + 8 && mouseX < x + PW - 8 && mouseY >= ly - 4 && mouseY < ly + 12) {
                 g.setTooltipForNextFrame(font, st.getHoverName(), mouseX, mouseY);
@@ -475,7 +475,7 @@ public class GuideScreen extends Screen {
         List<FormattedCharSequence> lines = font.split(Component.translatable("guide.cosmiccore.stabilizer_note"), PW - 20);
         for (FormattedCharSequence line : lines) {
             ly += 10;
-            g.drawString(font, line, x + 10, ly, 0xFF5A4A70, false);
+            g.text(font, line, x + 10, ly, 0xFF5A4A70, false);
         }
     }
 

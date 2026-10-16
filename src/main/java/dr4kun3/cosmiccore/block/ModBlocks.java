@@ -12,21 +12,27 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(CosmicCore.MODID);
 
+    /** Ab 26.1 erwartet NeoForge die Eigenschaften als Lieferant. */
+    private static <B extends net.minecraft.world.level.block.Block> DeferredBlock<B> block(String name,
+            java.util.function.Function<BlockBehaviour.Properties, B> factory, BlockBehaviour.Properties properties) {
+        return BLOCKS.registerBlock(name, factory, () -> properties);
+    }
+
     // Alle Huellenbloecke sind noOcclusion: bei gebildeter Struktur ist ihr Modell ausgeblendet (die runde Kammer
     // wird gerendert). Wuerden sie Nachbarflaechen verdecken, saehe man durch die Welt.
-    public static final DeferredBlock<StructureBlock> VOID_CASING = BLOCKS.registerBlock("void_casing",
+    public static final DeferredBlock<StructureBlock> VOID_CASING = block("void_casing",
             StructureBlock::new, metal(MapColor.COLOR_BLACK, SoundType.NETHERITE_BLOCK, 2, 5, 5).noOcclusion());
 
-    public static final DeferredBlock<StructureBlock> RUNE_FRAME = BLOCKS.registerBlock("rune_frame",
+    public static final DeferredBlock<StructureBlock> RUNE_FRAME = block("rune_frame",
             StructureBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
 
-    public static final DeferredBlock<ResonatorBlock> RESONANCE_COIL = BLOCKS.registerBlock("resonance_coil",
+    public static final DeferredBlock<ResonatorBlock> RESONANCE_COIL = block("resonance_coil",
             ResonatorBlock::new, metal(MapColor.COLOR_CYAN, SoundType.COPPER, 5, 10, 10).noOcclusion());
 
-    public static final DeferredBlock<ResonatorBlock> FOCUS_CRYSTAL = BLOCKS.registerBlock("focus_crystal",
+    public static final DeferredBlock<ResonatorBlock> FOCUS_CRYSTAL = block("focus_crystal",
             ResonatorBlock::new, metal(MapColor.COLOR_MAGENTA, SoundType.AMETHYST, 8, 15, 15).noOcclusion());
 
-    public static final DeferredBlock<FocusGlassBlock> FOCUS_GLASS = BLOCKS.registerBlock("focus_glass",
+    public static final DeferredBlock<FocusGlassBlock> FOCUS_GLASS = block("focus_glass",
             FocusGlassBlock::new, BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE).strength(3.0F, 600.0F).sound(SoundType.GLASS)
                     .requiresCorrectToolForDrops().noOcclusion()
@@ -36,7 +42,7 @@ public final class ModBlocks {
                     .isViewBlocking((s, l, p) -> false)
                     .lightLevel(light(3, 6, 6)));
 
-    public static final DeferredBlock<SingularityCoreBlock> SINGULARITY_CORE = BLOCKS.registerBlock("singularity_core",
+    public static final DeferredBlock<SingularityCoreBlock> SINGULARITY_CORE = block("singularity_core",
             SingularityCoreBlock::new, BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK).strength(5.0F, 1200.0F).sound(SoundType.AMETHYST)
                     .requiresCorrectToolForDrops().noOcclusion()
@@ -44,21 +50,21 @@ public final class ModBlocks {
                     .isViewBlocking((s, l, p) -> false)
                     .lightLevel(light(10, 15, 15)));
 
-    public static final DeferredBlock<ControllerBlock> CONTROLLER = BLOCKS.registerBlock("controller",
+    public static final DeferredBlock<ControllerBlock> CONTROLLER = block("controller",
             ControllerBlock::new, metal(MapColor.COLOR_PURPLE, SoundType.NETHERITE_BLOCK, 6, 10, 10).noOcclusion());
 
-    public static final DeferredBlock<EnergyPortBlock> ENERGY_PORT = BLOCKS.registerBlock("energy_port",
+    public static final DeferredBlock<EnergyPortBlock> ENERGY_PORT = block("energy_port",
             EnergyPortBlock::new, metal(MapColor.COLOR_CYAN, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
 
-    public static final DeferredBlock<ItemPortBlock> ITEM_PORT = BLOCKS.registerBlock("item_port",
+    public static final DeferredBlock<ItemPortBlock> ITEM_PORT = block("item_port",
             ItemPortBlock::new, metal(MapColor.COLOR_MAGENTA, SoundType.NETHERITE_BLOCK, 4, 8, 8).noOcclusion());
 
-    public static final DeferredBlock<StarFunnelBlock> STAR_FUNNEL = BLOCKS.registerBlock("star_funnel",
+    public static final DeferredBlock<StarFunnelBlock> STAR_FUNNEL = block("star_funnel",
             StarFunnelBlock::new, BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE).strength(5.0F, 600.0F).sound(SoundType.AMETHYST)
                     .requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 7));
 
-    public static final DeferredBlock<CosmicLaserBlock> COSMIC_LASER = BLOCKS.registerBlock("cosmic_laser",
+    public static final DeferredBlock<CosmicLaserBlock> COSMIC_LASER = block("cosmic_laser",
             CosmicLaserBlock::new, BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_CYAN).strength(5.0F, 600.0F).sound(SoundType.NETHERITE_BLOCK)
                     .requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 5));

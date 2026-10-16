@@ -1,9 +1,59 @@
 {
   "model": {
-    "type": "minecraft:special",
-    "base": "cosmiccore:item/guide_book",
-    "model": {
-      "type": "cosmiccore:cosmic_item"
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": "firstperson_righthand",
+        "model": {
+          "type": "minecraft:special",
+          "base": "cosmiccore:item/guide_book",
+          "model": {
+            "type": "cosmiccore:cosmic_item",
+            "context": "firstperson_righthand"
+          }
+        }
+      },
+      {
+        "when": "firstperson_lefthand",
+        "model": {
+          "type": "minecraft:special",
+          "base": "cosmiccore:item/guide_book",
+          "model": {
+            "type": "cosmiccore:cosmic_item",
+            "context": "firstperson_lefthand"
+          }
+        }
+      },
+      {
+        "when": "thirdperson_righthand",
+        "model": {
+          "type": "minecraft:special",
+          "base": "cosmiccore:item/guide_book",
+          "model": {
+            "type": "cosmiccore:cosmic_item",
+            "context": "thirdperson_righthand"
+          }
+        }
+      },
+      {
+        "when": "thirdperson_lefthand",
+        "model": {
+          "type": "minecraft:special",
+          "base": "cosmiccore:item/guide_book",
+          "model": {
+            "type": "cosmiccore:cosmic_item",
+            "context": "thirdperson_lefthand"
+          }
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:special",
+      "base": "cosmiccore:item/guide_book",
+      "model": {
+        "type": "cosmiccore:cosmic_item"
+      }
     }
   }
 }

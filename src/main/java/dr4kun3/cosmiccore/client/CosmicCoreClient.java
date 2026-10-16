@@ -52,7 +52,7 @@ public final class CosmicCoreClient {
     }
 
     private static void registerBlockModel(net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event,
-                                           net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<net.minecraft.client.renderer.block.model.BlockStateModel> key) {
+                                           net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<net.minecraft.client.renderer.block.dispatch.BlockStateModel> key) {
         event.register(key, net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel.blockStateModel(PortRenderer.modelId(key)));
     }
 
