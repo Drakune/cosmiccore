@@ -3,7 +3,7 @@ package dr4kun3.cosmiccore.compat.geckolib;
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animatable.processing.AnimationState;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 
@@ -17,22 +17,30 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
     @Override
-    public ResourceLocation getModelResource(VoidTitan animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitan> renderer) {
-        return CosmicCore.id("geo/void_titan.geo.json");
+    public ResourceLocation getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+        return CosmicCore.id("void_titan");
     }
 
     @Override
-    public ResourceLocation getTextureResource(VoidTitan animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitan> renderer) {
+    public ResourceLocation getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(VoidTitan animatable) {
-        return CosmicCore.id("animations/void_titan.animation.json");
+        return CosmicCore.id("void_titan");
     }
 
+    /**
+     * Zustand des gerade gezeichneten Titanen. GeckoLib 5 reicht das Objekt nicht mehr an die Zusatzbewegungen
+     * weiter - der Renderer setzt es vor dem Zeichnen (es gibt immer nur einen Titanen gleichzeitig).
+     */
+    static VoidTitan current;
+
     @Override
-    public void setCustomAnimations(VoidTitan animatable, long instanceId, AnimationState<VoidTitan> state) {
+    public void setCustomAnimations(AnimationState<VoidTitan> state) {
+        VoidTitan animatable = current;
+        if (animatable == null) return;
         float t = (float) (animatable.ticks / 20.0);
         for (String name : TRACKED) getBone(name).ifPresent(b -> b.setTrackingMatrices(true));
         for (String side : new String[]{"l", "r"}) {

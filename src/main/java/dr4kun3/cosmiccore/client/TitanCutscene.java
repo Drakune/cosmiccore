@@ -132,7 +132,7 @@ public final class TitanCutscene {
         if (titan == null) return;
         titan.setId(-7_700_000); // clientseitige ID
         Vec3 p = world(TITAN_POS);
-        titan.moveTo(p.x, p.y, p.z, 180.0F, 0.0F); // Vorderseite zur Buehnenmitte
+        titan.snapTo(p.x, p.y, p.z, 180.0F, 0.0F); // Vorderseite zur Buehnenmitte
         titan.scriptTime = 0.0F;
         titan.updateParts();
         level.addEntity(titan);
@@ -761,8 +761,13 @@ public final class TitanCutscene {
     public static void onInput(MovementInputUpdateEvent event) {
         if (!active) return;
         ClientInput in = event.getInput();
-        in.forwardImpulse = 0;
-        in.leftImpulse = 0;
+        // Bewegungsvektor ist geschuetzt: per Reflexion auf null setzen (Feldname in Mojang-Namen, gilt auch im Spiel)
+        try {
+            var f = ClientInput.class.getDeclaredField("moveVector");
+            f.setAccessible(true);
+            f.set(in, net.minecraft.world.phys.Vec2.ZERO);
+        } catch (ReflectiveOperationException ignored) {
+        }
         in.keyPresses = net.minecraft.world.entity.player.Input.EMPTY;
     }
 

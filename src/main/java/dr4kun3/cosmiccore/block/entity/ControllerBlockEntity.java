@@ -749,7 +749,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         double radius = 4.0 + structure * 1.5;
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(radius))) {
             e.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 240));
-            e.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160));
+            e.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 160));
             if (damage > 0) e.hurt(level.damageSources().magic(), (float) damage);
         }
 
@@ -1230,6 +1230,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         revalidate(level);
     }
 
+    /** Controller wird entfernt: Struktur zuruecksetzen und Inventar fallen lassen (ab 1.21.5 statt Block#onRemove). */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level instanceof ServerLevel sl) onControllerRemoved(sl, state);
+    }
+
     /** Wird vom Block aufgerufen, bevor der Controller verschwindet. */
     public void onControllerRemoved(ServerLevel level, BlockState oldState) {
         CorePattern p = pattern();
@@ -1355,41 +1362,41 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         // Controller aus aelteren Versionen (ohne Groessenwahl) waren immer 7x7x7
-        size = tag.contains("size") ? ReactorSize.bySize(tag.getInt("size")) : ReactorSize.MEDIUM;
-        scale = Math.max(1, tag.getInt("scale"));
+        size = tag.contains("size") ? ReactorSize.bySize(tag.getIntOr("size", 0)) : ReactorSize.MEDIUM;
+        scale = Math.max(1, tag.getIntOr("scale", 0));
         // aeltere Speicherstaende: bereits erreichte Stufen gelten als freigeschaltet
-        unlockedScale = tag.contains("unlockedScale") ? Math.max(1, tag.getInt("unlockedScale")) : scale;
+        unlockedScale = tag.contains("unlockedScale") ? Math.max(1, tag.getIntOr("unlockedScale", 0)) : scale;
         if (size != null) scale = Math.min(scale, size.maxScale());
-        enabled = !tag.contains("enabled") || tag.getBoolean("enabled");
-        preview = tag.getBoolean("preview");
-        antiAsteroid = tag.getBoolean("antiAsteroid");
+        enabled = !tag.contains("enabled") || tag.getBooleanOr("enabled", false);
+        preview = tag.getBooleanOr("preview", false);
+        antiAsteroid = tag.getBooleanOr("antiAsteroid", false);
         if (tag.contains("colors")) {
-            colors = new dr4kun3.cosmiccore.color.CoreColors.Config(tag.getInt("colorMask"), tag.getIntArray("colors"));
+            colors = new dr4kun3.cosmiccore.color.CoreColors.Config(tag.getIntOr("colorMask", 0), tag.getIntArray("colors").orElse(new int[0]));
         } else if (tag.contains("colorScheme")) {
             // aelterer Stand: ein Schema-Index -> passende Vorgabe uebernehmen
             var presets = dr4kun3.cosmiccore.color.CoreColors.PRESETS;
-            colors = presets.get(Math.floorMod(tag.getInt("colorScheme"), presets.size())).config();
+            colors = presets.get(Math.floorMod(tag.getIntOr("colorScheme", 0), presets.size())).config();
         }
-        withFunnel = tag.getBoolean("withFunnel");
-        withLasers = tag.getBoolean("withLasers");
-        overdrive = Math.max(0, tag.getInt("overdrive"));
+        withFunnel = tag.getBooleanOr("withFunnel", false);
+        withLasers = tag.getBooleanOr("withLasers", false);
+        overdrive = Math.max(0, tag.getIntOr("overdrive", 0));
         if (size != null) overdrive = Math.min(overdrive, size.maxOverdriveTotal());
-        formed = tag.getBoolean("formed");
-        energy = tag.getLong("energy");
-        burnTime = tag.getInt("burnTime");
-        burnTotal = tag.getInt("burnTotal");
-        burnPower = tag.getInt("burnPower");
-        burnHeat = tag.contains("burnHeat") ? tag.getFloat("burnHeat") : 1.0f;
-        field = tag.getFloat("field");
-        fieldMax = tag.getFloat("fieldMax");
-        instability = tag.getFloat("instability");
-        resonance = tag.getInt("resonance");
-        collapseCooldown = tag.getInt("collapseCooldown");
-        meltdown = tag.getInt("meltdown");
-        awakened = tag.getBoolean("awakened");
-        phase = CorePhase.byName(tag.getString("phase"));
+        formed = tag.getBooleanOr("formed", false);
+        energy = tag.getLongOr("energy", 0L);
+        burnTime = tag.getIntOr("burnTime", 0);
+        burnTotal = tag.getIntOr("burnTotal", 0);
+        burnPower = tag.getIntOr("burnPower", 0);
+        burnHeat = tag.contains("burnHeat") ? tag.getFloatOr("burnHeat", 0.0F) : 1.0f;
+        field = tag.getFloatOr("field", 0.0F);
+        fieldMax = tag.getFloatOr("fieldMax", 0.0F);
+        instability = tag.getFloatOr("instability", 0.0F);
+        resonance = tag.getIntOr("resonance", 0);
+        collapseCooldown = tag.getIntOr("collapseCooldown", 0);
+        meltdown = tag.getIntOr("meltdown", 0);
+        awakened = tag.getBooleanOr("awakened", false);
+        phase = CorePhase.byName(tag.getStringOr("phase", ""));
         if (tag.contains("inventory")) {
-            inventory.deserializeNBT(registries, tag.getCompound("inventory"));
+            inventory.deserializeNBT(registries, tag.getCompoundOrEmpty("inventory"));
         }
     }
 
@@ -1530,6 +1537,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return n;
     }
 
+    /** Liest einen Item-Stapel aus NBT (leer, wenn ungueltig). */
+    private static ItemStack readStack(HolderLookup.Provider registries, net.minecraft.nbt.Tag tag) {
+        return ItemStack.OPTIONAL_CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag)
+                .result().orElse(ItemStack.EMPTY);
+    }
+
     public ItemStack getClientFuel() {
         return clientFuel;
     }
@@ -1544,20 +1557,20 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
-        size = ReactorSize.bySize(tag.getInt("size"));
-        preview = tag.getBoolean("preview");
-        withFunnel = tag.getBoolean("withFunnel");
-        withLasers = tag.getBoolean("withLasers");
-        formed = tag.getBoolean("formed");
-        clientFuel = tag.contains("fuel") ? ItemStack.parseOptional(registries, tag.getCompound("fuel")) : ItemStack.EMPTY;
-        clientStab = tag.contains("stab") ? ItemStack.parseOptional(registries, tag.getCompound("stab")) : ItemStack.EMPTY;
-        clientLoot = tag.getInt("loot");
-        fuelSeconds = tag.contains("fuelSec") ? tag.getInt("fuelSec") : TIME_NONE;
-        stabSeconds = tag.contains("stabSec") ? tag.getInt("stabSec") : TIME_NONE;
-        energyPort = tag.getBoolean("energyPort");
+        size = ReactorSize.bySize(tag.getIntOr("size", 0));
+        preview = tag.getBooleanOr("preview", false);
+        withFunnel = tag.getBooleanOr("withFunnel", false);
+        withLasers = tag.getBooleanOr("withLasers", false);
+        formed = tag.getBooleanOr("formed", false);
+        clientFuel = tag.contains("fuel") ? readStack(registries, tag.getCompoundOrEmpty("fuel")) : ItemStack.EMPTY;
+        clientStab = tag.contains("stab") ? readStack(registries, tag.getCompoundOrEmpty("stab")) : ItemStack.EMPTY;
+        clientLoot = tag.getIntOr("loot", 0);
+        fuelSeconds = tag.contains("fuelSec") ? tag.getIntOr("fuelSec", 0) : TIME_NONE;
+        stabSeconds = tag.contains("stabSec") ? tag.getIntOr("stabSec", 0) : TIME_NONE;
+        energyPort = tag.getBooleanOr("energyPort", false);
         clientLootItems.clear();
-        for (net.minecraft.nbt.Tag t : tag.getList("lootItems", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
-            ItemStack st = ItemStack.parseOptional(registries, (CompoundTag) t);
+        for (net.minecraft.nbt.Tag t : tag.getListOrEmpty("lootItems")) {
+            ItemStack st = readStack(registries, t);
             if (!st.isEmpty()) clientLootItems.add(st);
         }
     }

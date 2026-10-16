@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Erzeugt die Assets des Void-Titanen fuer die Cutscene des Ultimate-Modus (GeckoLib, optional):
-  assets/cosmiccore/geo/void_titan.geo.json              - Oberkoerper (Becken, Rumpf, Kopf, Arme, Fluegel)
+  assets/cosmiccore/geckolib/models/void_titan.geo.json              - Oberkoerper (Becken, Rumpf, Kopf, Arme, Fluegel)
   assets/cosmiccore/geo/void_titan_tail.geo.json         - ein Schweifsegment (wird je Teil der Entity gezeichnet)
   assets/cosmiccore/animations/void_titan.animation.json - Kinofilm-Animation (14 s, weiche Uebergaenge)
   assets/cosmiccore/textures/entity/void_titan.png        - EINE bemalte Textur fuer beide Modelle
@@ -324,16 +324,16 @@ def paint(regions):
 
 def main():
     global ATLAS
-    for d in ('geo', 'animations', os.path.join('textures', 'entity')):
+    for d in (os.path.join('geckolib', 'models'), os.path.join('geckolib', 'animations'), os.path.join('textures', 'entity')):
         os.makedirs(os.path.join(ASSETS, d), exist_ok=True)
     ATLAS = Atlas()
     body = body_model()
     tail = tail_model()
-    with open(os.path.join(ASSETS, 'geo', 'void_titan.geo.json'), 'w') as f:
+    with open(os.path.join(ASSETS, 'geckolib', 'models', 'void_titan.geo.json'), 'w') as f:
         json.dump(body, f, indent=1)
-    with open(os.path.join(ASSETS, 'geo', 'void_titan_tail.geo.json'), 'w') as f:
+    with open(os.path.join(ASSETS, 'geckolib', 'models', 'void_titan_tail.geo.json'), 'w') as f:
         json.dump(tail, f, indent=1)
-    with open(os.path.join(ASSETS, 'animations', 'void_titan.animation.json'), 'w') as f:
+    with open(os.path.join(ASSETS, 'geckolib', 'animations', 'void_titan.animation.json'), 'w') as f:
         json.dump(animation(), f, indent=1)
     paint(ATLAS.regions).save(os.path.join(ASSETS, 'textures', 'entity', 'void_titan.png'))
     old = os.path.join(ASSETS, 'textures', 'entity', 'void_titan_glowmask.png')

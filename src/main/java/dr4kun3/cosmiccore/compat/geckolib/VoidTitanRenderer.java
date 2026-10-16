@@ -67,6 +67,7 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
         // GeckoLib verschiebt Objekte nach dem Skalieren um (0.5, 0.51, 0.5) - hier ausgleichen
         float k = VoidTitanEntity.SCALE;
         pose.translate(-0.5F * k, -0.51F * k, -0.5F * k);
+        VoidTitanModel.current = state;
         body.render(pose, state, buffers, null, null, full, partialTick);
         pose.popPose();
         // Lage der Markierungs-Knochen fuer die Leuchteffekte der Cutscene (relativ zur Entity)

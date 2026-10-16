@@ -26,7 +26,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -576,7 +575,7 @@ public final class ReactorShellRenderer {
                 pose.translate(-0.17F, -0.5F, -0.17F);
                 pose.scale(0.34F, 0.44F, 0.34F);
                 Minecraft.getInstance().getBlockRenderer().renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose,
-                        buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                        buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                 pose.popPose();
                 // Portalfeld unter dem Controller
                 PortStation.portalCapsule(buffers, new Matrix4f(cm).translate(0, -0.495F, 0), 0.0F, 0.44F);
@@ -614,7 +613,7 @@ public final class ReactorShellRenderer {
                     fly = s.setValue(dr4kun3.cosmiccore.block.ModProperties.PHASE, dr4kun3.cosmiccore.block.CorePhase.DORMANT);
                 }
                 dispatcher.renderSingleBlock(fly, pose, buffers, LightTexture.FULL_BRIGHT,
-                        OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                        OverlayTexture.NO_OVERLAY);
                 pose.popPose();
             }
         }

@@ -22,8 +22,9 @@ public class OverdriveParticleItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.cosmiccore.overdrive.effect").withStyle(ChatFormatting.GOLD));
-        tooltip.add(Component.translatable("tooltip.cosmiccore.overdrive.limit").withStyle(ChatFormatting.GRAY));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, net.minecraft.world.item.component.TooltipDisplay display,
+                                java.util.function.Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("tooltip.cosmiccore.overdrive.effect").withStyle(ChatFormatting.GOLD));
+        tooltip.accept(Component.translatable("tooltip.cosmiccore.overdrive.limit").withStyle(ChatFormatting.GRAY));
     }
 }

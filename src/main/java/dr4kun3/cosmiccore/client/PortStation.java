@@ -28,7 +28,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -100,7 +99,7 @@ public final class PortStation {
         pose.translate(-0.14F, -0.5F, -0.14F);
         pose.scale(0.28F, 0.4F * grow, 0.28F);
         dispatcher.renderSingleBlock(ModBlocks.VOID_CASING.get().defaultBlockState(), pose, buffers, LightTexture.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                OverlayTexture.NO_OVERLAY);
         pose.popPose();
         // Anschlussknoten an jeder belegten Seite
         CorePhase phase = port.hasProperty(ModProperties.PHASE) ? port.getValue(ModProperties.PHASE) : CorePhase.FORMED;
@@ -113,8 +112,8 @@ public final class PortStation {
             pose.translate(c.x, c.y, c.z);
             pose.scale(0.36F * grow, 0.36F * grow, 0.36F * grow);
             pose.translate(-0.5F, -0.5F, -0.5F);
-            dispatcher.getModelRenderer().renderModel(pose.last(), buffers.getBuffer(RenderType.cutout()), port, model,
-                    1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, RenderType.cutout());
+            net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), buffers.getBuffer(RenderType.cutout()), model,
+                    1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         }
         Matrix4f base = pose.last().pose();

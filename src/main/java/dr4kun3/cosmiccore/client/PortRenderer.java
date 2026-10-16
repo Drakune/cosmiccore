@@ -17,12 +17,11 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
 
 /**
@@ -36,15 +35,21 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     public PortRenderer(BlockEntityRendererProvider.Context ctx) {}
 
     /** Plug-Modelle je Port und Phase (werden in CosmicCoreClient als Zusatzmodelle registriert). */
-    public static ResourceLocation plugModel(boolean energy, CorePhase phase) {
-        return CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_plug_"
-                + phase.getSerializedName());
+    public static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> plugModel(boolean energy, CorePhase phase) {
+        return key("block/" + (energy ? "energy_port" : "item_port") + "_plug_" + phase.getSerializedName());
     }
 
     /** Seitenteil der Steuerkonsole je Port und Phase (Port neben dem Controller, siehe Terminal). */
-    public static ResourceLocation terminalModel(boolean energy, CorePhase phase) {
-        return CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_terminal_"
-                + phase.getSerializedName());
+    public static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> terminalModel(boolean energy, CorePhase phase) {
+        return key("block/" + (energy ? "energy_port" : "item_port") + "_terminal_" + phase.getSerializedName());
+    }
+
+    /** Schluessel je Modell nur einmal anlegen (Registrierung und Abruf brauchen dieselbe Instanz). */
+    private static final java.util.Map<String, net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel>> KEYS =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key(String path) {
+        return KEYS.computeIfAbsent(path, p -> new net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<>(CosmicCore.id(p)));
     }
 
     /** Materialisieren 0..1 aus dem Kern des zugehoerigen Reaktors; unbekannt = eigener Zeitpunkt des Formens. */
@@ -66,7 +71,7 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     }
 
     @Override
-    public void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    public void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         BlockState state = be.getBlockState();

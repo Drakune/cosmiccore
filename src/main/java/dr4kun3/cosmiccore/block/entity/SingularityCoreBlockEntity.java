@@ -391,33 +391,33 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        primary = tag.getBoolean("primary");
-        fused = tag.getBoolean("fused");
-        awakened = tag.getBoolean("awakened");
+        primary = tag.getBooleanOr("primary", false);
+        fused = tag.getBooleanOr("fused", false);
+        awakened = tag.getBooleanOr("awakened", false);
         colors = tag.contains("colors")
-                ? new dr4kun3.cosmiccore.color.CoreColors.Config(tag.getInt("colorMask"), tag.getIntArray("colors"))
+                ? new dr4kun3.cosmiccore.color.CoreColors.Config(tag.getIntOr("colorMask", 0), tag.getIntArray("colors").orElse(new int[0]))
                 : dr4kun3.cosmiccore.color.CoreColors.DEFAULT;
-        if (tag.contains("structureSize")) structureSize = tag.getInt("structureSize");
-        scale = Math.max(1, tag.getInt("scale"));
-        maxScale = Math.max(1, tag.getInt("maxScale"));
-        instability = tag.getInt("instability");
-        skyLink = tag.getBoolean("skyLink");
-        cosmic = tag.contains("cosmic") ? tag.getInt("cosmic") : 100;
-        shield = tag.getInt("shield");
-        funnel = tag.getBoolean("funnel");
-        laserArray = tag.getBoolean("laserArray");
-        overdrive = tag.getInt("overdrive");
-        output = tag.getInt("output");
-        energyPct = tag.getInt("energyPct");
-        meltdown = tag.getInt("meltdown");
-        int target = tag.contains("laserTarget") ? tag.getInt("laserTarget") : -1;
+        if (tag.contains("structureSize")) structureSize = tag.getIntOr("structureSize", 0);
+        scale = Math.max(1, tag.getIntOr("scale", 0));
+        maxScale = Math.max(1, tag.getIntOr("maxScale", 0));
+        instability = tag.getIntOr("instability", 0);
+        skyLink = tag.getBooleanOr("skyLink", false);
+        cosmic = tag.contains("cosmic") ? tag.getIntOr("cosmic", 0) : 100;
+        shield = tag.getIntOr("shield", 0);
+        funnel = tag.getBooleanOr("funnel", false);
+        laserArray = tag.getBooleanOr("laserArray", false);
+        overdrive = tag.getIntOr("overdrive", 0);
+        output = tag.getIntOr("output", 0);
+        energyPct = tag.getIntOr("energyPct", 0);
+        meltdown = tag.getIntOr("meltdown", 0);
+        int target = tag.contains("laserTarget") ? tag.getIntOr("laserTarget", 0) : -1;
         if (target != laserTarget && level != null) targetSince = level.getGameTime(); // Aufladen beginnt
         laserTarget = target;
-        formStart = tag.contains("formStart") ? tag.getLong("formStart") : Long.MIN_VALUE;
-        deliverStart = tag.contains("deliverStart") ? tag.getLong("deliverStart") : Long.MIN_VALUE;
-        if (tag.contains("deliverSize")) deliverSize = tag.getFloat("deliverSize");
+        formStart = tag.contains("formStart") ? tag.getLongOr("formStart", 0L) : Long.MIN_VALUE;
+        deliverStart = tag.contains("deliverStart") ? tag.getLongOr("deliverStart", 0L) : Long.MIN_VALUE;
+        if (tag.contains("deliverSize")) deliverSize = tag.getFloatOr("deliverSize", 0.0F);
         deliverSource = tag.contains("deliverX")
-                ? new net.minecraft.world.phys.Vec3(tag.getDouble("deliverX"), tag.getDouble("deliverY"), tag.getDouble("deliverZ")) : null;
+                ? new net.minecraft.world.phys.Vec3(tag.getDoubleOr("deliverX", 0.0), tag.getDoubleOr("deliverY", 0.0), tag.getDoubleOr("deliverZ", 0.0)) : null;
     }
 
     private void writeVisuals(CompoundTag tag) {

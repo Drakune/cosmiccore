@@ -71,6 +71,13 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         return clientUsed;
     }
 
+    /** Beim Abbauen faellt das Lager heraus (ab 1.21.5 ueber die Block-Entity statt Block#onRemove). */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level != null) dropContents(level, pos);
+    }
+
     public void dropContents(Level level, BlockPos pos) {
         for (int i = 0; i < STORAGE_SLOTS; i++) {
             ItemStack st = storage.getStackInSlot(i);
@@ -108,8 +115,8 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        if (tag.contains("storage")) storage.deserializeNBT(registries, tag.getCompound("storage"));
-        if (tag.contains("used")) clientUsed = tag.getInt("used");
+        if (tag.contains("storage")) storage.deserializeNBT(registries, tag.getCompoundOrEmpty("storage"));
+        if (tag.contains("used")) clientUsed = tag.getIntOr("used", 0);
         syncedUsed = usedSlots();
     }
 

@@ -156,7 +156,7 @@ public class CosmicAsteroid extends Entity {
         if (pullStart == null && tickCount - lastHit > 40 && entityData.get(DATA_HARVEST) > 0) {
             entityData.set(DATA_HARVEST, Math.max(0, entityData.get(DATA_HARVEST) - 5));
         }
-        boolean day = level().dimension() == Level.OVERWORLD && level().isDay();
+        boolean day = level().dimension() == Level.OVERWORLD && level().isBrightOutside();
         // beschworene Asteroiden bleiben, bis sie abgeschossen (oder entladen) werden
         if (natural && (life > MAX_LIFE || (day && life > 40))) discard();
     }
@@ -241,7 +241,7 @@ public class CosmicAsteroid extends Entity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
-        natural = tag.getBoolean("natural");
+        natural = tag.getBooleanOr("natural", false);
     }
 
     @Override

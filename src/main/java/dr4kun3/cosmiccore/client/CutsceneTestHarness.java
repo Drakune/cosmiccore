@@ -44,17 +44,17 @@ public final class CutsceneTestHarness {
         int t = worldTicks;
         if (t == 20) {
             mc.options.hideGui = false;
-            mc.player.getInventory().selected = 0;
+            mc.player.getInventory().setSelectedSlot(0);
             server.execute(() -> {
                 var sp = server.getPlayerList().getPlayers().get(0);
-                sp.getInventory().selected = 0;
+                sp.getInventory().setSelectedSlot(0);
                 sp.getInventory().setItem(0, ItemStack.EMPTY);
                 sp.getInventory().setItem(1, new ItemStack(dr4kun3.cosmiccore.ModItems.GUIDE_BOOK.get()));
                 sp.setXRot(10);
             });
         }
-        if (t == 40) mc.player.getInventory().selected = 1; // Buch nehmen -> klappt auf
-        if (t == 40) server.execute(() -> server.getPlayerList().getPlayers().get(0).getInventory().selected = 1);
+        if (t == 40) mc.player.getInventory().setSelectedSlot(1); // Buch nehmen -> klappt auf
+        if (t == 40) server.execute(() -> server.getPlayerList().getPlayers().get(0).getInventory().setSelectedSlot(1));
         int[] shots = {41, 43, 45, 47, 50, 60, 70, 72, 74, 76, 78};
         for (int k = 0; k < shots.length; k++) {
             if (t == shots[k]) Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", k), mc.getMainRenderTarget(), msg -> {});

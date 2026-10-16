@@ -2,8 +2,8 @@ package dr4kun3.cosmiccore.compat.geckolib;
 
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animatable.manager.AnimatableManager;
+import software.bernie.geckolib.animatable.processing.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -18,7 +18,7 @@ public class VoidTitan implements GeoAnimatable {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "main", 0, state -> state.setAndContinue(cinematic ? CINEMATIC : IDLE)));
+        controllers.add(new AnimationController<VoidTitan>("main", 0, state -> state.setAndContinue(cinematic ? CINEMATIC : IDLE)));
     }
 
     @Override

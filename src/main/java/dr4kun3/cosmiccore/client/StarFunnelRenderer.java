@@ -103,7 +103,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
     }
 
     @Override
-    public void render(StarFunnelBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    public void render(StarFunnelBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         BlockState below = level.getBlockState(be.getBlockPos().below());

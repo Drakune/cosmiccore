@@ -122,13 +122,4 @@ public class ControllerBlock extends Block implements EntityBlock {
         }
         return InteractionResult.SUCCESS;
     }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && level instanceof ServerLevel sl
-                && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
-            be.onControllerRemoved(sl, state);
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
-    }
 }

@@ -19,14 +19,13 @@ import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.neoforge.client.model.data.ModelData;
 
 /**
  * Bauvorschau: Solange die Struktur nicht steht und die Vorschau aktiv ist, zeigt der Controller jeden fehlenden
@@ -52,7 +51,7 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
     }
 
     @Override
-    public void render(ControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    public void render(ControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();
         ReactorSize size = be.getSize();
         if (level == null || size == null || !be.isPreview() || be.isFormed()) return;
@@ -92,13 +91,13 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             }
             BlockState target = CorePattern.blockFor(cell);
             if (target == null) return;
-            BakedModel model = dispatcher.getBlockModel(target);
+            BlockStateModel model = dispatcher.getBlockModel(target);
             pose.pushPose();
             pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
             pose.scale(0.82F, 0.82F, 0.82F);
             pose.translate(-0.5, -0.5, -0.5);
-            dispatcher.getModelRenderer().renderModel(pose.last(), ghost, target, model, 1.0F, 1.0F, 1.0F,
-                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+            net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), ghost, model, 1.0F, 1.0F, 1.0F,
+                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         });
 
@@ -113,8 +112,8 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
                     BlockState funnel = ModBlocks.STAR_FUNNEL.get().defaultBlockState();
                     pose.pushPose();
                     pose.translate(top.getX() - origin.getX(), top.getY() - origin.getY(), top.getZ() - origin.getZ());
-                    dispatcher.getModelRenderer().renderModel(pose.last(), ghost, funnel, dispatcher.getBlockModel(funnel),
-                            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                    net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), ghost, dispatcher.getBlockModel(funnel),
+                            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                     pose.popPose();
                 }
             }
@@ -133,8 +132,8 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
                 }
                 pose.pushPose();
                 pose.translate(lp.getX() - origin.getX(), lp.getY() - origin.getY(), lp.getZ() - origin.getZ());
-                dispatcher.getModelRenderer().renderModel(pose.last(), ghost, laser, dispatcher.getBlockModel(laser),
-                        1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+                net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), ghost, dispatcher.getBlockModel(laser),
+                        1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                 pose.popPose();
             }
         }
@@ -190,13 +189,13 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
     }
 
     private static void ghost(BlockRenderDispatcher dispatcher, PoseStack pose, VertexConsumer vc, BlockPos origin, BlockPos pos, BlockState target) {
-        BakedModel model = dispatcher.getBlockModel(target);
+        BlockStateModel model = dispatcher.getBlockModel(target);
         pose.pushPose();
         pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
         pose.scale(0.82F, 0.82F, 0.82F);
         pose.translate(-0.5, -0.5, -0.5);
-        dispatcher.getModelRenderer().renderModel(pose.last(), vc, target, model, 1.0F, 1.0F, 1.0F,
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+        net.minecraft.client.renderer.block.ModelBlockRenderer.renderModel(pose.last(), vc, model, 1.0F, 1.0F, 1.0F,
+                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
         pose.popPose();
     }
 }

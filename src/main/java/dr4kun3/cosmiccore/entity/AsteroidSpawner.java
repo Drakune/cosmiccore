@@ -31,7 +31,7 @@ public final class AsteroidSpawner {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         if (!CoreConfig.ASTEROIDS.get() || level.getGameTime() % 100 != 0) return;
         boolean end = level.dimension() == Level.END;
-        boolean night = level.dimension() == Level.OVERWORLD && !level.isDay();
+        boolean night = level.dimension() == Level.OVERWORLD && !level.isBrightOutside();
         if (!end && !night) return;
 
         List<ControllerBlockEntity> reactors = new ArrayList<>();
@@ -82,7 +82,7 @@ public final class AsteroidSpawner {
         CosmicAsteroid a = ModEntities.ASTEROIDS.get(kind).get().create(level, net.minecraft.world.entity.EntitySpawnReason.EVENT);
         if (a == null || !level.isLoaded(BlockPos.containing(start))) return;
         a.markNatural();
-        a.moveTo(start.x, start.y, start.z, r.nextFloat() * 360, 0);
+        a.snapTo(start.x, start.y, start.z, r.nextFloat() * 360, 0);
         a.setDeltaMovement(vel);
         level.addFreshEntity(a);
     }

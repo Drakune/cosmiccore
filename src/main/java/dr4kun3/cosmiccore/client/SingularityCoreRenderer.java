@@ -77,7 +77,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
 
     @Override
     public void render(SingularityCoreBlockEntity be, float partialTick, PoseStack pose,
-                       MultiBufferSource buffers, int light, int overlay) {
+                       MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         CorePhase phase = be.getBlockState().getValue(ModProperties.PHASE);

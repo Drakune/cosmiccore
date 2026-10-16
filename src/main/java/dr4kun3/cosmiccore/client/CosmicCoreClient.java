@@ -41,13 +41,14 @@ public final class CosmicCoreClient {
 
     /** Plug-Modelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen. */
     @SubscribeEvent
-    public static void registerModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
+    public static void registerModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event) {
+        var baker = net.neoforged.neoforge.client.model.standalone.StandaloneModelBaker.blockStateModel();
         for (dr4kun3.cosmiccore.block.CorePhase phase : dr4kun3.cosmiccore.block.CorePhase.values()) {
             if (phase == dr4kun3.cosmiccore.block.CorePhase.DORMANT) continue;
-            event.register(PortRenderer.plugModel(true, phase));
-            event.register(PortRenderer.plugModel(false, phase));
-            event.register(PortRenderer.terminalModel(true, phase));
-            event.register(PortRenderer.terminalModel(false, phase));
+            event.register(PortRenderer.plugModel(true, phase), baker);
+            event.register(PortRenderer.plugModel(false, phase), baker);
+            event.register(PortRenderer.terminalModel(true, phase), baker);
+            event.register(PortRenderer.terminalModel(false, phase), baker);
         }
     }
 

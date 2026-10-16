@@ -20,7 +20,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.model.data.ModelData;
 
 /** Drehende 3D-Vorschau einer Reaktorstruktur im GUI (Groessenwahl und Handbuch) und die Liste benoetigter Bloecke. */
 public final class StructurePreview {
@@ -82,7 +81,7 @@ public final class StructurePreview {
     private static void block(BlockRenderDispatcher d, PoseStack ps, MultiBufferSource buffers, BlockState state, float x, float y, float z) {
         ps.pushPose();
         ps.translate(x, y, z);
-        d.renderSingleBlock(state, ps, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+        d.renderSingleBlock(state, ps, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
         ps.popPose();
     }
 

@@ -4,7 +4,7 @@ import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animatable.manager.AnimatableManager;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -27,18 +27,18 @@ public class VoidTitanTail implements GeoAnimatable {
 
     public static class Model extends GeoModel<VoidTitanTail> {
         @Override
-        public ResourceLocation getModelResource(VoidTitanTail animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitanTail> renderer) {
-            return CosmicCore.id("geo/void_titan_tail.geo.json");
+        public ResourceLocation getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+            return CosmicCore.id("void_titan_tail");
         }
 
         @Override
-        public ResourceLocation getTextureResource(VoidTitanTail animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitanTail> renderer) {
+        public ResourceLocation getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
             return CosmicCore.id("textures/entity/void_titan.png");
         }
 
         @Override
         public ResourceLocation getAnimationResource(VoidTitanTail animatable) {
-            return CosmicCore.id("animations/void_titan.animation.json");
+            return CosmicCore.id("void_titan");
         }
     }
 }

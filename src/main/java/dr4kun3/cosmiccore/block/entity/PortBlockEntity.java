@@ -98,6 +98,6 @@ public abstract class PortBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        controllerPos = tag.contains("controller") ? BlockPos.of(tag.getLong("controller")) : null;
+        controllerPos = tag.contains("controller") ? BlockPos.of(tag.getLongOr("controller", 0L)) : null;
     }
 }

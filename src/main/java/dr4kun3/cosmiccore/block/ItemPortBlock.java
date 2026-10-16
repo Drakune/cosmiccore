@@ -54,13 +54,4 @@ public class ItemPortBlock extends Block implements EntityBlock {
         }
         return net.minecraft.world.InteractionResult.SUCCESS;
     }
-
-    /** Beim Abbauen faellt das Lager heraus. */
-    @Override
-    protected void onRemove(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, BlockState newState, boolean moved) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity be) {
-            be.dropContents(level, pos);
-        }
-        super.onRemove(state, level, pos, newState, moved);
-    }
 }

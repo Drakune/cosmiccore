@@ -63,7 +63,7 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
     }
 
     @Override
-    public void render(ResonatorBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    public void render(ResonatorBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         CorePhase phase = be.getBlockState().getValue(ModProperties.PHASE);
