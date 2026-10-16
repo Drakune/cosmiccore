@@ -49,7 +49,12 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
             new java.util.concurrent.ConcurrentHashMap<>();
 
     private static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key(String path) {
-        return KEYS.computeIfAbsent(path, p -> new net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<>(CosmicCore.id(p)));
+        return KEYS.computeIfAbsent(path, p -> new net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<>(() -> CosmicCore.id(p).toString()));
+    }
+
+    /** Modell-Datei hinter einem Schluessel (fuer die Registrierung). */
+    public static net.minecraft.resources.ResourceLocation modelId(net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key) {
+        return net.minecraft.resources.ResourceLocation.parse(key.getName());
     }
 
     /** Materialisieren 0..1 aus dem Kern des zugehoerigen Reaktors; unbekannt = eigener Zeitpunkt des Formens. */

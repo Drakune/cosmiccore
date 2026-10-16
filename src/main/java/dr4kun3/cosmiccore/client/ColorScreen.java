@@ -86,7 +86,7 @@ public class ColorScreen extends Screen {
     private void setConfig(CoreColors.Config c) {
         config = c;
         if (codeBox != null && !codeBox.isFocused()) codeBox.setValue(CoreColors.encode(config));
-        PacketDistributor.sendToServer(SetCoreColorsPayload.of(pos, config));
+        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(SetCoreColorsPayload.of(pos, config));
     }
 
     private void loadHsv() {
@@ -166,7 +166,7 @@ public class ColorScreen extends Screen {
         // Code
         g.drawString(font, Component.translatable("gui.cosmiccore.colors.code"), x + M + 1 + PAD, y + CODE_Y + 1 + PAD, HEAD, false);
         g.drawString(font, codeMessage, x + W - M - 1 - PAD - font.width(codeMessage), y + CODE_Y + 1 + PAD, 0xFFFFFFFF, false);
-        if (hovered != null) g.renderTooltip(font, hovered, mouseX, mouseY);
+        if (hovered != null) g.setTooltipForNextFrame(font, hovered, mouseX, mouseY);
     }
 
     @Override

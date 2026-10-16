@@ -107,15 +107,16 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.put("storage", storage.serializeNBT(registries));
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
+        super.saveAdditional(tag);
+        storage.serialize(tag.child("storage"));
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.contains("storage")) storage.deserializeNBT(registries, tag.getCompoundOrEmpty("storage"));
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
+        if (tag.contains("storage")) storage.deserialize(input.childOrEmpty("storage"));
         if (tag.contains("used")) clientUsed = tag.getIntOr("used", 0);
         syncedUsed = usedSlots();
     }

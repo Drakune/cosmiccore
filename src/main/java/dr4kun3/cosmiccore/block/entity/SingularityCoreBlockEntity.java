@@ -383,14 +383,17 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     // ------------------------------------------------------------------ Persistenz / Sync
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        writeVisuals(tag);
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
+        super.saveAdditional(tag);
+        CompoundTag visuals = new CompoundTag();
+        writeVisuals(visuals);
+        dr4kun3.cosmiccore.data.NbtBridge.write(tag, visuals);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
         primary = tag.getBooleanOr("primary", false);
         fused = tag.getBooleanOr("fused", false);
         awakened = tag.getBooleanOr("awakened", false);

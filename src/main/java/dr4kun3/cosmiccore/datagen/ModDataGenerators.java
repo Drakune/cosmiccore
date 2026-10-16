@@ -17,7 +17,7 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
  * Datengenerierung ({@code ./gradlew runData}): Rezepte, Loot-Tables, Tags, und Data Maps landen in
  * src/generated/resources. Texturen, Modelle und Sprachdateien erzeugt weiterhin tools/generate_resources.py.
  */
-@EventBusSubscriber(modid = CosmicCore.MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = CosmicCore.MODID)
 public final class ModDataGenerators {
     @SubscribeEvent
     public static void gather(GatherDataEvent.Client event) {

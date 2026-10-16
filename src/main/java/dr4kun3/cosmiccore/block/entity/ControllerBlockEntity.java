@@ -1328,8 +1328,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
+        super.saveAdditional(tag);
         tag.putInt("size", size == null ? 0 : size.size());
         tag.putInt("scale", scale);
         tag.putInt("unlockedScale", unlockedScale);
@@ -1355,12 +1355,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putInt("meltdown", meltdown);
         tag.putBoolean("awakened", awakened);
         tag.putString("phase", phase.getSerializedName());
-        tag.put("inventory", inventory.serializeNBT(registries));
+        inventory.serialize(tag.child("inventory"));
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
         // Controller aus aelteren Versionen (ohne Groessenwahl) waren immer 7x7x7
         size = tag.contains("size") ? ReactorSize.bySize(tag.getIntOr("size", 0)) : ReactorSize.MEDIUM;
         scale = Math.max(1, tag.getIntOr("scale", 0));
@@ -1396,7 +1397,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         awakened = tag.getBooleanOr("awakened", false);
         phase = CorePhase.byName(tag.getStringOr("phase", ""));
         if (tag.contains("inventory")) {
-            inventory.deserializeNBT(registries, tag.getCompoundOrEmpty("inventory"));
+            inventory.deserialize(input.childOrEmpty("inventory"));
         }
     }
 
@@ -1409,8 +1410,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         tag.putBoolean("withFunnel", withFunnel);
         tag.putBoolean("withLasers", withLasers);
         tag.putBoolean("formed", formed);
-        if (!inventory.getStackInSlot(SLOT_FUEL).isEmpty()) tag.put("fuel", inventory.getStackInSlot(SLOT_FUEL).save(registries));
-        if (!inventory.getStackInSlot(SLOT_STAB).isEmpty()) tag.put("stab", inventory.getStackInSlot(SLOT_STAB).save(registries));
+        if (!inventory.getStackInSlot(SLOT_FUEL).isEmpty()) tag.put("fuel", writeStack(registries, inventory.getStackInSlot(SLOT_FUEL)));
+        if (!inventory.getStackInSlot(SLOT_STAB).isEmpty()) tag.put("stab", writeStack(registries, inventory.getStackInSlot(SLOT_STAB)));
         tag.putInt("loot", lootCount());
         tag.putInt("fuelSec", fuelSeconds);
         tag.putInt("stabSec", stabSeconds);
@@ -1418,7 +1419,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         net.minecraft.nbt.ListTag lootList = new net.minecraft.nbt.ListTag();
         for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) {
             ItemStack st = inventory.getStackInSlot(i);
-            if (!st.isEmpty()) lootList.add(st.save(registries));
+            if (!st.isEmpty()) lootList.add(writeStack(registries, st));
         }
         tag.put("lootItems", lootList);
         return tag;
@@ -1537,6 +1538,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return n;
     }
 
+    /** Schreibt einen Item-Stapel als NBT. */
+    private static net.minecraft.nbt.Tag writeStack(HolderLookup.Provider registries, ItemStack stack) {
+        return ItemStack.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), stack)
+                .result().orElseGet(CompoundTag::new);
+    }
+
     /** Liest einen Item-Stapel aus NBT (leer, wenn ungueltig). */
     private static ItemStack readStack(HolderLookup.Provider registries, net.minecraft.nbt.Tag tag) {
         return ItemStack.OPTIONAL_CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag)
@@ -1556,7 +1563,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    public void handleUpdateTag(net.minecraft.world.level.storage.ValueInput input) {
+        CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
+        HolderLookup.Provider registries = input.lookup();
         size = ReactorSize.bySize(tag.getIntOr("size", 0));
         preview = tag.getBooleanOr("preview", false);
         withFunnel = tag.getBooleanOr("withFunnel", false);
@@ -1576,8 +1585,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
-        handleUpdateTag(pkt.getTag(), registries);
+    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.world.level.storage.ValueInput input) {
+        handleUpdateTag(input);
     }
 
     @Override
@@ -1620,10 +1629,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
         /** Aeltere Speicherstaende hatten nur 2 Slots - die Groesse bleibt immer INVENTORY_SIZE. */
         @Override
-        public void deserializeNBT(HolderLookup.Provider registries, CompoundTag nbt) {
-            CompoundTag copy = nbt.copy();
-            copy.putInt("Size", INVENTORY_SIZE);
-            super.deserializeNBT(registries, copy);
+        public void deserialize(net.minecraft.world.level.storage.ValueInput input) {
+            setSize(INVENTORY_SIZE);
+            input.listOrEmpty("Items", net.minecraft.world.ItemStackWithSlot.CODEC).forEach(slot -> {
+                if (slot.isValidInContainer(INVENTORY_SIZE)) stacks.set(slot.slot(), slot.stack());
+            });
+            onLoad();
         }
 
         @Override

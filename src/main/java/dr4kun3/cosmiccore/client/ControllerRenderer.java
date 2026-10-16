@@ -41,7 +41,7 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
     }
 
     @Override
-    public boolean shouldRenderOffScreen(ControllerBlockEntity be) {
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 

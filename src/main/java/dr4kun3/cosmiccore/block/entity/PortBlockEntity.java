@@ -90,14 +90,15 @@ public abstract class PortBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
+        super.saveAdditional(tag);
         if (controllerPos != null) tag.putLong("controller", controllerPos.asLong());
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
         controllerPos = tag.contains("controller") ? BlockPos.of(tag.getLongOr("controller", 0L)) : null;
     }
 }

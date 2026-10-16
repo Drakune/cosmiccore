@@ -42,20 +42,30 @@ public final class CosmicCoreClient {
     /** Plug-Modelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen. */
     @SubscribeEvent
     public static void registerModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event) {
-        var baker = net.neoforged.neoforge.client.model.standalone.StandaloneModelBaker.blockStateModel();
         for (dr4kun3.cosmiccore.block.CorePhase phase : dr4kun3.cosmiccore.block.CorePhase.values()) {
             if (phase == dr4kun3.cosmiccore.block.CorePhase.DORMANT) continue;
-            event.register(PortRenderer.plugModel(true, phase), baker);
-            event.register(PortRenderer.plugModel(false, phase), baker);
-            event.register(PortRenderer.terminalModel(true, phase), baker);
-            event.register(PortRenderer.terminalModel(false, phase), baker);
+            registerBlockModel(event, PortRenderer.plugModel(true, phase));
+            registerBlockModel(event, PortRenderer.plugModel(false, phase));
+            registerBlockModel(event, PortRenderer.terminalModel(true, phase));
+            registerBlockModel(event, PortRenderer.terminalModel(false, phase));
         }
+    }
+
+    private static void registerBlockModel(net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event,
+                                           net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<net.minecraft.client.renderer.block.model.BlockStateModel> key) {
+        event.register(key, net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel.blockStateModel(PortRenderer.modelId(key)));
     }
 
     /**
      * Animierte 3D-Items (Sternenstaub, Brennstoffe, Overdrive-Partikel, Module, Handbuch): ein Spezial-Renderer,
      * den die Item-Definitionen in assets/cosmiccore/items als Typ cosmiccore:cosmic_item anfordern.
      */
+    /** 3D-Vorschau der Reaktorstruktur im GUI (Bild im Bild, ab Minecraft 1.21.6). */
+    @SubscribeEvent
+    public static void registerPipRenderers(net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent event) {
+        event.register(StructurePreview.State.class, StructurePreview.Renderer::new);
+    }
+
     @SubscribeEvent
     public static void registerSpecialRenderers(net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent event) {
         event.register(dr4kun3.cosmiccore.CosmicCore.id("cosmic_item"), CosmicItemRenderer.Unbaked.CODEC);

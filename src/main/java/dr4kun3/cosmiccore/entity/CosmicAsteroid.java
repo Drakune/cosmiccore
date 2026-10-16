@@ -240,12 +240,12 @@ public class CosmicAsteroid extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
         natural = tag.getBooleanOr("natural", false);
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
         tag.putBoolean("natural", natural);
     }
 }

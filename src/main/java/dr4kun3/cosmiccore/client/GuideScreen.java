@@ -211,11 +211,11 @@ public class GuideScreen extends Screen {
         float scale = Mth.lerp(fly, 0.35F, 1.0F);
         // geschlossen liegt das Buch mittig; beim Aufklappen rueckt es zur Doppelseite
         float shift = Mth.lerp(open, -(PW + GAP) / 2.0F, 0.0F);
-        g.pose().pushPose();
+        g.pose().pushMatrix();
         float cx = width / 2.0F, cy = height / 2.0F;
-        g.pose().translate(cx, cy + (1.0F - fly) * 40.0F, 0);
-        g.pose().scale(scale, scale, 1.0F);
-        g.pose().translate(-cx + shift, -cy, 0);
+        g.pose().translate(cx, cy + (1.0F - fly) * 40.0F);
+        g.pose().scale(scale, scale);
+        g.pose().translate(-cx + shift, -cy);
         // rechte Haelfte: Seitenblock mit Seite 2
         frame(g, (int) spine, x + PW * 2 + GAP, y);
         page(g, 1, x + PW + GAP, y, -1, -1, t);
@@ -235,7 +235,7 @@ public class GuideScreen extends Screen {
             shade(g, (int) (spine - PW * k), (int) spine, y, 1.0F - k);
         }
         spineLine(g, spine, y);
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     /** Blaettern: das Blatt dreht sich um den Buchruecken (vorwaerts von rechts nach links, rueckwaerts umgekehrt). */
@@ -271,38 +271,31 @@ public class GuideScreen extends Screen {
         int sw = (int) (18 * (1.0F - k));
         if (sw > 0) {
             int a = (int) (90 * (1.0F - k));
-            g.pose().pushPose();
-            g.pose().translate(0, 0, SHEET_Z + 10);
+            g.pose().pushMatrix();
             if (right) g.fillGradient(x1, y, x1 + sw, y + PH, a << 24, 0); // Kante wirft Schatten nach aussen
             else g.fillGradient(x0 - sw, y, x0, y + PH, 0, a << 24);
-            g.pose().popPose();
+            g.pose().popMatrix();
         }
     }
-
-    /**
-     * Ebene des umklappenden Blatts: ueber allem, was auf den Seiten darunter liegt - Item-Symbole (ca. 150-250) und die
-     * 3D-Vorschau der Multibloecke (um 400) duerfen nicht durch das Blatt scheinen.
-     */
-    private static final float SHEET_Z = 800.0F;
 
     /** Zeichnet etwas zur Mitte hin gestaucht (Blatt im Drehen; factor 1 = flach, 0 = senkrecht). */
     private void squeezed(GuiGraphics g, float spine, float factor, Runnable draw) {
         if (factor <= 0.01F) return;
-        g.pose().pushPose();
-        g.pose().translate(spine, 0, SHEET_Z);
-        g.pose().scale(factor, 1.0F, 1.0F);
-        g.pose().translate(-spine, 0, 0);
+        g.nextStratum(); // Blatt liegt ueber allem, was darunter auf den Seiten ist (auch Items und 3D-Vorschau)
+        g.pose().pushMatrix();
+        g.pose().translate(spine, 0);
+        g.pose().scale(factor, 1.0F);
+        g.pose().translate(-spine, 0);
         draw.run();
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     private void shade(GuiGraphics g, int x0, int x1, int y, float amount) {
         int a = (int) (110 * Mth.clamp(amount, 0, 1));
         if (a <= 2 || x1 <= x0) return;
-        g.pose().pushPose();
-        g.pose().translate(0, 0, SHEET_Z + 10);
+        g.pose().pushMatrix();
         g.fill(x0, y, x1, y + PH, a << 24);
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     /** Einband um einen Bereich (Buchdeckel mit Goldkante). */
@@ -433,7 +426,7 @@ public class GuideScreen extends Screen {
                 g.renderItem(icons.get(i), ix, iy);
                 g.renderItemDecorations(font, icons.get(i), ix, iy);
                 if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {
-                    g.renderTooltip(font, icons.get(i).getHoverName(), mouseX, mouseY);
+                    g.setTooltipForNextFrame(font, icons.get(i).getHoverName(), mouseX, mouseY);
                 }
             }
         };
@@ -451,13 +444,13 @@ public class GuideScreen extends Screen {
             String line = f.power() + " RF/t · " + f.burnTime() / 20 + " s" + (f.heat() != 1.0F ? " · ♨" + String.format("%.1f", f.heat()) : "");
             // zu breite Zeilen (z. B. mit Hitze-Angabe) werden passend verkleinert statt ueber den Rand zu laufen
             float room = PW - 28 - 8, w = font.width(line), sc = Math.min(1.0F, room / w);
-            g.pose().pushPose();
-            g.pose().translate(x + 28, ly + (1.0F - sc) * 4.0F, 0);
-            g.pose().scale(sc, sc, 1.0F);
+            g.pose().pushMatrix();
+            g.pose().translate(x + 28, ly + (1.0F - sc) * 4.0F);
+            g.pose().scale(sc, sc);
             g.drawString(font, line, 0, 0, f.heat() > 1.0F ? 0xFF9A2A2A : INK, false);
-            g.pose().popPose();
+            g.pose().popMatrix();
             if (mouseX >= x + 8 && mouseX < x + PW - 8 && mouseY >= ly - 4 && mouseY < ly + 12) {
-                g.renderTooltip(font, st.getHoverName(), mouseX, mouseY);
+                g.setTooltipForNextFrame(font, st.getHoverName(), mouseX, mouseY);
             }
             ly += 17;
         }
@@ -475,7 +468,7 @@ public class GuideScreen extends Screen {
             g.drawString(font, Component.translatable("guide.cosmiccore.cooling",
                     String.format("%.0f", ControllerBlockEntity.stabilizerPoints(s))), x + 28, ly, INK, false);
             if (mouseX >= x + 8 && mouseX < x + PW - 8 && mouseY >= ly - 4 && mouseY < ly + 12) {
-                g.renderTooltip(font, st.getHoverName(), mouseX, mouseY);
+                g.setTooltipForNextFrame(font, st.getHoverName(), mouseX, mouseY);
             }
             ly += 17;
         }

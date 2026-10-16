@@ -389,10 +389,17 @@ public final class TitanCutscene {
     // ------------------------------------------------------------------ Welt
 
     @SubscribeEvent
-    public static void onRenderLevel(RenderLevelStageEvent event) {
+    public static void onRenderSky(RenderLevelStageEvent.AfterSky event) {
+        onRenderLevel(event, true);
+    }
+
+    @SubscribeEvent
+    public static void onRenderWeather(RenderLevelStageEvent.AfterWeather event) {
+        onRenderLevel(event, false);
+    }
+
+    private static void onRenderLevel(RenderLevelStageEvent event, boolean sky) {
         if (!active) return;
-        boolean sky = event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY;
-        if (!sky && event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
         Minecraft mc = Minecraft.getInstance();
         float t = tick + event.getPartialTick().getGameTimeDeltaPartialTick(false);
         Vec3 cam = event.getCamera().getPosition();
@@ -647,7 +654,6 @@ public final class TitanCutscene {
         if (!active) return;
         event.setNearPlaneDistance(Math.max(event.getNearPlaneDistance(), 600.0F));
         event.setFarPlaneDistance(Math.max(event.getFarPlaneDistance(), 1400.0F));
-        event.setCanceled(true);
     }
 
     // ------------------------------------------------------------------ Bildschirm: Breitbild, Vignette, Titel, Untertitel
@@ -724,22 +730,22 @@ public final class TitanCutscene {
         Component sub = Component.translatable("cutscene.cosmiccore.boss_title");
         float sc = 3.2F * (1.0F + 0.06F * span(t, ROAR + 8, CHARGE + 45));
         int alpha = Math.max(8, (int) (255 * a));
-        g.pose().pushPose();
-        g.pose().translate(w / 2.0F, h * 0.24F, 0);
-        g.pose().scale(sc, sc, 1);
+        g.pose().pushMatrix();
+        g.pose().translate(w / 2.0F, h * 0.24F);
+        g.pose().scale(sc, sc);
         int nw = mc.font.width(name);
         g.drawString(mc.font, name, -nw / 2, -4, (alpha << 24) | 0xE6D2FF, true);
-        g.pose().popPose();
+        g.pose().popMatrix();
         int lineY = (int) (h * 0.24F + 6 * sc);
         int half = (int) (nw * sc / 2 + 10);
         int lw = (int) (60 * a);
         g.fill(w / 2 - half - lw, lineY, w / 2 - half, lineY + 1, (alpha << 24) | 0xB080FF);
         g.fill(w / 2 + half, lineY, w / 2 + half + lw, lineY + 1, (alpha << 24) | 0xB080FF);
-        g.pose().pushPose();
-        g.pose().translate(w / 2.0F, lineY + 6, 0);
-        g.pose().scale(1.4F, 1.4F, 1);
+        g.pose().pushMatrix();
+        g.pose().translate(w / 2.0F, lineY + 6);
+        g.pose().scale(1.4F, 1.4F);
         g.drawString(mc.font, sub, -mc.font.width(sub) / 2, 0, (alpha << 24) | 0x9FE8FF, true);
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     private static void subtitle(GuiGraphics g, Minecraft mc, float t, float from, float to, String key, int w, int h, int bh) {
@@ -749,11 +755,11 @@ public final class TitanCutscene {
         Component c = Component.translatable(key);
         int alpha = Math.max(8, (int) (255 * a));
         float sc = 1.3F;
-        g.pose().pushPose();
-        g.pose().translate(w / 2.0F, h - Math.max(bh, 20) / 2.0F - 4 * sc, 0);
-        g.pose().scale(sc, sc, 1);
+        g.pose().pushMatrix();
+        g.pose().translate(w / 2.0F, h - Math.max(bh, 20) / 2.0F - 4 * sc);
+        g.pose().scale(sc, sc);
         g.drawString(mc.font, c, -mc.font.width(c) / 2, 0, (alpha << 24) | 0xEDE6FF, true);
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     /** Spieler steht still, solange der Film laeuft. */

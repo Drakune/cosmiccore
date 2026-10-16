@@ -492,12 +492,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                 float tt = (System.currentTimeMillis() % 100000L) / 50.0F;
                 float glowA = 0.75F + 0.25F * Mth.sin(tt * 0.15F);
                 Component head = Component.translatable("gui.cosmiccore.ultimate_title").withStyle(ChatFormatting.BOLD);
-                g.pose().pushPose();
-                g.pose().translate(VIEW_X + VIEW_W / 2.0F, VIEW_Y + 7.0F, 200.0F);
-                g.pose().scale(1.5F, 1.5F, 1.0F);
+                g.pose().pushMatrix();
+                g.pose().translate(VIEW_X + VIEW_W / 2.0F, VIEW_Y + 7.0F);
+                g.pose().scale(1.5F, 1.5F);
                 int col = ((int) (glowA * 255) << 24) | 0xFFC040;
                 g.drawString(font, head, -font.width(head) / 2, 0, col, true);
-                g.pose().popPose();
+                g.pose().popMatrix();
                 Component sub = Component.translatable("gui.cosmiccore.ultimate_cost");
                 g.drawString(font, sub, VIEW_X + (VIEW_W - font.width(sub)) / 2, VIEW_Y + 22, 0xFFE0C080, true);
             }
@@ -751,13 +751,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                 int ix = leftPos + iconX(i, icons.size()) - blocksScroll, iy = topPos + ICON_Y;
                 if (mouseX < leftPos + BLOCKS_IN_X0 || mouseX >= leftPos + BLOCKS_IN_X1) break; // ausserhalb des sichtbaren Bereichs
                 if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {
-                    g.renderTooltip(font, icons.get(i).getHoverName(), mouseX, mouseY);
+                    g.setTooltipForNextFrame(font, icons.get(i).getHoverName(), mouseX, mouseY);
                 }
             }
             int kx = leftPos + TAB_X + specTab(), ky = topPos + SIZE_INFO_Y + SPEC_KEY_Y - 4;
             if (mouseX >= kx && mouseX < kx + 16 && mouseY >= ky && mouseY < ky + 16) {
                 ItemStack key = new ItemStack(ReactorSize.values()[selected].unlockItem());
-                g.renderComponentTooltip(font, List.of(key.getHoverName(),
+                g.setComponentTooltipForNextFrame(font, List.of(key.getHoverName(),
                         Component.translatable("gui.cosmiccore.info_unlock_tip").withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
             }
             return;
@@ -819,7 +819,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             tip.add(Component.translatable("gui.cosmiccore.tip.resonance"));
             tip.add(Component.literal(menu.resonance() + " %").withStyle(ChatFormatting.GRAY));
         }
-        if (!tip.isEmpty()) g.renderComponentTooltip(font, tip, mouseX, mouseY);
+        if (!tip.isEmpty()) g.setComponentTooltipForNextFrame(font, tip, mouseX, mouseY);
     }
 
     private static boolean in(int mx, int my, int x, int y, int w, int h) {

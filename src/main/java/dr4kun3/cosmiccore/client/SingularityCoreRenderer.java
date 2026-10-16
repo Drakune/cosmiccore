@@ -66,7 +66,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     }
 
     @Override
-    public boolean shouldRenderOffScreen(SingularityCoreBlockEntity be) {
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 

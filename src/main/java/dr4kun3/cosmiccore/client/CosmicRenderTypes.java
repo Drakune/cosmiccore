@@ -28,14 +28,14 @@ public final class CosmicRenderTypes {
     // ------------------------------------------------------------------ Pipelines (ab Minecraft 1.21.5)
 
     /** Additives Leuchten wie "lightning", ohne Tiefe zu schreiben und ohne Culling. */
-    private static final RenderPipeline GLOW_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_COLOR_FOG_SNIPPET)
+    private static final RenderPipeline GLOW_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/glow"))
             .withVertexShader("core/rendertype_lightning").withFragmentShader("core/rendertype_lightning")
             .withBlend(BlendFunction.LIGHTNING).withDepthWrite(false).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
     /** Schreibt nur Tiefe, nur Rueckseiten. */
-    private static final RenderPipeline DEPTH_BACK_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_SNIPPET)
+    private static final RenderPipeline DEPTH_BACK_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/depth_back"))
             .withVertexShader("core/position").withFragmentShader("core/position")
             .withColorWrite(false).withDepthWrite(true).withCull(true)
@@ -47,14 +47,14 @@ public final class CosmicRenderTypes {
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false).build();
 
     /** Deckende Farbe ohne Tiefentest. */
-    private static final RenderPipeline SPACE_SOLID_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_COLOR_SNIPPET)
+    private static final RenderPipeline SPACE_SOLID_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_solid"))
             .withVertexShader("core/position_color").withFragmentShader("core/position_color")
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
     /** Halbtransparente Farbe ohne Tiefentest. */
-    private static final RenderPipeline SPACE_TINT_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_COLOR_SNIPPET)
+    private static final RenderPipeline SPACE_TINT_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_tint"))
             .withVertexShader("core/position_color").withFragmentShader("core/position_color")
             .withBlend(BlendFunction.TRANSLUCENT)
@@ -62,7 +62,7 @@ public final class CosmicRenderTypes {
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
     /** Additives Licht ohne Tiefentest. */
-    private static final RenderPipeline SPACE_GLOW_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_COLOR_FOG_SNIPPET)
+    private static final RenderPipeline SPACE_GLOW_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_glow"))
             .withVertexShader("core/rendertype_lightning").withFragmentShader("core/rendertype_lightning")
             .withBlend(BlendFunction.LIGHTNING)
@@ -102,8 +102,8 @@ public final class CosmicRenderTypes {
     private static final RenderType SPACE_DOME = RenderType.create("cosmiccore_space_dome", 1536, SPACE_DOME_PIPELINE,
             RenderType.CompositeState.builder()
                     .setTextureState(RenderStateShard.MultiTextureStateShard.builder()
-                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_SKY_LOCATION, false, false)
-                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_PORTAL_LOCATION, false, false)
+                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_SKY_LOCATION, false)
+                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_PORTAL_LOCATION, false)
                             .build())
                     .createCompositeState(false));
 

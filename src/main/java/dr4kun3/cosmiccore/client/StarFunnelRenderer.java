@@ -42,7 +42,7 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
     }
 
     @Override
-    public boolean shouldRenderOffScreen(StarFunnelBlockEntity be) {
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 

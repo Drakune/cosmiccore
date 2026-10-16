@@ -57,15 +57,15 @@ public final class CutsceneTestHarness {
         if (t == 40) server.execute(() -> server.getPlayerList().getPlayers().get(0).getInventory().setSelectedSlot(1));
         int[] shots = {41, 43, 45, 47, 50, 60, 70, 72, 74, 76, 78};
         for (int k = 0; k < shots.length; k++) {
-            if (t == shots[k]) Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", k), mc.getMainRenderTarget(), msg -> {});
+            if (t == shots[k]) Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", k), mc.getMainRenderTarget(), 1, msg -> {});
         }
         if (t == 100) mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
-        if (t == 120) Screenshot.grab(mc.gameDirectory, "cutscene_b20.png", mc.getMainRenderTarget(), msg -> {});
+        if (t == 120) Screenshot.grab(mc.gameDirectory, "cutscene_b20.png", mc.getMainRenderTarget(), 1, msg -> {});
         if (t == 125) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
             mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
         }
-        if (t == 140) Screenshot.grab(mc.gameDirectory, "cutscene_b21.png", mc.getMainRenderTarget(), msg -> {});
+        if (t == 140) Screenshot.grab(mc.gameDirectory, "cutscene_b21.png", mc.getMainRenderTarget(), 1, msg -> {});
         if (t == 150) {
             finished = true;
             mc.stop();
@@ -149,7 +149,7 @@ public final class CutsceneTestHarness {
                 mc.resizeDisplay();
                 server.execute(() -> {
                     var sp = server.getPlayerList().getPlayers().get(0);
-                    var level = sp.serverLevel();
+                    var level = sp.level();
                     sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, java.util.Set.of(), 0, 20, true);
                     switch (step) {
                         case 0, 1 -> { if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at); }
@@ -164,12 +164,12 @@ public final class CutsceneTestHarness {
         }
         if (worldTicks >= 24 && worldTicks < 300 && worldTicks % 8 == 0) {
             mc.options.hideGui = true;
-            Screenshot.grab(mc.gameDirectory, String.format("cutscene_a%03d.png", worldTicks), mc.getMainRenderTarget(), msg -> {});
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_a%03d.png", worldTicks), mc.getMainRenderTarget(), 1, msg -> {});
         }
         if (worldTicks >= 330 && (worldTicks - 330) % 40 == 0) {
             int v = (worldTicks - 330) / 40;
             mc.options.hideGui = v < views.length;
-            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.getMainRenderTarget(), msg -> {});
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", v), mc.getMainRenderTarget(), 1, msg -> {});
             CosmicCore.LOGGER.info("[ConsoleTest] Bild {}: Bildschirm = {}", v, mc.screen == null ? "-" : mc.screen.getClass().getSimpleName());
             if (v >= views.length + 3) {
                 finished = true;
@@ -260,7 +260,7 @@ public final class CutsceneTestHarness {
             if (since <= window && now - guideLastShot >= step) {
                 guideLastShot = now;
                 Minecraft mc = Minecraft.getInstance();
-                Screenshot.grab(mc.gameDirectory, String.format("cutscene_%s%02d.png", guidePhase, guideShot++ % 100), mc.getMainRenderTarget(), msg -> {});
+                Screenshot.grab(mc.gameDirectory, String.format("cutscene_%s%02d.png", guidePhase, guideShot++ % 100), mc.getMainRenderTarget(), 1, msg -> {});
             }
             if (since > window) guideShot = 0;
             return;
@@ -270,7 +270,7 @@ public final class CutsceneTestHarness {
         if (t != lastShot && t % EVERY == 0) {
             lastShot = t;
             Minecraft mc = Minecraft.getInstance();
-            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", t), mc.getMainRenderTarget(), msg -> {});
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_%03d.png", t), mc.getMainRenderTarget(), 1, msg -> {});
         }
     }
 }

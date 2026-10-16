@@ -34,6 +34,12 @@ import org.joml.Matrix4f;
  * Zeichenraum ist der Einheitswuerfel (0..1), die Display-Transformationen stehen im Item-Modell.
  */
 public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
+    /** Umriss fuer Halterungen und Rahmen: der volle Item-Block. */
+    @Override
+    public void getExtents(java.util.Set<org.joml.Vector3f> extents) {
+        for (int c = 0; c < 8; c++) extents.add(new org.joml.Vector3f(c & 1, (c >> 1) & 1, (c >> 2) & 1));
+    }
+
     private static final float[] GOLD = {1.0F, 0.75F, 0.25F};
     private static final float[] VIOLET = {0.7F, 0.4F, 1.0F};
     private static final float[] CYAN = {0.45F, 0.9F, 1.0F};
