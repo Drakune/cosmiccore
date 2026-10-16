@@ -95,3 +95,6 @@ secrets.properties
 *.bak
 *.swp
 preview.png
+
+### Versionierte Builds (lokal, siehe CHANGELOG.md) ###
+releases/
