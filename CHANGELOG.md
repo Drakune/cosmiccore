@@ -8,6 +8,10 @@ Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 
 ## [1.2.1] - 2026-10-16
 
+### Hinzugefügt
+- Eigene Dateien für Minecraft 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2 und 26.3
+  (Zweige `mc/<Version>`). Welten lassen sich mitnehmen, gelagerte Items bleiben erhalten.
+
 ### Behoben
 - Handbuch: Beim Blättern schienen Item-Symbole und die 3D-Vorschau der Multiblöcke von der nächsten Seite schon
   durch das umklappende Blatt. Das Blatt verdeckt sie jetzt sauber.
@@ -45,6 +49,11 @@ Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 - Module (Effizienz, Stabilität, Anti-Asteroiden, Farbe) im ausklappbaren Modul-Tab.
 - Overdrive und Ultimate-Modus mit Void-Titan-Zwischensequenz (mit GeckoLib).
 - Kosmisches Handbuch, JEI-, EMI- und REI-Anbindung.
+
+## Entwicklungsstände 0.1.0 bis 0.34.3
+
+Die Stände vor der ersten Veröffentlichung (13. bis 15.10.2026) liegen im Zweig `history`, jeweils mit Tag und als
+Vorab-Release mit eigener Datei. MINOR steht dort für eine neue Funktion, PATCH für eine Korrektur.
 
 [1.2.1]: https://github.com/Drakune/cosmiccore/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/Drakune/cosmiccore/compare/v1.1.0...v1.2.0
