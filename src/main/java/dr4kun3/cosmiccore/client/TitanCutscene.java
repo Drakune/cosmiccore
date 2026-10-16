@@ -8,7 +8,7 @@ import dr4kun3.cosmiccore.entity.VoidTitanEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.Input;
+import net.minecraft.client.player.ClientInput;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
@@ -87,7 +87,7 @@ public final class TitanCutscene {
         core = corePos.immutable();
         tick = 0;
         skipHeld = 0;
-        camera = EntityType.MARKER.create(mc.level);
+        camera = EntityType.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
         if (camera == null) return;
         spawnTitan(mc.level);
         mc.setScreen(null);
@@ -128,7 +128,7 @@ public final class TitanCutscene {
     }
 
     private static void spawnTitan(ClientLevel level) {
-        titan = ModEntities.VOID_TITAN.get().create(level);
+        titan = ModEntities.VOID_TITAN.get().create(level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
         if (titan == null) return;
         titan.setId(-7_700_000); // clientseitige ID
         Vec3 p = world(TITAN_POS);
@@ -760,12 +760,10 @@ public final class TitanCutscene {
     @SubscribeEvent
     public static void onInput(MovementInputUpdateEvent event) {
         if (!active) return;
-        Input in = event.getInput();
+        ClientInput in = event.getInput();
         in.forwardImpulse = 0;
         in.leftImpulse = 0;
-        in.up = in.down = in.left = in.right = false;
-        in.jumping = false;
-        in.shiftKeyDown = false;
+        in.keyPresses = net.minecraft.world.entity.player.Input.EMPTY;
     }
 
     @SubscribeEvent

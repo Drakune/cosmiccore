@@ -27,7 +27,7 @@ public final class ModDataGenerators {
         CompletableFuture<HolderLookup.Provider> lookup = event.getLookupProvider();
         ExistingFileHelper files = event.getExistingFileHelper();
 
-        gen.addProvider(event.includeServer(), new ModRecipeProvider(out, lookup));
+        gen.addProvider(event.includeServer(), new ModRecipeProvider.Runner(out, lookup));
         gen.addProvider(event.includeServer(), new LootTableProvider(out, Set.of(), List.of(
                 new LootTableProvider.SubProviderEntry(ModBlockLoot::new, LootContextParamSets.BLOCK),
                 new LootTableProvider.SubProviderEntry(ModAsteroidLoot::new, LootContextParamSets.EMPTY)), lookup));

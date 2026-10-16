@@ -17,12 +17,12 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
     @Override
-    public ResourceLocation getModelResource(VoidTitan animatable) {
+    public ResourceLocation getModelResource(VoidTitan animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitan> renderer) {
         return CosmicCore.id("geo/void_titan.geo.json");
     }
 
     @Override
-    public ResourceLocation getTextureResource(VoidTitan animatable) {
+    public ResourceLocation getTextureResource(VoidTitan animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitan> renderer) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 

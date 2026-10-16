@@ -122,7 +122,7 @@ public final class CutsceneTestHarness {
             int v = worldTicks == 15 ? 0 : (worldTicks - 300) / 40;
             if (v < views.length) {
                 int[] view = views[v];
-                if (cam == null) cam = net.minecraft.world.entity.EntityType.MARKER.create(mc.level);
+                if (cam == null) cam = net.minecraft.world.entity.EntityType.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
                 double x = at.getX() + 0.5 + view[0], y = at.getY() + view[1] + 0.2, z = at.getZ() + 0.5 + view[2];
                 cam.setPos(x, y, z);
                 cam.xo = cam.xOld = x;
@@ -150,7 +150,7 @@ public final class CutsceneTestHarness {
                 server.execute(() -> {
                     var sp = server.getPlayerList().getPlayers().get(0);
                     var level = sp.serverLevel();
-                    sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, 0, 20);
+                    sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, java.util.Set.of(), 0, 20, true);
                     switch (step) {
                         case 0, 1 -> { if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at); }
                         default -> {}

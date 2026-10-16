@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "S": {
-      "item": "cosmiccore:star_dust"
-    }
+    "S": "cosmiccore:star_dust"
   },
   "pattern": [
     "SSS",

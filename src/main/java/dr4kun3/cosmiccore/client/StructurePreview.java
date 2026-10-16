@@ -47,7 +47,7 @@ public final class StructurePreview {
         ps.mulPose(Axis.XP.rotationDegrees(22.0F + pitch));
         ps.mulPose(Axis.YP.rotationDegrees(yaw));
         Lighting.setupFor3DItems();
-        MultiBufferSource.BufferSource buffers = g.bufferSource();
+        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         p.forEach(BlockPos.ZERO, Direction.SOUTH, (pos, cell) -> {
             if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei fuer Rohre
             BlockState state = CorePattern.blockFor(cell);

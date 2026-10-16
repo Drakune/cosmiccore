@@ -20,7 +20,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -115,7 +115,7 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         // 0) Jet in den Himmel
         if (active && be.hasSkyLink()) {
             float[] jc = lerp(pJet, CRITICAL, heat * heat);
-            int color = FastColor.ARGB32.color(255, (int) (jc[0] * 255), (int) (jc[1] * 255), (int) (jc[2] * 255));
+            int color = ARGB.color(255, (int) (jc[0] * 255), (int) (jc[1] * 255), (int) (jc[2] * 255));
             float w = 0.12F + 0.1F * growth + 0.06F * Math.max(0.0F, be.getCosmic() - 1.0F);
             BeaconRenderer.renderBeaconBeam(pose, buffers, BeaconRenderer.BEAM_LOCATION, partialTick, 1.0F,
                     level.getGameTime(), half + (be.hasFunnel() ? 2 : 1), 1024, color, w, w + 0.15F);

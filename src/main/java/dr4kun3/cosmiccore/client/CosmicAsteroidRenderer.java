@@ -26,7 +26,7 @@ import org.joml.Vector3f;
  * Kometenschweif. Unter Laserbeschuss gluehen die dem Strahl zugewandte Seite und die Risse auf, der Brocken zittert
  * und Splitter platzen ab.
  */
-public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
+public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, EntityRefState<CosmicAsteroid>> {
     private static final float[][] ROCK = {{0.46F, 0.41F, 0.37F}, {0.36F, 0.35F, 0.41F}, {0.30F, 0.26F, 0.36F},
             {0.27F, 0.21F, 0.25F}};
     private static final float[][] CRYSTAL = {{0.45F, 0.85F, 1.0F}, {0.75F, 0.5F, 1.0F}, {1.0F, 0.8F, 0.4F}};
@@ -45,12 +45,23 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
     }
 
     @Override
-    public ResourceLocation getTextureLocation(CosmicAsteroid entity) {
-        return TextureAtlas.LOCATION_BLOCKS;
+    public EntityRefState<CosmicAsteroid> createRenderState() {
+        return new EntityRefState<>();
     }
 
     @Override
-    public void render(CosmicAsteroid a, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
+    public void extractRenderState(CosmicAsteroid entity, EntityRefState<CosmicAsteroid> state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.entity = entity;
+    }
+
+    @Override
+    public void render(EntityRefState<CosmicAsteroid> state, PoseStack pose, MultiBufferSource buffers, int light) {
+        if (state.entity != null) render(state.entity, 0.0F, state.partialTick, pose, buffers, light);
+        super.render(state, pose, buffers, light);
+    }
+
+    private void render(CosmicAsteroid a, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         float t = a.tickCount + partialTick;
         float overload = a.getOverload();
         // zum Schluss blaeht sich der ueberladene Asteroid auf
@@ -190,7 +201,6 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         RenderUtil.glowSphere(glow, wm, r * 1.2F, 8, 12, TRAIL, 0.05F);
         if (harvest > 0) RenderUtil.glowSphere(glow, wm, r * (1.05F + 0.15F * harvest), 8, 12, HOT, 0.16F * harvest);
         pose.popPose();
-        super.render(a, yaw, partialTick, pose, buffers, light);
     }
 
     // ------------------------------------------------------------------ Form

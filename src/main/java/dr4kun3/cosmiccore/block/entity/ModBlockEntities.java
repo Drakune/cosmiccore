@@ -13,29 +13,29 @@ public final class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ControllerBlockEntity>> CONTROLLER =
             BLOCK_ENTITIES.register("controller",
-                    () -> BlockEntityType.Builder.of(ControllerBlockEntity::new, ModBlocks.CONTROLLER.get()).build(null));
+                    () -> new BlockEntityType<>(ControllerBlockEntity::new, ModBlocks.CONTROLLER.get()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SingularityCoreBlockEntity>> CORE =
             BLOCK_ENTITIES.register("singularity_core",
-                    () -> BlockEntityType.Builder.of(SingularityCoreBlockEntity::new, ModBlocks.SINGULARITY_CORE.get()).build(null));
+                    () -> new BlockEntityType<>(SingularityCoreBlockEntity::new, ModBlocks.SINGULARITY_CORE.get()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnergyPortBlockEntity>> ENERGY_PORT =
             BLOCK_ENTITIES.register("energy_port",
-                    () -> BlockEntityType.Builder.of(EnergyPortBlockEntity::new, ModBlocks.ENERGY_PORT.get()).build(null));
+                    () -> new BlockEntityType<>(EnergyPortBlockEntity::new, ModBlocks.ENERGY_PORT.get()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ItemPortBlockEntity>> ITEM_PORT =
             BLOCK_ENTITIES.register("item_port",
-                    () -> BlockEntityType.Builder.of(ItemPortBlockEntity::new, ModBlocks.ITEM_PORT.get()).build(null));
+                    () -> new BlockEntityType<>(ItemPortBlockEntity::new, ModBlocks.ITEM_PORT.get()));
 
     /** Gemeinsamer Typ fuer Resonanzspule und Fokuskristall (nur fuer die Animation). */
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ResonatorBlockEntity>> RESONATOR =
             BLOCK_ENTITIES.register("resonator",
-                    () -> BlockEntityType.Builder.of(ResonatorBlockEntity::new,
-                            ModBlocks.RESONANCE_COIL.get(), ModBlocks.FOCUS_CRYSTAL.get()).build(null));
+                    () -> new BlockEntityType<>(ResonatorBlockEntity::new,
+                            ModBlocks.RESONANCE_COIL.get(), ModBlocks.FOCUS_CRYSTAL.get()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<StarFunnelBlockEntity>> STAR_FUNNEL =
             BLOCK_ENTITIES.register("star_funnel",
-                    () -> BlockEntityType.Builder.of(StarFunnelBlockEntity::new, ModBlocks.STAR_FUNNEL.get()).build(null));
+                    () -> new BlockEntityType<>(StarFunnelBlockEntity::new, ModBlocks.STAR_FUNNEL.get()));
 
     private ModBlockEntities() {}
 }

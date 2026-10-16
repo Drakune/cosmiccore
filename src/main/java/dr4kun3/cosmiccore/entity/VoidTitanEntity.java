@@ -137,7 +137,7 @@ public class VoidTitanEntity extends Entity {
     protected void addAdditionalSaveData(CompoundTag tag) {}
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, DamageSource source, float amount) {
         return false;
     }
 
@@ -149,11 +149,6 @@ public class VoidTitanEntity extends Entity {
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < 1024.0 * 1024.0;
-    }
-
-    @Override
-    public AABB getBoundingBoxForCulling() {
-        return getBoundingBox().inflate(70.0);
     }
 
     /** Position der Energiekugel vor der Brust (Weltkoordinaten) - hier beginnt der Strahl. */

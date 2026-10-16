@@ -71,7 +71,7 @@ public final class AsteroidSpawner {
     private static void spawnOver(ServerLevel level, Vec3 reactor, List<BlockPos> shields, double shieldRange, RandomSource r) {
         double ang = r.nextDouble() * Math.PI * 2;
         double dist = 70 + r.nextDouble() * 40;
-        double y = Mth.clamp(reactor.y + 40 + r.nextDouble() * 35, level.getMinBuildHeight() + 20, level.getMaxBuildHeight() - 10);
+        double y = Mth.clamp(reactor.y + 40 + r.nextDouble() * 35, level.getMinY() + 20, level.getMaxY() - 10);
         Vec3 start = new Vec3(reactor.x + Math.cos(ang) * dist, y, reactor.z + Math.sin(ang) * dist);
         if (shielded(BlockPos.containing(start), shields, shieldRange)) return;
         Vec3 target = new Vec3(reactor.x + (r.nextDouble() - 0.5) * 40, y + (r.nextDouble() - 0.5) * 10,
@@ -79,7 +79,7 @@ public final class AsteroidSpawner {
         CosmicAsteroid.Kind kind = pick(r);
         Vec3 vel = target.subtract(start).normalize().scale(kind.speed);
 
-        CosmicAsteroid a = ModEntities.ASTEROIDS.get(kind).get().create(level);
+        CosmicAsteroid a = ModEntities.ASTEROIDS.get(kind).get().create(level, net.minecraft.world.entity.EntitySpawnReason.EVENT);
         if (a == null || !level.isLoaded(BlockPos.containing(start))) return;
         a.markNatural();
         a.moveTo(start.x, start.y, start.z, r.nextFloat() * 360, 0);

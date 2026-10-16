@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "E": {
-      "item": "minecraft:ender_eye"
-    },
-    "N": {
-      "item": "minecraft:nether_star"
-    },
-    "O": {
-      "item": "minecraft:crying_obsidian"
-    }
+    "E": "minecraft:ender_eye",
+    "N": "minecraft:nether_star",
+    "O": "minecraft:crying_obsidian"
   },
   "pattern": [
     "OEO",

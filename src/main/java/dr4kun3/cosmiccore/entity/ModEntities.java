@@ -24,7 +24,7 @@ public final class ModEntities {
                     .clientTrackingRange(32)
                     .fireImmune()
                     .noSummon()
-                    .build("void_titan"));
+                    .build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CosmicCore.id("void_titan"))));
 
     /** Entity-Typ je Asteroiden-Art. */
     public static final Map<CosmicAsteroid.Kind, DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>>> ASTEROIDS = new EnumMap<>(Map.of(
@@ -38,7 +38,7 @@ public final class ModEntities {
                         .clientTrackingRange(kind == CosmicAsteroid.Kind.HUGE ? 24 : 16)
                         .updateInterval(1)
                         .fireImmune()
-                        .build(kind.entityName()));
+                        .build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CosmicCore.id(kind.entityName()))));
     }
 
     private ModEntities() {}

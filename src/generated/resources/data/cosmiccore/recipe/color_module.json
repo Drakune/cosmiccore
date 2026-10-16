@@ -2,21 +2,11 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "B": {
-      "item": "minecraft:blue_dye"
-    },
-    "G": {
-      "item": "minecraft:green_dye"
-    },
-    "R": {
-      "item": "minecraft:red_dye"
-    },
-    "S": {
-      "item": "cosmiccore:star_dust"
-    },
-    "V": {
-      "item": "cosmiccore:void_casing"
-    }
+    "B": "minecraft:blue_dye",
+    "G": "minecraft:green_dye",
+    "R": "minecraft:red_dye",
+    "S": "cosmiccore:star_dust",
+    "V": "cosmiccore:void_casing"
   },
   "pattern": [
     "RGB",

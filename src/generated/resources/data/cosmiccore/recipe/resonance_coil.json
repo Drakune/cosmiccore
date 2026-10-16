@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "C": {
-      "item": "minecraft:copper_ingot"
-    },
-    "R": {
-      "item": "minecraft:redstone"
-    },
-    "V": {
-      "item": "cosmiccore:void_casing"
-    }
+    "C": "minecraft:copper_ingot",
+    "R": "minecraft:redstone",
+    "V": "cosmiccore:void_casing"
   },
   "pattern": [
     "CCC",

@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "A": {
-      "item": "minecraft:amethyst_shard"
-    },
-    "D": {
-      "item": "minecraft:diamond"
-    },
-    "E": {
-      "item": "minecraft:ender_eye"
-    }
+    "A": "minecraft:amethyst_shard",
+    "D": "minecraft:diamond",
+    "E": "minecraft:ender_eye"
   },
   "pattern": [
     "ADA",

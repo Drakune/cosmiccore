@@ -67,7 +67,7 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
         float t = (level.getGameTime() % 24000L) + partialTick;
         float alpha = 0.35F + 0.15F * Mth.sin(t * 0.15F);
         BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
-        VertexConsumer ghost = new AlphaVertexConsumer(buffers.getBuffer(Sheets.translucentCullBlockSheet()), alpha);
+        VertexConsumer ghost = new AlphaVertexConsumer(buffers.getBuffer(Sheets.translucentItemSheet()), alpha);
         List<BlockPos> wrong = new ArrayList<>();
 
         // 1) Geisterbloecke (Linien erst danach - ein Wechsel des RenderTypes schliesst den vorherigen Puffer ab)
@@ -144,7 +144,7 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
             for (BlockPos pos : wrong) {
                 double ox = pos.getX() - origin.getX(), oy = pos.getY() - origin.getY(), oz = pos.getZ() - origin.getZ();
-                LevelRenderer.renderLineBox(pose, lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01),
+                net.minecraft.client.renderer.ShapeRenderer.renderLineBox(pose, lines, new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01),
                         1.0F, 0.2F, 0.25F, 1.0F);
             }
         }

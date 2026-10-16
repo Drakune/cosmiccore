@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "A": {
-      "item": "minecraft:amethyst_shard"
-    },
-    "G": {
-      "item": "minecraft:glass"
-    }
+    "A": "minecraft:amethyst_shard",
+    "G": "minecraft:glass"
   },
   "pattern": [
     "GGG",

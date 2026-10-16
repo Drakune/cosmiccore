@@ -21,7 +21,7 @@ import software.bernie.geckolib.renderer.GeoObjectRenderer;
  * Schweifsegment einzeln an seinem Teil (wie beim Enderdrachen), ausgerichtet entlang des Schweifs.
  * Wird nur registriert, wenn GeckoLib installiert ist.
  */
-public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity> {
+public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity>> {
     private final GeoObjectRenderer<VoidTitan> body;
     private final GeoObjectRenderer<VoidTitanTail> tail;
     private final VoidTitanTail tailAnimatable = new VoidTitanTail();
@@ -31,16 +31,31 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity> {
         super(ctx);
         body = new GeoObjectRenderer<>(new VoidTitanModel()).withScale(VoidTitanEntity.SCALE);
         tail = new GeoObjectRenderer<>(new VoidTitanTail.Model());
-        shadowRadius = 0.0F;
+    }
+
+    /** Der Titan ist riesig: weit ueber seine Hitbox hinaus sichtbar halten. */
+    @Override
+    protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(VoidTitanEntity entity) {
+        return entity.getBoundingBox().inflate(70.0);
     }
 
     @Override
-    public ResourceLocation getTextureLocation(VoidTitanEntity entity) {
-        return dr4kun3.cosmiccore.CosmicCore.id("textures/entity/void_titan.png");
+    public dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> createRenderState() {
+        return new dr4kun3.cosmiccore.client.EntityRefState<>();
     }
 
     @Override
-    public void render(VoidTitanEntity entity, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
+    public void extractRenderState(VoidTitanEntity entity, dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.entity = entity;
+    }
+
+    @Override
+    public void render(dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, PoseStack pose, MultiBufferSource buffers, int light) {
+        if (state.entity != null) render(state.entity, 0.0F, state.partialTick, pose, buffers, light);
+    }
+
+    private void render(VoidTitanEntity entity, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         int full = LightTexture.FULL_BRIGHT;
         float yawRad = entity.getYRot() * Mth.DEG_TO_RAD;
         // Oberkoerper
@@ -83,7 +98,6 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity> {
             tail.render(pose, tailAnimatable, buffers, null, null, full, partialTick);
             pose.popPose();
         }
-        super.render(entity, yaw, partialTick, pose, buffers, light);
     }
 
     @SuppressWarnings("unused")

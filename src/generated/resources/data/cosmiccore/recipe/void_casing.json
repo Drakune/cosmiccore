@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "A": {
-      "item": "minecraft:amethyst_shard"
-    },
-    "I": {
-      "item": "minecraft:iron_ingot"
-    },
-    "O": {
-      "item": "minecraft:obsidian"
-    }
+    "A": "minecraft:amethyst_shard",
+    "I": "minecraft:iron_ingot",
+    "O": "minecraft:obsidian"
   },
   "pattern": [
     "OIO",

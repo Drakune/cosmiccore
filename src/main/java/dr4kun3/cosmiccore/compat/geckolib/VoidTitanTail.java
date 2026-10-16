@@ -27,12 +27,12 @@ public class VoidTitanTail implements GeoAnimatable {
 
     public static class Model extends GeoModel<VoidTitanTail> {
         @Override
-        public ResourceLocation getModelResource(VoidTitanTail animatable) {
+        public ResourceLocation getModelResource(VoidTitanTail animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitanTail> renderer) {
             return CosmicCore.id("geo/void_titan_tail.geo.json");
         }
 
         @Override
-        public ResourceLocation getTextureResource(VoidTitanTail animatable) {
+        public ResourceLocation getTextureResource(VoidTitanTail animatable, software.bernie.geckolib.renderer.GeoRenderer<VoidTitanTail> renderer) {
             return CosmicCore.id("textures/entity/void_titan.png");
         }
 

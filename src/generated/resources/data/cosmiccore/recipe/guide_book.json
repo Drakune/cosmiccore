@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "minecraft:book"
-    },
-    {
-      "item": "cosmiccore:star_dust"
-    }
+    "minecraft:book",
+    "cosmiccore:star_dust"
   ],
   "result": {
     "count": 1,

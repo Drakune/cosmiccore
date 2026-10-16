@@ -9,9 +9,9 @@ final class TitanRenderers {
     private TitanRenderers() {}
 
     @SuppressWarnings("unchecked")
-    static EntityRenderer<VoidTitanEntity> create(EntityRendererProvider.Context ctx) {
+    static EntityRenderer<VoidTitanEntity, ?> create(EntityRendererProvider.Context ctx) {
         try {
-            return (EntityRenderer<VoidTitanEntity>) Class.forName("dr4kun3.cosmiccore.compat.geckolib.VoidTitanRenderer")
+            return (EntityRenderer<VoidTitanEntity, ?>) Class.forName("dr4kun3.cosmiccore.compat.geckolib.VoidTitanRenderer")
                     .getConstructor(EntityRendererProvider.Context.class).newInstance(ctx);
         } catch (ReflectiveOperationException | LinkageError e) {
             dr4kun3.cosmiccore.CosmicCore.LOGGER.warn("Void-Titan-Renderer nicht verfuegbar: {}", e.toString());

@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "G": {
-      "item": "cosmiccore:focus_glass"
-    },
-    "S": {
-      "item": "cosmiccore:star_dust"
-    },
-    "V": {
-      "item": "cosmiccore:void_casing"
-    }
+    "G": "cosmiccore:focus_glass",
+    "S": "cosmiccore:star_dust",
+    "V": "cosmiccore:void_casing"
   },
   "pattern": [
     "G G",

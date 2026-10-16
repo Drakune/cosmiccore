@@ -132,19 +132,39 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+/** Gibt es fuer diese Minecraft-Version eine Version des optionalen Mods? */
+boolean hasCompat(String mod) {
+    def v = project.findProperty(mod + '_version')
+    return v != null && !v.toString().trim().isEmpty()
+}
+
+sourceSets.main.java {
+    ['jei', 'emi', 'rei', 'geckolib'].each { mod ->
+        if (!hasCompat(mod)) exclude "dr4kun3/cosmiccore/compat/${mod}/**"
+    }
+}
+
 dependencies {
-    // Rezept-Viewer: nur die APIs zum Kompilieren, die Plugins laden sich, wenn der jeweilige Mod installiert ist
-    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
-    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
-    compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
-    compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}"
-    compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge:${rei_version}"
+    // Optionale Anbindungen: nur mitkompiliert, wenn es fuer diese Minecraft-Version eine passende Version gibt
+    // (leere Version in gradle.properties = Anbindung entfaellt, der Code in compat/<mod> wird dann nicht gebaut)
+    if (hasCompat('jei')) {
+        compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+        compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+        if (project.findProperty('viewer') == 'jei') localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    }
+    if (hasCompat('emi')) {
+        compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
+        if (project.findProperty('viewer') == 'emi') localRuntime "dev.emi:emi-neoforge:${emi_version}"
+    }
+    if (hasCompat('rei')) {
+        compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}"
+        compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge:${rei_version}"
+    }
     // GeckoLib (optional): animiertes Modell des Void-Titanen fuer die Erwachen-Cutscene
-    compileOnly "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
-    if (project.findProperty('geckolib') != 'off') localRuntime "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
-    // Zum Testen im Dev-Client einen Viewer aktivieren (nur einen gleichzeitig):
-    if (project.findProperty('viewer') == 'jei') localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    if (project.findProperty('viewer') == 'emi') localRuntime "dev.emi:emi-neoforge:${emi_version}"
+    if (hasCompat('geckolib')) {
+        compileOnly "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+        if (project.findProperty('geckolib') != 'off') localRuntime "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+    }
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
@@ -217,3 +237,6 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// alle Kompilierfehler auf einmal anzeigen (hilft beim Portieren)
+tasks.withType(JavaCompile).configureEach { options.compilerArgs.addAll(['-Xmaxerrs', '2000']) }

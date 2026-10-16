@@ -36,7 +36,7 @@ public final class Terminal {
     }
 
     /** Ist an der Aussenseite etwas angedockt: Block mit passender Schnittstelle oder ein Block einer anderen Mod? */
-    public static boolean docked(net.minecraft.world.level.LevelAccessor level, BlockPos port, ConsoleSide console, boolean energy) {
+    public static boolean docked(net.minecraft.world.level.LevelReader level, BlockPos port, ConsoleSide console, boolean energy) {
         if (console == ConsoleSide.NONE) return false;
         Direction out = outer(console, energy);
         BlockPos n = port.relative(out);
@@ -53,7 +53,7 @@ public final class Terminal {
     }
 
     /** Zustand eines Ports aus seiner Umgebung (Konsole und Andocken). */
-    public static BlockState portState(BlockState state, net.minecraft.world.level.LevelAccessor level, BlockPos pos, boolean energy) {
+    public static BlockState portState(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos, boolean energy) {
         ConsoleSide console = consoleFor(level, pos, energy);
         return state.setValue(ModProperties.CONSOLE, console).setValue(ModProperties.DOCKED, docked(level, pos, console, energy));
     }

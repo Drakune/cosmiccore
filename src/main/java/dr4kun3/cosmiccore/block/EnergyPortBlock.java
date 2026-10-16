@@ -33,8 +33,9 @@ public class EnergyPortBlock extends Block implements EntityBlock {
 
     /** Nachbar geaendert: gehoert der Port (noch) zu einer Steuerkonsole? */
     @Override
-    protected BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighbor,
-                                     net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level, net.minecraft.world.level.ScheduledTickAccess ticks,
+                                     BlockPos pos, net.minecraft.core.Direction dir, BlockPos neighborPos, BlockState neighbor,
+                                     net.minecraft.util.RandomSource random) {
         return Terminal.portState(state, level, pos, true);
     }
 

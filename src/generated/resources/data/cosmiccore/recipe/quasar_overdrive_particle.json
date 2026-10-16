@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "O": {
-      "item": "cosmiccore:overdrive_particle"
-    },
-    "Q": {
-      "item": "cosmiccore:quasar_essence"
-    }
+    "O": "cosmiccore:overdrive_particle",
+    "Q": "cosmiccore:quasar_essence"
   },
   "pattern": [
     " Q ",

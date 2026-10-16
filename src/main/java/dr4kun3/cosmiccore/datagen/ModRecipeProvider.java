@@ -13,18 +13,36 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 
 public class ModRecipeProvider extends RecipeProvider {
-    public ModRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
-        super(output, registries);
+    protected ModRecipeProvider(HolderLookup.Provider registries, RecipeOutput output) {
+        super(registries, output);
     }
 
-    private static ShapedRecipeBuilder shaped(ItemLike result, int count, ItemLike unlock, String... pattern) {
-        ShapedRecipeBuilder b = ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result, count);
+    /** Einstieg fuer die Datengenerierung (ab 1.21.2 laeuft der Provider ueber einen Runner). */
+    public static class Runner extends RecipeProvider.Runner {
+        public Runner(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+            super(output, registries);
+        }
+
+        @Override
+        protected RecipeProvider createRecipeProvider(HolderLookup.Provider registries, RecipeOutput output) {
+            return new ModRecipeProvider(registries, output);
+        }
+
+        @Override
+        public String getName() {
+            return "Cosmic Core Rezepte";
+        }
+    }
+
+    private ShapedRecipeBuilder shaped(ItemLike result, int count, ItemLike unlock, String... pattern) {
+        ShapedRecipeBuilder b = shaped(RecipeCategory.MISC, result, count);
         for (String row : pattern) b.pattern(row);
         return b.unlockedBy("has_item", has(unlock));
     }
 
     @Override
-    protected void buildRecipes(RecipeOutput out) {
+    protected void buildRecipes() {
+        RecipeOutput out = output;
         shaped(ModItems.VOID_CASING, 4, Items.OBSIDIAN, "OIO", "IAI", "OIO")
                 .define('O', Items.OBSIDIAN).define('I', Items.IRON_INGOT).define('A', Items.AMETHYST_SHARD).save(out);
         shaped(ModItems.RUNE_FRAME, 2, ModItems.VOID_CASING, "CAC", "ARA", "CAC")
@@ -65,16 +83,16 @@ public class ModRecipeProvider extends RecipeProvider {
         shaped(ModItems.COMPRESSED_STAR_DUST, 1, ModItems.STAR_DUST, "SSS", "SSS", "SSS")
                 .define('S', ModItems.STAR_DUST).save(out);
 
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.ENERGY_PORT)
+        shapeless(RecipeCategory.MISC, ModItems.ENERGY_PORT)
                 .requires(ModItems.VOID_CASING).requires(Items.REDSTONE, 2).requires(Items.COPPER_INGOT)
                 .unlockedBy("has_item", has(ModItems.VOID_CASING)).save(out);
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.ITEM_PORT)
+        shapeless(RecipeCategory.MISC, ModItems.ITEM_PORT)
                 .requires(ModItems.VOID_CASING).requires(Items.HOPPER)
                 .unlockedBy("has_item", has(ModItems.VOID_CASING)).save(out);
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.GUIDE_BOOK)
+        shapeless(RecipeCategory.MISC, ModItems.GUIDE_BOOK)
                 .requires(Items.BOOK).requires(ModItems.STAR_DUST)
                 .unlockedBy("has_item", has(ModItems.STAR_DUST)).save(out);
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.STAR_DUST, 2)
+        shapeless(RecipeCategory.MISC, ModItems.STAR_DUST, 2)
                 .requires(Items.AMETHYST_SHARD, 2).requires(Items.ENDER_PEARL).requires(Items.GLOWSTONE_DUST)
                 .unlockedBy("has_item", has(Items.AMETHYST_SHARD)).save(out);
     }

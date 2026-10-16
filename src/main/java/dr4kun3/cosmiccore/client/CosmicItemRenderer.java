@@ -45,7 +45,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     private static float time() {
         Minecraft mc = Minecraft.getInstance();
-        float pt = mc.getTimer().getGameTimeDeltaPartialTick(false);
+        float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         return mc.level == null ? (System.currentTimeMillis() % 100000L) / 50.0F : (mc.level.getGameTime() % 144000L) + pt;
     }
 

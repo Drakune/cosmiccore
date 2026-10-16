@@ -67,6 +67,17 @@ public class CosmicReiPlugin implements REIClientPlugin {
 
     public record CosmicDisplay(Entry entry) implements Display {
         @Override
+        public java.util.Optional<net.minecraft.resources.ResourceLocation> getDisplayLocation() {
+            return java.util.Optional.empty();
+        }
+
+        /** Nur clientseitig registriert - muss nicht zwischen Server und Client uebertragen werden. */
+        @Override
+        public me.shedaniel.rei.api.common.display.DisplaySerializer<? extends Display> getSerializer() {
+            return null;
+        }
+
+        @Override
         public List<EntryIngredient> getInputEntries() {
             return entry.kind() == Kind.LOOT ? List.of() : List.of(EntryIngredients.of(entry.input()));
         }

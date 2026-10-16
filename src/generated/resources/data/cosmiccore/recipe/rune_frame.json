@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "A": {
-      "item": "minecraft:amethyst_shard"
-    },
-    "C": {
-      "item": "cosmiccore:void_casing"
-    },
-    "R": {
-      "item": "minecraft:redstone"
-    }
+    "A": "minecraft:amethyst_shard",
+    "C": "cosmiccore:void_casing",
+    "R": "minecraft:redstone"
   },
   "pattern": [
     "CAC",

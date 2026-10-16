@@ -2,21 +2,11 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "E": {
-      "item": "minecraft:ender_eye"
-    },
-    "P": {
-      "item": "minecraft:phantom_membrane"
-    },
-    "R": {
-      "item": "minecraft:redstone"
-    },
-    "S": {
-      "item": "cosmiccore:star_dust"
-    },
-    "V": {
-      "item": "cosmiccore:void_casing"
-    }
+    "E": "minecraft:ender_eye",
+    "P": "minecraft:phantom_membrane",
+    "R": "minecraft:redstone",
+    "S": "cosmiccore:star_dust",
+    "V": "cosmiccore:void_casing"
   },
   "pattern": [
     "PRP",

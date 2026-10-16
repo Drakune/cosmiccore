@@ -36,6 +36,6 @@ harvest asteroids with a laser array and awaken the Ultimate Core.
 [[dependencies.${mod_id}]]
     modId="geckolib"
     type="optional"
-    versionRange="[4.9,)"
+    versionRange="*"
     ordering="NONE"
     side="CLIENT"

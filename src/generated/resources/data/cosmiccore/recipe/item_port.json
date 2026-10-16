@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "cosmiccore:void_casing"
-    },
-    {
-      "item": "minecraft:hopper"
-    }
+    "cosmiccore:void_casing",
+    "minecraft:hopper"
   ],
   "result": {
     "count": 1,

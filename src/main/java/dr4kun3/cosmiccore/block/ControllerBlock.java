@@ -9,7 +9,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -64,8 +63,8 @@ public class ControllerBlock extends Block implements EntityBlock {
 
     /** Item-Port links und Energie-Port rechts daneben machen den Controller zur Steuerkonsole. */
     @Override
-    protected BlockState updateShape(BlockState state, Direction dir, BlockState neighbor, net.minecraft.world.level.LevelAccessor level,
-                                     BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level, net.minecraft.world.level.ScheduledTickAccess ticks,
+                                     BlockPos pos, Direction dir, BlockPos neighborPos, BlockState neighbor, net.minecraft.util.RandomSource random) {
         return state.setValue(ModProperties.TERMINAL, Terminal.isTerminal(level, pos, state.getValue(FACING)));
     }
 
@@ -93,14 +92,14 @@ public class ControllerBlock extends Block implements EntityBlock {
 
     /** Rechtsklick mit Brennstoff oder Stabilisator fuettert den Kern. */
     @Override
-    public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+    public InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
         boolean feedable = ModDataMaps.fuel(stack) != null || ModDataMaps.stabilizer(stack) != null;
-        if (!feedable) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (!feedable) return InteractionResult.TRY_WITH_EMPTY_HAND;
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
             if (be.getSize() == null) {
                 player.openMenu(be, pos);
-                return ItemInteractionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
             ItemStack remainder = be.insertFromPlayer(stack.copy());
             int moved = stack.getCount() - remainder.getCount();
@@ -108,7 +107,7 @@ public class ControllerBlock extends Block implements EntityBlock {
                 stack.shrink(moved);
             }
         }
-        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
     /** Rechtsklick oeffnet die GUI, Schleichen + Rechtsklick zeigt den Status/ersten Baufehler im Chat. */
@@ -121,7 +120,7 @@ public class ControllerBlock extends Block implements EntityBlock {
                 player.openMenu(be, pos);
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
