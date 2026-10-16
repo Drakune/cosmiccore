@@ -11,7 +11,6 @@ import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 /**
@@ -21,18 +20,17 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 @EventBusSubscriber(modid = CosmicCore.MODID, bus = EventBusSubscriber.Bus.MOD)
 public final class ModDataGenerators {
     @SubscribeEvent
-    public static void gather(GatherDataEvent event) {
+    public static void gather(GatherDataEvent.Client event) {
         DataGenerator gen = event.getGenerator();
         PackOutput out = gen.getPackOutput();
         CompletableFuture<HolderLookup.Provider> lookup = event.getLookupProvider();
-        ExistingFileHelper files = event.getExistingFileHelper();
 
-        gen.addProvider(event.includeServer(), new ModRecipeProvider.Runner(out, lookup));
-        gen.addProvider(event.includeServer(), new LootTableProvider(out, Set.of(), List.of(
+        gen.addProvider(true, new ModRecipeProvider.Runner(out, lookup));
+        gen.addProvider(true, new LootTableProvider(out, Set.of(), List.of(
                 new LootTableProvider.SubProviderEntry(ModBlockLoot::new, LootContextParamSets.BLOCK),
                 new LootTableProvider.SubProviderEntry(ModAsteroidLoot::new, LootContextParamSets.EMPTY)), lookup));
-        gen.addProvider(event.includeServer(), new ModBlockTagProvider(out, lookup, files));
-        gen.addProvider(event.includeServer(), new ModDataMapProvider(out, lookup));
+        gen.addProvider(true, new ModBlockTagProvider(out, lookup));
+        gen.addProvider(true, new ModDataMapProvider(out, lookup));
     }
 
     private ModDataGenerators() {}

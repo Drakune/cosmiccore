@@ -18,7 +18,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -36,15 +36,15 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     public PortRenderer(BlockEntityRendererProvider.Context ctx) {}
 
     /** Plug-Modelle je Port und Phase (werden in CosmicCoreClient als Zusatzmodelle registriert). */
-    public static ModelResourceLocation plugModel(boolean energy, CorePhase phase) {
-        return ModelResourceLocation.standalone(CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_plug_"
-                + phase.getSerializedName()));
+    public static ResourceLocation plugModel(boolean energy, CorePhase phase) {
+        return CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_plug_"
+                + phase.getSerializedName());
     }
 
     /** Seitenteil der Steuerkonsole je Port und Phase (Port neben dem Controller, siehe Terminal). */
-    public static ModelResourceLocation terminalModel(boolean energy, CorePhase phase) {
-        return ModelResourceLocation.standalone(CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_terminal_"
-                + phase.getSerializedName()));
+    public static ResourceLocation terminalModel(boolean energy, CorePhase phase) {
+        return CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_terminal_"
+                + phase.getSerializedName());
     }
 
     /** Materialisieren 0..1 aus dem Kern des zugehoerigen Reaktors; unbekannt = eigener Zeitpunkt des Formens. */

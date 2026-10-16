@@ -105,7 +105,7 @@ public final class PortStation {
         // Anschlussknoten an jeder belegten Seite
         CorePhase phase = port.hasProperty(ModProperties.PHASE) ? port.getValue(ModProperties.PHASE) : CorePhase.FORMED;
         if (phase == CorePhase.DORMANT) phase = CorePhase.FORMED;
-        var model = Minecraft.getInstance().getModelManager().getModel(PortRenderer.plugModel(energy, phase));
+        var model = Minecraft.getInstance().getModelManager().getStandaloneModel(PortRenderer.plugModel(energy, phase));
         for (Direction d : Direction.values()) {
             if ((connMask & (1 << d.get3DDataValue())) == 0) continue;
             Vector3f c = connector(d, yaw);

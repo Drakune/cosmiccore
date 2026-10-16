@@ -1708,9 +1708,32 @@ def draw_logo(size=256):
     img.save(os.path.join(RES, 'logo.png'))
 
 
+
+# ----------------------------------------------------------------- Item-Definitionen (ab Minecraft 1.21.4)
+def client_items():
+    """Jedes Item braucht eine Definition unter assets/cosmiccore/items. Animierte 3D-Items (vormals
+    builtin/entity) laufen ueber den Spezial-Renderer cosmiccore:cosmic_item; ihr Modell liefert nur noch
+    Ansichten und Partikel."""
+    folder = f'{ASSETS}/models/item'
+    for name in sorted(os.listdir(folder)):
+        if not name.endswith('.json'):
+            continue
+        item = name[:-5]
+        path = os.path.join(folder, name)
+        model = json.load(open(path, encoding='utf-8'))
+        ref = f'{MOD}:item/{item}'
+        if model.get('parent') == 'minecraft:builtin/entity':
+            model.pop('parent')
+            wjson(path, model)
+            definition = {'model': {'type': 'minecraft:special', 'base': ref, 'model': {'type': f'{MOD}:cosmic_item'}}}
+        else:
+            definition = {'model': {'type': 'minecraft:model', 'model': ref}}
+        wjson(f'{ASSETS}/items/{item}.json', definition)
+
 if __name__ == '__main__':
     sheets = textures()
     models()
+    client_items()
     lang()
     draw_logo()
     import generate_titan  # Void-Titan der Erwachen-Cutscene (GeckoLib-Assets)

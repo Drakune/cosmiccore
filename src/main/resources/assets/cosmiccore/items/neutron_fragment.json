@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "cosmiccore:item/neutron_fragment",
+    "model": {
+      "type": "cosmiccore:cosmic_item"
+    }
+  }
+}

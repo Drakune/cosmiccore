@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "cosmiccore:item/guide_book",
+    "model": {
+      "type": "cosmiccore:cosmic_item"
+    }
+  }
+}

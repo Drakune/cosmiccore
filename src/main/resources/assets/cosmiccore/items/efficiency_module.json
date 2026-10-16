@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "cosmiccore:item/efficiency_module",
+    "model": {
+      "type": "cosmiccore:cosmic_item"
+    }
+  }
+}

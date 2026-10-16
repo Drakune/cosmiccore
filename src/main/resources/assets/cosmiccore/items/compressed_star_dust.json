@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "cosmiccore:item/compressed_star_dust",
+    "model": {
+      "type": "cosmiccore:cosmic_item"
+    }
+  }
+}

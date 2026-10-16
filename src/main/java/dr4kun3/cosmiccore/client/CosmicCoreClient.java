@@ -2,9 +2,6 @@ package dr4kun3.cosmiccore.client;
 
 import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.ModItems;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
 import dr4kun3.cosmiccore.block.entity.ModBlockEntities;
 import dr4kun3.cosmiccore.data.CoreFuel;
@@ -54,20 +51,13 @@ public final class CosmicCoreClient {
         }
     }
 
-    private static CosmicItemRenderer itemRenderer;
-
-    /** Animierte 3D-Items (Sternenstaub, verdichteter Sternenstaub, Overdrive-Partikel, Neutronenstern, Quasar-Essenz, Module). */
+    /**
+     * Animierte 3D-Items (Sternenstaub, Brennstoffe, Overdrive-Partikel, Module, Handbuch): ein Spezial-Renderer,
+     * den die Item-Definitionen in assets/cosmiccore/items als Typ cosmiccore:cosmic_item anfordern.
+     */
     @SubscribeEvent
-    public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
-        event.registerItem(new IClientItemExtensions() {
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                if (itemRenderer == null) itemRenderer = new CosmicItemRenderer();
-                return itemRenderer;
-            }
-        }, ModItems.STAR_DUST.get(), ModItems.COMPRESSED_STAR_DUST.get(), ModItems.OVERDRIVE_PARTICLE.get(), ModItems.NEUTRON_FRAGMENT.get(),
-                ModItems.QUASAR_ESSENCE.get(), ModItems.QUASAR_OVERDRIVE_PARTICLE.get(), ModItems.EFFICIENCY_MODULE.get(), ModItems.STABILITY_MODULE.get(),
-                ModItems.ANTI_ASTEROID_MODULE.get(), ModItems.COLOR_MODULE.get(), ModItems.GUIDE_BOOK.get());
+    public static void registerSpecialRenderers(net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent event) {
+        event.register(dr4kun3.cosmiccore.CosmicCore.id("cosmic_item"), CosmicItemRenderer.Unbaked.CODEC);
     }
 
     @SubscribeEvent

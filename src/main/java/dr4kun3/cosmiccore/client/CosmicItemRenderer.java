@@ -8,7 +8,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.ModItems;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.client.model.geom.EntityModelSet;
+import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
@@ -31,7 +33,7 @@ import org.joml.Matrix4f;
  * </ul>
  * Zeichenraum ist der Einheitswuerfel (0..1), die Display-Transformationen stehen im Item-Modell.
  */
-public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
+public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
     private static final float[] GOLD = {1.0F, 0.75F, 0.25F};
     private static final float[] VIOLET = {0.7F, 0.4F, 1.0F};
     private static final float[] CYAN = {0.45F, 0.9F, 1.0F};
@@ -39,8 +41,29 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
     private static final float[] ORANGE = {1.0F, 0.5F, 0.15F};
 
-    public CosmicItemRenderer() {
-        super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
+    /** Ab 1.21.4: Spezial-Renderer, den die Item-Definitionen (assets/cosmiccore/items) per Typ cosmiccore:cosmic_item anfordern. */
+    public record Unbaked() implements SpecialModelRenderer.Unbaked {
+        public static final MapCodec<Unbaked> CODEC = MapCodec.unit(new Unbaked());
+
+        @Override
+        public SpecialModelRenderer<?> bake(EntityModelSet models) {
+            return new CosmicItemRenderer();
+        }
+
+        @Override
+        public MapCodec<Unbaked> type() {
+            return CODEC;
+        }
+    }
+
+    @Override
+    public ItemStack extractArgument(ItemStack stack) {
+        return stack;
+    }
+
+    @Override
+    public void render(ItemStack stack, ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay, boolean foil) {
+        if (stack != null) renderByItem(stack, ctx, pose, buffers, light, overlay);
     }
 
     private static float time() {
@@ -49,8 +72,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         return mc.level == null ? (System.currentTimeMillis() % 100000L) / 50.0F : (mc.level.getGameTime() % 144000L) + pt;
     }
 
-    @Override
-    public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    private void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         float t = time();
         pose.pushPose();
         pose.translate(0.5, 0.5, 0.5);
