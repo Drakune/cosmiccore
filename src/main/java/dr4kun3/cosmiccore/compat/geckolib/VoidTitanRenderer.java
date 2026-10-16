@@ -67,7 +67,9 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
         pose.mulPose(Axis.YP.rotation(yawRad));
         // GeckoLib verschiebt Objekte nach dem Skalieren um (0.5, 0.51, 0.5) - hier ausgleichen
         float k = VoidTitanEntity.SCALE;
-        pose.translate(-0.5F * k, -0.51F * k, -0.5F * k);
+        // Bis GeckoLib 5.2 kam dieser Versatz unskaliert dazu - die Zwischensequenz ist auf diese Lage abgestimmt
+        float legacy = k - 1.0F;
+        pose.translate(-0.5F * (k + legacy), -0.51F * (k + legacy), -0.5F * (k + legacy));
         VoidTitanModel.current = state;
         body.submit(pose, state, null, collector, camera, full, partialTick, null);
         pose.popPose();
@@ -77,7 +79,8 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
                 // Drehpunkt des Knochens durch seine (animierte) Matrix
                 org.joml.Vector3f v = b.getLocalSpaceMatrix().transformPosition(
                         new org.joml.Vector3f(b.getPivotX() / 16.0F, b.getPivotY() / 16.0F, b.getPivotZ() / 16.0F));
-                v.add(-0.5F * k, -0.51F * k, -0.5F * k).rotateY(yawRad);
+                // GeckoLib 5.3 liefert die Lage ohne Modellskalierung und ohne Versatz
+                v.mul(k).add(-0.5F * legacy, -0.51F * legacy, -0.5F * legacy).rotateY(yawRad);
                 entity.bones.put(name, new Vec3(v.x, v.y, v.z));
             });
         }
