@@ -54,6 +54,13 @@ public final class CosmicRenderTypes {
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
+    /** Deckende Farbe mit Tiefentest, die Tiefe schreibt (wie frueher debugQuads, das seit 1.21.11 keine Tiefe mehr schreibt). */
+    private static final RenderPipeline SOLID_COLOR_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+            .withLocation(CosmicCore.id("pipeline/solid_color"))
+            .withVertexShader("core/position_color").withFragmentShader("core/position_color")
+            .withBlend(BlendFunction.TRANSLUCENT).withDepthWrite(true).withCull(false)
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
+
     /** Halbtransparente Farbe ohne Tiefentest. */
     private static final RenderPipeline SPACE_TINT_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/space_tint"))
@@ -77,7 +84,7 @@ public final class CosmicRenderTypes {
      */
     @SubscribeEvent
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {
-        for (RenderPipeline p : new RenderPipeline[]{GLOW_PIPELINE, DEPTH_BACK_PIPELINE, SPACE_DOME_PIPELINE, SPACE_SOLID_PIPELINE,
+        for (RenderPipeline p : new RenderPipeline[]{SOLID_COLOR_PIPELINE, GLOW_PIPELINE, DEPTH_BACK_PIPELINE, SPACE_DOME_PIPELINE, SPACE_SOLID_PIPELINE,
                 SPACE_TINT_PIPELINE, SPACE_GLOW_PIPELINE}) {
             event.registerPipeline(p);
         }
@@ -139,6 +146,19 @@ public final class CosmicRenderTypes {
      */
     public static RenderType spaceSolid() {
         return SPACE_SOLID;
+    }
+
+    /** Deckende Farbflaechen mit Tiefe (Bildschirme, Asteroidenfels, Kerne der Items). */
+    private static final RenderType SOLID_COLOR = RenderType.create("cosmiccore_solid_color", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SOLID_COLOR_PIPELINE).bufferSize(1536).createRenderSetup());
+
+    /**
+     * Deckende Farbflaechen, die Tiefe schreiben: Bildschirme verdecken so die Leuchtstrahlen dahinter. Ersetzt
+     * debugQuads, das seit Minecraft 1.21.11 keine Tiefe mehr schreibt.
+     *
+     * @return der Render-Typ
+     */
+    public static RenderType solidColor() {
+        return SOLID_COLOR;
     }
 
     /** Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */

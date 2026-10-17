@@ -829,7 +829,7 @@ public final class ReactorShellRenderer {
                 pose.popPose();
                 // Portalfeld unter dem Controller
                 PortStation.portalCapsule(buffers, new Matrix4f(cm).translate(0, -0.495F, 0), 0.0F, 0.44F);
-                VertexConsumer dq = buffers.getBuffer(RenderTypes.debugQuads());
+                VertexConsumer dq = buffers.getBuffer(CosmicRenderTypes.solidColor());
                 // undurchsichtiger Bildschirmhintergrund - mit Ports direkt daneben ein breiter Bildschirm ueber allen
                 float[] lr = screenLR(p, c);
                 float[] b0 = screenAt(lr[0] - 0.014F, -0.03F), b1 = screenAt(lr[1] + 0.014F, -0.03F), b2 = screenAt(lr[1] + 0.014F, 1.03F),
