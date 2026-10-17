@@ -226,10 +226,23 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      * @return die Kernmitte
      */
     public static BlockPos debugSetupUltimate(ServerLevel level, BlockPos controllerPos) {
+        return debugSetup(level, controllerPos, ReactorSize.ULTIMATE);
+    }
+
+    /**
+     * Nur fuer Entwicklungs-Tests: setzt einen fertigen Kern der gewuenschten Groesse mit Trichter und Lasern,
+     * Brennstoff und hoechster Stufe.
+     *
+     * @param level Server-Welt
+     * @param controllerPos Position des Controllers
+     * @param size Baugroesse
+     * @return die Kernmitte
+     */
+    public static BlockPos debugSetup(ServerLevel level, BlockPos controllerPos, ReactorSize size) {
         level.setBlock(controllerPos, ModBlocks.CONTROLLER.get().defaultBlockState()
                 .setValue(dr4kun3.cosmiccore.block.ControllerBlock.FACING, Direction.NORTH), Block.UPDATE_ALL);
         if (!(level.getBlockEntity(controllerPos) instanceof ControllerBlockEntity c)) return controllerPos;
-        c.size = ReactorSize.ULTIMATE;
+        c.size = size;
         c.withFunnel = true;
         c.withLasers = true;
         c.buildStructure(level);
@@ -237,7 +250,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         c.scale = c.size.maxScale();
         c.unlockedScale = c.scale;
         c.overdrive = c.size.maxOverdriveTotal();
-        c.awakened = true;
+        c.awakened = size.isUltimate();
         c.inventory.setStackInSlot(SLOT_FUEL, new ItemStack(ModItems.QUASAR_ESSENCE.get(), 64));
         c.inventory.setStackInSlot(SLOT_STAB, new ItemStack(net.minecraft.world.item.Items.NETHERITE_SCRAP, 64));
         c.checkTimer = 0;

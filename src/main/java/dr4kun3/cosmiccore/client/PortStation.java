@@ -10,6 +10,8 @@ import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
+import dr4kun3.cosmiccore.block.entity.EnergyPortBlockEntity;
+import dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.PortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import net.minecraft.client.Minecraft;
@@ -51,15 +53,102 @@ public final class PortStation {
     private static final int ROW_TITLE = 3, ROW_A = 18, ROW_B = 30, ROW_C = 42, BAR = 54;
 
     /** Daten fuer die Anzeige (Controller und Kern koennen auf dem Client kurz fehlen). */
-    public record Data(@Nullable ControllerBlockEntity ctrl, @Nullable SingularityCoreBlockEntity core, float t, float e, int used) {
+    public record Data(@Nullable ControllerBlockEntity ctrl, @Nullable SingularityCoreBlockEntity core, float t, float e,
+                       @Nullable PortBlockEntity port) {
         /**
-         * Daten fuer einen bestimmten Port (belegte Lagerplaetze beim Item-Port).
+         * Daten fuer einen bestimmten Port (Lagerinhalt beim Item-Port, Durchfluss beim Energie-Port).
          *
          * @param port der Port oder {@code null}
-         * @return neue Daten mit der Lagerbelegung
+         * @return neue Daten fuer diesen Port
          */
         public Data withPort(@Nullable PortBlockEntity port) {
-            return new Data(ctrl, core, t, e, port instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip ? ip.getClientUsed() : 0);
+            return new Data(ctrl, core, t, e, port);
+        }
+
+        /**
+         * Belegte Lagerplaetze (nur beim Item-Port).
+         *
+         * @return Anzahl 0..27
+         */
+        public int used() {
+            return port instanceof ItemPortBlockEntity ip ? ip.getClientUsed() : 0;
+        }
+    }
+
+    /** Groesse eines Lagerplatzes im Raster in Schriftpixeln und Oberkante des Rasters. */
+    static final float CELL = 13.0F, GRID_Y = 15.0F;
+
+    /**
+     * Werte des Energie-Ports: Durchfluss, gespeicherte Energie und Kapazitaet - vom Port gemessen, sonst aus dem Kern
+     * geschaetzt.
+     *
+     * @param port der Port oder {@code null}
+     * @param core der Kern oder {@code null}
+     * @return {Durchfluss RF/t, gespeichert RF, Kapazitaet RF}
+     */
+    static long[] energyValues(@Nullable PortBlockEntity port, @Nullable SingularityCoreBlockEntity core) {
+        if (port instanceof EnergyPortBlockEntity ep && ep.getClientCapacity() > 0) {
+            return new long[]{ep.getClientFlow(), ep.getClientStored(), ep.getClientCapacity()};
+        }
+        if (core == null) return new long[]{0, 0, 0};
+        long cap = ReactorShellRenderer.capacity(core.getStructureSize());
+        return new long[]{0, Math.round(cap * core.getEnergyPct() / 100.0), cap};
+    }
+
+    /**
+     * Lagerraster: 3 Reihen zu 9 Plaetzen mit den echten Items und ihrer Anzahl.
+     *
+     * @param font Schrift
+     * @param tm Matrix fuer die Schrift
+     * @param buffers Puffer
+     * @param level Welt
+     * @param port der Item-Port oder {@code null}
+     * @param x0 linke Kante des Rasters in Schriftpixeln
+     * @param y0 Oberkante des Rasters in Schriftpixeln
+     * @param cell Kantenlaenge eines Platzes in Schriftpixeln
+     */
+    static void itemGrid(Font font, Matrix4f tm, MultiBufferSource buffers, Level level, @Nullable PortBlockEntity port, float x0, float y0,
+                         float cell) {
+        if (!(port instanceof ItemPortBlockEntity ip)) return;
+        for (int k = 0; k < ItemPortBlockEntity.STORAGE_SLOTS; k++) {
+            ItemStack stack = ip.getClientStack(k);
+            if (stack.isEmpty()) continue;
+            float cx = x0 + (k % 9) * cell, cy = y0 + (k / 9) * cell, size = cell * 0.62F;
+            icon(tm, buffers, level, stack, cx + cell / 2, cy + cell / 2, size);
+            if (stack.getCount() <= 1) continue;
+            String n = stack.getCount() < 1000 ? Integer.toString(stack.getCount()) : stack.getCount() / 1000 + "k";
+            float ns = cell / 26.0F;
+            Matrix4f nm = new Matrix4f(tm).translate(cx + cell - 0.8F, cy + cell - 9.2F * ns, size * 0.75F).scale(ns, ns, ns);
+            dr4kun3.cosmiccore.client.render.WorldText.draw(font, n, -font.width(n), 0, 0xFFFFFFFF, false, nm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        }
+    }
+
+    /**
+     * Leuchtende Rahmen des Lagerrasters: freie Plaetze schwach, belegte hell, ein volles Lager rot.
+     *
+     * @param vc Puffer
+     * @param tm Matrix fuer die Schrift
+     * @param port der Item-Port oder {@code null}
+     * @param x0 linke Kante des Rasters in Schriftpixeln
+     * @param y0 Oberkante des Rasters in Schriftpixeln
+     * @param cell Kantenlaenge eines Platzes in Schriftpixeln
+     * @param col Farbe RGB 0..1
+     * @param a Deckkraft
+     */
+    static void itemGridGlow(VertexConsumer vc, Matrix4f tm, @Nullable PortBlockEntity port, float x0, float y0, float cell, float[] col,
+                             float a) {
+        ItemPortBlockEntity ip = port instanceof ItemPortBlockEntity i ? i : null;
+        int slots = ItemPortBlockEntity.STORAGE_SLOTS;
+        boolean full = ip != null && ip.getClientUsed() >= slots;
+        float[] c = full ? new float[]{1.0F, 0.35F, 0.35F} : col;
+        for (int k = 0; k < slots; k++) {
+            boolean used = ip != null && !ip.getClientStack(k).isEmpty();
+            float al = used ? a * 0.7F : a * 0.18F;
+            float bx = x0 + (k % 9) * cell + 0.6F, by = y0 + (k / 9) * cell + 0.6F, bw = cell - 1.2F;
+            segment(vc, tm, bx, by, 0, bx + bw, by, 0, 0.3F, c[0], c[1], c[2], al, al);
+            segment(vc, tm, bx + bw, by, 0, bx + bw, by + bw, 0, 0.3F, c[0], c[1], c[2], al, al);
+            segment(vc, tm, bx + bw, by + bw, 0, bx, by + bw, 0, 0.3F, c[0], c[1], c[2], al, al);
+            segment(vc, tm, bx, by + bw, 0, bx, by, 0, 0.3F, c[0], c[1], c[2], al, al);
         }
     }
 
@@ -133,16 +222,26 @@ public final class PortStation {
         dr4kun3.cosmiccore.client.render.BlockQuads.render(ModBlocks.VOID_CASING.get().defaultBlockState(), pose, buffers, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT,
                 OverlayTexture.NO_OVERLAY); // wie bis 1.21.11: feste Flaechen bleiben unsichtbar
         pose.popPose();
-        // Anschlussknoten an jeder belegten Seite
+        // Anschluss an jeder belegten Seite: flacher Stecker genau in der Mitte der Blockseite, dazu ein Flachbandkabel,
+        // das unter dem Bildschirm aus dem Sockel kommt und aussen um ihn herum zum Stecker biegt
         CorePhase phase = port.hasProperty(ModProperties.PHASE) ? port.getValue(ModProperties.PHASE) : CorePhase.FORMED;
         if (phase == CorePhase.DORMANT) phase = CorePhase.FORMED;
         var model = Minecraft.getInstance().getModelManager().getStandaloneModel(PortRenderer.plugModel(energy, phase));
+        VertexConsumer ribbon = buffers.getBuffer(CosmicRenderTypes.solidColor());
         for (Direction d : Direction.values()) {
             if ((connMask & (1 << d.get3DDataValue())) == 0) continue;
+            ribbonSolid(ribbon, pose.last().pose(), d, yaw, grow);
             Vector3f c = connector(d, yaw);
             pose.pushPose();
             pose.translate(c.x, c.y, c.z);
-            pose.scale(0.36F * grow, 0.36F * grow, 0.36F * grow);
+            // Modell zeigt nach Sueden (+Z): auf die Blockseite drehen, gleichmaessig skalieren (keine Verzerrung)
+            if (d == Direction.UP) pose.rotate(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
+            else if (d == Direction.DOWN) pose.rotate(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
+            else {
+                Vector3f v = side(d, yaw);
+                pose.rotate(com.mojang.math.Axis.YP.rotation((float) Math.atan2(v.x, v.z)));
+            }
+            pose.scale(0.34F * grow, 0.34F * grow, 0.34F * grow);
             pose.translate(-0.5F, -0.5F, -0.5F);
             dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), buffers.getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.cutoutMovingBlock()), model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
@@ -167,11 +266,84 @@ public final class PortStation {
      * @return Position relativ zur Blockmitte
      */
     private static Vector3f connector(Direction d, float yaw) {
-        if (d == Direction.UP) return new Vector3f(0.0F, 0.32F, -0.28F);
-        if (d == Direction.DOWN) return new Vector3f(0.0F, -0.34F, 0.0F);
-        Vector3f v = new Vector3f(d.getStepX(), 0, d.getStepZ()).rotateY(-yaw);
-        return new Vector3f(v.x * 0.32F, -0.27F, v.z * 0.32F);
+        if (d == Direction.UP) return new Vector3f(0.0F, PLUG_AT, 0.0F);
+        if (d == Direction.DOWN) return new Vector3f(0.0F, -PLUG_AT, 0.0F);
+        Vector3f v = side(d, yaw);
+        return new Vector3f(v.x * PLUG_AT, 0.0F, v.z * PLUG_AT);
     }
+
+    /**
+     * Waagrechte Weltseite im lokalen Rahmen der Station.
+     *
+     * @param d Weltseite (nicht oben/unten)
+     * @param yaw Drehung der Station (Bogenmass)
+     * @return Einheitsvektor in der XZ-Ebene
+     */
+    private static Vector3f side(Direction d, float yaw) {
+        return new Vector3f(d.getStepX(), 0, d.getStepZ()).rotateY(-yaw);
+    }
+
+    /**
+     * Verlauf des Flachbandkabels vom Sockel zum Stecker (unten aus dem Sockel, unter dem Bildschirm hindurch, aussen
+     * herum und mit weichem Bogen in den Stecker).
+     *
+     * @param d Weltseite
+     * @param yaw Drehung der Station (Bogenmass)
+     * @return Punkte des Verlaufs (leer fuer unten - dort sitzt der Stecker direkt unter dem Sockel)
+     */
+    private static Vector3f[] ribbonPath(Direction d, float yaw) {
+        if (d == Direction.DOWN) return new Vector3f[0];
+        if (d == Direction.UP) {
+            // hinter dem Bildschirm hinauf und oben nach vorn zur Mitte der Oberseite
+            return new Vector3f[]{new Vector3f(0, -0.26F, -0.14F), new Vector3f(0, -0.26F, -0.3F), new Vector3f(0, -0.2F, -0.36F),
+                    new Vector3f(0, 0.36F, -0.36F), new Vector3f(0, 0.42F, -0.32F), new Vector3f(0, 0.45F, -0.22F),
+                    new Vector3f(0, 0.45F, -0.14F)};
+        }
+        Vector3f v = side(d, yaw);
+        float[][] p = {{0.14F, -0.26F}, {0.36F, -0.26F}, {0.42F, -0.245F}, {0.455F, -0.21F}, {0.465F, -0.17F}, {0.465F, -0.14F}};
+        Vector3f[] out = new Vector3f[p.length];
+        for (int i = 0; i < p.length; i++) out[i] = new Vector3f(v.x * p[i][0], p[i][1], v.z * p[i][0]);
+        return out;
+    }
+
+    /**
+     * Querachse des Flachbandes: waagrecht und quer zum Verlauf.
+     *
+     * @param d Weltseite
+     * @param yaw Drehung der Station (Bogenmass)
+     * @return Einheitsvektor
+     */
+    private static Vector3f ribbonAcross(Direction d, float yaw) {
+        if (d.getAxis() == Direction.Axis.Y) return new Vector3f(1, 0, 0);
+        Vector3f v = side(d, yaw);
+        return new Vector3f(-v.z, 0, v.x);
+    }
+
+    /**
+     * Flachbandkabel als dunkles Band (beidseitig sichtbar).
+     *
+     * @param vc Puffer (deckende Farbe)
+     * @param m Matrix der Station
+     * @param d Weltseite
+     * @param yaw Drehung der Station (Bogenmass)
+     * @param grow Einblenden 0..1
+     */
+    private static void ribbonSolid(VertexConsumer vc, Matrix4f m, Direction d, float yaw, float grow) {
+        Vector3f[] path = ribbonPath(d, yaw);
+        if (path.length < 2 || grow < 0.3F) return;
+        Vector3f w = ribbonAcross(d, yaw).mul(RIBBON_HALF * grow);
+        for (int i = 0; i + 1 < path.length; i++) {
+            Vector3f a = path[i], b = path[i + 1];
+            RenderUtil.quad2(vc, m, a.x - w.x, a.y - w.y, a.z - w.z, a.x + w.x, a.y + w.y, a.z + w.z,
+                    b.x + w.x, b.y + w.y, b.z + w.z, b.x - w.x, b.y - w.y, b.z - w.z, RIBBON[0], RIBBON[1], RIBBON[2], 1.0F);
+        }
+    }
+
+    /** Abstand der Steckermitte von der Blockmitte (der Stecker schliesst buendig mit der Blockseite ab). */
+    private static final float PLUG_AT = 0.455F;
+    /** Halbe Breite des Flachbandes und seine Farbe. */
+    private static final float RIBBON_HALF = 0.07F;
+    private static final float[] RIBBON = {0.09F, 0.08F, 0.13F};
 
     /**
      * Punkt auf der geneigten Bildschirmflaeche.
@@ -214,15 +386,14 @@ public final class PortStation {
                 ROW_TITLE, energy ? 0x7AE8FF : 0xFFC070);
         if (energy) {
             if (d.core() == null) return;
-            long cap = ReactorShellRenderer.capacity(d.core().getStructureSize());
-            row(font, tm, buffers, tr("console.cosmiccore.output"), compact(d.core().getOutput()) + " RF/t", ROW_A, 0x7AE8FF);
-            row(font, tm, buffers, tr("console.cosmiccore.buffer"), d.core().getEnergyPct() + " %", ROW_B, 0xC8B8F0);
-            row(font, tm, buffers, tr("console.cosmiccore.capacity"), compact(cap) + " RF", ROW_C, 0xA898C8);
+            long[] ev = energyValues(d.port(), d.core());
+            row(font, tm, buffers, tr("console.cosmiccore.transfer"), compact(ev[0]) + " RF/t", ROW_A, 0x7AE8FF);
+            row(font, tm, buffers, tr("console.cosmiccore.output"), compact(d.core().getOutput()) + " RF/t", ROW_B, 0xA898C8);
+            row(font, tm, buffers, tr("console.cosmiccore.buffer"), compact(ev[1]) + " / " + compact(ev[2]) + " RF", ROW_C, 0xC8B8F0);
             return;
         }
-        // Item-Port: einzige Angabe sind die belegten Plaetze seines Lagers
-        int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
-        row(font, tm, buffers, tr("console.cosmiccore.slots"), d.used() + " / " + slots, ROW_B - 4, d.used() >= slots ? 0xFF6060 : 0xFFC070);
+        // Item-Port: das Lager als Raster mit den echten Items
+        itemGrid(font, tm, buffers, level, d.port(), (PX - 9 * CELL) / 2.0F, GRID_Y, CELL);
     }
 
     /**
@@ -259,11 +430,26 @@ public final class PortStation {
      * @param y Position y in Schriftpixeln
      */
     static void icon(Matrix4f tm, MultiBufferSource buffers, Level level, ItemStack stack, float x, float y) {
+        icon(tm, buffers, level, stack, x + 4, y + 3.5F, 8.0F);
+    }
+
+    /**
+     * Item-Symbol beliebiger Groesse auf dem Bildschirm.
+     *
+     * @param tm Matrix fuer die Schrift
+     * @param buffers Puffer
+     * @param level Welt
+     * @param stack das Item
+     * @param cx Mitte x in Schriftpixeln
+     * @param cy Mitte y in Schriftpixeln
+     * @param size Kantenlaenge in Schriftpixeln
+     */
+    static void icon(Matrix4f tm, MultiBufferSource buffers, Level level, ItemStack stack, float cx, float cy, float size) {
         PoseStack ps = new PoseStack();
         ps.last().pose().set(tm);
         // gleichmaessig skaliert (sonst kippen die Normalen und das Symbol wird schwarz), leicht vor der Glasflaeche
-        ps.translate(x + 4, y + 3.5F, 1.0F);
-        ps.scale(8.0F, -8.0F, 8.0F);
+        ps.translate(cx, cy, size / 8.0F);
+        ps.scale(size, -size, size);
         if (!(buffers instanceof dr4kun3.cosmiccore.client.render.DeferredBuffers d)) return;
         var state = new net.minecraft.client.renderer.item.ItemStackRenderState();
         Minecraft.getInstance().getItemModelResolver().updateForTopItem(state, stack, ItemDisplayContext.GUI, level, null, 0);
@@ -352,19 +538,12 @@ public final class PortStation {
         Matrix4f tm = textFrame(sm, 0.002F);
         segment(vc, tm, 5, 12, 0, PX - 5, 12, 0, 0.5F, col[0], col[1], col[2], e * 0.6F, e * 0.6F);
         if (energy && d.core() != null) {
-            float fill = Mth.clamp(d.core().getEnergyPct() / 100.0F, 0, 1);
+            long[] ev = energyValues(d.port(), d.core());
+            float fill = ev[2] <= 0 ? 0.0F : Mth.clamp((float) ((double) ev[1] / ev[2]), 0, 1);
             segment(vc, tm, 5, BAR, 0, PX - 5, BAR, 0, 1.4F, col[0], col[1], col[2], e * 0.15F, e * 0.15F);
             if (fill > 0) segment(vc, tm, 5, BAR, 0, 5 + (PX - 10) * fill, BAR, 0, 1.4F, col[0], col[1], col[2], e, e);
         } else if (!energy) {
-            // Fuellstand des Lagers: 27 Kaestchen, belegte leuchten
-            int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
-            float cw = (PX - 10) / (float) slots;
-            for (int k = 0; k < slots; k++) {
-                float x0 = 5 + k * cw + 0.6F, x1 = 5 + (k + 1) * cw - 0.6F;
-                boolean full = k < d.used();
-                float[] c = full && d.used() >= slots ? new float[]{1.0F, 0.35F, 0.35F} : col;
-                segment(vc, tm, x0, BAR - 8, 0, x1, BAR - 8, 0, 3.0F, c[0], c[1], c[2], full ? e : e * 0.15F, full ? e : e * 0.15F);
-            }
+            itemGridGlow(vc, tm, d.port(), (PX - 9 * CELL) / 2.0F, GRID_Y, CELL, col, e);
         }
         float sv = Mth.frac(d.t() * 0.015F + (energy ? 0.5F : 0.0F)) * 62.0F;
         segment(vc, tm, 2, sv, 0, PX - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.1F, e * 0.1F);
@@ -385,13 +564,41 @@ public final class PortStation {
         float[] col = energy ? ENERGY : ITEM;
         for (Direction dir : Direction.values()) {
             if ((connMask & (1 << dir.get3DDataValue())) == 0) continue;
-            Vector3f c = connector(dir, yaw);
-            Vector3f to = new Vector3f(0, Math.min(c.y, -0.15F), 0);
-            segment(vc, base, c.x, c.y, c.z, to.x, to.y, to.z, 0.015F, col[0], col[1], col[2], e * 0.7F, e * 0.7F);
-            float s = Mth.frac(d.t() * 0.05F + dir.ordinal() * 0.17F);
-            float ps = energy ? 1.0F - s : s;
-            cube(vc, base, Mth.lerp(ps, c.x, to.x), Mth.lerp(ps, c.y, to.y), Mth.lerp(ps, c.z, to.z), 0.02F, 1, 1, 1, e * Mth.sin(ps * Mth.PI));
+            Vector3f[] path = ribbonPath(dir, yaw);
+            if (path.length < 2) continue;
+            // Adern des Flachbandes: drei feine Leuchtlinien knapp ueber dem Band
+            Vector3f across = ribbonAcross(dir, yaw);
+            for (int lane = -1; lane <= 1; lane++) {
+                Vector3f off = new Vector3f(across).mul(lane * RIBBON_HALF * 0.55F);
+                for (int i = 0; i + 1 < path.length; i++) {
+                    Vector3f a = new Vector3f(path[i]).add(off), b = new Vector3f(path[i + 1]).add(off);
+                    segment(vc, base, a.x, a.y, a.z, b.x, b.y, b.z, 0.006F, col[0], col[1], col[2], e * 0.55F, e * 0.55F);
+                }
+            }
+            // Lichtpuls laeuft das Band entlang (Energie hinaus, Items hinein)
+            float s = Mth.frac(d.t() * 0.03F + dir.ordinal() * 0.17F);
+            Vector3f q = along(path, energy ? s : 1.0F - s);
+            cube(vc, base, q.x, q.y, q.z, 0.022F, 1, 1, 1, e * Mth.sin(s * Mth.PI));
         }
+    }
+
+    /**
+     * Punkt auf einem Linienzug nach Anteil der Gesamtlaenge.
+     *
+     * @param path die Punkte
+     * @param f Anteil 0..1
+     * @return der Punkt
+     */
+    private static Vector3f along(Vector3f[] path, float f) {
+        float total = 0;
+        for (int i = 0; i + 1 < path.length; i++) total += path[i].distance(path[i + 1]);
+        float want = f * total;
+        for (int i = 0; i + 1 < path.length; i++) {
+            float len = path[i].distance(path[i + 1]);
+            if (want <= len || i + 2 == path.length) return new Vector3f(path[i]).lerp(path[i + 1], len <= 0 ? 0 : Math.min(1, want / len));
+            want -= len;
+        }
+        return new Vector3f(path[0]);
     }
 
     // ------------------------------------------------------------------ Portalfeld
