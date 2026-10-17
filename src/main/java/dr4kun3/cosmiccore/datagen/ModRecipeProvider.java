@@ -13,33 +13,67 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 
 public class ModRecipeProvider extends RecipeProvider {
+    /**
+     * Legt den Rezept-Erzeuger an.
+     *
+     * @param registries Registry-Zugriff
+     * @param output nimmt die Rezepte auf
+     */
     protected ModRecipeProvider(HolderLookup.Provider registries, RecipeOutput output) {
         super(registries, output);
     }
 
     /** Einstieg fuer die Datengenerierung (ab 1.21.2 laeuft der Provider ueber einen Runner). */
     public static class Runner extends RecipeProvider.Runner {
+        /**
+         * Legt den Einstieg fuer die Datengenerierung an.
+         *
+         * @param output Ausgabeordner
+         * @param registries Registry-Zugriff (asynchron)
+         */
         public Runner(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
             super(output, registries);
         }
 
+        /**
+         * Erzeugt den eigentlichen Rezept-Erzeuger.
+         *
+         * @param registries Registry-Zugriff
+         * @param output nimmt die Rezepte auf
+         * @return der Erzeuger
+         */
         @Override
         protected RecipeProvider createRecipeProvider(HolderLookup.Provider registries, RecipeOutput output) {
             return new ModRecipeProvider(registries, output);
         }
 
+        /**
+         * Name in der Ausgabe der Datengenerierung.
+         *
+         * @return "Cosmic Core Rezepte"
+         */
         @Override
         public String getName() {
             return "Cosmic Core Rezepte";
         }
     }
 
+    /**
+     * Beginnt ein geformtes Rezept, das freigeschaltet wird, sobald man das angegebene Item besitzt.
+     *
+     * @param result Ergebnis-Item
+     * @param count Anzahl des Ergebnisses
+     * @param unlock Item, dessen Besitz das Rezept freischaltet
+     * @param pattern Zeilen des 3x3-Musters
+     * @return Bauplan, an dem noch die Zutaten definiert werden
+     */
     private ShapedRecipeBuilder shaped(ItemLike result, int count, ItemLike unlock, String... pattern) {
         ShapedRecipeBuilder b = shaped(RecipeCategory.MISC, result, count);
         for (String row : pattern) b.pattern(row);
         return b.unlockedBy("has_item", has(unlock));
     }
 
+    /** Erzeugt alle Rezepte der Mod. */
     @Override
     protected void buildRecipes() {
         RecipeOutput out = output;

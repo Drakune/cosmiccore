@@ -16,6 +16,11 @@ public final class AsteroidLoot {
     public record Drop(Supplier<? extends Item> item, int min, int max, float chance) {}
 
     public record Table(String name, List<Drop> drops) {
+        /**
+         * Name der Loot-Table dieser Asteroidengroesse.
+         *
+         * @return Kennung {@code cosmiccore:asteroid/<groesse>}
+         */
         public net.minecraft.resources.Identifier id() {
             return CosmicCore.id("asteroid/" + name);
         }
@@ -48,5 +53,6 @@ public final class AsteroidLoot {
                     new Drop(() -> Items.ECHO_SHARD, 2, 4, 0.4F),
                     new Drop(() -> Items.NETHER_STAR, 1, 1, 0.05F))));
 
+    /** Nur statische Tabellen - keine Instanzen. */
     private AsteroidLoot() {}
 }

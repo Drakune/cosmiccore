@@ -71,5 +71,6 @@ public final class CoreConfig {
 
     public static final ModConfigSpec SPEC = B.build();
 
+    /** Nur statische Einstellungen - keine Instanzen. */
     private CoreConfig() {}
 }

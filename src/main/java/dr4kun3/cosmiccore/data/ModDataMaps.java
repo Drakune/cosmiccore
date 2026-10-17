@@ -18,15 +18,28 @@ public final class ModDataMaps {
             .synced(CoreStabilizer.CODEC, false)
             .build();
 
+    /**
+     * Brennstoffwerte eines Items laut Data Map.
+     *
+     * @param stack zu pruefender Stapel
+     * @return Brenndauer, Leistung und Hitze oder {@code null}, wenn das Item kein Brennstoff ist
+     */
     @Nullable
     public static CoreFuel fuel(ItemStack stack) {
         return stack.isEmpty() ? null : stack.typeHolder().getData(CORE_FUEL);
     }
 
+    /**
+     * Stabilisatorwerte eines Items laut Data Map.
+     *
+     * @param stack zu pruefender Stapel
+     * @return Kuehlwerte oder {@code null}, wenn das Item kein Stabilisator ist
+     */
     @Nullable
     public static CoreStabilizer stabilizer(ItemStack stack) {
         return stack.isEmpty() ? null : stack.typeHolder().getData(CORE_STABILIZER);
     }
 
+    /** Nur statische Definitionen - keine Instanzen. */
     private ModDataMaps() {}
 }

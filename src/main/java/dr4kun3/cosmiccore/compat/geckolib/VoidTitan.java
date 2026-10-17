@@ -16,11 +16,21 @@ public class VoidTitan implements GeoAnimatable {
     double ticks;
     boolean cinematic;
 
+    /**
+     * Ein Animations-Controller: im Film die Choreografie (einmal, dann halten), sonst die Ruhe-Animation in Schleife.
+     *
+     * @param controllers Sammelstelle der Controller
+     */
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<VoidTitan>("main", 0, state -> state.setAndContinue(cinematic ? CINEMATIC : IDLE)));
     }
 
+    /**
+     * Zwischenspeicher der Animationszustaende dieser Instanz.
+     *
+     * @return der Zwischenspeicher
+     */
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;

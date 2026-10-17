@@ -9,10 +9,22 @@ import org.jetbrains.annotations.Nullable;
 
 /** Resonanzspule und Fokuskristall: Strukturbloecke mit eigener Animation (siehe ResonatorRenderer). */
 public class ResonatorBlock extends StructureBlock implements EntityBlock {
+    /**
+     * Erzeugt den Block (Resonanzspule oder Fokuskristall).
+     *
+     * @param props Blockeigenschaften aus der Registrierung
+     */
     public ResonatorBlock(Properties props) {
         super(props);
     }
 
+    /**
+     * Jeder Resonator bekommt einen Blockinhalt, der den animierten Emitter zeichnet.
+     *
+     * @param pos Position des Blocks
+     * @param state aktueller Blockzustand
+     * @return neuer {@link ResonatorBlockEntity}
+     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

@@ -117,11 +117,20 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Farbsatz des Farb-Moduls (je Effekt eine Farbe) - wirkt nur mit eingesetztem Modul. */
     private dr4kun3.cosmiccore.color.CoreColors.Config colors = dr4kun3.cosmiccore.color.CoreColors.DEFAULT;
 
+    /**
+     * Eigener Farbsatz des Kerns (wirkt nur mit eingesetztem Farbmodul).
+     *
+     * @return der Farbsatz
+     */
     public dr4kun3.cosmiccore.color.CoreColors.Config getColors() {
         return colors;
     }
 
-    /** Vom Farbmenue (ueber das Netzwerk) gesetzt. */
+    /**
+     * Vom Farbmenue (ueber das Netzwerk) gesetzt.
+     *
+     * @param c der neue Farbsatz
+     */
     public void setColors(dr4kun3.cosmiccore.color.CoreColors.Config c) {
         colors = c;
         setChanged();
@@ -179,24 +188,43 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     @Nullable
     private CorePattern.Report lastReport;
 
+    /**
+     * Legt den Controller mit Inventar, Rohr-/Kabel-Sichten und GUI-Daten an.
+     *
+     * @param pos Position
+     * @param state Blockzustand
+     */
     public ControllerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CONTROLLER.get(), pos, state);
     }
 
     // ------------------------------------------------------------------ API fuer Ports / Capabilities / GUI
 
+    /**
+     * Steht die Struktur vollstaendig?
+     *
+     * @return {@code true}, wenn gebildet
+     */
     public boolean isFormed() {
         return formed;
     }
 
-    /** Freie Sicht zum Himmel ueber dem Kern (bzw. dem Trichter). */
+    /**
+     * Freie Sicht zum Himmel ueber dem Kern (bzw. dem Trichter).
+     *
+     * @return {@code true} bei freier Sicht
+     */
     public boolean hasSkyLink() {
         return skyLink;
     }
 
     /**
      * Nur fuer den Entwicklungs-Test der Cutscene: setzt einen fertigen ultimativen Kern mit Trichter und Lasern,
-     * Brennstoff, Stufe 10 und Ultimate-Modus (ohne die Cutscene selbst auszuloesen). Liefert die Kernmitte.
+     * Brennstoff, Stufe 10 und Ultimate-Modus (ohne die Cutscene selbst auszuloesen).
+     *
+     * @param level Server-Welt
+     * @param controllerPos Position des Controllers
+     * @return die Kernmitte
      */
     public static BlockPos debugSetupUltimate(ServerLevel level, BlockPos controllerPos) {
         level.setBlock(controllerPos, ModBlocks.CONTROLLER.get().defaultBlockState()
@@ -218,85 +246,161 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return c.corePos();
     }
 
-    /** Ultimativer Kern: ist der Void-Titan schon erwacht? */
+    /**
+     * Ultimativer Kern: ist der Void-Titan schon erwacht?
+     *
+     * @return {@code true} nach dem Erwachen
+     */
     public boolean isAwakened() {
         return awakened && size != null && size.isUltimate();
     }
 
-    /** Position der Kernmitte (nur bei gewaehlter Groesse sinnvoll). */
+    /**
+     * Position der Kernmitte (nur bei gewaehlter Groesse sinnvoll).
+     *
+     * @return die Kernmitte
+     */
     public BlockPos corePos() {
         return size == null || level == null ? worldPosition : size.pattern().center(worldPosition, facing());
     }
 
+    /**
+     * Ist das Farbmodul eingesetzt?
+     *
+     * @return {@code true}, wenn eingesetzt
+     */
     public boolean hasColorModule() {
         return inventory.getStackInSlot(SLOT_COLOR).is(ModItems.COLOR_MODULE.get());
     }
 
+    /**
+     * Ist das Asteroiden-Abwehrmodul eingesetzt?
+     *
+     * @return {@code true}, wenn eingesetzt
+     */
     public boolean hasAntiAsteroidModule() {
         return inventory.getStackInSlot(SLOT_ANTI).is(ModItems.ANTI_ASTEROID_MODULE.get());
     }
 
-    /** Eingesetzt und eingeschaltet: im Umkreis erscheinen keine Asteroiden. */
+    /**
+     * Eingesetzt und eingeschaltet: im Umkreis erscheinen keine Asteroiden.
+     *
+     * @return {@code true}, wenn die Abwehr aktiv ist
+     */
     public boolean isAsteroidShieldActive() {
         return antiAsteroid && hasAntiAsteroidModule();
     }
 
+    /** Meldet den Reaktor beim Laden in der Reaktorliste der Welt an (serverseitig). */
     @Override
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide()) ReactorRegistry.add(level, worldPosition);
     }
 
+    /** Meldet den Reaktor beim Entfernen aus der Reaktorliste ab. */
     @Override
     public void setRemoved() {
         super.setRemoved();
         if (level != null && !level.isClientSide()) ReactorRegistry.remove(level, worldPosition);
     }
 
+    /** Meldet den Reaktor beim Entladen des Chunks aus der Reaktorliste ab. */
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         if (level != null && !level.isClientSide()) ReactorRegistry.remove(level, worldPosition);
     }
 
+    /**
+     * Gespeicherte Energie.
+     *
+     * @return Energie in RF
+     */
     public long getEnergy() {
         return energy;
     }
 
+    /**
+     * Gewaehlte Baugroesse.
+     *
+     * @return die Baugroesse oder {@code null}, solange keine gewaehlt ist
+     */
     @Nullable
     public ReactorSize getSize() {
         return size;
     }
 
+    /**
+     * Wird die Bauvorschau angezeigt?
+     *
+     * @return {@code true}, wenn eingeschaltet
+     */
     public boolean isPreview() {
         return preview;
     }
 
+    /**
+     * Zeigt die Bauvorschau den Sternentrichter mit an?
+     *
+     * @return {@code true}, wenn ja
+     */
     public boolean isWithFunnel() {
         return withFunnel;
     }
 
+    /**
+     * Zeigt die Bauvorschau die Kosmos-Laser mit an?
+     *
+     * @return {@code true}, wenn ja
+     */
     public boolean isWithLasers() {
         return withLasers;
     }
 
-    /** Kapazitaet waechst mit der Leistungsstufe: Stufe x energyPerLevel (Standard 250 Mio. RF). */
+    /**
+     * Kapazitaet des Puffers je Baustufe (Werte aus der Konfiguration).
+     *
+     * @return Kapazitaet in RF
+     */
     public long getCapacity() {
         return size == null ? CoreConfig.BUFFER_PER_TIER.get() : size.buffer();
     }
 
+    /**
+     * Das Inventar des Kerns (Brennstoff, Stabilisator, Module, Beute).
+     *
+     * @return das Inventar
+     */
     public ItemStackHandler getInventory() {
         return inventory;
     }
 
+    /**
+     * Energie-Schnittstelle fuer Kabel (nur entnehmen).
+     *
+     * @return die Schnittstelle
+     */
     public IEnergyStorage getEnergyView() {
         return energyView;
     }
 
+    /**
+     * Item-Schnittstelle fuer Rohre (Brennstoff, Stabilisator und Module einfuegen, Beute entnehmen).
+     *
+     * @return die Schnittstelle
+     */
     public IItemHandler getItemView() {
         return itemView;
     }
 
+    /**
+     * Entnimmt Energie aus dem Puffer (nur bei gebildeter Struktur).
+     *
+     * @param max hoechstens so viel RF
+     * @param simulate nur pruefen
+     * @return entnommene Menge in RF
+     */
     public int extractEnergy(int max, boolean simulate) {
         if (!formed || max <= 0) return 0;
         int out = (int) Math.min(energy, max);
@@ -307,7 +411,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return out;
     }
 
-    /** Nimmt Energie von aussen auf (z. B. aus dem Kosmos-Laser). Liefert die tatsaechlich aufgenommene Menge. */
+    /**
+     * Nimmt Energie von aussen auf (z. B. aus dem Kosmos-Laser) - nur mit Brennstoff im Kern.
+     *
+     * @param amount angebotene Menge in RF
+     * @return tatsaechlich aufgenommene Menge
+     */
     public int receiveCosmicEnergy(int amount) {
         // ohne Brennstoff im Kern laeuft nichts - auch keine kosmische Energie
         if (!formed || amount <= 0 || burnTime <= 0) return 0;
@@ -319,11 +428,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return accepted;
     }
 
+    /**
+     * Legt einen Stapel des Spielers erst in den Brennstoff-, dann in den Stabilisator-Slot.
+     *
+     * @param stack der Stapel
+     * @return was nicht hineinpasst
+     */
     public ItemStack insertFromPlayer(ItemStack stack) {
         ItemStack rest = inventory.insertItem(SLOT_FUEL, stack, false);
         return inventory.insertItem(SLOT_STAB, rest, false);
     }
 
+    /**
+     * Bauplan der gewaehlten Groesse.
+     *
+     * @return das Muster oder {@code null} ohne Groesse
+     */
     @Nullable
     private CorePattern pattern() {
         return size == null ? null : size.pattern();
@@ -331,17 +451,36 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     // ------------------------------------------------------------------ GUI
 
+    /**
+     * Fenstertitel.
+     *
+     * @return Name des Controllers
+     */
     @Override
     public Component getDisplayName() {
         return Component.translatable("block.cosmiccore.controller");
     }
 
+    /**
+     * Oeffnet das Controller-Menue.
+     *
+     * @param id Fensternummer
+     * @param playerInv Inventar des Spielers
+     * @param player der Spieler
+     * @return das Menue
+     */
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory playerInv, Player player) {
         return new ControllerMenu(id, playerInv, this, dataAccess);
     }
 
-    /** Knopfdruck aus der GUI (serverseitig, ueber den Vanilla-Mechanismus clickMenuButton). */
+    /**
+     * Knopfdruck aus der GUI (serverseitig, ueber den Vanilla-Mechanismus clickMenuButton).
+     *
+     * @param player der Spieler
+     * @param id Nummer des Knopfs
+     * @return {@code true}, wenn der Knopf etwas bewirkt hat
+     */
     public boolean handleButton(Player player, int id) {
         if (!(level instanceof ServerLevel sl)) return false;
         int sizes = ReactorSize.values().length;
@@ -465,7 +604,14 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /** Kosten des Ultimate-Modus in Quasar-Overdrive-Partikeln. */
     public static final int ULTIMATE_COST = 4;
 
-    /** Verbraucht genau count Stueck - aber nur, wenn so viele im Inventar sind. */
+    /**
+     * Verbraucht genau count Stueck - aber nur, wenn so viele im Inventar sind.
+     *
+     * @param player der Spieler
+     * @param item das Item
+     * @param count Anzahl
+     * @return {@code true}, wenn verbraucht
+     */
     private static boolean consumeItems(Player player, net.minecraft.world.item.Item item, int count) {
         Inventory inv = player.getInventory();
         int have = 0;
@@ -482,6 +628,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return true;
     }
 
+    /**
+     * Verbraucht ein Stueck aus dem Inventar des Spielers.
+     *
+     * @param player der Spieler
+     * @param item das Item
+     * @return {@code true}, wenn eines gefunden wurde
+     */
     private static boolean consumeOne(Player player, net.minecraft.world.item.Item item) {
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -494,6 +647,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return false;
     }
 
+    /**
+     * Verbraucht einen Overdrive-Partikel aus dem Inventar des Spielers.
+     *
+     * @param player der Spieler
+     * @return {@code true}, wenn einer gefunden wurde
+     */
     private static boolean consumeParticle(Player player) {
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -508,10 +667,24 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     // ------------------------------------------------------------------ Tick
 
+    /**
+     * Tick-Einstieg fuer den Block-Ticker (nur auf dem Server).
+     *
+     * @param level Welt
+     * @param pos Position
+     * @param state Blockzustand
+     * @param be der Controller
+     */
     public static void serverTick(Level level, BlockPos pos, BlockState state, ControllerBlockEntity be) {
         if (level instanceof ServerLevel sl) be.tick(sl);
     }
 
+    /**
+     * Ein Server-Tick: Prognose und Konsolendaten (jede Sekunde), Strukturpruefung, Simulation, Laser,
+     * Uebergabe-Klaenge und Darstellungswerte.
+     *
+     * @param level Server-Welt
+     */
     private void tick(ServerLevel level) {
         if (size == null) return; // wartet auf die Wahl der Baugroesse
         energy = Math.min(energy, getCapacity()); // Puffer haengt an der Baustufe (z. B. nach Config-Aenderung)
@@ -548,37 +721,72 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         if (level.getGameTime() % 10 == 0) pushVisuals(level);
     }
 
+    /**
+     * Wie viele Module einer Sorte stecken im Slot (hoechstens MAX_MODULES)?
+     *
+     * @param slot Slot-Nummer
+     * @param module das Modul-Item
+     * @return Anzahl
+     */
     private int moduleCount(int slot, net.minecraft.world.item.Item module) {
         ItemStack st = inventory.getStackInSlot(slot);
         return st.is(module) ? Math.min(MAX_MODULES, st.getCount()) : 0;
     }
 
-    /** Effizienz-Module: je -15 % Brennstoffverbrauch. */
+    /**
+     * Effizienz-Module: je -15 % Brennstoffverbrauch.
+     *
+     * @return Faktor fuer den Verbrauch
+     */
     private float fuelUseFactor() {
         return 1.0f - 0.15f * moduleCount(SLOT_EFFICIENCY, ModItems.EFFICIENCY_MODULE.get());
     }
 
-    /** Stabilitaets-Module: je -12 % Instabilitaet. */
+    /**
+     * Stabilitaets-Module: je -12 % Instabilitaet.
+     *
+     * @return Faktor fuer die Instabilitaet
+     */
     private float stabilityFactor() {
         return 1.0f - 0.12f * moduleCount(SLOT_STABILITY, ModItems.STABILITY_MODULE.get());
     }
 
-    /** Haltewert des Eindaemmungsfelds - Stabilitaets-Module senken ihn um je 3 Prozentpunkte. */
+    /**
+     * Haltewert des Eindaemmungsfelds - Stabilitaets-Module senken ihn um je 3 Prozentpunkte.
+     *
+     * @return Haltewert in Prozent
+     */
     private float fieldTarget() {
         return FIELD_TARGET - 3f * moduleCount(SLOT_STABILITY, ModItems.STABILITY_MODULE.get());
     }
 
+    /**
+     * Leistungsfaktor aus Stufe (Exponent aus der Konfiguration), Baugroesse und Overdrive (x2 je Stufe).
+     *
+     * @return Faktor
+     */
     private double outputScale() {
         double sizeFactor = size == null ? 1.0 : size.outputFactor();
         return Math.pow(scale, CoreConfig.SCALE_OUTPUT_EXPONENT.get()) * sizeFactor * Math.pow(2.0, overdrive);
     }
 
+    /**
+     * Instabilitaetsfaktor aus Stufe, Baugroesse und Overdrive (x3 je Stufe, Ultimate-Modus x2).
+     *
+     * @return Faktor
+     */
     private double instabilityScale() {
         double sizeFactor = size == null ? 1.0 : size.instabilityFactor();
         return Math.pow(scale, CoreConfig.SCALE_INSTABILITY_EXPONENT.get()) * sizeFactor
                 * (overdrive <= 3 ? Math.pow(3.0, overdrive) : 27.0 * 2.0); // Ultimate-Modus: x2 statt x3
     }
 
+    /**
+     * Simuliert die Reaktion: Brennstoff nachlegen, Energie erzeugen, Instabilitaet und Eindaemmungsfeld
+     * fuehren, Phase setzen und gegebenenfalls kollabieren.
+     *
+     * @param level Server-Welt
+     */
     private void simulate(ServerLevel level) {
         final long capacity = getCapacity();
         final int ramp = CoreConfig.RAMP_UP_TICKS.get();
@@ -719,7 +927,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Verbraucht einen Stabilisator aus dem Slot und laedt das Feld. Groessere Reaktoren nutzen ihn besser. */
+    /**
+     * Verbraucht einen Stabilisator aus dem Slot und laedt das Feld. Groessere Reaktoren nutzen ihn besser.
+     *
+     * @return {@code true}, wenn einer verbraucht wurde
+     */
     private boolean consumeStabilizer() {
         CoreStabilizer stab = ModDataMaps.stabilizer(inventory.getStackInSlot(SLOT_STAB));
         if (stab == null || size == null) return false;
@@ -730,11 +942,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return true;
     }
 
-    /** Kuehlpunkte eines Stabilisators (vor dem Groessenfaktor): Wirkdauer x Staerke aus der Data Map. */
+    /**
+     * Kuehlpunkte eines Stabilisators (vor dem Groessenfaktor): Wirkdauer x Staerke aus der Data Map.
+     *
+     * @param stab Eintrag aus der Data Map
+     * @return Kuehlpunkte
+     */
     public static double stabilizerPoints(CoreStabilizer stab) {
         return stab.duration() * (double) stab.strength() * CoreConfig.STABILIZER_MULTIPLIER.get();
     }
 
+    /**
+     * Kollaps bei zu hoher Instabilitaet: Knall und Partikel, Schaden und Dunkelheit im Umkreis, optional
+     * zerbricht der Kern.
+     *
+     * @param level Server-Welt
+     */
     private void collapse(ServerLevel level) {
         BlockPos core = center(level);
         Vec3 c = Vec3.atCenterOf(core);
@@ -794,7 +1017,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public static final double HOLD_ABOVE = 1.6;
 
     /** Schaltet die Modelle der vier Laser um (im Verbund ausgeblendet, das grosse Geschuetz wird gerendert). */
-    /** @param top Position ueber der Deckenmitte (dort sitzt ggf. der Sternentrichter, die Laser drumherum). */
+    /**
+     * Schaltet die Kosmos-Laser um die Deckenmitte auf verbunden oder getrennt.
+     *
+     * @param level Server-Welt
+     * @param top Position ueber der Deckenmitte (dort sitzt ggf. der Sternentrichter, die Laser drumherum)
+     * @param linked {@code true}: verbunden
+     */
     private static void setLasersLinked(ServerLevel level, BlockPos top, boolean linked) {
         for (Direction d : Direction.Plane.HORIZONTAL) {
             BlockPos lp = top.relative(d);
@@ -808,7 +1037,10 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     /**
      * Asteroiden-Beute: wuerfelt die Loot-Tabelle cosmiccore:asteroid/small|medium|large (per Datapack anpassbar)
-     * und legt sie in die Beute-Slots. Was nicht passt, faellt am Controller heraus.
+     * und legt sie in die Item-Ports. Was nicht passt, faellt am Controller heraus.
+     *
+     * @param level Server-Welt
+     * @param kind Groesse des Asteroiden
      */
     private void collectLoot(ServerLevel level, CosmicAsteroid.Kind kind) {
         String name = kind.id;
@@ -829,7 +1061,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Schaltet das Modell des Sternentrichters um (verbunden = animierter Trichter wird gerendert). */
+    /**
+     * Schaltet das Modell des Sternentrichters um (verbunden = animierter Trichter wird gerendert).
+     *
+     * @param level Server-Welt
+     * @param top Position ueber der Deckenmitte
+     * @param linked {@code true}: verbunden
+     */
     private static void setFunnelLinked(ServerLevel level, BlockPos top, boolean linked) {
         if (!level.hasChunkAt(top)) return;
         BlockState s = level.getBlockState(top);
@@ -838,7 +1076,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Erfasst Asteroiden, laedt auf und schiesst sie mit dem Strahl ab. Die freigesetzte Energie fliesst in den Puffer. */
+    /**
+     * Erfasst Asteroiden, laedt auf und schiesst sie mit dem Strahl ab. Die freigesetzte Energie fliesst in den Puffer.
+     *
+     * @param level Server-Welt
+     */
     private void tickLasers(ServerLevel level) {
         CorePattern p = pattern();
         if (p == null) return;
@@ -896,6 +1138,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      * Klaenge passend zur Uebergabe-Animation (Lautstaerke > 1 = groessere Hoerweite):
      * jedes ankommende Bruchstueck ein heller Ton (steigende Tonhoehe), dann das Formen der Energiekugel und
      * schliesslich ihre Aufnahme im Kern.
+     *
+     * @param level Server-Welt
      */
     private void tickDelivery(ServerLevel level) {
         if (deliverTicks < 0) return;
@@ -933,6 +1177,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     /**
      * Einmaliges Erwachen des ultimativen Kerns: alle Spieler der Dimension sehen den Himmelseffekt
      * (Lichtsaeule ins All, Himmelsblitz, Polarlichter rund um die Welt, Schockwelle, Sternschnuppen).
+     *
+     * @param level Server-Welt
      */
     private void awaken(ServerLevel level) {
         awakened = true;
@@ -943,7 +1189,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 new dr4kun3.cosmiccore.network.AwakeningPayload(c, size.size()));
     }
 
-    /** Uebergibt die Darstellungswerte an den Singularitaetskern (der sie an die Clients schickt). */
+    /**
+     * Uebergibt die Darstellungswerte an den Singularitaetskern (der sie an die Clients schickt).
+     *
+     * @param level Server-Welt
+     */
     private void pushVisuals(ServerLevel level) {
         if (!formed || size == null) return;
         BlockPos core = center(level);
@@ -962,19 +1212,33 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     // ------------------------------------------------------------------ Kosmische Modifikatoren
 
+    /**
+     * Ist es Nacht (Tageszeit 13000 bis 23000)?
+     *
+     * @param level Server-Welt
+     * @return {@code true} bei Nacht
+     */
     private static boolean isNight(ServerLevel level) {
         long t = level.getOverworldClockTime() % 24000L;
         return t >= 13000L && t < 23000L;
     }
 
-    /** Moonphase 0 = Vollmond, 4 = Neumond (gleiche Formel wie Vanilla). */
+    /**
+     * Mondphase (gleiche Formel wie Vanilla).
+     *
+     * @param level Server-Welt
+     * @return 0 = Vollmond ... 4 = Neumond ... 7
+     */
     private static int moonPhase(ServerLevel level) {
         return (int) ((level.getOverworldClockTime() / 24000L) % 8L);
     }
 
     /**
-     * Sternenlicht: nur mit freier Sicht zum Himmel ueber der Decke gibt es den Himmelsbonus und den Nacht-/Mondbonus.
-     * Im End wirkt die Leere immer, mit Himmelssicht noch staerker.
+     * Sternenlicht: nur mit freier Sicht zum Himmel ueber der Decke gibt es den Himmelsbonus und den
+     * Nacht-/Mondbonus. Im End wirkt die Leere immer, mit Himmelssicht noch staerker.
+     *
+     * @param level Server-Welt
+     * @return Faktor fuer die Leistung
      */
     public double cosmicOutput(ServerLevel level) {
         if (!CoreConfig.COSMIC_MODIFIERS.get()) return 1.0;
@@ -991,6 +1255,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return 1.0;
     }
 
+    /**
+     * Kosmischer Einfluss auf die Instabilitaet: im End x1,25, in Neumondnaechten mit Himmelssicht x1,3.
+     *
+     * @param level Server-Welt
+     * @return Faktor
+     */
     private double cosmicInstability(ServerLevel level) {
         if (!CoreConfig.COSMIC_MODIFIERS.get()) return 1.0;
         if (level.dimension() == Level.END) return 1.25;
@@ -1000,16 +1270,33 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     // ------------------------------------------------------------------ Struktur
 
+    /**
+     * Blickrichtung des Controllers.
+     *
+     * @return Richtung (Norden, falls unbekannt)
+     */
     private Direction facing() {
         BlockState s = getBlockState();
         return s.hasProperty(ControllerBlock.FACING) ? s.getValue(ControllerBlock.FACING) : Direction.NORTH;
     }
 
+    /**
+     * Kernmitte der Struktur aus Controller-Position und Blickrichtung.
+     *
+     * @param level Server-Welt
+     * @return die Kernmitte (ohne Groesse der Controller selbst)
+     */
     private BlockPos center(ServerLevel level) {
         CorePattern p = pattern();
         return p == null ? worldPosition : p.center(worldPosition, level.getBlockState(worldPosition).getValue(ControllerBlock.FACING));
     }
 
+    /**
+     * Prueft die Struktur in allen vier Ausrichtungen und bildet oder loest den Reaktor entsprechend.
+     * In ungeladenen Chunks aendert sich nichts.
+     *
+     * @param level Server-Welt
+     */
     private void revalidate(ServerLevel level) {
         CorePattern pattern = pattern();
         if (pattern == null) return;
@@ -1083,6 +1370,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * Struktur ist vollstaendig: Ports verbinden, Phase setzen, beim ultimativen Kern die Satelliten verschmelzen,
+     * Klaenge und die Verwandlungs-Animation starten.
+     *
+     * @param level Server-Welt
+     */
     private void onFormed(ServerLevel level) {
         formed = true;
         // ultimativ: die vier Satellitenkerne verschmelzen zum Kern in der Mitte
@@ -1107,6 +1400,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         changedAndSync();
     }
 
+    /**
+     * Struktur ist zerbrochen: Overdrive verfaellt, Phase zurueck auf ruhend, Ports trennen, verschmolzenen Kern
+     * entfernen.
+     *
+     * @param level Server-Welt
+     */
     private void onUnformed(ServerLevel level) {
         formed = false;
         meltdown = 0;
@@ -1122,19 +1421,38 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         changedAndSync();
     }
 
-    /** Der verschmolzene Mittelkern des ultimativen Kerns existiert nur, solange die Struktur steht (kein Drop). */
+    /**
+     * Der verschmolzene Mittelkern des ultimativen Kerns existiert nur, solange die Struktur steht (kein Drop).
+     *
+     * @param level Server-Welt
+     * @param mid Kernmitte
+     */
     private static void removeFusedCore(ServerLevel level, BlockPos mid) {
         if (level.hasChunkAt(mid) && level.getBlockEntity(mid) instanceof SingularityCoreBlockEntity core && core.isFused()) {
             level.setBlock(mid, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         }
     }
 
-    /** Spiegelt die aktuelle Phase auf alle Strukturbloecke (Textur-Variante, Licht, Animation). */
+    /**
+     * Spiegelt die aktuelle Phase auf alle Strukturbloecke (Textur-Variante, Licht, Animation).
+     *
+     * @param level Server-Welt
+     */
     private void applyPhase(ServerLevel level) {
         CorePattern p = pattern();
         if (p != null) setPhaseAround(level, p, center(level), facing(), phase, worldPosition);
     }
 
+    /**
+     * Setzt Phase und Phantom-Zustand (ausserhalb der sichtbaren Kugel kein Koerper) auf alle Bloecke des Musters.
+     *
+     * @param level Server-Welt
+     * @param pattern Bauplan
+     * @param center Kernmitte
+     * @param facing Ausrichtung
+     * @param target neue Phase
+     * @param skip Position, die zuletzt gesondert gesetzt wird (der Controller), oder {@code null}
+     */
     private static void setPhaseAround(ServerLevel level, CorePattern pattern, BlockPos center, Direction facing, CorePhase target,
                                        @Nullable BlockPos skip) {
         float radius = pattern.shellRadius();
@@ -1160,6 +1478,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * Verbindet alle Ports der Struktur mit dem Controller oder trennt sie.
+     *
+     * @param level Server-Welt
+     * @param link {@code true}: verbinden, {@code false}: trennen
+     */
     private void linkPorts(ServerLevel level, boolean link) {
         CorePattern p = pattern();
         if (p == null) return;
@@ -1176,6 +1500,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      * Kreativ-Modus: setzt die komplette Struktur in der aktuellen Ausrichtung. Luft-Zellen werden freigeraeumt,
      * "egal"-Zellen bleiben unberuehrt. Rechts neben dem Controller (von vorn gesehen) entsteht der Energie-Port, links
      * der Item-Port - zusammen bilden die drei eine Steuerkonsole, an deren Seiten Rohre und Kabel andocken.
+     *
+     * @param level Server-Welt
      */
     private void buildStructure(ServerLevel level) {
         CorePattern p = pattern();
@@ -1230,14 +1556,24 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         revalidate(level);
     }
 
-    /** Controller wird entfernt: Struktur zuruecksetzen und Inventar fallen lassen (ab 1.21.5 statt Block#onRemove). */
+    /**
+     * Bevor der Controller verschwindet: loest die Struktur auf.
+     *
+     * @param pos Position
+     * @param state bisheriger Blockzustand
+     */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
         if (level instanceof ServerLevel sl) onControllerRemoved(sl, state);
     }
 
-    /** Wird vom Block aufgerufen, bevor der Controller verschwindet. */
+    /**
+     * Wird vom Block aufgerufen, bevor der Controller verschwindet: loest die Struktur auf.
+     *
+     * @param level Server-Welt
+     * @param oldState bisheriger Blockzustand
+     */
     public void onControllerRemoved(ServerLevel level, BlockState oldState) {
         CorePattern p = pattern();
         if (p != null && oldState.hasProperty(ControllerBlock.FACING)) {
@@ -1272,10 +1608,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     // ------------------------------------------------------------------ Statusanzeige (Schleichen + Rechtsklick)
 
+    /**
+     * Zahl mit Tausendertrennzeichen.
+     *
+     * @param n Wert
+     * @return formatierter Text
+     */
     private static String fmt(long n) {
         return NumberFormat.getIntegerInstance().format(n);
     }
 
+    /**
+     * Schreibt den Zustand in den Chat: Fehler der Struktur oder Energie, Leistung, Instabilitaet und mehr.
+     *
+     * @param level Server-Welt
+     * @param player Empfaenger
+     */
     public void sendStatus(ServerLevel level, Player player) {
         player.sendSystemMessage(Component.translatable("message.cosmiccore.status.header")
                 .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
@@ -1320,6 +1668,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     // ------------------------------------------------------------------ Persistenz / Sync
 
+    /** Markiert als geaendert und schickt die Daten an die Clients. */
     private void changedAndSync() {
         setChanged();
         if (level != null && !level.isClientSide()) {
@@ -1327,6 +1676,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * Speichert Zustand, Inventar und Einstellungen.
+     *
+     * @param tag Ziel der Daten
+     */
     @Override
     protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
         super.saveAdditional(tag);
@@ -1358,6 +1712,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         inventory.serialize(tag.child("inventory"));
     }
 
+    /**
+     * Laedt Zustand, Inventar und Einstellungen.
+     *
+     * @param input gespeicherte Daten
+     */
     @Override
     protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
         super.loadAdditional(input);
@@ -1401,7 +1760,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Der Client braucht nur, was die Bauvorschau zeichnen muss. */
+    /**
+     * Der Client braucht nur, was Bauvorschau, Konsole und Port-Stationen zeichnen muessen.
+     *
+     * @param registries Registry-Zugriff
+     * @return die zu sendenden Daten
+     */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
@@ -1425,13 +1789,23 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return tag;
     }
 
+    /**
+     * Pruefwert ueber die Beute-Items (um Aenderungen zu erkennen).
+     *
+     * @return Hashwert
+     */
     private int lootSignature() {
         int h = 0;
         for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) h = h * 31 + inventory.getStackInSlot(i).getItem().hashCode();
         return h;
     }
 
-    /** Erster Item-Port der Struktur (fuer den Lager-Knopf im Menue). */
+    /**
+     * Erster Item-Port der Struktur (fuer den Lager-Knopf im Menue).
+     *
+     * @param level Server-Welt
+     * @return der Port oder {@code null}
+     */
     @Nullable
     private ItemPortBlockEntity firstItemPort(ServerLevel level) {
         CorePattern p = pattern();
@@ -1446,7 +1820,13 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return found[0];
     }
 
-    /** Legt Beute in die Lager der Item-Ports der Struktur; zurueck kommt, was nirgends passt. */
+    /**
+     * Legt Beute in die Lager der Item-Ports der Struktur.
+     *
+     * @param level Server-Welt
+     * @param stack die Beute
+     * @return was nirgends passt
+     */
     private ItemStack storeInPorts(ServerLevel level, ItemStack stack) {
         CorePattern p = pattern();
         if (p == null || !formed) return stack;
@@ -1458,7 +1838,11 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         return rest[0];
     }
 
-    /** Verdeckten Beute-Puffer (aeltere Spielstaende, volle Ports) in die Item-Ports nachschieben. */
+    /**
+     * Verdeckten Beute-Puffer (aeltere Spielstaende, volle Ports) in die Item-Ports nachschieben.
+     *
+     * @param level Server-Welt
+     */
     private void flushLoot(ServerLevel level) {
         for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) {
             ItemStack st = inventory.getStackInSlot(i);
@@ -1468,6 +1852,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * Hat die Struktur einen Energie-Port?
+     *
+     * @param level Server-Welt
+     * @return {@code true}, wenn mindestens einer verbaut ist
+     */
     private boolean scanEnergyPort(ServerLevel level) {
         CorePattern p = pattern();
         if (p == null) return false;
@@ -1485,6 +1875,8 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      * Wie lange reichen Brennstoff und Stabilisator bei der aktuellen Stufe, Overdrive, Modulen und Umgebung?
      * Brennstoff: Restbrenndauer / Verbrauch pro Tick. Stabilisator: Feldpunkte / Hitze pro Tick (im Gleichgewicht
      * verbraucht das Feld genau so viel, wie die Reaktion an Instabilitaet erzeugt).
+     *
+     * @param level Server-Welt
      */
     private void updateForecast(ServerLevel level) {
         if (!formed || !enabled || collapseCooldown > 0 || size == null) {
@@ -1516,52 +1908,109 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * Prognose: wie lange reicht der Brennstoff noch?
+     *
+     * @return Sekunden oder TIME_NONE
+     */
     public int getFuelSeconds() {
         return fuelSeconds;
     }
 
+    /**
+     * Prognose: wie lange reicht der Stabilisator noch?
+     *
+     * @return Sekunden oder TIME_NONE
+     */
     public int getStabSeconds() {
         return stabSeconds;
     }
 
+    /**
+     * Hat die Struktur einen Energie-Port (laut letzter Pruefung)?
+     *
+     * @return {@code true}, wenn ja
+     */
     public boolean hasEnergyPort() {
         return energyPort;
     }
 
+    /**
+     * Client: die Beute-Items laut Server (fuer die Anzeige).
+     *
+     * @return Liste der Stapel
+     */
     public java.util.List<ItemStack> getClientLootItems() {
         return clientLootItems;
     }
 
+    /**
+     * Anzahl Items im verdeckten Beute-Puffer.
+     *
+     * @return Anzahl
+     */
     private int lootCount() {
         int n = 0;
         for (int i = SLOT_LOOT_FIRST; i < LOOT_END; i++) n += inventory.getStackInSlot(i).getCount();
         return n;
     }
 
-    /** Schreibt einen Item-Stapel als NBT. */
+    /**
+     * Schreibt einen Item-Stapel als NBT.
+     *
+     * @param registries Registry-Zugriff
+     * @param stack der Stapel
+     * @return die Daten
+     */
     private static net.minecraft.nbt.Tag writeStack(HolderLookup.Provider registries, ItemStack stack) {
         return ItemStack.CODEC.encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), stack)
                 .result().orElseGet(CompoundTag::new);
     }
 
-    /** Liest einen Item-Stapel aus NBT (leer, wenn ungueltig). */
+    /**
+     * Liest einen Item-Stapel aus NBT (leer, wenn ungueltig).
+     *
+     * @param registries Registry-Zugriff
+     * @param tag gespeicherter Stapel
+     * @return der Stapel
+     */
     private static ItemStack readStack(HolderLookup.Provider registries, net.minecraft.nbt.Tag tag) {
         return ItemStack.OPTIONAL_CODEC.parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag)
                 .result().orElse(ItemStack.EMPTY);
     }
 
+    /**
+     * Client: Inhalt des Brennstoff-Slots laut Server.
+     *
+     * @return der Stapel
+     */
     public ItemStack getClientFuel() {
         return clientFuel;
     }
 
+    /**
+     * Client: Inhalt des Stabilisator-Slots laut Server.
+     *
+     * @return der Stapel
+     */
     public ItemStack getClientStab() {
         return clientStab;
     }
 
+    /**
+     * Client: Anzahl Beute-Items laut Server.
+     *
+     * @return Anzahl
+     */
     public int getClientLoot() {
         return clientLoot;
     }
 
+    /**
+     * Client: uebernimmt die Daten vom Server.
+     *
+     * @param input empfangene Daten
+     */
     @Override
     public void handleUpdateTag(net.minecraft.world.level.storage.ValueInput input) {
         CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
@@ -1584,11 +2033,22 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * Client: Datenpaket des Servers empfangen.
+     *
+     * @param net Verbindung
+     * @param input empfangene Daten
+     */
     @Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.world.level.storage.ValueInput input) {
         handleUpdateTag(input);
     }
 
+    /**
+     * Paket mit den Daten fuer die Clients.
+     *
+     * @return das Paket
+     */
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
@@ -1603,11 +2063,23 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     public static class CoreInventory extends ItemStackHandler {
         private final Runnable onChange;
 
+        /**
+         * Legt das Inventar an.
+         *
+         * @param onChange wird bei jeder Aenderung aufgerufen
+         */
         public CoreInventory(Runnable onChange) {
             super(INVENTORY_SIZE);
             this.onChange = onChange;
         }
 
+        /**
+         * Darf das Item in diesen Slot? Brennstoff und Stabilisator laut Data Map, Module nur in ihren Slot.
+         *
+         * @param slot Slot-Nummer
+         * @param stack zu pruefender Stapel
+         * @return {@code true}, wenn erlaubt
+         */
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             return switch (slot) {
@@ -1621,13 +2093,23 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             };
         }
 
+        /**
+         * Groesste Menge je Slot: Abwehr- und Farbmodul 1, Effizienz/Stabilitaet MAX_MODULES.
+         *
+         * @param slot Slot-Nummer
+         * @return Grenze
+         */
         @Override
         public int getSlotLimit(int slot) {
             if (slot == SLOT_ANTI || slot == SLOT_COLOR) return 1;
             return slot == SLOT_EFFICIENCY || slot == SLOT_STABILITY ? MAX_MODULES : super.getSlotLimit(slot);
         }
 
-        /** Aeltere Speicherstaende hatten nur 2 Slots - die Groesse bleibt immer INVENTORY_SIZE. */
+        /**
+         * Laedt das Inventar. Aeltere Speicherstaende hatten nur 2 Slots - die Groesse bleibt immer INVENTORY_SIZE.
+         *
+         * @param input gespeicherte Daten
+         */
         @Override
         public void deserialize(net.minecraft.world.level.storage.ValueInput input) {
             setSize(INVENTORY_SIZE);
@@ -1637,13 +2119,23 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             onLoad();
         }
 
+        /**
+         * Meldet jede Aenderung weiter.
+         *
+         * @param slot geaenderter Slot
+         */
         @Override
         protected void onContentsChanged(int slot) {
             onChange.run();
         }
     }
 
-    /** Scheitert die Struktur nur an einem fehlenden Pflicht-Port (Uebersetzungsschluessel der Meldung)? */
+    /**
+     * Scheitert die Struktur nur an einem fehlenden Pflicht-Port?
+     *
+     * @param key Uebersetzungsschluessel der Meldung
+     * @return {@code true}, wenn genau das fehlt
+     */
     private boolean missing(String key) {
         return lastReport != null && lastReport.expected() != null
                 && lastReport.expected().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
@@ -1652,6 +2144,12 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Werte fuer die GUI. Ganzzahlen > 16 Bit werden in zwei Haelften uebertragen (Vanilla sendet nur Shorts). */
     private final class DataAccess implements ContainerData {
+        /**
+         * Ein Wert fuer die GUI (grosse Zahlen in zwei 16-Bit-Haelften).
+         *
+         * @param index Nummer des Werts (siehe ControllerMenu.D_*)
+         * @return der Wert
+         */
         @Override
         public int get(int index) {
             return switch (index) {
@@ -1702,9 +2200,20 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
             };
         }
 
+        /**
+         * Nur lesend - der Client setzt keine Werte.
+         *
+         * @param index Nummer des Werts
+         * @param value ignoriert
+         */
         @Override
         public void set(int index, int value) {}
 
+        /**
+         * Anzahl der Werte.
+         *
+         * @return ControllerMenu.DATA_COUNT
+         */
         @Override
         public int getCount() {
             return ControllerMenu.DATA_COUNT;
@@ -1713,31 +2222,71 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Fuer Trichter/Rohre: Brennstoff, Stabilisator und Module einfuegen, Asteroiden-Beute entnehmen. */
     private final class InsertOnlyView implements IItemHandler {
+        /**
+         * Anzahl Slots.
+         *
+         * @return Anzahl
+         */
         @Override
         public int getSlots() {
             return inventory.getSlots();
         }
 
+        /**
+         * Inhalt eines Slots.
+         *
+         * @param slot Slot-Nummer
+         * @return der Stapel
+         */
         @Override
         public ItemStack getStackInSlot(int slot) {
             return inventory.getStackInSlot(slot);
         }
 
+        /**
+         * Einfuegen nur in Brennstoff-, Stabilisator- und Modul-Slots.
+         *
+         * @param slot Slot-Nummer
+         * @param stack einzufuegender Stapel
+         * @param simulate nur pruefen
+         * @return was nicht eingefuegt werden konnte
+         */
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
             return slot < SLOT_LOOT_FIRST || slot >= SLOT_ANTI ? inventory.insertItem(slot, stack, simulate) : stack;
         }
 
+        /**
+         * Entnehmen nur aus den Beute-Slots.
+         *
+         * @param slot Slot-Nummer
+         * @param amount gewuenschte Menge
+         * @param simulate nur pruefen
+         * @return entnommener Stapel
+         */
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
             return slot >= SLOT_LOOT_FIRST && slot < LOOT_END ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
         }
 
+        /**
+         * Groesste Menge je Slot.
+         *
+         * @param slot Slot-Nummer
+         * @return Grenze
+         */
         @Override
         public int getSlotLimit(int slot) {
             return inventory.getSlotLimit(slot);
         }
 
+        /**
+         * Darf das Item von aussen in diesen Slot?
+         *
+         * @param slot Slot-Nummer
+         * @param stack zu pruefender Stapel
+         * @return {@code true}, wenn erlaubt
+         */
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             return (slot < SLOT_LOOT_FIRST || slot >= SLOT_ANTI) && inventory.isItemValid(slot, stack);
@@ -1745,31 +2294,65 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private final class EnergyView implements IEnergyStorage {
+        /**
+         * Der Reaktor nimmt ueber Kabel keine Energie an.
+         *
+         * @param toReceive angebotene Menge
+         * @param simulate nur pruefen
+         * @return immer 0
+         */
         @Override
         public int receiveEnergy(int toReceive, boolean simulate) {
             return 0;
         }
 
+        /**
+         * Entnimmt Energie aus dem Puffer.
+         *
+         * @param toExtract gewuenschte Menge in RF
+         * @param simulate nur pruefen
+         * @return entnommene Menge
+         */
         @Override
         public int extractEnergy(int toExtract, boolean simulate) {
             return ControllerBlockEntity.this.extractEnergy(toExtract, simulate);
         }
 
+        /**
+         * Gespeicherte Energie (auf int begrenzt).
+         *
+         * @return Energie in RF
+         */
         @Override
         public int getEnergyStored() {
             return (int) Math.min(Integer.MAX_VALUE, energy);
         }
 
+        /**
+         * Kapazitaet (auf int begrenzt).
+         *
+         * @return Kapazitaet in RF
+         */
         @Override
         public int getMaxEnergyStored() {
             return (int) Math.min(Integer.MAX_VALUE, getCapacity());
         }
 
+        /**
+         * Entnehmen ist moeglich.
+         *
+         * @return immer {@code true}
+         */
         @Override
         public boolean canExtract() {
             return true;
         }
 
+        /**
+         * Einspeisen ist nicht moeglich.
+         *
+         * @return immer {@code false}
+         */
         @Override
         public boolean canReceive() {
             return false;

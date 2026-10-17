@@ -16,6 +16,12 @@ import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 
 /** Asteroiden-Beute aus {@link AsteroidLoot}: ein Pool je Drop, mit Zufallschance falls unter 100 %. */
 public record ModAsteroidLoot(HolderLookup.Provider registries) implements LootTableSubProvider {
+    /**
+     * Erzeugt fuer jede Asteroidengroesse eine Loot-Table: ein Pool je moeglichem Drop, mit zufaelliger Anzahl
+     * zwischen Minimum und Maximum und einer Wahrscheinlichkeit, falls diese unter 100 % liegt.
+     *
+     * @param out Empfaenger der fertigen Tabellen (Schluessel der Loot-Table und Tabellen-Bauplan)
+     */
     @Override
     public void generate(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> out) {
         for (AsteroidLoot.Table t : AsteroidLoot.TABLES) {

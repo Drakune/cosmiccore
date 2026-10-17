@@ -23,26 +23,51 @@ public final class DeferredBuffers implements MultiBufferSource {
     private final int orderBase;
     private boolean closed;
 
+    /**
+     * Schliesst den aktuellen Abschnitt ab: der naechste Zugriff beginnt einen neuen, spaeter gezeichneten.
+     *
+     * @param type Render-Typ (ungenutzt)
+     */
     @Override
     public void endBatch(RenderType type) {
         closed = true;
     }
 
+    /**
+     * Legt die Puffer fuer einen Sammler an (Reihenfolge ab 0).
+     *
+     * @param collector Sammler der Zeichenauftraege
+     */
     public DeferredBuffers(SubmitNodeCollector collector) {
         this(collector, 0);
     }
 
-    /** @param orderBase Zeichenreihenfolge des ersten Abschnitts (kleiner = frueher, z. B. Kulissen hinter allem) */
+    /**
+     * Legt die Puffer fuer einen Sammler an.
+     *
+     * @param collector Sammler der Zeichenauftraege
+     * @param orderBase Zeichenreihenfolge des ersten Abschnitts (kleiner = frueher, z. B. Kulissen hinter allem)
+     */
     public DeferredBuffers(SubmitNodeCollector collector, int orderBase) {
         this.collector = collector;
         this.orderBase = orderBase;
     }
 
-    /** Fuer Dinge, die eigene Einreichungen brauchen (Items, Blockmodelle). */
+    /**
+     * Fuer Dinge, die eigene Einreichungen brauchen (Items, Blockmodelle).
+     *
+     * @return der Sammler
+     */
     public SubmitNodeCollector collector() {
         return collector;
     }
 
+    /**
+     * Puffer fuer einen Render-Typ; ein Wechsel des Typs beginnt einen neuen Abschnitt.
+     *
+     * @param type Render-Typ
+     * @return der aufzeichnende Puffer
+     */
     @Override
     public VertexConsumer getBuffer(RenderType type) {
         int last = types.size() - 1;
@@ -72,15 +97,33 @@ public final class DeferredBuffers implements MultiBufferSource {
         private float[] data = new float[STRIDE * 64];
         private int count;
 
+        /**
+         * Startindex des aktuellen Vertex im Datenfeld.
+         *
+         * @return Index
+         */
         private int base() {
             return (count - 1) * STRIDE;
         }
 
+        /**
+         * Merkt, dass ein Attribut am aktuellen Vertex gesetzt wurde.
+         *
+         * @param bit Kennbit des Attributs
+         */
         private void mark(int bit) {
             int i = base() + 11;
             data[i] = Float.intBitsToFloat(Float.floatToRawIntBits(data[i]) | bit);
         }
 
+        /**
+         * Beginnt einen neuen Vertex.
+         *
+         * @param x Position x
+         * @param y Position y
+         * @param z Position z
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             if ((count + 1) * STRIDE > data.length) data = java.util.Arrays.copyOf(data, data.length * 2);
@@ -93,6 +136,15 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        /**
+         * Farbe des aktuellen Vertex.
+         *
+         * @param r Rot 0..255
+         * @param g Gruen 0..255
+         * @param b Blau 0..255
+         * @param a Deckkraft 0..255
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setColor(int r, int g, int b, int a) {
             data[base() + 3] = Float.intBitsToFloat((a & 0xFF) << 24 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | (b & 0xFF));
@@ -100,11 +152,24 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        /**
+         * Farbe aus einem ARGB-Wert.
+         *
+         * @param argb Farbe 0xAARRGGBB
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setColor(int argb) {
             return setColor(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24);
         }
 
+        /**
+         * Texturkoordinate des aktuellen Vertex.
+         *
+         * @param u u-Koordinate
+         * @param v v-Koordinate
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv(float u, float v) {
             data[base() + 4] = u;
@@ -113,6 +178,13 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        /**
+         * Overlay-Koordinate des aktuellen Vertex.
+         *
+         * @param u u-Wert
+         * @param v v-Wert
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv1(int u, int v) {
             data[base() + 6] = Float.intBitsToFloat((v & 0xFFFF) << 16 | (u & 0xFFFF));
@@ -120,6 +192,13 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        /**
+         * Lichtkoordinate des aktuellen Vertex.
+         *
+         * @param u Blocklicht
+         * @param v Himmelslicht
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv2(int u, int v) {
             data[base() + 7] = Float.intBitsToFloat((v & 0xFFFF) << 16 | (u & 0xFFFF));
@@ -127,6 +206,14 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        /**
+         * Normale des aktuellen Vertex.
+         *
+         * @param x Normale x
+         * @param y Normale y
+         * @param z Normale z
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setNormal(float x, float y, float z) {
             data[base() + 8] = x;
@@ -136,6 +223,12 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        /**
+         * Linienbreite des aktuellen Vertex.
+         *
+         * @param width Breite in Pixeln
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setLineWidth(float width) {
             data[base() + 12] = width;
@@ -143,6 +236,11 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
+        /**
+         * Spielt alle Vertices mit ihren gesetzten Attributen in einen echten Puffer ab.
+         *
+         * @param vc Zielpuffer
+         */
         void replay(VertexConsumer vc) {
             for (int i = 0; i < count; i++) {
                 int b = i * STRIDE;

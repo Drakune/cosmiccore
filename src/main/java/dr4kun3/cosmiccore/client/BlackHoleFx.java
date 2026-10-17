@@ -16,6 +16,7 @@ import org.joml.Matrix4f;
  * Alle Teilchen haben eigene Radien, Geschwindigkeiten und Phasen, damit nichts deckungsgleich uebereinanderliegt.
  */
 public final class BlackHoleFx {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private BlackHoleFx() {}
 
     private static final float[] COOL_DEF = {0.55F, 0.35F, 1.0F};
@@ -27,7 +28,7 @@ public final class BlackHoleFx {
     private static final float[] DUST_DEF = {0.75F, 0.8F, 1.0F};
     private static float[] DUST = DUST_DEF;
 
-    /** Kanalfarbe "Partikel" uebernehmen (sonst die eigene Farbwelt). */
+    /** Uebernimmt die Kanalfarbe "Partikel" des Farb-Moduls (sonst bleibt die eigene Farbwelt). */
     private static void colors() {
         int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;
         COOL = ColorOverride.dark(ch, COOL_DEF, 0.35F);
@@ -36,7 +37,18 @@ public final class BlackHoleFx {
         DUST = ColorOverride.light(ch, DUST_DEF, 0.4F);
     }
 
-    /** Einfallende Materie in der Scheibenebene (m = gekippte Scheibenebene, y = Scheibennormale). */
+    /**
+     * Einfallende Materie in der Scheibenebene: Teilchen spiralen von aussen beschleunigend bis in den Horizont und
+     * ziehen einen Lichtschweif.
+     *
+     * @param m Matrix der gekippten Scheibenebene (y = Scheibennormale)
+     * @param vc Puffer fuer additives Leuchten
+     * @param rh Radius des Ereignishorizonts
+     * @param inner Innenradius der Scheibe
+     * @param outer Aussenradius der Scheibe
+     * @param t Animationszeit in Ticks
+     * @param energy Helligkeit 0..1
+     */
     public static void infall(Matrix4f m, VertexConsumer vc, float rh, float inner, float outer, float t, float energy) {
         colors();
         int n = RenderQuality.scale(42, 14);
@@ -54,6 +66,17 @@ public final class BlackHoleFx {
         }
     }
 
+    /**
+     * Position eines einfallenden Teilchens: Radius schrumpft zum Horizont, der Winkel waechst nach Kepler (innen
+     * rasend schnell).
+     *
+     * @param k Nummer des Teilchens (fuer feste Zufallswerte)
+     * @param s Fortschritt 0 (aussen) bis 1 (am Horizont)
+     * @param rh Radius des Ereignishorizonts
+     * @param inner Innenradius der Scheibe
+     * @param outer Aussenradius der Scheibe
+     * @return {x, y, z} in der Scheibenebene
+     */
     private static float[] infallPos(int k, float s, float rh, float inner, float outer) {
         float r0 = outer * (0.85F + 0.3F * (hash(k * 3) * 0.5F + 0.5F));
         float r = Mth.lerp((float) Math.pow(s, 1.6), r0, rh * 1.02F);
@@ -63,7 +86,16 @@ public final class BlackHoleFx {
         return new float[]{Mth.cos(ang) * r, y, Mth.sin(ang) * r};
     }
 
-    /** Staub auf geneigten Kepler-Bahnen um das Loch (Weltrahmen). */
+    /**
+     * Staub auf geneigten Kepler-Bahnen um das Loch - jede Bahn mit eigenem Radius, innen schneller.
+     *
+     * @param m Matrix im Weltrahmen (Ursprung in der Kernmitte)
+     * @param vc Puffer fuer additives Leuchten
+     * @param rh Radius des Ereignishorizonts
+     * @param reach Radius der Kammer (aeusserste Bahn)
+     * @param t Animationszeit in Ticks
+     * @param energy Helligkeit 0..1
+     */
     public static void orbiters(Matrix4f m, VertexConsumer vc, float rh, float reach, float t, float energy) {
         colors();
         int n = RenderQuality.scale(28, 10);
@@ -83,7 +115,17 @@ public final class BlackHoleFx {
         }
     }
 
-    /** Gezeitenstrom: etwa alle 10 s wird ein Klumpen zu einem langen Faden gestreckt und spiralt hinein. */
+    /**
+     * Gezeitenstrom: etwa alle 10 Sekunden wird ein Klumpen zu einem langen Faden gestreckt und spiralt hinein.
+     *
+     * @param m Matrix der Scheibenebene
+     * @param vc Puffer fuer additives Leuchten
+     * @param rh Radius des Ereignishorizonts
+     * @param inner Innenradius der Scheibe
+     * @param outer Aussenradius der Scheibe
+     * @param t Animationszeit in Ticks
+     * @param energy Helligkeit 0..1
+     */
     public static void tidalStream(Matrix4f m, VertexConsumer vc, float rh, float inner, float outer, float t, float energy) {
         colors();
         final float period = 200.0F;
