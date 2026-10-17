@@ -160,6 +160,9 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
     private float fieldMax;
     private float instability;
     private int resonance;
+    /** Positionen der Item-Ports der gebildeten Struktur (nicht gespeichert, bei Bedarf neu gesucht). */
+    @Nullable
+    private java.util.List<BlockPos> itemPortPositions;
     private int collapseCooldown;
     private int meltdown;
     /** Ultimativer Kern: das einmalige Erwachen (globaler Himmelseffekt) wurde bereits ausgeloest. */
@@ -1357,6 +1360,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
                 onFormed(level);
             } else {
                 linkPorts(level, true);
+                shareItemPorts();
                 // verschmolzener Mittelkern abgebaut, die vier Satelliten stehen aber noch: er bildet sich neu
                 BlockPos mid = pattern.center(worldPosition, bestDir);
                 if (pattern.hasFusedCore() && level.getBlockState(mid).isAir()) {
@@ -1402,6 +1406,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
         phase = CorePhase.FORMED;
         applyPhase(level);
         linkPorts(level, true);
+        shareItemPorts();
         Vec3 c = Vec3.atCenterOf(center(level));
         level.playSound(null, c.x, c.y, c.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.5F, 0.6F);
         level.playSound(null, c.x, c.y, c.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 0.6F, 1.4F);
@@ -1420,6 +1425,7 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      */
     private void onUnformed(ServerLevel level) {
         formed = false;
+        itemPortPositions = null;
         meltdown = 0;
         overdrive = 0; // Overdrive gilt nur fuer den gebildeten Reaktor - die Partikel sind verbraucht
         phase = CorePhase.DORMANT;
@@ -1820,16 +1826,57 @@ public class ControllerBlockEntity extends BlockEntity implements MenuProvider {
      */
     @Nullable
     private ItemPortBlockEntity firstItemPort(ServerLevel level) {
+        return sharedItemPort();
+    }
+
+    /**
+     * Alle Item-Ports der gebildeten Struktur (Positionen werden beim ersten Zugriff gesucht und gemerkt).
+     *
+     * @return die Ports in fester Reihenfolge (leer ohne gebildete Struktur)
+     */
+    public java.util.List<ItemPortBlockEntity> itemPorts() {
+        if (!formed || !(level instanceof ServerLevel sl)) return java.util.List.of();
         CorePattern p = pattern();
-        if (p == null) return null;
-        ItemPortBlockEntity[] found = {null};
-        p.forEach(center(level), (pos, cell) -> {
-            if (found[0] == null && (cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT) && level.hasChunkAt(pos)
-                    && level.getBlockEntity(pos) instanceof ItemPortBlockEntity ip) {
-                found[0] = ip;
-            }
-        });
-        return found[0];
+        if (p == null) return java.util.List.of();
+        if (itemPortPositions == null) {
+            java.util.List<BlockPos> found = new java.util.ArrayList<>();
+            p.forEach(center(sl), (pos, cell) -> {
+                if ((cell == CorePattern.Cell.HULL || cell == CorePattern.Cell.SLOT) && sl.hasChunkAt(pos)
+                        && sl.getBlockEntity(pos) instanceof ItemPortBlockEntity) {
+                    found.add(pos.immutable());
+                }
+            });
+            itemPortPositions = found;
+        }
+        java.util.List<ItemPortBlockEntity> out = new java.util.ArrayList<>();
+        for (BlockPos pos : itemPortPositions) {
+            if (sl.hasChunkAt(pos) && sl.getBlockEntity(pos) instanceof ItemPortBlockEntity ip) out.add(ip);
+        }
+        return out;
+    }
+
+    /**
+     * Der Item-Port, der das gemeinsame Lager aller Item-Ports der Struktur haelt (der erste der Struktur).
+     *
+     * @return der Port oder {@code null} ohne gebildete Struktur
+     */
+    @Nullable
+    public ItemPortBlockEntity sharedItemPort() {
+        java.util.List<ItemPortBlockEntity> ports = itemPorts();
+        return ports.isEmpty() ? null : ports.get(0);
+    }
+
+    /**
+     * Fuehrt die Lager aller Item-Ports zusammen: Inhalte der weiteren Ports wandern in das gemeinsame Lager, danach
+     * zeigen alle Ports denselben Inhalt.
+     */
+    private void shareItemPorts() {
+        itemPortPositions = null;
+        java.util.List<ItemPortBlockEntity> ports = itemPorts();
+        if (ports.isEmpty()) return;
+        ItemPortBlockEntity shared = ports.get(0);
+        for (int i = 1; i < ports.size(); i++) ports.get(i).moveInto(shared);
+        for (ItemPortBlockEntity ip : ports) ip.refreshClients();
     }
 
     /**
