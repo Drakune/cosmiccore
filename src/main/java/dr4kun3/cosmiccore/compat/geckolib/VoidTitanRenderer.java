@@ -27,6 +27,11 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity> {
     private final VoidTitanTail tailAnimatable = new VoidTitanTail();
     private final Map<VoidTitanEntity, VoidTitan> states = new WeakHashMap<>();
 
+    /**
+     * Legt den Renderer an: Oberkoerper (skaliert) und Schweifsegment als GeckoLib-Modelle, ohne Schatten.
+     *
+     * @param ctx Kontext der Entity-Renderer
+     */
     public VoidTitanRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
         body = new GeoObjectRenderer<>(new VoidTitanModel()).withScale(VoidTitanEntity.SCALE);
@@ -34,11 +39,28 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity> {
         shadowRadius = 0.0F;
     }
 
+    /**
+     * Textur des Titanen.
+     *
+     * @param entity der Titan
+     * @return Pfad der Textur
+     */
     @Override
     public ResourceLocation getTextureLocation(VoidTitanEntity entity) {
         return dr4kun3.cosmiccore.CosmicCore.id("textures/entity/void_titan.png");
     }
 
+    /**
+     * Zeichnet den Oberkoerper an der Entity-Position, merkt sich die Lage der Leuchtpunkte (Augen, Haende, Kern) fuer
+     * die Zwischensequenz und zeichnet jedes Schweifsegment an seinem Teil.
+     *
+     * @param entity der Titan
+     * @param yaw Gierwinkel (nicht verwendet, die Entity liefert ihn selbst)
+     * @param partialTick Teil-Tick fuer fluessige Bewegung
+     * @param pose Pose-Stapel an der Entity-Position
+     * @param buffers Puffer
+     * @param light Lichtwert (der Titan leuchtet immer voll)
+     */
     @Override
     public void render(VoidTitanEntity entity, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         int full = LightTexture.FULL_BRIGHT;
@@ -86,6 +108,11 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity> {
         super.render(entity, yaw, partialTick, pose, buffers, light);
     }
 
+    /**
+     * Standard-Overlay ohne Treffer-Faerbung.
+     *
+     * @return Overlay-Wert
+     */
     @SuppressWarnings("unused")
     private static int overlay() {
         return OverlayTexture.NO_OVERLAY;

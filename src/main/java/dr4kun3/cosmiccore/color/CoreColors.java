@@ -26,30 +26,65 @@ public final class CoreColors {
             for (int i = 0; i < CHANNELS; i++) colors[i] &= 0x7FFF;
         }
 
+        /**
+         * Hat der Kanal eine eigene Farbe?
+         *
+         * @param channel Nummer des Farbkanals
+         * @return {@code true}, wenn gesetzt
+         */
         public boolean custom(int channel) {
             return (mask >> channel & 1) != 0;
         }
 
-        /** Farbe des Kanals als 0xRRGGBB (Standardfarbe, wenn nicht eigen gesetzt). */
+        /**
+         * Farbe des Kanals (Standardfarbe, wenn nicht eigen gesetzt).
+         *
+         * @param channel Nummer des Farbkanals
+         * @return Farbe als 0xRRGGBB
+         */
         public int rgb(int channel) {
             return custom(channel) ? to24(colors[channel]) : DEFAULT_RGB[channel];
         }
 
+        /**
+         * Neuer Farbsatz mit einer geaenderten Kanalfarbe.
+         *
+         * @param channel Nummer des Farbkanals
+         * @param rgb24 neue Farbe als 0xRRGGBB
+         * @return der neue Farbsatz (dieser bleibt unveraendert)
+         */
         public Config with(int channel, int rgb24) {
             int[] c = colors.clone();
             c[channel] = to555(rgb24);
             return new Config(mask | (1 << channel), c);
         }
 
+        /**
+         * Neuer Farbsatz, in dem der Kanal wieder seine Standardfarbe hat.
+         *
+         * @param channel Nummer des Farbkanals
+         * @return der neue Farbsatz
+         */
         public Config reset(int channel) {
             return new Config(mask & ~(1 << channel), colors);
         }
 
+        /**
+         * Gleich, wenn Maske und alle Farben uebereinstimmen.
+         *
+         * @param o Vergleichsobjekt
+         * @return {@code true} bei gleichem Farbsatz
+         */
         @Override
         public boolean equals(Object o) {
             return o instanceof Config c && c.mask == mask && Arrays.equals(c.colors, colors);
         }
 
+        /**
+         * Hashwert passend zu {@link #equals}.
+         *
+         * @return der Hashwert
+         */
         @Override
         public int hashCode() {
             return mask * 31 + Arrays.hashCode(colors);
@@ -71,6 +106,13 @@ public final class CoreColors {
             preset("frost", 0xFFFFFF, 0xBFF2FF, 0x7399D9, 0xD9F2FF, 0xA0C8F0, 0xC8F0FF, 0xE0F8FF, 0xD0F0FF),
             preset("void", 0xD9B3FF, 0x7333CC, 0x260D59, 0x9966FF, 0x5A2AA0, 0x7A50E0, 0xA080FF, 0x8A60F0));
 
+    /**
+     * Legt eine Vorgabe mit Farben fuer alle Kanaele an.
+     *
+     * @param key Uebersetzungsschluessel des Namens
+     * @param rgb Farben je Kanal als 0xRRGGBB
+     * @return die Vorgabe
+     */
     private static Preset preset(String key, int... rgb) {
         int[] c = new int[CHANNELS];
         for (int i = 0; i < CHANNELS; i++) c[i] = to555(rgb[i]);
@@ -79,20 +121,44 @@ public final class CoreColors {
 
     // ------------------------------------------------------------------ Umrechnung
 
+    /**
+     * Verdichtet eine Farbe auf 5 Bit je Kanal (fuer kurze Codes und kleine Pakete).
+     *
+     * @param rgb24 Farbe als 0xRRGGBB
+     * @return 15-Bit-Farbe
+     */
     public static int to555(int rgb24) {
         int r = (rgb24 >> 16) & 0xFF, g = (rgb24 >> 8) & 0xFF, b = rgb24 & 0xFF;
         return ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
     }
 
+    /**
+     * Erweitert eine 15-Bit-Farbe wieder auf 8 Bit je Kanal.
+     *
+     * @param c555 15-Bit-Farbe
+     * @return Farbe als 0xRRGGBB
+     */
     public static int to24(int c555) {
         int r = (c555 >> 10) & 31, g = (c555 >> 5) & 31, b = c555 & 31;
         return (expand(r) << 16) | (expand(g) << 8) | expand(b);
     }
 
+    /**
+     * Erweitert einen 5-Bit-Wert auf 8 Bit (volle Helligkeit bleibt voll).
+     *
+     * @param v5 Wert 0..31
+     * @return Wert 0..255
+     */
     private static int expand(int v5) {
         return (v5 << 3) | (v5 >> 2);
     }
 
+    /**
+     * Farbe als Gleitkommawerte.
+     *
+     * @param rgb24 Farbe als 0xRRGGBB
+     * @return {r, g, b} je 0..1
+     */
     public static float[] toFloat(int rgb24) {
         return new float[]{((rgb24 >> 16) & 0xFF) / 255.0F, ((rgb24 >> 8) & 0xFF) / 255.0F, (rgb24 & 0xFF) / 255.0F};
     }
@@ -101,7 +167,12 @@ public final class CoreColors {
 
     private static final String PREFIX = "CC-";
 
-    /** Kodiert den Farbsatz als "CC-" + 24 Zeichen (Maske, 8 Farben, Pruefsumme). */
+    /**
+     * Kodiert den Farbsatz als teilbaren Code: "CC-" + 24 Zeichen (Maske, 8 Farben, Pruefsumme).
+     *
+     * @param c der Farbsatz
+     * @return der Code
+     */
     public static String encode(Config c) {
         byte[] b = new byte[18];
         b[0] = (byte) c.mask();
@@ -113,7 +184,12 @@ public final class CoreColors {
         return PREFIX + Base64.getUrlEncoder().withoutPadding().encodeToString(b);
     }
 
-    /** Liest einen Code; leer, wenn er ungueltig ist (falsches Format oder Pruefsumme). */
+    /**
+     * Liest einen Code (mit oder ohne "CC-").
+     *
+     * @param code der Code
+     * @return der Farbsatz oder leer, wenn Format oder Pruefsumme nicht stimmen
+     */
     public static Optional<Config> decode(String code) {
         if (code == null) return Optional.empty();
         String s = code.trim();
@@ -129,11 +205,18 @@ public final class CoreColors {
         }
     }
 
+    /**
+     * Einfache Pruefsumme ueber die ersten 17 Bytes eines Codes.
+     *
+     * @param b die Bytes des Codes
+     * @return die Pruefsumme
+     */
     private static byte checksum(byte[] b) {
         int sum = 0x5A;
         for (int i = 0; i < 17; i++) sum = (sum * 31 + (b[i] & 0xFF)) & 0xFF;
         return (byte) sum;
     }
 
+    /** Nur statische Definitionen - keine Instanzen. */
     private CoreColors() {}
 }

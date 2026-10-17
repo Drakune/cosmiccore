@@ -23,6 +23,17 @@ public enum ReactorSize {
     private final int maxOverdrive;
     private final CorePattern pattern;
 
+    /**
+     * Legt eine Baugroesse mit ihren Kennwerten an.
+     *
+     * @param size Kantenlaenge in Bloecken
+     * @param maxScale hoechste Leistungsstufe
+     * @param outputFactor Leistungsfaktor je Stufe
+     * @param capacityFactor Faktor fuer den Puffer (aeltere Berechnung)
+     * @param instabilityFactor wie schnell die Instabilitaet steigt
+     * @param stabilizerFactor wie stark Stabilisatoren wirken
+     * @param maxOverdrive hoechste Overdrive-Stufe ohne Ultimate-Modus
+     */
     ReactorSize(int size, int maxScale, double outputFactor, double capacityFactor, double instabilityFactor, double stabilizerFactor, int maxOverdrive) {
         this.size = size;
         this.maxScale = maxScale;
@@ -34,13 +45,22 @@ public enum ReactorSize {
         this.pattern = new CorePattern(size);
     }
 
-    /** RF-Puffer dieser Baustufe: 1G je Stufe (5er 1G, 7er 2G, 9er 3G), der ultimative Kern 5G - unabhaengig vom Power-Level. */
+    /**
+     * RF-Puffer dieser Baustufe: 1G je Stufe (5er 1G, 7er 2G, 9er 3G), der ultimative Kern 5G - unabhaengig von der
+     * Leistungsstufe (Werte aus der Konfiguration).
+     *
+     * @return Kapazitaet in RF
+     */
     public long buffer() {
         if (this == ULTIMATE) return dr4kun3.cosmiccore.CoreConfig.ULTIMATE_BUFFER.get();
         return dr4kun3.cosmiccore.CoreConfig.BUFFER_PER_TIER.get() * (ordinal() + 1);
     }
 
-    /** Item, das je Leistungsstufe einmalig verbraucht wird, um sie dauerhaft freizuschalten. */
+    /**
+     * Item, das je Leistungsstufe einmalig verbraucht wird, um sie dauerhaft freizuschalten.
+     *
+     * @return Sternenstaub, verdichteter Sternenstaub, Neutronenstern bzw. Quasar-Essenz
+     */
     public net.minecraft.world.item.Item unlockItem() {
         return switch (this) {
             case SMALL -> dr4kun3.cosmiccore.ModItems.STAR_DUST.get();
@@ -50,55 +70,111 @@ public enum ReactorSize {
         };
     }
 
-    /** Kantenlaenge in Bloecken (5, 7 oder 9). */
+    /**
+     * Kantenlaenge der Struktur.
+     *
+     * @return 5, 7, 9 oder 11 Bloecke
+     */
     public int size() {
         return size;
     }
 
+    /**
+     * Halbe Kantenlaenge (Abstand Mitte -> Wand).
+     *
+     * @return Bloecke
+     */
     public int half() {
         return size / 2;
     }
 
-    /** Hoechste einstellbare Leistungsstufe fuer diese Baugroesse. */
+    /**
+     * Hoechste einstellbare Leistungsstufe fuer diese Baugroesse.
+     *
+     * @return 4, 6, 8 bzw. 10
+     */
     public int maxScale() {
         return maxScale;
     }
 
-    /** Leistungsfaktor der Baugroesse (auf jede Stufe). */
+    /**
+     * Leistungsfaktor der Baugroesse (wirkt auf jede Stufe).
+     *
+     * @return Faktor
+     */
     public double outputFactor() {
         return outputFactor;
     }
 
+    /**
+     * Faktor fuer die Kapazitaet.
+     *
+     * @return Faktor
+     */
     public double capacityFactor() {
         return capacityFactor;
     }
 
+    /**
+     * Wie schnell die Instabilitaet bei dieser Groesse steigt.
+     *
+     * @return Faktor
+     */
     public double instabilityFactor() {
         return instabilityFactor;
     }
 
+    /**
+     * Wie stark Stabilisatoren bei dieser Groesse kuehlen.
+     *
+     * @return Faktor
+     */
     public double stabilizerFactor() {
         return stabilizerFactor;
     }
 
-    /** Wie viele Overdrive-Partikel diese Baugroesse aufnehmen kann. */
-    /** Hoechste Overdrive-Stufe inklusive Ultimate-Modus (nur der ultimative Kern hat Stufe 4). */
+    /**
+     * Hoechste Overdrive-Stufe inklusive Ultimate-Modus (nur der ultimative Kern hat eine Stufe mehr).
+     *
+     * @return hoechste Stufe
+     */
     public int maxOverdriveTotal() {
         return isUltimate() ? maxOverdrive() + 1 : maxOverdrive();
     }
 
+    /**
+     * Wie viele Overdrive-Partikel diese Baugroesse aufnehmen kann (ohne Ultimate-Modus).
+     *
+     * @return hoechste Overdrive-Stufe
+     */
     public int maxOverdrive() {
         return maxOverdrive;
     }
 
+    /**
+     * Bauplan der Struktur.
+     *
+     * @return das Muster aller Bloecke
+     */
     public CorePattern pattern() {
         return pattern;
     }
 
+    /**
+     * Ist das der ultimative Kern (11x11x11)?
+     *
+     * @return {@code true} fuer den ultimativen Kern
+     */
     public boolean isUltimate() {
         return this == ULTIMATE;
     }
 
+    /**
+     * Baugroesse zu einer Kantenlaenge.
+     *
+     * @param size Kantenlaenge in Bloecken
+     * @return die Baugroesse oder {@code null}, wenn es keine gibt
+     */
     @Nullable
     public static ReactorSize bySize(int size) {
         for (ReactorSize s : values()) {

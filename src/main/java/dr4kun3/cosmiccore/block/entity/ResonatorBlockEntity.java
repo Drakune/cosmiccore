@@ -16,11 +16,23 @@ public class ResonatorBlockEntity extends BlockEntity {
     private int[] coreOffset;
     private long lastLookup = Long.MIN_VALUE;
 
+    /**
+     * Legt den Blockinhalt einer Resonanzspule bzw. eines Fokuskristalls an.
+     *
+     * @param pos Position des Blocks in der Welt
+     * @param state Blockzustand beim Erzeugen
+     */
     public ResonatorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RESONATOR.get(), pos, state);
     }
 
-    /** Versatz zum Singularitaetskern (sucht entlang der Achsen und Diagonalen), null wenn keiner in Reichweite. */
+    /**
+     * Sucht den naechsten Singularitaetskern entlang der Achsen und Diagonalen (bis 4 Bloecke). Das Ergebnis wird
+     * zwei Sekunden zwischengespeichert, damit nicht jedes Bild neu gesucht wird.
+     *
+     * @param gameTime aktuelle Spielzeit in Ticks (fuer den Zwischenspeicher)
+     * @return Versatz {x, y, z} zum Kern oder {@code null}, wenn keiner in Reichweite ist
+     */
     @Nullable
     public int[] findCoreOffset(long gameTime) {
         if (level == null) return null;

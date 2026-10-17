@@ -34,6 +34,11 @@ import org.jetbrains.annotations.Nullable;
 public class ControllerBlock extends Block implements EntityBlock {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
+    /**
+     * Erzeugt den Controller (Blick nach Norden, ruhend, keine Konsole).
+     *
+     * @param props Blockeigenschaften aus der Registrierung
+     */
     public ControllerBlock(Properties props) {
         super(props);
         registerDefaultState(stateDefinition.any()
@@ -42,6 +47,11 @@ public class ControllerBlock extends Block implements EntityBlock {
                 .setValue(ModProperties.TERMINAL, false));
     }
 
+    /**
+     * Zustaende: Blickrichtung, Reaktorphase und "Steuerkonsole" (Ports links und rechts).
+     *
+     * @param builder Bauplan der Zustaende
+     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, ModProperties.PHASE, ModProperties.TERMINAL);
@@ -49,12 +59,27 @@ public class ControllerBlock extends Block implements EntityBlock {
 
     private static final VoxelShape NODE = Block.box(3, 3, 3, 13, 13, 13);
 
-    /** Bei gebildeter Struktur schwebt der Controller als Interface-Knoten - nur dieser ist anwaehlbar. */
+    /**
+     * Ruhend ein voller Block; bei gebildeter Struktur schwebt der Controller als Interface-Knoten - nur dieser ist
+     * anwaehlbar.
+     *
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position
+     * @param ctx Kontext der Abfrage
+     * @return der Umriss
+     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.PHASE) == CorePhase.DORMANT ? Shapes.block() : NODE;
     }
 
+    /**
+     * Der Controller schaut zum Spieler; stehen die Ports schon daneben, wird er gleich zur Konsole.
+     *
+     * @param ctx Kontext des Setzens
+     * @return der Startzustand
+     */
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         Direction facing = ctx.getHorizontalDirection().getOpposite();
@@ -62,19 +87,45 @@ public class ControllerBlock extends Block implements EntityBlock {
                 .setValue(ModProperties.TERMINAL, Terminal.isTerminal(ctx.getLevel(), ctx.getClickedPos(), facing));
     }
 
-    /** Item-Port links und Energie-Port rechts daneben machen den Controller zur Steuerkonsole. */
+    /**
+     * Item-Port links und Energie-Port rechts daneben machen den Controller zur Steuerkonsole.
+     *
+     * @param state bisheriger Zustand
+     * @param dir Richtung zum geaenderten Nachbarn
+     * @param neighbor neuer Zustand des Nachbarn
+     * @param level Welt
+     * @param pos Position des Controllers
+     * @param neighborPos Position des Nachbarn
+     * @return der aktualisierte Zustand
+     */
     @Override
     protected BlockState updateShape(BlockState state, Direction dir, BlockState neighbor, net.minecraft.world.level.LevelAccessor level,
                                      BlockPos pos, BlockPos neighborPos) {
         return state.setValue(ModProperties.TERMINAL, Terminal.isTerminal(level, pos, state.getValue(FACING)));
     }
 
+    /**
+     * Der Controller hat den Blockinhalt mit der ganzen Reaktorlogik.
+     *
+     * @param pos Position
+     * @param state Blockzustand
+     * @return neuer {@link ControllerBlockEntity}
+     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ControllerBlockEntity(pos, state);
     }
 
+    /**
+     * Nur auf dem Server: jeden Tick die Reaktorlogik ausfuehren.
+     *
+     * @param level Welt
+     * @param state Blockzustand
+     * @param type Typ des Blockinhalts
+     * @param <T> Typ des Blockinhalts
+     * @return Ticker auf dem Server, auf dem Client {@code null}
+     */
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
@@ -82,7 +133,15 @@ public class ControllerBlock extends Block implements EntityBlock {
         return (lvl, pos, st, be) -> ControllerBlockEntity.serverTick(lvl, pos, st, (ControllerBlockEntity) be);
     }
 
-    /** Direkt nach dem Platzieren oeffnet sich die (einmalige) Wahl der Baugroesse. */
+    /**
+     * Direkt nach dem Platzieren oeffnet sich die (einmalige) Wahl der Baugroesse.
+     *
+     * @param level Welt
+     * @param pos Position
+     * @param state Blockzustand
+     * @param placer wer den Block gesetzt hat
+     * @param stack das gesetzte Item
+     */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
@@ -91,7 +150,18 @@ public class ControllerBlock extends Block implements EntityBlock {
         }
     }
 
-    /** Rechtsklick mit Brennstoff oder Stabilisator fuettert den Kern. */
+    /**
+     * Rechtsklick mit Brennstoff oder Stabilisator fuettert den Kern direkt.
+     *
+     * @param stack Item in der Hand
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position
+     * @param player klickender Spieler
+     * @param hand benutzte Hand
+     * @param hit getroffene Stelle
+     * @return Erfolg, wenn gefuettert wurde, sonst weiter zur normalen Benutzung
+     */
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
@@ -111,7 +181,16 @@ public class ControllerBlock extends Block implements EntityBlock {
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /** Rechtsklick oeffnet die GUI, Schleichen + Rechtsklick zeigt den Status/ersten Baufehler im Chat. */
+    /**
+     * Rechtsklick oeffnet das Fenster, Schleichen + Rechtsklick zeigt den Status bzw. den ersten Baufehler im Chat.
+     *
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position
+     * @param player klickender Spieler
+     * @param hit getroffene Stelle
+     * @return Erfolg
+     */
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ControllerBlockEntity be) {
@@ -124,6 +203,15 @@ public class ControllerBlock extends Block implements EntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
+    /**
+     * Beim Abbauen loest sich der Reaktor auf (Phasen zuruecksetzen, Inventar fallen lassen).
+     *
+     * @param state alter Zustand
+     * @param level Welt
+     * @param pos Position
+     * @param newState neuer Zustand an dieser Stelle
+     * @param movedByPiston {@code true}, wenn der Block verschoben wurde
+     */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && level instanceof ServerLevel sl

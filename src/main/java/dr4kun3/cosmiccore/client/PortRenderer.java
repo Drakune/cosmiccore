@@ -33,21 +33,46 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     private static final float[] ENERGY = {1.0F, 0.75F, 0.3F};
     private static final float[] ITEM = {0.45F, 0.9F, 1.0F};
 
+    /**
+     * Legt den Renderer der Ports an.
+     *
+     * @param ctx Kontext der Blockinhalt-Renderer
+     */
     public PortRenderer(BlockEntityRendererProvider.Context ctx) {}
 
-    /** Plug-Modelle je Port und Phase (werden in CosmicCoreClient als Zusatzmodelle registriert). */
+    /**
+     * Stecker-Modell je Port und Phase (wird in CosmicCoreClient als Zusatzmodell registriert).
+     *
+     * @param energy {@code true} fuer den Energie-Port, sonst Item-Port
+     * @param phase Reaktorphase
+     * @return Kennung des Zusatzmodells
+     */
     public static ModelResourceLocation plugModel(boolean energy, CorePhase phase) {
         return ModelResourceLocation.standalone(CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_plug_"
                 + phase.getSerializedName()));
     }
 
-    /** Seitenteil der Steuerkonsole je Port und Phase (Port neben dem Controller, siehe Terminal). */
+    /**
+     * Seitenteil der Steuerkonsole je Port und Phase (Port neben dem Controller, siehe Terminal).
+     *
+     * @param energy {@code true} fuer den Energie-Port, sonst Item-Port
+     * @param phase Reaktorphase
+     * @return Kennung des Zusatzmodells
+     */
     public static ModelResourceLocation terminalModel(boolean energy, CorePhase phase) {
         return ModelResourceLocation.standalone(CosmicCore.id("block/" + (energy ? "energy_port" : "item_port") + "_terminal_"
                 + phase.getSerializedName()));
     }
 
-    /** Materialisieren 0..1 aus dem Kern des zugehoerigen Reaktors; unbekannt = eigener Zeitpunkt des Formens. */
+    /**
+     * Fortschritt des Materialisierens: folgt dem Kern des zugehoerigen Reaktors; ist der unbekannt, der eigene
+     * Zeitpunkt des Formens.
+     *
+     * @param be der Port
+     * @param level Welt
+     * @param partialTick Teil-Tick
+     * @return 0 (noch unsichtbar) bis 1 (ganz da)
+     */
     private static float settle(PortBlockEntity be, Level level, float partialTick) {
         // eigener Zeitpunkt (Zustandswechsel am Port) - faengt Pakete ab, die einen Tick versetzt ankommen
         float own = 1.0F;
@@ -65,6 +90,17 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         return Math.min(1.0F, Math.max(0.0F, Math.min(own, core)));
     }
 
+    /**
+     * Zeichnet einen einzelnen Port als Station: Sockel, Anschluesse, Bildschirm und Leuchteffekte. Ports direkt neben
+     * dem Controller zeichnet die Steuerkonsole des Kerns.
+     *
+     * @param be der Port
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel an der Blockposition
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     @Override
     public void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         Level level = be.getLevel();

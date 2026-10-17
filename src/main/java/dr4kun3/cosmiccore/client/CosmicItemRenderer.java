@@ -39,16 +39,32 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
     private static final float[] ORANGE = {1.0F, 0.5F, 0.15F};
 
+    /** Legt den Renderer der animierten 3D-Items an. */
     public CosmicItemRenderer() {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
     }
 
+    /**
+     * Animationszeit: Spielzeit mit Teil-Tick, im Hauptmenue die Systemzeit.
+     *
+     * @return Zeit in Ticks
+     */
     private static float time() {
         Minecraft mc = Minecraft.getInstance();
         float pt = mc.getTimer().getGameTimeDeltaPartialTick(false);
         return mc.level == null ? (System.currentTimeMillis() % 100000L) / 50.0F : (mc.level.getGameTime() % 144000L) + pt;
     }
 
+    /**
+     * Waehlt die passende Animation fuer das Item (Handbuch, Sternenstaub, Partikel, Neutronenstern, Quasar, Module).
+     *
+     * @param stack das gezeichnete Item
+     * @param ctx Anzeigeart (Hand, Inventar, Boden ...)
+     * @param pose Pose-Stapel
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         float t = time();
@@ -83,6 +99,13 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.popPose();
     }
 
+    /**
+     * Overdrive-Partikel: gleissender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold, Cyan und Violett.
+     *
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param t Animationszeit
+     */
     private static void renderParticle(PoseStack pose, MultiBufferSource buffers, float t) {
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.2F);
         pose.pushPose();
@@ -102,6 +125,13 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         }
     }
 
+    /**
+     * Sternenstaub: schwebende Sternenfeld-Splitter mit funkelnden Lichtpunkten.
+     *
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param t Animationszeit
+     */
     private static void renderStarDust(PoseStack pose, MultiBufferSource buffers, float t) {
         VertexConsumer gateway = buffers.getBuffer(RenderType.endGateway());
         float[][] shards = {{0.0F, -0.05F, 0.0F, 0.14F}, {0.18F, -0.12F, 0.08F, 0.09F}, {-0.16F, -0.14F, -0.06F, 0.1F},
@@ -139,6 +169,13 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     // ------------------------------------------------------------------ Verdichteter Sternenstaub
 
+    /**
+     * Verdichteter Sternenstaub: ein Kristall, um den sich Ringe im Takt zusammenziehen - beim Pressen leuchtet er auf.
+     *
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param t Animationszeit
+     */
     private static void renderCompressedDust(PoseStack pose, MultiBufferSource buffers, float t) {
         // Pressen im Takt: die Ringe ziehen sich zusammen, der Kristall leuchtet beim Zusammendruecken auf
         float press = 0.5F + 0.5F * Mth.sin(t * 0.12F);
@@ -178,12 +215,25 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         }
     }
 
+    /**
+     * Fester Pseudozufall 0..1 je Nummer.
+     *
+     * @param i Nummer
+     * @return Wert 0..1
+     */
     private static float hashY(int i) {
         return Mth.frac(Mth.sin(i * 12.9898F) * 43758.547F);
     }
 
     // ------------------------------------------------------------------ Neutronenstern (Pulsar)
 
+    /**
+     * Neutronenstern: kleine, dichte Kugel mit zwei Lichtkegeln an den Polen, die sich ruhig drehen.
+     *
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param t Animationszeit
+     */
     private static void renderPulsar(PoseStack pose, MultiBufferSource buffers, float t) {
         float spin = t * 0.08F; // ruhige Drehung (kein Flackern)
         float flash = 0.5F + 0.5F * Mth.sin(t * 0.06F); // weicher, langsamer Puls statt Stroboskop
@@ -234,9 +284,12 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float[] DEEP_GOLD = {1.0F, 0.62F, 0.12F};
 
     /**
-     * Quasar-Overdrive-Partikel - eigene Gestalt: ein Sternkristall (zwei verdrehte Sternenfeld-Doppelpyramiden) mit
-     * goldenen Kanten ueber einer kleinen Spiralgalaxie, schmale Polarjets mit wandernden Knoten und eine goldene
-     * Druckwelle, die in ruhigem Takt nach aussen laeuft.
+     * Quasar-Overdrive-Partikel: ein Sternkristall (zwei verdrehte Sternenfeld-Doppelpyramiden) mit goldenen Kanten
+     * ueber einer kleinen Spiralgalaxie, schmale Polarjets mit wandernden Knoten und eine goldene Druckwelle.
+     *
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param t Animationszeit
      */
     private static void renderQuasarParticle(PoseStack pose, MultiBufferSource buffers, float t) {
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.1F);
@@ -296,6 +349,13 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     // ------------------------------------------------------------------ Quasar
 
+    /**
+     * Quasar-Essenz: gleissender Kern mit Akkretionsscheibe und pulsierenden Jets.
+     *
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param t Animationszeit
+     */
     private static void renderQuasar(PoseStack pose, MultiBufferSource buffers, float t) {
         float beat = 0.5F + 0.5F * Mth.sin(t * 0.25F);
         pose.pushPose();
@@ -326,7 +386,15 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     // ------------------------------------------------------------------ Module
 
-    /** Schwebende Platine; symbol 0 = Effizienz (Zahnrad-Ring), 1 = Stabilitaet (Sechseck-Schild), 2 = Anti-Asteroid. */
+    /**
+     * Modul: schwebende Platine mit leuchtenden Leiterbahnen und einem Symbol darueber.
+     *
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param t Animationszeit
+     * @param accent Akzentfarbe RGB 0..1
+     * @param symbol 0 = Effizienz (Zahnrad-Ring), 1 = Stabilitaet (Sechseck-Schild), 2 = Anti-Asteroid, 3 = Farbe
+     */
     private static void renderModule(PoseStack pose, MultiBufferSource buffers, float t, float[] accent, int symbol) {
         float bob = 0.02F * Mth.sin(t * 0.08F);
         float pulse = 0.5F + 0.5F * Mth.sin(t * 0.18F);
@@ -403,7 +471,21 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.popPose();
     }
 
-    /** Deckender Quader mit einfacher Flaechenschattierung. */
+    /**
+     * Deckender Quader mit einfacher Flaechenschattierung.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param x0 kleinste x
+     * @param y0 kleinste y
+     * @param z0 kleinste z
+     * @param x1 groesste x
+     * @param y1 groesste y
+     * @param z1 groesste z
+     * @param r Rot 0..1
+     * @param g Gruen 0..1
+     * @param b Blau 0..1
+     */
     private static void box(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, float x1, float y1, float z1,
                             float r, float g, float b) {
         float[] sh = {0.55F, 1.0F, 0.8F, 0.8F, 0.7F, 0.7F};

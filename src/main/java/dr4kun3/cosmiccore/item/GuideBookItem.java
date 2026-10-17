@@ -10,10 +10,23 @@ import net.minecraft.world.level.Level;
 
 /** Kosmisches Handbuch: erklaert Aufbau und Betrieb des Kerngenerators. Oeffnet sich nur clientseitig. */
 public class GuideBookItem extends Item {
+    /**
+     * Erzeugt das Handbuch-Item.
+     *
+     * @param props Item-Eigenschaften aus der Registrierung
+     */
     public GuideBookItem(Properties props) {
         super(props);
     }
 
+    /**
+     * Rechtsklick oeffnet das Kosmische Handbuch (nur auf dem Client).
+     *
+     * @param level Welt, in der benutzt wird
+     * @param player Spieler, der das Buch benutzt
+     * @param hand Hand mit dem Buch
+     * @return Erfolg mit dem unveraenderten Stapel
+     */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);

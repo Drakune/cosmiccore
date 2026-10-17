@@ -39,16 +39,38 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
     private static final float[] WHITE_HOT = {1.0F, 0.93F, 0.78F};
     private static final Vector3f MOON = new Vector3f(0.35F, 0.85F, 0.4F).normalize();
 
+    /**
+     * Legt den Asteroiden-Renderer an (ohne Schatten).
+     *
+     * @param ctx Kontext der Entity-Renderer
+     */
     public CosmicAsteroidRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
         shadowRadius = 0.0F;
     }
 
+    /**
+     * Textur-Atlas der Bloecke (der Asteroid nutzt nur farbige Flaechen).
+     *
+     * @param entity der Asteroid
+     * @return Pfad des Atlas
+     */
     @Override
     public ResourceLocation getTextureLocation(CosmicAsteroid entity) {
         return TextureAtlas.LOCATION_BLOCKS;
     }
 
+    /**
+     * Zeichnet den Asteroiden: unregelmaessiger Felsen mit Kristallen, Lichthof, Glut beim Einfangen und am Ende das
+     * Aufblaehen vor dem Zerplatzen, dazu absplitternde Brocken.
+     *
+     * @param a der Asteroid
+     * @param yaw Gierwinkel
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel an der Entity-Position
+     * @param buffers Puffer
+     * @param light Lichtwert
+     */
     @Override
     public void render(CosmicAsteroid a, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         float t = a.tickCount + partialTick;
@@ -195,7 +217,14 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
 
     // ------------------------------------------------------------------ Form
 
-    /** Radius in Richtung d (Einheitsvektor): Kartoffelform mit Beulen und Kratern. */
+    /**
+     * Radius in einer Richtung: Kartoffelform mit Beulen und Kratern.
+     *
+     * @param d Richtung (Einheitsvektor)
+     * @param r Grundradius
+     * @param seed Zufallswert des Asteroiden
+     * @return Radius in dieser Richtung
+     */
     private static float radiusAt(Vector3f d, float r, int seed) {
         float s = 1.0F;
         for (int b = 0; b < 5; b++) {
@@ -216,6 +245,15 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         return r * s;
     }
 
+    /**
+     * Berechnet die Oberflaechenpunkte auf einem Breiten-/Laengengitter.
+     *
+     * @param r Grundradius
+     * @param seed Zufallswert des Asteroiden
+     * @param LAT Anzahl Breitenringe
+     * @param LON Anzahl Laengensegmente
+     * @return Punkte [Breite][Laenge] = {x, y, z}
+     */
     private static float[][][] surface(float r, int seed, int LAT, int LON) {
         float[][][] pts = new float[LAT + 1][LON][];
         for (int i = 0; i <= LAT; i++) {
@@ -231,7 +269,20 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         return pts;
     }
 
-    /** Flach schattierte Gesteinsflaechen: Mondlicht von oben, violettes Reaktorlicht und Laserglut von unten. */
+    /**
+     * Flach schattierte Gesteinsflaechen: Mondlicht von oben, violettes Reaktorlicht und Laserglut von unten.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param nm Normalenmatrix
+     * @param pts Oberflaechenpunkte (siehe {@link #surface})
+     * @param base Gesteinsfarbe RGB 0..1
+     * @param harvest Einfangen 0..1 (Glut von unten)
+     * @param overload Ueberladung 0..1 (leuchtende Risse)
+     * @param seed Zufallswert
+     * @param LAT Breitenringe
+     * @param LON Laengensegmente
+     */
     private static void rock(VertexConsumer vc, Matrix4f m, Matrix3f nm, float[][][] pts, float[] base, float harvest,
                              float overload, int seed, int LAT, int LON) {
         for (int i = 0; i < LAT; i++) {
@@ -261,7 +312,18 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         }
     }
 
-    /** Kristall: gestreckte Doppelpyramide aus leuchtenden Flaechen mit hellen Kanten. */
+    /**
+     * Kristall: gestreckte Doppelpyramide aus leuchtenden Flaechen mit hellen Kanten.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param base Fusspunkt auf der Oberflaeche
+     * @param dir Wuchsrichtung
+     * @param len Laenge
+     * @param w Breite
+     * @param col Farbe RGB 0..1
+     * @param a Deckkraft 0..1
+     */
     private static void crystal(VertexConsumer vc, Matrix4f m, Vector3f base, Vector3f dir, float len, float w, float[] col, float a) {
         Vector3f u = new Vector3f(dir).cross(Math.abs(dir.y) > 0.9F ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
         Vector3f v = new Vector3f(dir).cross(u).normalize();
@@ -283,6 +345,15 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         }
     }
 
+    /**
+     * Flugbahn eines absplitternden Brockens (nach unten zum Laser gezogen).
+     *
+     * @param k Nummer des Brockens
+     * @param seed Zufallswert des Asteroiden
+     * @param r Radius des Asteroiden
+     * @param ph Fortschritt 0..1
+     * @return Position relativ zur Mitte
+     */
     private static Vector3f chipPos(int k, int seed, float r, float ph) {
         Vector3f d = new Vector3f(hash(seed + k * 37) * 0.8F, -1.0F, hash(seed + k * 41) * 0.8F).normalize();
         Vector3f p = d.mul(r * (0.85F + 1.8F * ph));
@@ -290,6 +361,16 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid> {
         return p;
     }
 
+    /**
+     * Zeichnet einen kleinen, taumelnden Gesteinsbrocken.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param p Position
+     * @param s Groesse
+     * @param spin Drehwinkel
+     * @param c Farbe RGB 0..1
+     */
     private static void chip(VertexConsumer vc, Matrix4f m, Vector3f p, float s, float spin, float[] c) {
         Matrix4f cm = new Matrix4f(m).translate(p.x, p.y, p.z).rotateXYZ(spin, spin * 1.3F, spin * 0.7F);
         float x0 = -s, x1 = s, y0 = -s * 0.7F, y1 = s * 0.7F, z0 = -s, z1 = s;

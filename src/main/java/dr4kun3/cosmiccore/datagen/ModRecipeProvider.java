@@ -13,16 +13,36 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 
 public class ModRecipeProvider extends RecipeProvider {
+    /**
+     * Legt den Rezept-Generator an.
+     *
+     * @param output Ausgabeziel der Datengenerierung
+     * @param registries Registry-Zugriff (wird asynchron geliefert)
+     */
     public ModRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
         super(output, registries);
     }
 
+    /**
+     * Beginnt ein geformtes Rezept, das freigeschaltet wird, sobald man das angegebene Item besitzt.
+     *
+     * @param result Ergebnis-Item
+     * @param count Anzahl des Ergebnisses
+     * @param unlock Item, dessen Besitz das Rezept freischaltet
+     * @param pattern Zeilen des 3x3-Musters
+     * @return Bauplan, an dem noch die Zutaten definiert werden
+     */
     private static ShapedRecipeBuilder shaped(ItemLike result, int count, ItemLike unlock, String... pattern) {
         ShapedRecipeBuilder b = ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result, count);
         for (String row : pattern) b.pattern(row);
         return b.unlockedBy("has_item", has(unlock));
     }
 
+    /**
+     * Alle Rezepte der Mod: Strukturbloecke, Controller, Ports, Brennstoffstufen, Module und Overdrive-Partikel.
+     *
+     * @param out Empfaenger der fertigen Rezepte
+     */
     @Override
     protected void buildRecipes(RecipeOutput out) {
         shaped(ModItems.VOID_CASING, 4, Items.OBSIDIAN, "OIO", "IAI", "OIO")

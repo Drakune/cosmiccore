@@ -16,21 +16,47 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     /** Markierungs-Knochen, deren Lage die Cutscene fuer Leuchteffekte braucht. */
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
+    /**
+     * Modell des Oberkoerpers.
+     *
+     * @param animatable Animationszustand (nicht verwendet)
+     * @return Pfad der Modelldatei
+     */
     @Override
     public ResourceLocation getModelResource(VoidTitan animatable) {
         return CosmicCore.id("geo/void_titan.geo.json");
     }
 
+    /**
+     * Textur des Titanen.
+     *
+     * @param animatable Animationszustand (nicht verwendet)
+     * @return Pfad der Textur
+     */
     @Override
     public ResourceLocation getTextureResource(VoidTitan animatable) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 
+    /**
+     * Animationen (Ruhe und Film).
+     *
+     * @param animatable Animationszustand (nicht verwendet)
+     * @return Pfad der Animationsdatei
+     */
     @Override
     public ResourceLocation getAnimationResource(VoidTitan animatable) {
         return CosmicCore.id("animations/void_titan.animation.json");
     }
 
+    /**
+     * Prozedurale Zusatzbewegung zur Keyframe-Animation: Fluegelspeichen fachern, Finger kruemmen sich beim Aufladen;
+     * ausserdem werden die Leuchtpunkte (Augen, Haende, Kern) zum Mitverfolgen markiert.
+     *
+     * @param animatable Zustand des gezeichneten Titanen
+     * @param instanceId Kennung der Instanz
+     * @param state Animationszustand dieses Bildes
+     */
     @Override
     public void setCustomAnimations(VoidTitan animatable, long instanceId, AnimationState<VoidTitan> state) {
         float t = (float) (animatable.ticks / 20.0);
@@ -53,11 +79,24 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
         }
     }
 
+    /**
+     * Weicher Bogen zwischen zwei Zeitpunkten (0 ausserhalb, 1 in der Mitte).
+     *
+     * @param t aktuelle Zeit in Sekunden
+     * @param a Beginn
+     * @param b Ende
+     * @return 0..1
+     */
     private static float window(float t, float a, float b) {
         if (t <= a || t >= b) return 0.0F;
         return Mth.sin((t - a) / (b - a) * Mth.PI);
     }
 
+    /**
+     * Haelt den Import von GeoBone fuer die Lambdas oben (wird nie aufgerufen).
+     *
+     * @param b beliebiger Knochen
+     */
     @SuppressWarnings("unused")
     private static void unused(GeoBone b) {}
 }
