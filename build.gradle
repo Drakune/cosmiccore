@@ -78,9 +78,13 @@ neoForge {
             systemProperty 'cosmiccore.cutsceneTo', project.findProperty('to') ?: '99999'
             systemProperty 'cosmiccore.cutsceneEvery', project.findProperty('every') ?: '15'
             if (project.findProperty('console')) systemProperty 'cosmiccore.consoleTest', 'true'
+            if (project.findProperty('views')) systemProperty 'cosmiccore.views', project.findProperty('views')
+            if (project.findProperty('size')) systemProperty 'cosmiccore.size', project.findProperty('size')
+            if (project.findProperty('burst')) systemProperty 'cosmiccore.burst', 'true'
             if (project.findProperty('guide')) systemProperty 'cosmiccore.guideTest', 'true'
             if (project.findProperty('book')) systemProperty 'cosmiccore.bookTest', 'true'
             programArguments.addAll '--quickPlaySingleplayer', 'CutsceneTest'
+            if (project.findProperty('hd')) programArguments.addAll '--width', '1920', '--height', '1080'
         }
 
         server {

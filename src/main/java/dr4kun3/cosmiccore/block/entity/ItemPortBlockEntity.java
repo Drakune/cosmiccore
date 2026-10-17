@@ -29,17 +29,21 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            int used = usedSlots();
-            if (used != syncedUsed && level != null && !level.isClientSide()) {
-                syncedUsed = used;
+            // die Station zeigt jeden Platz mit Item und Anzahl - bei jeder sichtbaren Aenderung neu senden
+            int signature = contentSignature();
+            if (signature != syncedSignature && level != null && !level.isClientSide()) {
+                syncedSignature = signature;
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             }
         }
     };
     private final IItemHandler itemView = new View();
-    private int syncedUsed;
+    /** Pruefwert des zuletzt an die Clients gesendeten Lagerinhalts. */
+    private int syncedSignature;
     /** Nur Client: belegte Lagerplaetze (fuer das Hologramm). */
     private int clientUsed;
+    /** Nur Client: Lagerinhalt laut Server (fuer die Anzeige auf der Station). */
+    private final ItemStackHandler clientView = new ItemStackHandler(STORAGE_SLOTS);
 
     /**
      * Legt den Blockinhalt des Item-Ports mit seinem Beutelager an.
@@ -114,6 +118,67 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
+     * Client: Inhalt eines Lagerplatzes laut Server.
+     *
+     * @param slot Platz 0..26
+     * @return der Stapel (leer, wenn frei)
+     */
+    public ItemStack getClientStack(int slot) {
+        return clientView.getStackInSlot(slot);
+    }
+
+    /**
+     * Lagerinhalt als Liste fuer die Clients (Platz und Stapel).
+     *
+     * @param registries Registry-Zugriff
+     * @return die Liste
+     */
+    private net.minecraft.nbt.ListTag writeView(HolderLookup.Provider registries) {
+        var ops = registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
+        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+        for (int i = 0; i < STORAGE_SLOTS; i++) {
+            ItemStack st = storage.getStackInSlot(i);
+            if (st.isEmpty()) continue;
+            CompoundTag e = new CompoundTag();
+            e.putInt("Slot", i);
+            e.put("Stack", ItemStack.CODEC.encodeStart(ops, st).result().orElseGet(CompoundTag::new));
+            list.add(e);
+        }
+        return list;
+    }
+
+    /**
+     * Client: uebernimmt den gesendeten Lagerinhalt.
+     *
+     * @param list die Liste aus {@link #writeView}
+     * @param registries Registry-Zugriff
+     */
+    private void readView(net.minecraft.nbt.ListTag list, HolderLookup.Provider registries) {
+        var ops = registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
+        for (int i = 0; i < STORAGE_SLOTS; i++) clientView.setStackInSlot(i, ItemStack.EMPTY);
+        for (net.minecraft.nbt.Tag t : list) {
+            if (!(t instanceof CompoundTag e)) continue;
+            int slot = e.getIntOr("Slot", -1);
+            if (slot < 0 || slot >= STORAGE_SLOTS || e.get("Stack") == null) continue;
+            clientView.setStackInSlot(slot, ItemStack.CODEC.parse(ops, e.get("Stack")).result().orElse(ItemStack.EMPTY));
+        }
+    }
+
+    /**
+     * Pruefwert ueber Items und Anzahlen aller Lagerplaetze (um Aenderungen zu erkennen).
+     *
+     * @return Hashwert
+     */
+    private int contentSignature() {
+        int h = 1;
+        for (int i = 0; i < STORAGE_SLOTS; i++) {
+            ItemStack st = storage.getStackInSlot(i);
+            h = h * 31 + (st.isEmpty() ? 0 : st.getItem().hashCode() * 101 + st.getCount());
+        }
+        return h;
+    }
+
+    /**
      * Laesst den ganzen Lagerinhalt als Items fallen und leert das Lager.
      *
      * @param level Welt
@@ -163,6 +228,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putInt("used", usedSlots());
+        tag.put("view", writeView(registries));
         return tag;
     }
 
@@ -188,7 +254,8 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
         if (tag.contains("storage")) storage.deserialize(input.childOrEmpty("storage"));
         if (tag.contains("used")) clientUsed = tag.getIntOr("used", 0);
-        syncedUsed = usedSlots();
+        if (tag.contains("view")) readView(tag.getListOrEmpty("view"), input.lookup());
+        syncedSignature = contentSignature();
     }
 
     /**
