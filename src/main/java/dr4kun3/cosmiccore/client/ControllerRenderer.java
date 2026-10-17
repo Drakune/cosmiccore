@@ -34,23 +34,56 @@ import net.neoforged.neoforge.client.model.data.ModelData;
  * werden rot umrandet.
  */
 public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEntity> {
+    /**
+     * Legt den Renderer der Bauvorschau an.
+     *
+     * @param context Kontext der Blockinhalt-Renderer
+     */
     public ControllerRenderer(BlockEntityRendererProvider.Context context) {}
 
+    /**
+     * Sichtbarkeitsbox: die ganze geplante Struktur um den Controller.
+     *
+     * @param be der Controller
+     * @return die Box
+     */
     @Override
     public AABB getRenderBoundingBox(ControllerBlockEntity be) {
         return new AABB(be.getBlockPos()).inflate(10.0);
     }
 
+    /**
+     * Auch zeichnen, wenn der Controller selbst nicht im Bild ist (die Vorschau ist viel groesser).
+     *
+     * @param be der Controller
+     * @return immer {@code true}
+     */
     @Override
     public boolean shouldRenderOffScreen(ControllerBlockEntity be) {
         return true;
     }
 
+    /**
+     * Sichtweite der Bauvorschau in Bloecken.
+     *
+     * @return 96
+     */
     @Override
     public int getViewDistance() {
         return 96;
     }
 
+    /**
+     * Bauvorschau: Solange die Struktur nicht steht und die Vorschau an ist, erscheint jeder fehlende Block als
+     * pulsierender Geist an seiner Zielposition; falsche Bloecke werden rot umrandet.
+     *
+     * @param be der Controller
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel an der Position des Controllers
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     @Override
     public void render(ControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         Level level = be.getLevel();
@@ -152,36 +185,82 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
 
     /** Leitet alles weiter, multipliziert aber den Alphakanal (fuer die Geisterbloecke). */
     private record AlphaVertexConsumer(VertexConsumer delegate, float alpha) implements VertexConsumer {
+        /**
+         * Leitet den Eckpunkt unveraendert weiter.
+         *
+         * @param x Position x
+         * @param y Position y
+         * @param z Position z
+         * @return dieser Puffer (zum Verketten)
+         */
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             delegate.addVertex(x, y, z);
             return this;
         }
 
+        /**
+         * Leitet die Farbe weiter, der Alphawert wird mit der Geister-Deckkraft multipliziert.
+         *
+         * @param red Rot 0..255
+         * @param green Gruen 0..255
+         * @param blue Blau 0..255
+         * @param a Alpha 0..255
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setColor(int red, int green, int blue, int a) {
             delegate.setColor(red, green, blue, Math.round(a * alpha));
             return this;
         }
 
+        /**
+         * Leitet die Texturkoordinate weiter.
+         *
+         * @param u Koordinate u
+         * @param v Koordinate v
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv(float u, float v) {
             delegate.setUv(u, v);
             return this;
         }
 
+        /**
+         * Leitet die Overlay-Koordinate weiter.
+         *
+         * @param u Koordinate u
+         * @param v Koordinate v
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv1(int u, int v) {
             delegate.setUv1(u, v);
             return this;
         }
 
+        /**
+         * Leitet die Licht-Koordinate weiter.
+         *
+         * @param u Blocklicht
+         * @param v Himmelslicht
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv2(int u, int v) {
             delegate.setUv2(u, v);
             return this;
         }
 
+        /**
+         * Leitet die Normale weiter.
+         *
+         * @param x Normale x
+         * @param y Normale y
+         * @param z Normale z
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setNormal(float x, float y, float z) {
             delegate.setNormal(x, y, z);
@@ -189,6 +268,16 @@ public class ControllerRenderer implements BlockEntityRenderer<ControllerBlockEn
         }
     }
 
+    /**
+     * Zeichnet einen fehlenden Block verkleinert und durchscheinend an seiner Zielposition.
+     *
+     * @param dispatcher Block-Renderer
+     * @param pose Pose-Stapel am Controller
+     * @param vc durchscheinender Puffer
+     * @param origin Position des Controllers
+     * @param pos Zielposition
+     * @param target gewuenschter Blockzustand
+     */
     private static void ghost(BlockRenderDispatcher dispatcher, PoseStack pose, VertexConsumer vc, BlockPos origin, BlockPos pos, BlockState target) {
         BakedModel model = dispatcher.getBlockModel(target);
         pose.pushPose();

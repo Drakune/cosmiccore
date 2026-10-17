@@ -35,6 +35,12 @@ public class VoidTitanEntity extends Entity {
     /** Zeit der Cutscene in Ticks (clientseitig gesetzt); negativ = freie Leerlauf-Bewegung. */
     public float scriptTime = -1.0F;
 
+    /**
+     * Legt den Titanen samt seiner Teile (Rumpf, Kopf, Arme, Schweifsegmente) an; er schwebt ohne Physik.
+     *
+     * @param type Entity-Typ
+     * @param level Welt
+     */
     public VoidTitanEntity(EntityType<? extends VoidTitanEntity> type, Level level) {
         super(type, level);
         noPhysics = true;
@@ -57,27 +63,48 @@ public class VoidTitanEntity extends Entity {
         updateParts();
     }
 
-    /** Animationszeit in Ticks (Cutscene oder Leerlauf). */
+    /**
+     * Animationszeit: im Film die Drehbuchzeit, sonst die Lebenszeit.
+     *
+     * @param partialTick Teil-Tick
+     * @return Zeit in Ticks
+     */
     public float animTime(float partialTick) {
         return scriptTime >= 0 ? scriptTime : tickCount + partialTick;
     }
 
+    /**
+     * Vergibt die Kennung und dahinter fortlaufend die der Teile.
+     *
+     * @param id Kennung des Titanen
+     */
     @Override
     public void setId(int id) {
         super.setId(id);
         for (int i = 0; i < parts.length; i++) parts[i].setId(id + i + 1);
     }
 
+    /**
+     * Der Titan besteht aus mehreren Teilen.
+     *
+     * @return immer {@code true}
+     */
     @Override
     public boolean isMultipartEntity() {
         return true;
     }
 
+    /**
+     * Die Teile des Titanen.
+     *
+     * @return Rumpf, Kopf, Arme und Schweifsegmente
+     */
     @Override
     public PartEntity<?>[] getParts() {
         return parts;
     }
 
+    /** Jeden Tick die Teile mitbewegen. */
     @Override
     public void tick() {
         super.tick();
@@ -86,7 +113,7 @@ public class VoidTitanEntity extends Entity {
 
     /**
      * Teile nachfuehren: Rumpf, Kopf und Arme sitzen fest am Koerper, der Schweif bildet eine schlaengelnde S-Kurve,
-     * die vom Becken nach hinten unten haengt (Welle laeuft von der Wurzel zur Spitze).
+     * die vom Becken nach hinten unten haengt (die Welle laeuft von der Wurzel zur Spitze).
      */
     public void updateParts() {
         float t = scriptTime >= 0 ? scriptTime : tickCount;
@@ -116,6 +143,14 @@ public class VoidTitanEntity extends Entity {
         }
     }
 
+    /**
+     * Setzt ein Teil an eine Stelle relativ zum Titanen (mit dessen Drehung) und merkt die alte Lage fuer weiche
+     * Bewegung.
+     *
+     * @param part das Teil
+     * @param local Versatz relativ zum Titanen
+     * @param yawRad Drehung des Titanen in Bogenmass
+     */
     private void place(VoidTitanPart part, Vector3f local, float yawRad) {
         Vector3f w = new Vector3f(local).rotateY(yawRad);
         part.xo = part.getX();
@@ -127,31 +162,69 @@ public class VoidTitanEntity extends Entity {
         part.setPos(getX() + w.x, getY() + w.y - part.getBbHeight() / 2.0, getZ() + w.z);
     }
 
+    /**
+     * Keine abgeglichenen Daten - der Film laeuft auf jedem Client selbst.
+     *
+     * @param builder Bauplan der abgeglichenen Daten
+     */
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {}
 
+    /**
+     * Nichts zu laden - der Titan wird nie gespeichert.
+     *
+     * @param tag gespeicherte Daten
+     */
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {}
 
+    /**
+     * Nichts zu speichern - der Titan wird nie gespeichert.
+     *
+     * @param tag Ziel der Daten
+     */
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {}
 
+    /**
+     * Der Titan ist unverwundbar.
+     *
+     * @param level Server-Welt
+     * @param source Schadensquelle
+     * @param amount Schadensmenge
+     * @return immer {@code false}
+     */
     @Override
     public boolean hurtServer(net.minecraft.server.level.ServerLevel level, DamageSource source, float amount) {
         return false;
     }
 
+    /**
+     * Der Titan existiert nur waehrend des Films.
+     *
+     * @return immer {@code false}
+     */
     @Override
     public boolean shouldBeSaved() {
         return false;
     }
 
+    /**
+     * Sehr grosse Sichtweite (bis 1024 Bloecke), er erscheint im All weit entfernt.
+     *
+     * @param distance quadrierte Entfernung zur Kamera
+     * @return {@code true}, wenn er gezeichnet werden soll
+     */
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < 1024.0 * 1024.0;
     }
 
-    /** Position der Energiekugel vor der Brust (Weltkoordinaten) - hier beginnt der Strahl. */
+    /**
+     * Position der Energiekugel vor der Brust - hier beginnt der Strahl.
+     *
+     * @return Weltkoordinaten
+     */
     public Vec3 orbPosition() {
         float b = SCALE / 16.0F;
         Vector3f w = new Vector3f(0, 30 * b, -26 * b).rotateY(getYRot() * Mth.DEG_TO_RAD);

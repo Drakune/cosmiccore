@@ -26,6 +26,12 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 public final class AsteroidSpawner {
     private static final int MAX_NEARBY = 3;
 
+    /**
+     * Alle 5 Sekunden: nachts in der Oberwelt (und im End) laesst ueber Reaktoren gelegentlich Asteroiden
+     * vorbeiziehen - nicht in Bereichen mit Anti-Asteroiden-Modul.
+     *
+     * @param event Ende eines Welt-Ticks
+     */
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
@@ -60,6 +66,14 @@ public final class AsteroidSpawner {
         }
     }
 
+    /**
+     * Liegt eine Position im Schutzbereich eines Anti-Asteroiden-Moduls?
+     *
+     * @param pos zu pruefende Position
+     * @param shields Positionen der geschuetzten Reaktoren
+     * @param range Schutzradius in Bloecken
+     * @return {@code true}, wenn geschuetzt
+     */
     private static boolean shielded(BlockPos pos, List<BlockPos> shields, double range) {
         for (BlockPos s : shields) {
             if (s.distSqr(pos) <= range * range) return true;
@@ -67,7 +81,16 @@ public final class AsteroidSpawner {
         return false;
     }
 
-    /** Flugbahn quer ueber den Reaktor hinweg (leicht versetzt), Start ausserhalb geschuetzter Bereiche. */
+    /**
+     * Erzeugt einen Asteroiden mit Flugbahn quer ueber den Reaktor hinweg (leicht versetzt); Start ausserhalb
+     * geschuetzter Bereiche.
+     *
+     * @param level Server-Welt
+     * @param reactor Mitte des Reaktors
+     * @param shields Positionen geschuetzter Reaktoren
+     * @param shieldRange Schutzradius
+     * @param r Zufallsquelle
+     */
     private static void spawnOver(ServerLevel level, Vec3 reactor, List<BlockPos> shields, double shieldRange, RandomSource r) {
         double ang = r.nextDouble() * Math.PI * 2;
         double dist = 70 + r.nextDouble() * 40;
@@ -87,7 +110,12 @@ public final class AsteroidSpawner {
         level.addFreshEntity(a);
     }
 
-    /** Zufaellige Art nach spawnWeight (klein haeufig, sehr gross selten). */
+    /**
+     * Waehlt eine Asteroidengroesse nach Gewicht (klein haeufig, sehr gross selten).
+     *
+     * @param r Zufallsquelle
+     * @return die gewaehlte Groesse
+     */
     private static CosmicAsteroid.Kind pick(RandomSource r) {
         int total = 0;
         for (CosmicAsteroid.Kind k : CosmicAsteroid.Kind.values()) total += k.spawnWeight;
@@ -99,5 +127,6 @@ public final class AsteroidSpawner {
         return CosmicAsteroid.Kind.SMALL;
     }
 
+    /** Nur ein Ereignis-Abonnent - keine Instanzen. */
     private AsteroidSpawner() {}
 }

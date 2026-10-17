@@ -10,6 +10,11 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import org.jetbrains.annotations.Nullable;
 
 public class ItemPortBlock extends Block implements EntityBlock {
+    /**
+     * Erzeugt den Item-Port (ruhend, keine Konsole, nichts angedockt).
+     *
+     * @param props Blockeigenschaften aus der Registrierung
+     */
     public ItemPortBlock(Properties props) {
         super(props);
         registerDefaultState(stateDefinition.any().setValue(ModProperties.PHASE, CorePhase.DORMANT)
@@ -17,17 +22,40 @@ public class ItemPortBlock extends Block implements EntityBlock {
                 .setValue(ModProperties.DOCKED, false));
     }
 
+    /**
+     * Zustaende: Reaktorphase, Konsolenseite und "angedockt" (Rohr oder Trichter daneben).
+     *
+     * @param builder Bauplan der Zustaende
+     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ModProperties.PHASE, ModProperties.CONSOLE, ModProperties.DOCKED);
     }
 
+    /**
+     * Beim Setzen pruefen, ob der Port neben einem Controller Teil der Steuerkonsole wird.
+     *
+     * @param ctx Kontext des Setzens
+     * @return der Startzustand
+     */
     @Override
     public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
         return Terminal.portState(defaultBlockState(), ctx.getLevel(), ctx.getClickedPos(), false);
     }
 
-    /** Nachbar geaendert: gehoert der Port (noch) zu einer Steuerkonsole? */
+    /**
+     * Passt den Zustand an, wenn sich ein Nachbar aendert: Teil der Steuerkonsole und Ausrichtung zum Controller.
+     *
+     * @param state bisheriger Zustand
+     * @param level Welt
+     * @param ticks geplante Ticks
+     * @param pos Position
+     * @param dir Richtung zum Nachbarn
+     * @param neighborPos Position des Nachbarn
+     * @param neighbor Zustand des Nachbarn
+     * @param random Zufall
+     * @return der neue Zustand
+     */
     @Override
     protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level, net.minecraft.world.level.ScheduledTickAccess ticks,
                                      BlockPos pos, net.minecraft.core.Direction dir, BlockPos neighborPos, BlockState neighbor,
@@ -35,13 +63,29 @@ public class ItemPortBlock extends Block implements EntityBlock {
         return Terminal.portState(state, level, pos, false);
     }
 
+    /**
+     * Der Item-Port hat einen Blockinhalt mit dem Beutelager (27 Plaetze).
+     *
+     * @param pos Position
+     * @param state Blockzustand
+     * @return neuer {@link dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity}
+     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ItemPortBlockEntity(pos, state);
     }
 
-    /** Rechtsklick oeffnet das Beutelager. */
+    /**
+     * Rechtsklick oeffnet das Beutelager.
+     *
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position des Ports
+     * @param player klickender Spieler
+     * @param hit getroffene Stelle
+     * @return Erfolg
+     */
     @Override
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
                                                                    net.minecraft.world.entity.player.Player player,
@@ -55,7 +99,15 @@ public class ItemPortBlock extends Block implements EntityBlock {
         return net.minecraft.world.InteractionResult.SUCCESS;
     }
 
-    /** Beim Abbauen faellt das Lager heraus. */
+    /**
+     * Beim Abbauen faellt der Inhalt des Lagers heraus.
+     *
+     * @param state alter Zustand
+     * @param level Welt
+     * @param pos Position
+     * @param newState neuer Zustand an dieser Stelle
+     * @param moved {@code true}, wenn der Block verschoben wurde (Kolben)
+     */
     @Override
     protected void onRemove(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, BlockState newState, boolean moved) {
         if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity be) {

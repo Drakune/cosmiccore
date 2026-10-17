@@ -21,6 +21,7 @@ import org.joml.Matrix4f;
  * </ul>
  */
 public final class FieldFx {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private FieldFx() {}
 
     private static final float[] BLUE_DEF = {0.35F, 0.75F, 1.0F};
@@ -32,8 +33,19 @@ public final class FieldFx {
     private static final int FULL_LINES = 12, FULL_STEPS = 28;
 
     /**
+     * Zeichnet das Eindaemmungsfeld: Feldlinien vom Emitter unter dem Kern um das Loch bis zum Kristall darueber, die
+     * Membran dazwischen und aufsteigende Lichtpulse. Mit sinkendem Stabilisator reissen Linien weg, Hitze faerbt rot.
+     *
+     * @param m Transformationsmatrix (Ursprung in der Kernmitte)
+     * @param vc Puffer fuer additives Leuchten
      * @param focus Abstand Kern -> Emitter/Kristall in Bloecken
+     * @param reach Radius der Kammer in Bloecken (wie weit sich das Feld woelbt)
+     * @param t Animationszeit in Ticks
+     * @param energy Helligkeit 0..1 (0 = nichts zeichnen)
+     * @param heat Instabilitaet 0..1 (ab 0.4 faerbt sich das Feld rot)
      * @param shield Stabilisator-Vorrat 0..1
+     * @param unstable {@code true}, wenn der Kern kurz vor dem Kollaps steht (Entladungen)
+     * @param overdrive Overdrive-Stufe 0..4 (Farbe der Pulse)
      */
     public static void render(Matrix4f m, VertexConsumer vc, float focus, float reach, float t, float energy, float heat,
                               float shield, boolean unstable, int overdrive) {
