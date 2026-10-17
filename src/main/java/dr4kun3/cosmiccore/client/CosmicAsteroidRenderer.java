@@ -129,7 +129,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
         Matrix4f m = new Matrix4f(pose.last().pose());
         Matrix3f nm = new Matrix3f(pose.last().normal());
         float[][][] pts = surface(r, seed, GRID[variant][0], GRID[variant][1]);
-        VertexConsumer solid = buffers.getBuffer(RenderTypes.debugQuads());
+        VertexConsumer solid = buffers.getBuffer(CosmicRenderTypes.solidColor());
         rock(solid, m, nm, pts, ROCK[variant], harvest, overload, seed, GRID[variant][0], GRID[variant][1]);
         // abplatzende Splitter (in Weltrichtung nach unten, dem Strahl entgegen)
         int chips = harvest > 0.2F ? 6 : 0;

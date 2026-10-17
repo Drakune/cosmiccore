@@ -64,8 +64,7 @@ public final class BlockQuads {
     }
 
     /**
-     * Wie oben; ohne feste Flaechen, wenn {@code solid} false ist. Bis 1.21.11 kamen feste Blockflaechen aus den
-     * Block-Renderern der Kammer nie auf den Bildschirm - so bleibt das Aussehen gleich.
+     * Wie oben; ohne feste Flaechen, wenn {@code solid} false ist.
      *
      * @param state Blockzustand
      * @param pose Pose-Stapel
