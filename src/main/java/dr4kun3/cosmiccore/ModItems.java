@@ -55,5 +55,6 @@ public final class ModItems {
             "quasar_overdrive_particle", dr4kun3.cosmiccore.item.QuasarOverdriveItem::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.EPIC));
 
+    /** Nur statische Registrierungen - keine Instanzen. */
     private ModItems() {}
 }

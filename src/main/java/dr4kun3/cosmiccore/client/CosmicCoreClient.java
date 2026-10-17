@@ -25,6 +25,11 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 /** Wird nur auf dem Client geladen (dedizierte Server fassen diese Klasse nie an). */
 @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
 public final class CosmicCoreClient {
+    /**
+     * Meldet die Renderer an: Kern, Resonatoren, Controller, Ports, Trichter, Asteroiden und Void-Titan.
+     *
+     * @param event Ereignis zur Renderer-Registrierung
+     */
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntities.CORE.get(), SingularityCoreRenderer::new);
@@ -42,7 +47,11 @@ public final class CosmicCoreClient {
         }
     }
 
-    /** Plug-Modelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen. */
+    /**
+     * Stecker- und Konsolenmodelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen.
+     *
+     * @param event Ereignis zur Registrierung zusaetzlicher Modelle
+     */
     @SubscribeEvent
     public static void registerModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
         for (dr4kun3.cosmiccore.block.CorePhase phase : dr4kun3.cosmiccore.block.CorePhase.values()) {
@@ -56,7 +65,12 @@ public final class CosmicCoreClient {
 
     private static CosmicItemRenderer itemRenderer;
 
-    /** Animierte 3D-Items (Sternenstaub, verdichteter Sternenstaub, Overdrive-Partikel, Neutronenstern, Quasar-Essenz, Module). */
+    /**
+     * Animierte 3D-Items (Sternenstaub, verdichteter Sternenstaub, Overdrive-Partikel, Neutronenstern, Quasar-Essenz,
+     * Module, Handbuch) bekommen einen eigenen Item-Renderer.
+     *
+     * @param event Ereignis zur Registrierung der Client-Erweiterungen
+     */
     @SubscribeEvent
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new IClientItemExtensions() {
@@ -70,12 +84,22 @@ public final class CosmicCoreClient {
                 ModItems.ANTI_ASTEROID_MODULE.get(), ModItems.COLOR_MODULE.get(), ModItems.GUIDE_BOOK.get());
     }
 
+    /**
+     * Verbindet die Menues mit ihren Fenstern (Controller, Item-Port).
+     *
+     * @param event Ereignis zur Registrierung der Menue-Fenster
+     */
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.CONTROLLER.get(), ControllerScreen::new);
         event.register(ModMenus.ITEM_PORT.get(), ItemPortScreen::new);
     }
 
+    /**
+     * Zeigt an Brennstoffen Leistung, Brenndauer und Hitze, an Stabilisatoren den Kuehlwert.
+     *
+     * @param event Ereignis beim Erstellen eines Item-Tooltips
+     */
     @SubscribeEvent
     public static void onTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
@@ -105,5 +129,6 @@ public final class CosmicCoreClient {
         }
     }
 
+    /** Nur Ereignis-Abonnenten - keine Instanzen. */
     private CosmicCoreClient() {}
 }

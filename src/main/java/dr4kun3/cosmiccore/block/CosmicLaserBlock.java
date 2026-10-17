@@ -22,21 +22,49 @@ public class CosmicLaserBlock extends Block {
     /** Im Verbund: nur eine flache Rune auf der Decke (zum Abbauen anwaehlbar, ohne Kollision). */
     private static final VoxelShape RUNE = Block.box(3, 0, 3, 13, 1, 13);
 
+    /**
+     * Erzeugt den Kosmos-Laser (anfangs nicht verbunden).
+     *
+     * @param props Blockeigenschaften aus der Registrierung
+     */
     public CosmicLaserBlock(Properties props) {
         super(props);
         registerDefaultState(stateDefinition.any().setValue(ModProperties.LINKED, false));
     }
 
+    /**
+     * Zustand: mit der Reaktordecke verbunden ja/nein.
+     *
+     * @param builder Bauplan der Zustaende
+     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ModProperties.LINKED);
     }
 
+    /**
+     * Umriss: frei stehend der ganze Laser, verbunden nur die flache Rune.
+     *
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position
+     * @param ctx Kontext der Abfrage
+     * @return der Umriss
+     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.LINKED) ? RUNE : SHAPE;
     }
 
+    /**
+     * Kollision: verbunden laeuft man hindurch (der Laser wird dann gerendert).
+     *
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position
+     * @param ctx Kontext der Abfrage
+     * @return die Kollisionsform
+     */
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.LINKED) ? Shapes.empty() : SHAPE;

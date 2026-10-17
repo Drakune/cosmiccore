@@ -20,25 +20,48 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 public final class ReactorRegistry {
     private static final Map<ResourceKey<Level>, Set<BlockPos>> CONTROLLERS = new ConcurrentHashMap<>();
 
+    /**
+     * Merkt sich einen Controller (fuer Asteroiden und den Zwischensequenz-Befehl).
+     *
+     * @param level Welt des Controllers
+     * @param pos Position des Controllers
+     */
     public static void add(Level level, BlockPos pos) {
         CONTROLLERS.computeIfAbsent(level.dimension(), k -> ConcurrentHashMap.newKeySet()).add(pos.immutable());
     }
 
+    /**
+     * Vergisst einen Controller (abgebaut oder entladen).
+     *
+     * @param level Welt des Controllers
+     * @param pos Position des Controllers
+     */
     public static void remove(Level level, BlockPos pos) {
         Set<BlockPos> set = CONTROLLERS.get(level.dimension());
         if (set != null) set.remove(pos);
     }
 
-    /** Kopie der Controller-Positionen dieser Dimension. */
+    /**
+     * Alle bekannten Controller einer Dimension.
+     *
+     * @param level die Welt
+     * @return Kopie der Positionen (darf veraendert werden)
+     */
     public static List<BlockPos> controllers(Level level) {
         Set<BlockPos> set = CONTROLLERS.get(level.dimension());
         return set == null ? List.of() : List.copyOf(set);
     }
 
+    /**
+     * Beim Beenden des Servers alles vergessen (die naechste Welt beginnt leer).
+     *
+     * @param event Server wurde beendet
+     */
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         CONTROLLERS.clear();
     }
 
+    /** Nur statischer Zustand - keine Instanzen. */
     private ReactorRegistry() {}
 }

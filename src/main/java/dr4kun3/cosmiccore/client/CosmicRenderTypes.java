@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.RenderType;
  * das fuehrte zu Flackern. Additives Licht ist reihenfolgeunabhaengig, daher ist kein Sortieren noetig.
  */
 public final class CosmicRenderTypes {
+    /** Nur statische Render-Typen - keine Instanzen. */
     private CosmicRenderTypes() {}
 
     private static final RenderType GLOW = RenderType.create("cosmiccore_glow", DefaultVertexFormat.POSITION_COLOR,
@@ -25,6 +26,11 @@ public final class CosmicRenderTypes {
                     .setOutputState(RenderStateShard.WEATHER_TARGET)
                     .createCompositeState(false));
 
+    /**
+     * Additives Leuchten wie bei Blitzen, ohne Tiefe zu schreiben und ohne Culling - fuer fast alle Effekte.
+     *
+     * @return der Render-Typ
+     */
     public static RenderType glow() {
         return GLOW;
     }
@@ -41,6 +47,12 @@ public final class CosmicRenderTypes {
                     .setCullState(RenderStateShard.CULL)
                     .createCompositeState(false));
 
+    /**
+     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten. Ohne ihn wuerden spaeter gezeichnete
+     * Wolken oder Regen hinter der Kammer davor erscheinen.
+     *
+     * @return der Render-Typ
+     */
     public static RenderType depthBack() {
         return DEPTH_BACK;
     }
@@ -59,6 +71,11 @@ public final class CosmicRenderTypes {
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false));
 
+    /**
+     * Sternenfeld-Kuppel eines fremden Universums: End-Sternenfeld ohne Tiefentest (liegt hinter allem).
+     *
+     * @return der Render-Typ
+     */
     public static RenderType spaceDome() {
         return SPACE_DOME;
     }
@@ -73,6 +90,11 @@ public final class CosmicRenderTypes {
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false));
 
+    /**
+     * Deckende Farbflaechen ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel).
+     *
+     * @return der Render-Typ
+     */
     public static RenderType spaceSolid() {
         return SPACE_SOLID;
     }
@@ -88,6 +110,11 @@ public final class CosmicRenderTypes {
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false));
 
+    /**
+     * Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All).
+     *
+     * @return der Render-Typ
+     */
     public static RenderType spaceTint() {
         return SPACE_TINT;
     }
@@ -103,6 +130,11 @@ public final class CosmicRenderTypes {
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false));
 
+    /**
+     * Additives Licht ohne Tiefentest (Sterne, Nebel und Lichtreflexe der Kulissen - liegen immer vorn).
+     *
+     * @return der Render-Typ
+     */
     public static RenderType spaceGlow() {
         return SPACE_GLOW;
     }

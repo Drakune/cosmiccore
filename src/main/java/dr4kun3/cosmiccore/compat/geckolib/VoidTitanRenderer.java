@@ -27,34 +27,75 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
     private final VoidTitanTail tailAnimatable = new VoidTitanTail();
     private final Map<VoidTitanEntity, VoidTitan> states = new WeakHashMap<>();
 
+    /**
+     * Legt den Renderer an: Oberkoerper (skaliert) und Schweifsegment als GeckoLib-Modelle, ohne Schatten.
+     *
+     * @param ctx Kontext der Entity-Renderer
+     */
     public VoidTitanRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
         body = new GeoObjectRenderer<>(new VoidTitanModel()).withScale(VoidTitanEntity.SCALE);
         tail = new GeoObjectRenderer<>(new VoidTitanTail.Model());
     }
 
-    /** Der Titan ist riesig: weit ueber seine Hitbox hinaus sichtbar halten. */
+    /**
+     * Sichtbarkeitsbox weit ueber die Hitbox hinaus (Fluegel und Schweif).
+     *
+     * @param entity der Titan
+     * @return die Box
+     */
     @Override
     protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(VoidTitanEntity entity) {
         return entity.getBoundingBox().inflate(70.0);
     }
 
+    /**
+     * Neuer Zeichenzustand, der auf die Entity verweist.
+     *
+     * @return der Zustand
+     */
     @Override
     public dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> createRenderState() {
         return new dr4kun3.cosmiccore.client.EntityRefState<>();
     }
 
+    /**
+     * Uebernimmt die Entity in den Zeichenzustand.
+     *
+     * @param entity der Titan
+     * @param state Zeichenzustand
+     * @param partialTick Teil-Tick
+     */
     @Override
     public void extractRenderState(VoidTitanEntity entity, dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
         state.entity = entity;
     }
 
+    /**
+     * Zeichnet den Titanen aus dem Zeichenzustand.
+     *
+     * @param state Zeichenzustand
+     * @param pose Pose-Stapel
+     * @param buffers Puffer
+     * @param light Lichtwert
+     */
     @Override
     public void render(dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, PoseStack pose, MultiBufferSource buffers, int light) {
         if (state.entity != null) render(state.entity, 0.0F, state.partialTick, pose, buffers, light);
     }
 
+    /**
+     * Zeichnet den Oberkoerper an der Entity-Position, merkt sich die Lage der Leuchtpunkte (Augen, Haende, Kern) fuer
+     * die Zwischensequenz und zeichnet jedes Schweifsegment an seinem Teil.
+     *
+     * @param entity der Titan
+     * @param yaw Gierwinkel (nicht verwendet, die Entity liefert ihn selbst)
+     * @param partialTick Teil-Tick fuer fluessige Bewegung
+     * @param pose Pose-Stapel an der Entity-Position
+     * @param buffers Puffer
+     * @param light Lichtwert (der Titan leuchtet immer voll)
+     */
     private void render(VoidTitanEntity entity, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         int full = LightTexture.FULL_BRIGHT;
         float yawRad = entity.getYRot() * Mth.DEG_TO_RAD;
@@ -100,6 +141,11 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
         }
     }
 
+    /**
+     * Standard-Overlay ohne Treffer-Faerbung.
+     *
+     * @return Overlay-Wert
+     */
     @SuppressWarnings("unused")
     private static int overlay() {
         return OverlayTexture.NO_OVERLAY;
