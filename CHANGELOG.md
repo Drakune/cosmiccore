@@ -11,6 +11,9 @@ Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 ### Hinzugefügt
 - Item-Port: Die Station und der Abschnitt auf der Steuerkonsole zeigen das Lager als Raster mit den echten Items und
   ihrer Anzahl.
+- Alle Item-Ports einer Struktur teilen sich ein Lager mit 27 Plätzen: Jeder Port zeigt denselben Inhalt, im Menü wie
+  auf dem Bildschirm. Was vorher in einzelnen Ports lag, wandert beim Bilden ins gemeinsame Lager; was dort keinen
+  Platz mehr hat, fällt am Port heraus.
 - Energie-Port: Die Anzeige zeigt live, wie viel Strom gerade durch den Port fließt („Abgabe“), dazu Puffer und
   Kapazität in RF. Die Werte werden zweimal pro Sekunde aktualisiert.
 - Angeschlossene Kabel, Rohre und Kisten docken jetzt über einen flachen Stecker genau in der Mitte der Blockseite an.
