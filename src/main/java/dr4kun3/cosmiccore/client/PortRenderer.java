@@ -157,7 +157,7 @@ public class PortRenderer<T extends PortBlockEntity> extends dr4kun3.cosmiccore.
         }
         float t = level.getGameTime() + partialTick;
         float bright = core == null ? 0.6F : Math.max(0.6F, phase == CorePhase.FORMED ? 0.6F : 1.0F);
-        PortStation.Data data = new PortStation.Data(ctrl, core, t, bright, 0).withPort(be);
+        PortStation.Data data = new PortStation.Data(ctrl, core, t, bright, null).withPort(be);
         int conn = PortStation.connections(level, be, energy);
         float sc = SingularityCoreBlockEntity.easeOutBack(st);
         pose.pushPose();

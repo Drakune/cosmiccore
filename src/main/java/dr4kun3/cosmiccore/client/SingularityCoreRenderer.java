@@ -246,6 +246,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         OverdriveFx.render(pose, glow, od, rh, t, e, camYaw, camPitch, pal);
 
         tendrils(pose.last().pose(), glow, reach, inner, t, e, heat, active);
+        infall(pose.last().pose(), glow, reach, rh, t, e, heat, active, unstable, growth);
         lensing(pose, glow, rh, inner, t, e, heat, camYaw, camPitch, beat);
         if (active) jets(pose.last().pose(), glow, rh, reach, t, e, heat, growth + 0.25F * od);
         if (be.getStructureSize() >= 11) BlackHoleFx.orbiters(pose.last().pose(), glow, rh, reach, t, e);
@@ -463,6 +464,55 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
                 prev = q;
             }
         }
+    }
+
+    /**
+     * Lichtpunkte, die ruhig in einer Spirale in die Singularitaet sinken (ersetzt die flackernden Portal-Partikel).
+     * Jeder Punkt braucht etwa zehn Sekunden fuer seinen Weg, blendet weich ein und aus und zieht eine kurze Spur.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param reach Radius der Kammer
+     * @param rh Radius des Ereignishorizonts
+     * @param t Animationszeit
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     * @param active Reaktor laeuft
+     * @param unstable Reaktor ist instabil
+     * @param growth Leistungsstufe 0..1
+     */
+    private static void infall(Matrix4f m, VertexConsumer vc, float reach, float rh, float t, float energy, float heat,
+                               boolean active, boolean unstable, float growth) {
+        int count = RenderQuality.scale(unstable ? 18 : active ? 8 + Math.round(growth * 8) : 4, 3);
+        float[] cold = {0.72F, 0.5F, 1.0F}, hot = {1.0F, 0.55F, 0.3F};
+        for (int k = 0; k < count; k++) {
+            float s = Mth.frac(t / 200.0F + k * 0.618034F);
+            float lon0 = hash(k * 13 + 5) * Mth.TWO_PI, lat0 = (hash(k * 7 + 3) - 0.5F) * 1.4F;
+            float a = energy * Mth.sin(s * Mth.PI) * 0.75F;
+            if (a <= 0.01F) continue;
+            float[] col = lerp(cold, hot, heat * 0.7F);
+            float[] q = infallPos(s, reach, rh, lon0, lat0), q0 = infallPos(Math.max(0.0F, s - 0.04F), reach, rh, lon0, lat0);
+            segment(vc, m, q0[0], q0[1], q0[2], q[0], q[1], q[2], 0.012F, col[0], col[1], col[2], 0.0F, a * 0.6F);
+            cube(vc, m, q[0], q[1], q[2], 0.028F, col[0], col[1], col[2], a);
+        }
+    }
+
+    /**
+     * Ort eines einfallenden Lichtpunkts: der Radius schrumpft beschleunigt, der Umlauf wird nach innen schneller,
+     * die Neigung flacht zur Scheibe hin ab.
+     *
+     * @param s Fortschritt 0 (aussen) .. 1 (am Horizont)
+     * @param reach Radius der Kammer
+     * @param rh Radius des Ereignishorizonts
+     * @param lon0 Startlaenge (Bogenmass)
+     * @param lat0 Startbreite (Bogenmass)
+     * @return Punkt {x, y, z} relativ zur Kernmitte
+     */
+    private static float[] infallPos(float s, float reach, float rh, float lon0, float lat0) {
+        float r = Mth.lerp(s * s, reach + 0.4F, rh * 1.05F);
+        float lon = lon0 + s * s * 4.0F;
+        float lat = lat0 * (1.0F - s);
+        return new float[]{r * Mth.cos(lat) * Mth.cos(lon), r * Mth.sin(lat), r * Mth.cos(lat) * Mth.sin(lon)};
     }
 
     /**
