@@ -25,6 +25,12 @@ import net.minecraft.world.item.ItemStack;
 public class CosmicEmiPlugin implements EmiPlugin {
     private static final Map<Kind, EmiRecipeCategory> CATEGORIES = new EnumMap<>(Kind.class);
 
+    /**
+     * Meldet bei EMI die Kategorien (Brennstoffe, Stabilisatoren, Asteroiden-Beute) und ihre Eintraege an und haelt
+     * den Modul-Tab rechts am Controller-Fenster frei.
+     *
+     * @param registry Registrierung von EMI
+     */
     @Override
     public void register(EmiRegistry registry) {
         // Modul-Tab rechts am Controller-Fenster freihalten
@@ -50,41 +56,81 @@ public class CosmicEmiPlugin implements EmiPlugin {
     }
 
     private record Recipe(Entry entry) implements EmiRecipe {
+        /**
+         * Kategorie dieses Eintrags.
+         *
+         * @return Brennstoff-, Stabilisator- oder Beute-Kategorie
+         */
         @Override
         public EmiRecipeCategory getCategory() {
             return CATEGORIES.get(entry.kind());
         }
 
+        /**
+         * Eindeutige Kennung des Eintrags.
+         *
+         * @return Kennung im Namensraum der Mod
+         */
         @Override
         public ResourceLocation getId() {
             return CosmicCore.id("/" + entry.id());
         }
 
+        /**
+         * Eingabe: das Item (bei Asteroiden-Beute keine).
+         *
+         * @return Liste der Eingaben
+         */
         @Override
         public List<EmiIngredient> getInputs() {
             return entry.kind() == Kind.LOOT ? List.of() : List.of(EmiStack.of(entry.input()));
         }
 
+        /**
+         * Ausgaben, bei Beute mit Wahrscheinlichkeit.
+         *
+         * @return Liste der Ausgaben
+         */
         @Override
         public List<EmiStack> getOutputs() {
             return entry.outputs().stream().map(o -> EmiStack.of(o.stack()).setChance(o.chance())).toList();
         }
 
+        /**
+         * Breite der Anzeige.
+         *
+         * @return Breite in Pixeln
+         */
         @Override
         public int getDisplayWidth() {
             return ViewerEntries.WIDTH;
         }
 
+        /**
+         * Hoehe der Anzeige (je nach Zeilenzahl).
+         *
+         * @return Hoehe in Pixeln
+         */
         @Override
         public int getDisplayHeight() {
             return entry.height();
         }
 
+        /**
+         * Diese Eintraege sind keine Rezepte zum Herstellen und gehoeren nicht in den Rezeptbaum.
+         *
+         * @return immer {@code false}
+         */
         @Override
         public boolean supportsRecipeTree() {
             return false;
         }
 
+        /**
+         * Baut die Anzeige: Item-Slot und Textzeilen bzw. bei Beute die moeglichen Drops mit Chance.
+         *
+         * @param widgets Sammelstelle der Anzeigeelemente
+         */
         @Override
         public void addWidgets(WidgetHolder widgets) {
             if (entry.kind() == Kind.LOOT) {

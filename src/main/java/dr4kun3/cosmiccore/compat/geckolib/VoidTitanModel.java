@@ -16,16 +16,34 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     /** Markierungs-Knochen, deren Lage die Cutscene fuer Leuchteffekte braucht. */
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
+    /**
+     * Geometrie des Titanen.
+     *
+     * @param state Zeichenzustand
+     * @return ID der Geometrie
+     */
     @Override
     public ResourceLocation getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
         return CosmicCore.id("void_titan");
     }
 
+    /**
+     * Textur des Titanen.
+     *
+     * @param state Zeichenzustand
+     * @return Pfad der Textur
+     */
     @Override
     public ResourceLocation getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 
+    /**
+     * Animationen (Ruhe und Film).
+     *
+     * @param animatable Animationszustand (nicht verwendet)
+     * @return Pfad der Animationsdatei
+     */
     @Override
     public ResourceLocation getAnimationResource(VoidTitan animatable) {
         return CosmicCore.id("void_titan");
@@ -37,6 +55,11 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
      */
     static VoidTitan current;
 
+    /**
+     * Eigene Bewegung der Knochen: Fluegelschlag, Atmen, Kopf und Arme; merkt die Lage der Leuchtpunkte.
+     *
+     * @param state Animationszustand
+     */
     @Override
     public void setCustomAnimations(AnimationState<VoidTitan> state) {
         VoidTitan animatable = current;
@@ -61,11 +84,24 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
         }
     }
 
+    /**
+     * Weicher Bogen zwischen zwei Zeitpunkten (0 ausserhalb, 1 in der Mitte).
+     *
+     * @param t aktuelle Zeit in Sekunden
+     * @param a Beginn
+     * @param b Ende
+     * @return 0..1
+     */
     private static float window(float t, float a, float b) {
         if (t <= a || t >= b) return 0.0F;
         return Mth.sin((t - a) / (b - a) * Mth.PI);
     }
 
+    /**
+     * Haelt den Import von GeoBone fuer die Lambdas oben (wird nie aufgerufen).
+     *
+     * @param b beliebiger Knochen
+     */
     @SuppressWarnings("unused")
     private static void unused(GeoBone b) {}
 }

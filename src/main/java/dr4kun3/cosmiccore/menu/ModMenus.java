@@ -16,5 +16,6 @@ public final class ModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<ItemPortMenu>> ITEM_PORT =
             MENUS.register("item_port", () -> IMenuTypeExtension.create(ItemPortMenu::new));
 
+    /** Nur statische Registrierungen - keine Instanzen. */
     private ModMenus() {}
 }

@@ -39,5 +39,6 @@ public final class ModCreativeTabs {
                 out.accept(ModItems.COLOR_MODULE.get());
             }).build());
 
+    /** Nur statische Registrierungen - keine Instanzen. */
     private ModCreativeTabs() {}
 }

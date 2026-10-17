@@ -20,13 +20,22 @@ public abstract class PortBlockEntity extends BlockEntity {
     public long clientConnTick = Long.MIN_VALUE;
 
 
+    /**
+     * Gemeinsame Grundlage von Energie- und Item-Port.
+     *
+     * @param type Typ des Blockinhalts
+     * @param pos Position
+     * @param state Blockzustand
+     */
     protected PortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
     /**
-     * Client: Wechsel inaktiv -> gebildet merken (beim Laden einer fertigen Struktur gibt es keinen Wechsel,
-     * dann ist die Dose sofort da). Unabhaengig davon, ob der Port gerade gezeichnet wurde.
+     * Client: merkt sich den Wechsel ruhend -> gebildet fuer die Einblend-Animation (beim Laden einer fertigen Struktur
+     * gibt es keinen Wechsel, dann ist die Station sofort da).
+     *
+     * @param state neuer Blockzustand
      */
     @Override
     @SuppressWarnings("deprecation")
@@ -46,6 +55,11 @@ public abstract class PortBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * Verbindet den Port mit einem Controller oder loest die Verbindung; der Client erfaehrt es sofort.
+     *
+     * @param pos Position des Controllers oder {@code null} zum Loesen
+     */
     public void link(@Nullable BlockPos pos) {
         if (!Objects.equals(controllerPos, pos)) {
             controllerPos = pos;
@@ -57,12 +71,22 @@ public abstract class PortBlockEntity extends BlockEntity {
         }
     }
 
-    /** Client: Position des Controllers, zu dem der Port gehoert (oder null). */
+    /**
+     * Position des Controllers, zu dem der Port gehoert (auch auf dem Client bekannt).
+     *
+     * @return die Position oder {@code null}
+     */
     @Nullable
     public BlockPos getControllerPos() {
         return controllerPos;
     }
 
+    /**
+     * Daten fuer den Client: nur die Position des Controllers.
+     *
+     * @param registries Registry-Zugriff
+     * @return die zu sendenden Daten
+     */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
@@ -70,18 +94,31 @@ public abstract class PortBlockEntity extends BlockEntity {
         return tag;
     }
 
+    /**
+     * Paket, mit dem Aenderungen an den Client gehen.
+     *
+     * @return das Paket mit den Daten aus {@link #getUpdateTag}
+     */
     @Override
     public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
         return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
 
-    /** Oeffentlicher Zugriff auf den angeschlossenen Controller (nur bei gebildeter Struktur). */
+    /**
+     * Oeffentlicher Zugriff auf den angeschlossenen Controller (nur bei gebildeter Struktur).
+     *
+     * @return der Controller oder {@code null}
+     */
     @Nullable
     public ControllerBlockEntity linkedController() {
         return controller();
     }
 
-    /** Liefert den Controller nur, wenn die Struktur gerade vollstaendig gebildet ist. */
+    /**
+     * Liefert den Controller nur, wenn die Struktur gerade vollstaendig gebildet und geladen ist.
+     *
+     * @return der Controller oder {@code null}
+     */
     @Nullable
     protected ControllerBlockEntity controller() {
         if (controllerPos == null || level == null || !level.hasChunkAt(controllerPos)) return null;
@@ -89,12 +126,22 @@ public abstract class PortBlockEntity extends BlockEntity {
         return null;
     }
 
+    /**
+     * Speichert die Position des verbundenen Controllers.
+     *
+     * @param tag Ziel der Daten
+     */
     @Override
     protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
         super.saveAdditional(tag);
         if (controllerPos != null) tag.putLong("controller", controllerPos.asLong());
     }
 
+    /**
+     * Laedt die Position des verbundenen Controllers.
+     *
+     * @param input gespeicherte Daten
+     */
     @Override
     protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
         super.loadAdditional(input);

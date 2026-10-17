@@ -55,13 +55,35 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
     private static final float[] PUPIL = {0.01F, 0.02F, 0.02F};
     private static final float[] SHINE = {0.95F, 1.0F, 0.97F};
 
+    /**
+     * Legt den Renderer fuer Schild-Emitter und Fokuskristall an.
+     *
+     * @param context Kontext der Blockinhalt-Renderer
+     */
     public ResonatorRenderer(BlockEntityRendererProvider.Context context) {}
 
+    /**
+     * Sichtbarkeitsbox: der Block mit etwas Rand (die Effekte ragen leicht hinaus).
+     *
+     * @param be der Resonator
+     * @return die Box
+     */
     @Override
     public AABB getRenderBoundingBox(ResonatorBlockEntity be) {
         return new AABB(be.getBlockPos()).inflate(0.5);
     }
 
+    /**
+     * Zeichnet den schwebenden, leuchtenden Kristall des Resonators.
+     *
+     * @param be der Resonator
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel am Block
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param cameraPos Position der Kamera
+     */
     @Override
     public void render(ResonatorBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();
@@ -97,8 +119,19 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
 
     /**
      * Schild-Emitter als runder Trichter aus purer Energie: Lichtringe formen einen Kelch, der sich zum Kern oeffnet,
-     * Spiralbahnen drehen sich darin, Lichtpunkte steigen auf und im Hals glueht die Quelle. Aus seiner Oeffnung
-     * steigt das Eindaemmungsfeld (FieldFx).
+     * Spiralbahnen drehen sich darin, Lichtpunkte steigen auf und im Hals glueht die Quelle. Aus seiner Oeffnung steigt
+     * das Eindaemmungsfeld (FieldFx).
+     *
+     * @param pose Pose-Stapel in der Blockmitte
+     * @param buffers Puffer
+     * @param level Welt
+     * @param pos Position des Emitters
+     * @param core Versatz zum Kern {x, y, z} oder {@code null}
+     * @param t Animationszeit in Ticks
+     * @param speed Drehgeschwindigkeit (hoeher im Overdrive)
+     * @param energy Helligkeit 0..1
+     * @param rim Farbe des Randes RGB 0..1
+     * @param heat Instabilitaet 0..1
      */
     private static void renderCoil(PoseStack pose, MultiBufferSource buffers, Level level, BlockPos pos, int[] core, float t,
                                    float speed, float energy, float[] rim, float heat) {
@@ -149,12 +182,29 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         pose.popPose();
     }
 
-    /** Radius des Kelchs: schmaler Hals, weit geoeffneter Rand (f = 0 unten, 1 oben). */
+    /**
+     * Radius des Kelchs: schmaler Hals, weit geoeffneter Rand.
+     *
+     * @param f Hoehe im Kelch (0 unten, 1 oben)
+     * @return Radius in Bloecken
+     */
     private static float funnelRadius(float f) {
         return 0.07F + 0.43F * f * f;
     }
 
-    /** Ellipse (Halbachsen a, b, Mitte ox/oy) als Kappe auf der Kugel mit Radius r, Blickrichtung +Z. */
+    /**
+     * Zeichnet eine Ellipse als gewoelbte Kappe auf einer Kugel (z. B. die Iris des Enderauges), Blickrichtung +Z.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param r Kugelradius
+     * @param a Halbachse in x
+     * @param b Halbachse in y
+     * @param ox Mitte x
+     * @param oy Mitte y
+     * @param inner Farbe in der Mitte
+     * @param outer Farbe am Rand
+     */
     private static void capEllipse(VertexConsumer vc, Matrix4f m, float r, float a, float b, float ox, float oy,
                                    float[] inner, float[] outer) {
         final int rings = 5, seg = 24;
@@ -173,10 +223,28 @@ public class ResonatorRenderer implements BlockEntityRenderer<ResonatorBlockEnti
         }
     }
 
+    /**
+     * Punkt auf der Kugeloberflaeche ueber (x, y).
+     *
+     * @param r Kugelradius
+     * @param x Position x
+     * @param y Position y
+     * @return {x, y, z}
+     */
     private static float[] capPoint(float r, float x, float y) {
         return new float[]{x, y, Mth.sqrt(Math.max(0.0F, r * r - x * x - y * y))};
     }
 
+    /**
+     * Fokuskristall: schwebender, drehender Sternenfeld-Oktaeder mit leuchtenden Kanten und Lichthof.
+     *
+     * @param pose Pose-Stapel in der Blockmitte
+     * @param buffers Puffer
+     * @param t Animationszeit
+     * @param speed Drehgeschwindigkeit
+     * @param energy Helligkeit 0..1
+     * @param unstable {@code true} faerbt den Kristall rot
+     */
     private static void renderCrystal(PoseStack pose, MultiBufferSource buffers, float t, float speed, float energy,
                                       boolean unstable) {
         pose.translate(0.0, 0.04 * Mth.sin(t * 0.06F), 0.0);

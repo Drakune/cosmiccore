@@ -32,14 +32,31 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     private static final float[] ENERGY = {1.0F, 0.75F, 0.3F};
     private static final float[] ITEM = {0.45F, 0.9F, 1.0F};
 
+    /**
+     * Legt den Renderer der Ports an.
+     *
+     * @param ctx Kontext der Blockinhalt-Renderer
+     */
     public PortRenderer(BlockEntityRendererProvider.Context ctx) {}
 
-    /** Plug-Modelle je Port und Phase (werden in CosmicCoreClient als Zusatzmodelle registriert). */
+    /**
+     * Stecker-Modell je Port und Phase (wird in CosmicCoreClient als Zusatzmodell registriert).
+     *
+     * @param energy {@code true} fuer den Energie-Port, sonst Item-Port
+     * @param phase Reaktorphase
+     * @return Kennung des Zusatzmodells
+     */
     public static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> plugModel(boolean energy, CorePhase phase) {
         return key("block/" + (energy ? "energy_port" : "item_port") + "_plug_" + phase.getSerializedName());
     }
 
-    /** Seitenteil der Steuerkonsole je Port und Phase (Port neben dem Controller, siehe Terminal). */
+    /**
+     * Seitenteil der Steuerkonsole je Port und Phase (Port neben dem Controller, siehe Terminal).
+     *
+     * @param energy {@code true} fuer den Energie-Port, sonst Item-Port
+     * @param phase Reaktorphase
+     * @return Kennung des Zusatzmodells
+     */
     public static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> terminalModel(boolean energy, CorePhase phase) {
         return key("block/" + (energy ? "energy_port" : "item_port") + "_terminal_" + phase.getSerializedName());
     }
@@ -48,16 +65,35 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     private static final java.util.Map<String, net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel>> KEYS =
             new java.util.concurrent.ConcurrentHashMap<>();
 
+    /**
+     * Schluessel eines eigenstaendigen Modells, zwischengespeichert.
+     *
+     * @param path Modellpfad im Mod-Namensraum
+     * @return der Schluessel
+     */
     private static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key(String path) {
         return KEYS.computeIfAbsent(path, p -> new net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<>(() -> CosmicCore.id(p).toString()));
     }
 
-    /** Modell-Datei hinter einem Schluessel (fuer die Registrierung). */
+    /**
+     * Modell-ID zu einem Schluessel.
+     *
+     * @param key der Schluessel
+     * @return die ID
+     */
     public static net.minecraft.resources.ResourceLocation modelId(net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key) {
         return net.minecraft.resources.ResourceLocation.parse(key.getName());
     }
 
-    /** Materialisieren 0..1 aus dem Kern des zugehoerigen Reaktors; unbekannt = eigener Zeitpunkt des Formens. */
+    /**
+     * Fortschritt des Materialisierens: folgt dem Kern des zugehoerigen Reaktors; ist der unbekannt, der eigene
+     * Zeitpunkt des Formens.
+     *
+     * @param be der Port
+     * @param level Welt
+     * @param partialTick Teil-Tick
+     * @return 0 (noch unsichtbar) bis 1 (ganz da)
+     */
     private static float settle(PortBlockEntity be, Level level, float partialTick) {
         // eigener Zeitpunkt (Zustandswechsel am Port) - faengt Pakete ab, die einen Tick versetzt ankommen
         float own = 1.0F;
@@ -75,6 +111,17 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         return Math.min(1.0F, Math.max(0.0F, Math.min(own, core)));
     }
 
+    /**
+     * Zeichnet die Port-Station (Sockel, Bruecke zum Kern, Anzeige) bei gebildeter Struktur.
+     *
+     * @param be der Port
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel am Block
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param cameraPos Position der Kamera
+     */
     @Override
     public void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();

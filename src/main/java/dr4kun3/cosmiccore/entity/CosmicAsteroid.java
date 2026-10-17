@@ -42,6 +42,17 @@ public class CosmicAsteroid extends Entity {
         public final int energy, pullTicks, overloadTicks, spawnWeight;
         public final double speed;
 
+        /**
+         * Legt eine Asteroidengroesse an.
+         *
+         * @param id Name (z. B. {@code huge})
+         * @param size Durchmesser in Bloecken
+         * @param energy gewonnene Energie in RF
+         * @param pullTicks Dauer des Heranziehens
+         * @param overloadTicks Dauer der Ueberladung am Haltepunkt
+         * @param speed Fluggeschwindigkeit in Bloecken je Tick
+         * @param spawnWeight Haeufigkeit beim Erscheinen
+         */
         Kind(String id, float size, int energy, int pullTicks, int overloadTicks, double speed, int spawnWeight) {
             this.id = id;
             this.size = size;
@@ -52,7 +63,11 @@ public class CosmicAsteroid extends Entity {
             this.spawnWeight = spawnWeight;
         }
 
-        /** Registry-Name des Entity-Typs, z. B. "huge_asteroid". */
+        /**
+         * Registry-Name des Entity-Typs.
+         *
+         * @return z. B. {@code huge_asteroid}
+         */
         public String entityName() {
             return id + "_asteroid";
         }
@@ -69,6 +84,13 @@ public class CosmicAsteroid extends Entity {
     private int lastHit = -100;
     private Vec3 pullStart; // Server: Position beim Erfassen durch den Traktorstrahl
 
+    /**
+     * Legt einen Asteroiden an; er fliegt ohne Physik und Schwerkraft.
+     *
+     * @param type Entity-Typ
+     * @param level Welt
+     * @param kind Groesse
+     */
     public CosmicAsteroid(EntityType<? extends CosmicAsteroid> type, Level level, Kind kind) {
         super(type, level);
         this.kind = kind;
@@ -76,58 +98,109 @@ public class CosmicAsteroid extends Entity {
         setNoGravity(true);
     }
 
+    /**
+     * Abgeglichen wird der Fortschritt des Einfangens (fuer die Darstellung auf dem Client).
+     *
+     * @param builder Bauplan der abgeglichenen Daten
+     */
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_HARVEST, 0);
     }
 
+    /**
+     * Groesse des Asteroiden.
+     *
+     * @return die Groesse
+     */
     public Kind getKind() {
         return kind;
     }
 
-    /** Index der Art (0 = klein ... 3 = sehr gross), z. B. fuer Farbtabellen im Renderer. */
+    /**
+     * Index der Groesse (0 = klein ... 3 = sehr gross), z. B. fuer Farbtabellen im Renderer.
+     *
+     * @return Index
+     */
     public int getVariant() {
         return kind.ordinal();
     }
 
+    /** Markiert den Asteroiden als von selbst erschienen (verschwindet nach seiner Flugzeit). */
     public void markNatural() {
         natural = true;
     }
 
-    /** Abbaufortschritt 0..1. */
+    /**
+     * Fortschritt des Einfangens.
+     *
+     * @return 0..1
+     */
     public float getHarvest() {
         return entityData.get(DATA_HARVEST) / 1000.0F;
     }
 
-    /** Sichtbare Groesse 1..0.35: der Traktorstrahl presst den Asteroiden beim Heranziehen zusammen. */
+    /**
+     * Sichtbare Groesse: der Traktorstrahl presst den Asteroiden beim Heranziehen zusammen.
+     *
+     * @return 1..0.7
+     */
     public float getPullScale() {
         float h = getPull();
         return 1.0F - 0.3F * h * h * (3.0F - 2.0F * h);
     }
 
-    /** Heranziehen 0..1 (danach haengt der Asteroid am Haltepunkt). */
+    /**
+     * Fortschritt des Heranziehens (danach haengt der Asteroid am Haltepunkt).
+     *
+     * @return 0..1
+     */
     public float getPull() {
         return Math.min(1.0F, entityData.get(DATA_HARVEST) / (float) PULL_PART);
     }
 
-    /** Ueberladung am Haltepunkt 0..1 - bei 1 zerbricht der Asteroid. */
+    /**
+     * Ueberladung am Haltepunkt - bei 1 zerbricht der Asteroid.
+     *
+     * @return 0..1
+     */
     public float getOverload() {
         return Math.max(0.0F, (entityData.get(DATA_HARVEST) - PULL_PART) / (float) (1000 - PULL_PART));
     }
 
+    /**
+     * Durchmesser.
+     *
+     * @return Bloecke
+     */
     public float getSizeBlocks() {
         return kind.size;
     }
 
+    /**
+     * Energie, die der Reaktor beim Zerbrechen gewinnt.
+     *
+     * @return RF
+     */
     public int getEnergy() {
         return kind.energy;
     }
 
+    /**
+     * Hitbox passend zur Groesse.
+     *
+     * @param pose Haltung (nicht verwendet)
+     * @return die Abmessungen
+     */
     @Override
     public EntityDimensions getDimensions(Pose pose) {
         return EntityDimensions.scalable(kind.size, kind.size);
     }
 
+    /**
+     * Fliegt weiter (solange kein Strahl zieht), zieht auf dem Client einen Staubschweif und verschwindet nach seiner
+     * Flugzeit.
+     */
     @Override
     public void tick() {
         super.tick();
@@ -162,8 +235,11 @@ public class CosmicAsteroid extends Entity {
     }
 
     /**
-     * Ein Tick Traktorstrahl (Server): zieht den Asteroiden zum Haltepunkt ueber dem Trichter (Mitte = hold).
-     * Liefert die gewonnene Energie, sobald er dort ankommt und zerbricht, sonst 0.
+     * Ein Tick Traktorstrahl (Server): zieht den Asteroiden zum Haltepunkt ueber dem Trichter und ueberlaedt ihn dort.
+     *
+     * @param hold Haltepunkt (Mitte ueber dem Trichter)
+     * @param high {@code true}, wenn der Haltepunkt am oberen Trichterrand liegt
+     * @return gewonnene Energie in RF, sobald er zerbricht, sonst 0
      */
     public int harvestTick(Vec3 hold, boolean high) {
         if (isRemoved()) return 0;
@@ -219,31 +295,65 @@ public class CosmicAsteroid extends Entity {
         return energy;
     }
 
+    /**
+     * Asteroiden nehmen keinen Schaden (nur die Laser holen sie herunter).
+     *
+     * @param level Server-Welt
+     * @param source Schadensquelle
+     * @param amount Schadensmenge
+     * @return immer {@code false}
+     */
     @Override
     public boolean hurtServer(net.minecraft.server.level.ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount) {
         return false;
     }
 
+    /**
+     * Kann angeschaut und angeklickt werden.
+     *
+     * @return immer {@code true}
+     */
     @Override
     public boolean isPickable() {
         return true;
     }
 
+    /**
+     * Asteroiden sind nur auf der Durchreise und werden nicht gespeichert.
+     *
+     * @return immer {@code false}
+     */
     @Override
     public boolean shouldBeSaved() {
         return false;
     }
 
+    /**
+     * Grosse Sichtweite (bis 400 Bloecke), damit man sie am Himmel kommen sieht.
+     *
+     * @param distance quadrierte Entfernung zur Kamera
+     * @return {@code true}, wenn gezeichnet werden soll
+     */
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < 400.0 * 400.0;
     }
 
+    /**
+     * Laedt die Markierung "natuerlich erschienen".
+     *
+     * @param tag gespeicherte Daten
+     */
     @Override
     protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
         natural = tag.getBooleanOr("natural", false);
     }
 
+    /**
+     * Speichert die Markierung "natuerlich erschienen".
+     *
+     * @param tag Ziel der Daten
+     */
     @Override
     protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
         tag.putBoolean("natural", natural);
