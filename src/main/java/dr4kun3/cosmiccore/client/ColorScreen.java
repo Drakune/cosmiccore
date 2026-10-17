@@ -38,6 +38,13 @@ public class ColorScreen extends Screen {
     private Component codeMessage = Component.empty();
     private int left, top;
 
+    /**
+     * Legt das Farbmenue an.
+     *
+     * @param parent Fenster, zu dem Schliessen zurueckkehrt (das Controller-Fenster)
+     * @param pos Position des Controllers
+     * @param config aktueller Farbsatz
+     */
     public ColorScreen(Screen parent, BlockPos pos, CoreColors.Config config) {
         super(Component.translatable("gui.cosmiccore.colors.title"));
         this.parent = parent;
@@ -46,6 +53,7 @@ public class ColorScreen extends Screen {
         loadHsv();
     }
 
+    /** Baut Knoepfe (Zuruecksetzen, Code laden/kopieren) und das Code-Eingabefeld auf. */
     @Override
     protected void init() {
         left = (width - W) / 2;
@@ -71,6 +79,7 @@ public class ColorScreen extends Screen {
                 .bounds(left + W / 2 - 50, top + H - M - 20, 100, 20).build());
     }
 
+    /** Uebernimmt den eingegebenen Code - oder meldet, dass er ungueltig ist. */
     private void loadCode() {
         var decoded = CoreColors.decode(codeBox.getValue());
         if (decoded.isPresent()) {
@@ -82,13 +91,18 @@ public class ColorScreen extends Screen {
         }
     }
 
-    /** Neuen Farbsatz uebernehmen, Code aktualisieren und an den Server schicken (Kern faerbt sich live). */
+    /**
+     * Neuen Farbsatz uebernehmen, Code aktualisieren und an den Server schicken (der Kern faerbt sich live).
+     *
+     * @param c der neue Farbsatz
+     */
     private void setConfig(CoreColors.Config c) {
         config = c;
         if (codeBox != null && !codeBox.isFocused()) codeBox.setValue(CoreColors.encode(config));
         net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(SetCoreColorsPayload.of(pos, config));
     }
 
+    /** Stellt die Regler (Farbton, Saettigung, Helligkeit) auf die Farbe des gewaehlten Kanals. */
     private void loadHsv() {
         int rgb = config.rgb(selected);
         float[] hsb = Color.RGBtoHSB((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, null);
@@ -97,16 +111,35 @@ public class ColorScreen extends Screen {
         val = hsb[2];
     }
 
+    /**
+     * Farbe aus den aktuellen Reglern.
+     *
+     * @return Farbe als 0xRRGGBB
+     */
     private int currentRgb() {
         return Color.HSBtoRGB(hue, sat, val) & 0xFFFFFF;
     }
 
+    /**
+     * Oberkante eines Reglers.
+     *
+     * @param i Nummer des Reglers (0 Farbton, 1 Saettigung, 2 Helligkeit)
+     * @return y relativ zum Fenster
+     */
     private static int sliderY(int i) {
         return LIST_Y + 1 + PAD + 12 + 36 + i * 16;
     }
 
     // ------------------------------------------------------------------ Zeichnen
 
+    /**
+     * Zeichnet Vorgaben, Kanalliste, Regler mit Vorschau und den Code samt Tooltips.
+     *
+     * @param g Grafik-Kontext
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     * @param partialTick Teil-Tick
+     */
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
@@ -169,6 +202,14 @@ public class ColorScreen extends Screen {
         if (hovered != null) g.setTooltipForNextFrame(font, hovered, mouseX, mouseY);
     }
 
+    /**
+     * Hintergrund: Rahmen und die Felder fuer Vorgaben, Kanaele, Regler und Code.
+     *
+     * @param g Grafik-Kontext
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     * @param partialTick Teil-Tick
+     */
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(g, mouseX, mouseY, partialTick);
@@ -181,19 +222,43 @@ public class ColorScreen extends Screen {
         panel(g, x + M, y + CODE_Y, W - 2 * M, CODE_H);
     }
 
+    /**
+     * Ein umrandetes Feld mit Leuchtkante.
+     *
+     * @param g Grafik-Kontext
+     * @param px linke Kante
+     * @param py obere Kante
+     * @param pw Breite
+     * @param ph Hoehe
+     */
     private static void panel(GuiGraphics g, int px, int py, int pw, int ph) {
         g.fill(px, py, px + pw, py + ph, PANEL_BORDER);
         g.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, PANEL_FILL);
         g.fill(px + 3, py + 1, px + pw - 3, py + 2, PANEL_ACCENT);
     }
 
-    /** Vorgabe als Kachel: vier Streifen (Scheibe innen/mitte/aussen, Jet). */
+    /**
+     * Vorgabe als Kachel: vier Streifen (Scheibe innen, Mitte, aussen und Jet).
+     *
+     * @param g Grafik-Kontext
+     * @param px linke Kante
+     * @param py obere Kante
+     * @param c Farbsatz der Vorgabe
+     */
     private static void presetTile(GuiGraphics g, int px, int py, CoreColors.Config c) {
         g.fill(px - 1, py - 1, px + 17, py + 17, 0xFF120A20);
         int[] ch = {CoreColors.DISK_INNER, CoreColors.DISK_MID, CoreColors.DISK_OUTER, CoreColors.JETS};
         for (int i = 0; i < 4; i++) g.fill(px + i * 4, py, px + i * 4 + 4, py + 16, 0xFF000000 | c.rgb(ch[i]));
     }
 
+    /**
+     * Zeichnet einen Regler mit Farbverlauf und Markierung.
+     *
+     * @param g Grafik-Kontext
+     * @param sx linke Kante
+     * @param sy obere Kante
+     * @param which 0 Farbton, 1 Saettigung, 2 Helligkeit
+     */
     private void drawSlider(GuiGraphics g, int sx, int sy, int which) {
         g.fill(sx - 1, sy - 1, sx + SLIDER_W + 1, sy + SLIDER_H + 1, 0xFF120A20);
         for (int i = 0; i < SLIDER_W; i++) {
@@ -211,6 +276,14 @@ public class ColorScreen extends Screen {
         g.fill(mx, sy - 1, mx + 1, sy + SLIDER_H + 1, 0xFFFFFFFF);
     }
 
+    /**
+     * Mischt zwei Farben.
+     *
+     * @param a erste Farbe 0xRRGGBB
+     * @param b zweite Farbe 0xRRGGBB
+     * @param f Anteil der zweiten 0..1
+     * @return Mischfarbe 0xRRGGBB
+     */
     private static int mix(int a, int b, float f) {
         int r = (int) Mth.lerp(f, (a >> 16) & 0xFF, (b >> 16) & 0xFF);
         int gg = (int) Mth.lerp(f, (a >> 8) & 0xFF, (b >> 8) & 0xFF);
@@ -220,6 +293,13 @@ public class ColorScreen extends Screen {
 
     // ------------------------------------------------------------------ Eingabe
 
+    /**
+     * Klick auf Vorgabe, Kanal oder Regler.
+     *
+     * @param event Mausereignis (Position und Taste)
+     * @param doubleClick Doppelklick
+     * @return {@code true}, wenn der Klick verarbeitet wurde
+     */
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x(), mouseY = event.y();
@@ -252,6 +332,14 @@ public class ColorScreen extends Screen {
         return super.mouseClicked(event, doubleClick);
     }
 
+    /**
+     * Ziehen eines Reglers.
+     *
+     * @param event Mausereignis (Position und Taste)
+     * @param dx Bewegung x
+     * @param dy Bewegung y
+     * @return {@code true}, wenn verarbeitet
+     */
     @Override
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dx, double dy) {
         double mouseX = event.x(), mouseY = event.y();
@@ -263,6 +351,12 @@ public class ColorScreen extends Screen {
         return super.mouseDragged(event, dx, dy);
     }
 
+    /**
+     * Loslassen eines Reglers - erst jetzt geht die Farbe an den Server.
+     *
+     * @param event Mausereignis (Position und Taste)
+     * @return {@code true}, wenn verarbeitet
+     */
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
         double mouseX = event.x(), mouseY = event.y();
@@ -275,6 +369,12 @@ public class ColorScreen extends Screen {
         return super.mouseReleased(event);
     }
 
+    /**
+     * Setzt den gezogenen Regler auf die Mausposition.
+     *
+     * @param mouseX Mausposition x
+     * @param send {@code true}: auch an den Server schicken
+     */
     private void dragTo(double mouseX, boolean send) {
         float f = Mth.clamp((float) (mouseX - left - SLIDER_X) / (SLIDER_W - 1), 0.0F, 1.0F);
         if (dragging == 0) hue = f;
@@ -289,11 +389,17 @@ public class ColorScreen extends Screen {
         }
     }
 
+    /** Schliessen fuehrt zurueck zum Controller-Fenster. */
     @Override
     public void onClose() {
         if (minecraft != null) minecraft.setScreen(parent);
     }
 
+    /**
+     * Das Spiel laeuft weiter, damit man die Farben live am Kern sieht.
+     *
+     * @return immer {@code false}
+     */
     @Override
     public boolean isPauseScreen() {
         return false;

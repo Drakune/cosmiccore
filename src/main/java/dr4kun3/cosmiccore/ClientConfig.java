@@ -17,5 +17,6 @@ public final class ClientConfig {
 
     public static final ModConfigSpec SPEC = B.build();
 
+    /** Nur statische Einstellungen - keine Instanzen. */
     private ClientConfig() {}
 }

@@ -13,6 +13,13 @@ import net.minecraft.world.inventory.Slot;
 public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
     private static final int BORDER = 0xFF3A2468, FILL = 0xCC0E0820, ACCENT = 0xFF6A44B8, HEAD = 0xFFB8A8D8;
 
+    /**
+     * Legt das Fenster des Item-Port-Lagers an (27 Plaetze und Spielerinventar).
+     *
+     * @param menu das zugehoerige Menue
+     * @param inv Inventar des Spielers
+     * @param title Fenstertitel
+     */
     public ItemPortScreen(ItemPortMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         imageWidth = ItemPortMenu.W;
@@ -21,7 +28,7 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
         inventoryLabelY = ItemPortMenu.INV_Y - 11;
     }
 
-    /** Vom Controller aus geoeffnet: Schliessen fuehrt zurueck zur Steuerung. */
+    /** Vom Controller aus geoeffnet: Schliessen fuehrt zurueck zur Steuerung (solange man nah genug steht). */
     @Override
     public void onClose() {
         if (menu.getReturnTo() != null && minecraft != null && minecraft.gameMode != null && minecraft.player != null
@@ -32,12 +39,28 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
         super.onClose();
     }
 
+    /**
+     * Zeichnet das Fenster samt Tooltips.
+     *
+     * @param g Grafik-Kontext
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     * @param partialTick Teil-Tick
+     */
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         renderTooltip(g, mouseX, mouseY);
     }
 
+    /**
+     * Hintergrund: Rahmen, kosmischer Grund, leuchtende Slot-Raender und Trennlinie zum Inventar.
+     *
+     * @param g Grafik-Kontext
+     * @param partialTick Teil-Tick (fuer das Leuchten)
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     */
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
@@ -64,6 +87,13 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
         }
     }
 
+    /**
+     * Beschriftungen: Titel, belegte Plaetze (z. B. 12 / 27) und "Inventar".
+     *
+     * @param g Grafik-Kontext
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     */
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(font, title, titleLabelX, titleLabelY, 0xFFFFC070, false);

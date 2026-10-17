@@ -16,10 +16,12 @@ import org.joml.Vector3f;
  * gehen dort in einem Lichtblitz auf. Ursprung ist die Kernmitte, Fortschritt ph 0..1.
  */
 public final class IgnitionFx {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private IgnitionFx() {}
 
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
+    /** Uebernimmt die Kanalfarbe "Partikel" des Farb-Moduls (sonst Gold, Cyan und Violett). */
     private static void particleColors() {
         int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;
         GOLD = ColorOverride.get(ch, GOLD_DEF);
@@ -33,6 +35,15 @@ public final class IgnitionFx {
     private static final float[] VIOLET_DEF = {0.7F, 0.45F, 1.0F};
     private static float[] VIOLET = VIOLET_DEF;
 
+    /**
+     * Zuendung: Sterne stuerzen in einem Wirbel vom Himmel in den Kern und verloeschen am Ende der Zuendphase.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer fuer additives Leuchten
+     * @param size Kantenlaenge der Struktur in Bloecken (groessere Reaktoren ziehen mehr Sterne an)
+     * @param ph Fortschritt der Zuendung 0..1 (negativ = keine Zuendung)
+     * @param energy Helligkeit 0..1
+     */
     public static void render(Matrix4f m, VertexConsumer vc, int size, float ph, float energy) {
         particleColors();
         if (ph < 0.0F) return;
@@ -63,10 +74,15 @@ public final class IgnitionFx {
     }
 
     /**
-     * Dauerhafter Zustrom, solange der Kern aktiv ist: feine Sterne fallen von oben aus dem All in den Trichter
-     * (bzw. ohne Trichter auf die Deckenmitte) - leicht verdrillt, beschleunigend, mit Lichtschweif.
+     * Dauerhafter Zustrom, solange der Kern aktiv ist: feine Sterne fallen von oben aus dem All in den Trichter (bzw.
+     * ohne Trichter auf die Deckenmitte) - leicht verdrillt, beschleunigend, mit Lichtschweif.
      *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer fuer additives Leuchten
+     * @param size Kantenlaenge der Struktur in Bloecken
      * @param mouthY Hoehe des Ziels relativ zur Kernmitte
+     * @param t Animationszeit in Ticks
+     * @param energy Helligkeit 0..1
      */
     public static void ambient(Matrix4f m, VertexConsumer vc, int size, float mouthY, float t, float energy) {
         particleColors();
@@ -88,7 +104,16 @@ public final class IgnitionFx {
         }
     }
 
-    /** Fall von oben in den Trichter: Radius schrumpft auf die Oeffnung, leichte Drehung, beschleunigend. */
+    /**
+     * Fall von oben in den Trichter: Radius schrumpft auf die Oeffnung, leichte Drehung, beschleunigend.
+     *
+     * @param lon Startwinkel um die Hochachse (Bogenmass)
+     * @param startR Startabstand von der Achse
+     * @param startH Starthoehe ueber dem Ziel
+     * @param mouthY Hoehe des Ziels
+     * @param s Fortschritt 0..1
+     * @return aktuelle Position
+     */
     private static Vector3f fallPos(float lon, float startR, float startH, float mouthY, float s) {
         float e = s * s;
         float r = Mth.lerp(e, startR, 0.15F);
@@ -96,7 +121,15 @@ public final class IgnitionFx {
         return new Vector3f(Mth.cos(ang) * r, mouthY + startH * (1.0F - e), Mth.sin(ang) * r);
     }
 
-    /** Flugbahn: vom Himmel in einem Wirbel (Drehung um die Hochachse) beschleunigend in die Mitte. */
+    /**
+     * Flugbahn der Zuendung: vom Himmel in einem Wirbel (Drehung um die Hochachse) beschleunigend in die Mitte.
+     *
+     * @param lon Startwinkel um die Hochachse (Bogenmass)
+     * @param lat Hoehenwinkel (Bogenmass)
+     * @param r0 Startentfernung
+     * @param s Fortschritt 0..1
+     * @return aktuelle Position
+     */
     private static Vector3f starPos(float lon, float lat, float r0, float s) {
         float e = s * s;
         float r = r0 * (1.0F - e);

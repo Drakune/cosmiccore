@@ -14,20 +14,49 @@ import org.joml.Vector3f;
  * Die Matrix m ist jeweils auf die Kamera zentriert; right/up sind die Bildschirmachsen der Kamera.
  */
 final class CutsceneScenery {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private CutsceneScenery() {}
 
     interface ColorFn {
-        /** Farbe (0xAARRGGBB) fuer einen Punkt der Einheitskugel (Planeten-Koordinaten). */
+        /**
+         * Farbe fuer einen Punkt der Einheitskugel (Planeten-Koordinaten).
+         *
+         * @param x Richtung x
+         * @param y Richtung y
+         * @param z Richtung z
+         * @return Farbe als 0xAARRGGBB
+         */
         int argb(float x, float y, float z);
     }
 
     // ------------------------------------------------------------------ Grundformen
 
+    /**
+     * Ein farbiger Eckpunkt.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param x Position x
+     * @param y Position y
+     * @param z Position z
+     * @param c Farbe 0xAARRGGBB
+     */
     private static void vertex(VertexConsumer vc, Matrix4f m, float x, float y, float z, int c) {
         vc.addVertex(m, x, y, z).setColor((c >> 16) & 255, (c >> 8) & 255, c & 255, (c >>> 24) & 255);
     }
 
-    /** Kugel mit Farbe je Eckpunkt (fn bekommt die Richtung, rot dreht die Oberflaeche um die eigene Achse). */
+    /**
+     * Kugel mit Farbe je Eckpunkt.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param c Mittelpunkt
+     * @param r Radius
+     * @param lat Anzahl Breitenringe
+     * @param lon Anzahl Laengensegmente
+     * @param rot Drehung der Oberflaeche um die eigene Achse (Bogenmass)
+     * @param fn liefert die Farbe je Richtung
+     */
     static void colorSphere(VertexConsumer vc, Matrix4f m, Vector3f c, float r, int lat, int lon, float rot, ColorFn fn) {
         int[][] col = new int[lat + 1][lon + 1];
         float[][][] pos = new float[lat + 1][lon + 1][];
@@ -52,7 +81,20 @@ final class CutsceneScenery {
         }
     }
 
-    /** Weiche Scheibe zur Kamera (innen aIn, aussen aOut) - Grundbaustein fuer Nebel, Halos und Lichter. */
+    /**
+     * Weiche Scheibe zur Kamera - Grundbaustein fuer Nebel, Halos und Lichter.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param c Mittelpunkt
+     * @param right Kamera-Rechts-Vektor
+     * @param up Kamera-Oben-Vektor
+     * @param r0 Innenradius
+     * @param r1 Aussenradius
+     * @param col Farbe RGB 0..1
+     * @param aIn Deckkraft innen
+     * @param aOut Deckkraft aussen
+     */
     static void disc(VertexConsumer vc, Matrix4f m, Vector3f c, Vector3f right, Vector3f up, float r0, float r1,
                      float[] col, float aIn, float aOut) {
         int seg = 24;
@@ -64,11 +106,33 @@ final class CutsceneScenery {
         }
     }
 
+    /**
+     * Punkt in der Kameraebene um einen Mittelpunkt.
+     *
+     * @param c Mittelpunkt
+     * @param right Kamera-Rechts-Vektor
+     * @param up Kamera-Oben-Vektor
+     * @param x Versatz nach rechts
+     * @param y Versatz nach oben
+     * @return der Punkt
+     */
     private static Vector3f at(Vector3f c, Vector3f right, Vector3f up, float x, float y) {
         return new Vector3f(c).add(new Vector3f(right).mul(x)).add(new Vector3f(up).mul(y));
     }
 
-    /** Gestreckter Lichtstreifen (anamorph) durch einen Punkt entlang dir. */
+    /**
+     * Gestreckter Lichtstreifen (anamorph) durch einen Punkt.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param c Mittelpunkt
+     * @param dir Richtung des Streifens
+     * @param side Querrichtung
+     * @param len halbe Laenge
+     * @param w halbe Breite
+     * @param col Farbe RGB 0..1
+     * @param a Deckkraft in der Mitte
+     */
     static void streak(VertexConsumer vc, Matrix4f m, Vector3f c, Vector3f dir, Vector3f side, float len, float w, float[] col, float a) {
         Vector3f d = new Vector3f(dir).mul(len), s = new Vector3f(side).mul(w);
         Vector3f p0 = new Vector3f(c).sub(d), p1 = new Vector3f(c).add(d);
@@ -80,7 +144,16 @@ final class CutsceneScenery {
 
     // ------------------------------------------------------------------ Himmel
 
-    /** Opaker Himmel mit Farbverlauf von oben nach unten (verdeckt Welt und Vanilla-Himmel). */
+    /**
+     * Deckender Himmel mit Farbverlauf von oben nach unten (verdeckt Welt und Vanilla-Himmel).
+     *
+     * @param solid deckender Puffer
+     * @param m Matrix (kamerazentriert)
+     * @param r Radius
+     * @param top Farbe oben 0xAARRGGBB
+     * @param horizon Farbe am Horizont
+     * @param bottom Farbe unten
+     */
     static void gradientDome(VertexConsumer solid, Matrix4f m, float r, int top, int horizon, int bottom) {
         colorSphere(solid, m, new Vector3f(), r, 12, 20, 0.0F, (x, y, z) -> {
             int a = y > 0 ? horizon : horizon, b = y > 0 ? top : bottom;
@@ -88,7 +161,19 @@ final class CutsceneScenery {
         });
     }
 
-    /** Sternenfeld: viele kleine, verschieden helle und farbige Sterne, die helleren mit Kreuzglanz und Funkeln. */
+    /**
+     * Sternenfeld: viele kleine, verschieden helle und farbige Sterne, die helleren mit Kreuzglanz und Funkeln.
+     *
+     * @param vc Puffer
+     * @param m Matrix (kamerazentriert)
+     * @param right Kamera-Rechts-Vektor
+     * @param up Kamera-Oben-Vektor
+     * @param seed Zufallswert (gleiche Sterne bei gleichem Wert)
+     * @param count Anzahl Sterne
+     * @param radius Entfernung der Sternkugel
+     * @param t Animationszeit (Funkeln)
+     * @param alpha Deckkraft 0..1
+     */
     static void stars(VertexConsumer vc, Matrix4f m, Vector3f right, Vector3f up, int seed, int count, float radius, float t, float alpha) {
         float[][] tints = {{0.75F, 0.85F, 1.0F}, {1.0F, 1.0F, 1.0F}, {1.0F, 0.9F, 0.7F}, {1.0F, 0.7F, 0.6F}, {0.8F, 0.7F, 1.0F}};
         for (int i = 0; i < count; i++) {
@@ -111,7 +196,22 @@ final class CutsceneScenery {
         }
     }
 
-    /** Weicher Nebel aus vielen ueberlagerten, transparenten Wolken um die Richtung dir. */
+    /**
+     * Weicher Nebel aus vielen ueberlagerten, transparenten Wolken um eine Richtung.
+     *
+     * @param vc Puffer
+     * @param m Matrix (kamerazentriert)
+     * @param right Kamera-Rechts-Vektor
+     * @param up Kamera-Oben-Vektor
+     * @param dir Richtung des Nebels
+     * @param dist Entfernung
+     * @param spread Ausdehnung
+     * @param a erste Farbe RGB 0..1
+     * @param b zweite Farbe RGB 0..1
+     * @param seed Zufallswert
+     * @param blobs Anzahl Wolken
+     * @param alpha Deckkraft 0..1
+     */
     static void nebula(VertexConsumer vc, Matrix4f m, Vector3f right, Vector3f up, Vector3f dir, float dist, float spread,
                        float[] a, float[] b, int seed, int blobs, float alpha) {
         Vector3f d = new Vector3f(dir).normalize();
@@ -126,7 +226,19 @@ final class CutsceneScenery {
         }
     }
 
-    /** Spiralgalaxie: heller Kern, zwei Arme aus Sternhaufen, Nebelflecken in den Armen. */
+    /**
+     * Spiralgalaxie: heller Kern, zwei Arme aus Sternhaufen, Nebelflecken in den Armen.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param right Kamera-Rechts-Vektor
+     * @param up Kamera-Oben-Vektor
+     * @param c Mittelpunkt
+     * @param radius Radius
+     * @param tiltX Neigung um x (Bogenmass)
+     * @param tiltZ Neigung um z (Bogenmass)
+     * @param spin Drehung (Bogenmass)
+     */
     static void galaxy(VertexConsumer vc, Matrix4f m, Vector3f right, Vector3f up, Vector3f c, float radius, float tiltX,
                        float tiltZ, float spin) {
         Matrix4f gm = new Matrix4f(m).translate(c.x, c.y, c.z).rotateX(tiltX).rotateZ(tiltZ).rotateY(spin);
@@ -147,7 +259,18 @@ final class CutsceneScenery {
         disc(vc, m, cw, right, up, 0.0F, radius * 0.7F, arm, 0.12F, 0.0F);
     }
 
-    /** Sonne mit Kern, Halo, Kreuzglanz und horizontalem (anamorphem) Lichtstreifen. */
+    /**
+     * Sonne mit Kern, Halo, Kreuzglanz und waagrechtem (anamorphem) Lichtstreifen.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param right Kamera-Rechts-Vektor
+     * @param up Kamera-Oben-Vektor
+     * @param p Position
+     * @param size Groesse des Kerns
+     * @param col Farbe des Lichts RGB 0..1
+     * @param alpha Deckkraft 0..1
+     */
     static void sun(VertexConsumer vc, Matrix4f m, Vector3f right, Vector3f up, Vector3f p, float size, float[] col, float alpha) {
         float[] white = {1, 1, 1};
         disc(vc, m, p, right, up, 0.0F, size, white, alpha, alpha * 0.8F);
@@ -159,7 +282,16 @@ final class CutsceneScenery {
 
     // ------------------------------------------------------------------ Planeten
 
-    /** Die Erde: Ozeane, Kontinente, Wuesten, Polkappen, Tag/Nacht-Grenze mit Stadtlichtern. */
+    /**
+     * Die Erde: Ozeane, Kontinente, Wuesten, Polkappen, Tag-Nacht-Grenze mit Stadtlichtern.
+     *
+     * @param solid deckender Puffer
+     * @param m Matrix
+     * @param c Mittelpunkt
+     * @param r Radius
+     * @param rot Drehung um die eigene Achse
+     * @param sun Richtung zur Sonne
+     */
     static void earth(VertexConsumer solid, Matrix4f m, Vector3f c, float r, float rot, Vector3f sun) {
         Vector3f s = new Vector3f(sun).normalize();
         colorSphere(solid, m, c, r, 24, 40, rot, (x, y, z) -> {
@@ -180,7 +312,18 @@ final class CutsceneScenery {
         });
     }
 
-    /** Wolkendecke der Erde (additiv) und blau leuchtender Atmosphaerensaum. */
+    /**
+     * Wolkendecke der Erde (additiv) und blau leuchtender Atmosphaerensaum.
+     *
+     * @param glow Puffer fuer additives Licht
+     * @param m Matrix
+     * @param right Kamera-Rechts-Vektor
+     * @param up Kamera-Oben-Vektor
+     * @param c Mittelpunkt der Erde
+     * @param r Radius der Erde
+     * @param rot Drehung der Wolken
+     * @param sun Richtung zur Sonne
+     */
     static void earthAtmosphere(VertexConsumer glow, Matrix4f m, Vector3f right, Vector3f up, Vector3f c, float r, float rot, Vector3f sun) {
         Vector3f s = new Vector3f(sun).normalize();
         colorSphere(glow, m, c, r * 1.012F, 18, 30, rot * 1.3F, (x, y, z) -> {
@@ -194,13 +337,29 @@ final class CutsceneScenery {
         disc(glow, m, c, right, up, r * 1.0F, r * 1.35F, blue, 0.12F, 0.0F);
     }
 
+    /**
+     * Landmaske: Ueberlagerte Wellen ergeben Kontinente (groesser als Schwelle = Land).
+     *
+     * @param x Richtung x
+     * @param y Richtung y
+     * @param z Richtung z
+     * @return Hoehenwert (etwa -1..1)
+     */
     private static float land(float x, float y, float z) {
         return Mth.sin(2.7F * x + 1.3F) * Mth.cos(2.1F * y + 0.7F) * Mth.sin(3.3F * z + 2.2F)
                 + 0.55F * Mth.sin(5.9F * x + 3.1F * y + 2.0F) * Mth.sin(4.7F * z + 0.3F)
                 + 0.3F * Mth.sin(11.3F * x - 7.1F * z + 1.1F) * Mth.cos(9.7F * y);
     }
 
-    /** Der Mond: grau mit Kratern und Maria, beleuchtet. */
+    /**
+     * Der Mond: grau mit Kratern und Maria, beleuchtet.
+     *
+     * @param solid deckender Puffer
+     * @param m Matrix
+     * @param c Mittelpunkt
+     * @param r Radius
+     * @param sun Richtung zur Sonne
+     */
     static void moon(VertexConsumer solid, Matrix4f m, Vector3f c, float r, Vector3f sun) {
         Vector3f s = new Vector3f(sun).normalize();
         colorSphere(solid, m, c, r, 14, 22, 0.0F, (x, y, z) -> {
@@ -211,7 +370,16 @@ final class CutsceneScenery {
         });
     }
 
-    /** Gasriese: Wolkenbaender, Turbulenzen und ein grosser Sturm; Terminator zur Sonne. */
+    /**
+     * Gasriese: Wolkenbaender, Turbulenzen und ein grosser Sturm; Schattengrenze zur Sonne.
+     *
+     * @param solid deckender Puffer
+     * @param m Matrix
+     * @param c Mittelpunkt
+     * @param r Radius
+     * @param rot Drehung um die eigene Achse
+     * @param sun Richtung zur Sonne
+     */
     static void gasGiant(VertexConsumer solid, Matrix4f m, Vector3f c, float r, float rot, Vector3f sun) {
         Vector3f s = new Vector3f(sun).normalize();
         int[] pal = {0xFFE6CCA8, 0xFFB46E4A, 0xFF7A4A8C, 0xFFF0DCC0, 0xFF9A5A3C, 0xFF5A3A7A};
@@ -229,7 +397,20 @@ final class CutsceneScenery {
         });
     }
 
-    /** Planetenring (halbtransparent) in der Aequatorebene; front = nur die vordere bzw. hintere Haelfte. */
+    /**
+     * Planetenring (halbtransparent) in der Aequatorebene - getrennt in vordere und hintere Haelfte, damit der Planet
+     * dazwischen liegen kann.
+     *
+     * @param tint halbtransparenter Puffer
+     * @param m Matrix
+     * @param c Mittelpunkt des Planeten
+     * @param r0 Innenradius
+     * @param r1 Aussenradius
+     * @param tiltX Neigung um x
+     * @param tiltZ Neigung um z
+     * @param front {@code true}: nur die vordere Haelfte, sonst die hintere
+     * @param cam Kameraposition
+     */
     static void ring(VertexConsumer tint, Matrix4f m, Vector3f c, float r0, float r1, float tiltX, float tiltZ, boolean front, Vector3f cam) {
         Matrix4f rm = new Matrix4f(m).translate(c.x, c.y, c.z).rotateX(tiltX).rotateZ(tiltZ);
         // Kamerarichtung im Ringraum: welche Haelfte liegt vorn?
@@ -259,8 +440,15 @@ final class CutsceneScenery {
     // ------------------------------------------------------------------ Lichtgeschwindigkeit
 
     /**
-     * Tunnel aus Sternenstreifen: Streifen entstehen im Fluchtpunkt, werden beim Naeherkommen laenger und heller;
-     * ein Leuchten am Ende des Tunnels und spiralig mitlaufende Lichtfaeden. speed 0..1.
+     * Tunnel aus Sternenstreifen: Streifen entstehen im Fluchtpunkt und werden beim Naeherkommen laenger und heller;
+     * dazu ein Leuchten am Ende und spiralig mitlaufende Lichtfaeden.
+     *
+     * @param glow Puffer fuer additives Licht
+     * @param m Matrix (kamerazentriert)
+     * @param fwd Flugrichtung
+     * @param local Zeit seit Beginn des Flugs
+     * @param speed Geschwindigkeit 0..1
+     * @param alpha Deckkraft 0..1
      */
     static void warp(VertexConsumer glow, Matrix4f m, Vector3f fwd, float local, float speed, float alpha) {
         Vector3f u = new Vector3f(fwd).cross(Math.abs(fwd.y) > 0.9F ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
@@ -302,6 +490,14 @@ final class CutsceneScenery {
 
     // ------------------------------------------------------------------ Farbe
 
+    /**
+     * Mischt zwei Farben mit Alpha.
+     *
+     * @param a erste Farbe 0xAARRGGBB
+     * @param b zweite Farbe
+     * @param t Anteil der zweiten 0..1
+     * @return Mischfarbe
+     */
     static int lerpColor(int a, int b, float t) {
         t = Mth.clamp(t, 0.0F, 1.0F);
         int aa = (a >>> 24), ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
@@ -310,6 +506,13 @@ final class CutsceneScenery {
                 | (int) (ab + (bb - ab) * t);
     }
 
+    /**
+     * Dunkelt eine Farbe ab (Alpha bleibt).
+     *
+     * @param c Farbe 0xAARRGGBB
+     * @param f Faktor 0..1
+     * @return die Farbe
+     */
     static int scale(int c, float f) {
         return (c & 0xFF000000) | ((int) (((c >> 16) & 255) * f) << 16) | ((int) (((c >> 8) & 255) * f) << 8) | (int) ((c & 255) * f);
     }
