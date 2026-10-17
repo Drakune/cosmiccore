@@ -437,6 +437,41 @@ def draw_port_socket():
     return img
 
 
+def draw_port_plug(energy, phase):
+    """Flacher Stecker fuer das Flachbandkabel: Metallrahmen mit Schrauben, Kontaktleiste mit zwei Reihen Stiften,
+    Leuchtkanten in der Farbe des Ports (gebildet gedimmt, instabil rot verfaerbt)."""
+    accent = (110, 210, 255) if energy else (255, 170, 70)
+    if phase == 'unstable':
+        accent = lerp(accent, (255, 80, 90), 0.55)
+    k = {'formed': 0.55, 'active': 1.0, 'unstable': 1.0}[phase]
+    glow = tuple(int(c * k) for c in accent)
+    img = plate(43 if energy else 44, base=(20, 16, 32), noise=2)
+    px = img.load()
+    for i in range(16):  # Rahmen
+        for (x, y) in ((i, 0), (i, 15), (0, i), (15, i)):
+            put(px, x, y, (52, 44, 78))
+    for i in range(1, 15):
+        for (x, y) in ((i, 1), (1, i)):
+            put(px, x, y, (68, 58, 100))
+        for (x, y) in ((i, 14), (14, i)):
+            put(px, x, y, (30, 24, 46))
+    for (x, y) in [(2, 2), (13, 2), (2, 13), (13, 13)]:  # Schrauben
+        put(px, x, y, (150, 146, 170))
+    for x in range(3, 13):  # Leuchtkanten ober- und unterhalb der Kontaktleiste
+        put(px, x, 3, lerp(glow, (255, 255, 255), 0.15))
+        put(px, x, 12, glow)
+    for y in range(5, 11):  # Kontaktleiste
+        for x in range(3, 13):
+            put(px, x, y, (8, 6, 14))
+    for x in range(4, 12, 2):  # Stifte
+        put(px, x, 6, (205, 200, 220)); put(px, x + 1, 6, (120, 116, 140))
+        put(px, x, 9, (205, 200, 220)); put(px, x + 1, 9, (120, 116, 140))
+    for x in range(3, 13):  # schwacher Schein der Leiste
+        put(px, x, 7, lerp((8, 6, 14), glow, 0.25))
+        put(px, x, 8, lerp((8, 6, 14), glow, 0.25))
+    return img
+
+
 def draw_overdrive_particle(f, nf):
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     px = img.load()
@@ -885,6 +920,9 @@ def textures():
     save_strip('cosmic_book', [draw_cosmic_book()], 1, folder='item')
     save_strip('cosmic_laser_side', [draw_laser_side()], 1)
     save_strip('port_socket', [draw_port_socket()], 1)
+    for b, energy in (('energy_port', True), ('item_port', False)):
+        for p in PHASES[1:]:
+            save_strip(f'{b}_plug_{p}', [draw_port_plug(energy, p)], 1)
     save_strip('overdrive_particle', [draw_overdrive_particle(f, 8) for f in range(8)], 3, folder='item')
     save_strip('cosmic_laser_top', [draw_laser_top()], 1)
     save_strip('star_funnel_side', [draw_funnel_side(f, 16) for f in range(16)], 2)
@@ -928,19 +966,18 @@ def models():
         wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
         wjson(f'{ASSETS}/models/item/{b}.json', {'parent': f'{MOD}:block/{b}_formed'})
 
-    # Ports: bei gebildeter Struktur eine Anschlussdose mit Steckbuchsen auf allen Seiten
-    def plug(core_tex):
-        socket = f'{MOD}:block/port_socket'
-        def el(a, b, tex):
-            return {'from': a, 'to': b, 'faces': {d: {'texture': tex} for d in ('down', 'up', 'north', 'south', 'west', 'east')}}
-        return {'parent': 'minecraft:block/block', 'textures': {'particle': core_tex, 'core': core_tex, 'socket': socket},
-                'elements': [el([2, 2, 2], [14, 14, 14], '#core'),
-                             el([0, 4, 4], [2, 12, 12], '#socket'), el([14, 4, 4], [16, 12, 12], '#socket'),
-                             el([4, 0, 4], [12, 2, 12], '#socket'), el([4, 14, 4], [12, 16, 12], '#socket'),
-                             el([4, 4, 0], [12, 12, 2], '#socket'), el([4, 4, 14], [12, 12, 16], '#socket')]}
+    # Ports: flacher Stecker am Ende des Flachbandkabels (duenn entlang Z, Vorderseite nach Sueden)
+    def plug(tex):
+        def face(uv):
+            return {'texture': '#plug', 'uv': uv}
+        return {'parent': 'minecraft:block/block', 'textures': {'particle': tex, 'plug': tex},
+                'elements': [{'from': [1, 1, 6], 'to': [15, 15, 10], 'faces': {
+                    'north': face([1, 1, 15, 15]), 'south': face([1, 1, 15, 15]),
+                    'up': face([1, 0, 15, 4]), 'down': face([1, 12, 15, 16]),
+                    'west': face([0, 1, 4, 15]), 'east': face([12, 1, 16, 15])}}]}
     for b in ('energy_port', 'item_port'):
         for p in PHASES[1:]:
-            wjson(f'{ASSETS}/models/block/{b}_plug_{p}.json', plug(f'{MOD}:block/{b}_{p}'))
+            wjson(f'{ASSETS}/models/block/{b}_plug_{p}.json', plug(f'{MOD}:block/{b}_plug_{p}'))
         # gebildet: Blockmodell leer, die Dose zeichnet der PortRenderer (mit Einblend-Animation)
         wjson(f'{ASSETS}/models/block/{b}_hidden.json', {'textures': {'particle': f'{MOD}:block/{b}_formed'}})
         wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': {
@@ -1190,7 +1227,7 @@ DE = {
     'guide.cosmiccore.page.3': '§5§lBlöcke§r\n§lGehäuse:§r Boden, Decke\n§lRunenrahmen:§r Ecken\n§lFokusglas:§r Deckenring\n§lSchild-Emitter:§r unter dem Kern\n§lKristall:§r über dem Kern\n§lKern:§r Mitte\n\nDas Innere muss leer sein. Die Vorschau zeigt alles genau.',
     'guide.cosmiccore.page.4': '§5§lPorts§r\n\nJeder Reaktor braucht §cmindestens einen Energie-Port und einen Item-Port§r - sie ersetzen beliebige Gehäuseblöcke.\n\n§lEnergie-Port:§r gibt RF an Kabel ab.\n\n§lItem-Port:§r nimmt Brennstoff per Trichter oder Rohr an und hat ein Lager für 27 Stapel Beute (Rechtsklick).\n\n§d§lSteuerkonsole:§r Item-Port links und Energie-Port rechts neben dem Controller verschmelzen zu einer Konsole. Rohre und Kabel docken außen an - diese beiden Plätze bleiben frei.',
     'guide.cosmiccore.page.5': '§5§lBetrieb§r\n\nRechtsklick auf den Controller öffnet die GUI.\n\n§6Brennstoff:§r Sternenstaub, Enderperle, Netherstern ...\n\n§3Stabilisator:§r Obsidian, Netheritschrott ...',
-    'guide.cosmiccore.page.6': '§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 30 Sekunden von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.',
+    'guide.cosmiccore.page.6': '§5§lResonanz§r\n\nNach dem Zünden baut sich die Leistung über etwa 3 Minuten von 20 % auf 100 % auf.\n\nSchleichen + Rechtsklick auf den Controller zeigt den ersten Baufehler im Chat.',
     'guide.cosmiccore.page.7': '§5§lLeistungsstufe§r\n\nJede Stufe bringt:\n§b+ Leistung§r (stark)\n§6+ Verbrauch§r\n§c+ Instabilität§r\n\nStufen: 5er 4, 7er 6, 9er 8, ultimativ 10. Jede neue Stufe einmalig freischalten: §e5er§r Sternenstaub, §e7er§r verd. Sternenstaub, §e9er§r Neutronenstern, §eUltimativ§r Quasar-Essenz.',
     'guide.cosmiccore.page.8': '§5§lInstabilität§r\n\nBrennstoff erhitzt den Kern. Ab 20 % hält das Feld ihn dort und verbraucht dafür Stabilisatoren - je höher die Stufe, desto mehr.\n§e70 %§r: Kern wird rot\n§685 %§r: Alarm\n§4100 %§r: 10 s Countdown - unter 95 % gerettet, sonst §lKollaps§r!',
     'guide.cosmiccore.page.9': '§5§lDer Kosmos§r\n\nFreie Sicht zum Himmel über der Decke: §b+25 %§r Leistung, mit Sternentrichter §b+50 %§r.\n\nNachts zusätzlich +25 %, bei Vollmond bis +50 %.\n\nIm End: immer +40 %, aber instabiler. Neumond ebenso.',
@@ -1236,6 +1273,7 @@ DE = {
     'console.cosmiccore.wing_items': 'ITEMS',
     'console.cosmiccore.capacity': 'Kapazität',
     'console.cosmiccore.stored': 'Gespeichert',
+    'console.cosmiccore.transfer': 'Abgabe',
     'console.cosmiccore.fuel': 'Brennstoff',
     'console.cosmiccore.stabilizer': 'Stabilisator',
     'console.cosmiccore.loot': 'Beute',
@@ -1460,7 +1498,7 @@ EN = {
     'guide.cosmiccore.page.3': '§5§lBlocks§r\n§lCasing:§r floor, ceiling\n§lRune Frame:§r corners\n§lFocus Glass:§r ceiling ring\n§lShield Emitter:§r below the core\n§lCrystal:§r above the core\n§lCore:§r center\n\nThe inside must be empty. The preview shows everything.',
     'guide.cosmiccore.page.4': '§5§lPorts§r\n\nEvery reactor needs §cat least one energy port and one item port§r - they replace any casing block.\n\n§lEnergy Port:§r pushes RF into cables.\n\n§lItem Port:§r accepts fuel from hoppers or pipes and stores 27 stacks of loot (right-click).\n\n§d§lControl console:§r item port left and energy port right of the controller merge into one console. Pipes and cables dock on the outside - those two spots stay free.',
     'guide.cosmiccore.page.5': '§5§lOperation§r\n\nRight-click the controller to open the GUI.\n\n§6Fuel:§r Star Dust, ender pearl, nether star ...\n\n§3Stabilizer:§r obsidian, netherite scrap ...',
-    'guide.cosmiccore.page.6': '§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 30 seconds.\n\nSneak + right-click the controller to see the first build error in chat.',
+    'guide.cosmiccore.page.6': '§5§lResonance§r\n\nAfter ignition the output builds up from 20 % to 100 % over about 3 minutes.\n\nSneak + right-click the controller to see the first build error in chat.',
     'guide.cosmiccore.page.7': '§5§lPower level§r\n\nEach level adds:\n§b+ output§r (a lot)\n§6+ fuel use§r\n§c+ instability§r\n\nLevels: 5x 4, 7x 6, 9x 8, ultimate 10. Unlock each new level once: §e5x§r star dust, §e7x§r compressed star dust, §e9x§r neutron star, §eUltimate§r quasar essence.',
     'guide.cosmiccore.page.8': '§5§lInstability§r\n\nFuel heats the core. From 20 % the field holds it there, using stabilizers - the higher the level, the more.\n§e70 %§r: core turns red\n§685 %§r: alarm\n§4100 %§r: 10 s countdown - below 95 % saved, else §lcollapse§r!',
     'guide.cosmiccore.page.9': '§5§lThe cosmos§r\n\nClear sky above the ceiling: §b+25 %§r output, with a Star Funnel §b+50 %§r.\n\nAt night +25 %, at full moon up to +50 %.\n\nThe End: always +40 %, but less stable.',
@@ -1506,6 +1544,7 @@ EN = {
     'console.cosmiccore.wing_items': 'ITEMS',
     'console.cosmiccore.capacity': 'Capacity',
     'console.cosmiccore.stored': 'Stored',
+    'console.cosmiccore.transfer': 'Transfer',
     'console.cosmiccore.fuel': 'Fuel',
     'console.cosmiccore.stabilizer': 'Stabilizer',
     'console.cosmiccore.loot': 'Loot',

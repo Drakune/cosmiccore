@@ -29,17 +29,21 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            int used = usedSlots();
-            if (used != syncedUsed && level != null && !level.isClientSide) {
-                syncedUsed = used;
+            // die Station zeigt jeden Platz mit Item und Anzahl - bei jeder sichtbaren Aenderung neu senden
+            int signature = contentSignature();
+            if (signature != syncedSignature && level != null && !level.isClientSide) {
+                syncedSignature = signature;
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             }
         }
     };
     private final IItemHandler itemView = new View();
-    private int syncedUsed;
+    /** Pruefwert des zuletzt an die Clients gesendeten Lagerinhalts. */
+    private int syncedSignature;
     /** Nur Client: belegte Lagerplaetze (fuer das Hologramm). */
     private int clientUsed;
+    /** Nur Client: Lagerinhalt laut Server (fuer die Anzeige auf der Station). */
+    private final ItemStackHandler clientView = new ItemStackHandler(STORAGE_SLOTS);
 
     /**
      * Legt den Blockinhalt des Item-Ports mit seinem Beutelager an.
@@ -102,6 +106,30 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
+     * Client: Inhalt eines Lagerplatzes laut Server.
+     *
+     * @param slot Platz 0..26
+     * @return der Stapel (leer, wenn frei)
+     */
+    public ItemStack getClientStack(int slot) {
+        return clientView.getStackInSlot(slot);
+    }
+
+    /**
+     * Pruefwert ueber Items und Anzahlen aller Lagerplaetze (um Aenderungen zu erkennen).
+     *
+     * @return Hashwert
+     */
+    private int contentSignature() {
+        int h = 1;
+        for (int i = 0; i < STORAGE_SLOTS; i++) {
+            ItemStack st = storage.getStackInSlot(i);
+            h = h * 31 + (st.isEmpty() ? 0 : st.getItem().hashCode() * 101 + st.getCount());
+        }
+        return h;
+    }
+
+    /**
      * Laesst den ganzen Lagerinhalt als Items fallen und leert das Lager.
      *
      * @param level Welt
@@ -151,6 +179,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putInt("used", usedSlots());
+        tag.put("view", storage.serializeNBT(registries));
         return tag;
     }
 
@@ -177,7 +206,8 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         super.loadAdditional(tag, registries);
         if (tag.contains("storage")) storage.deserializeNBT(registries, tag.getCompound("storage"));
         if (tag.contains("used")) clientUsed = tag.getInt("used");
-        syncedUsed = usedSlots();
+        if (tag.contains("view")) clientView.deserializeNBT(registries, tag.getCompound("view"));
+        syncedSignature = contentSignature();
     }
 
     /**
