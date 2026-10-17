@@ -9,7 +9,7 @@ Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 ## [1.2.1] - 2026-10-16
 
 ### Hinzugefügt
-- Eigene Dateien für Minecraft 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2 und 26.3
+- Eigene Dateien für Minecraft 1.21.2, 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2 und 26.3
   (Zweige `mc/<Version>`). Welten lassen sich mitnehmen, gelagerte Items bleiben erhalten.
 
 ### Behoben
