@@ -21,11 +21,23 @@ public record SetCoreColorsPayload(BlockPos pos, int mask, List<Integer> colors)
             ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list(CoreColors.CHANNELS)), SetCoreColorsPayload::colors,
             SetCoreColorsPayload::new);
 
+    /**
+     * Baut das Paket aus einem Farbsatz.
+     *
+     * @param pos Position des Controllers
+     * @param c der neue Farbsatz
+     * @return das Paket fuer den Server
+     */
     public static SetCoreColorsPayload of(BlockPos pos, CoreColors.Config c) {
         return new SetCoreColorsPayload(pos, c.mask(), java.util.Arrays.stream(c.colors()).boxed().toList());
     }
 
-    /** Server: nur in Reichweite und nur mit eingesetztem Farb-Modul. */
+    /**
+     * Server: uebernimmt die Farben nur in Reichweite (8 Bloecke) und nur mit eingesetztem Farb-Modul.
+     *
+     * @param p das empfangene Paket
+     * @param ctx Kontext mit dem sendenden Spieler
+     */
     public static void handle(SetCoreColorsPayload p, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (!(ctx.player() instanceof ServerPlayer player)) return;
@@ -37,6 +49,11 @@ public record SetCoreColorsPayload(BlockPos pos, int mask, List<Integer> colors)
         });
     }
 
+    /**
+     * Liefert den Pakettyp, unter dem NeoForge dieses Paket kennt.
+     *
+     * @return der registrierte Typ des Farb-Pakets
+     */
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;

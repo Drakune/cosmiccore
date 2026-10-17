@@ -32,23 +32,55 @@ import net.minecraft.world.phys.AABB;
  * werden rot umrandet.
  */
 public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<ControllerBlockEntity> {
+    /**
+     * Legt den Renderer der Bauvorschau an.
+     *
+     * @param context Kontext der Blockinhalt-Renderer
+     */
     public ControllerRenderer(BlockEntityRendererProvider.Context context) {}
 
+    /**
+     * Sichtbarkeitsbox: die ganze geplante Struktur um den Controller.
+     *
+     * @param be der Controller
+     * @return die Box
+     */
     @Override
     public AABB getRenderBoundingBox(ControllerBlockEntity be) {
         return new AABB(be.getBlockPos()).inflate(10.0);
     }
 
+    /**
+     * Auch zeichnen, wenn der Controller selbst nicht im Bild ist.
+     *
+     * @return immer {@code true}
+     */
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
     }
 
+    /**
+     * Sichtweite der Bauvorschau in Bloecken.
+     *
+     * @return 96
+     */
     @Override
     public int getViewDistance() {
         return 96;
     }
 
+    /**
+     * Zeichnet die Bauvorschau: fehlende Bloecke als Geister, falsche rot umrandet.
+     *
+     * @param be der Controller
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel am Controller
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param cameraPos Position der Kamera
+     */
     @Override
     public void render(ControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();
@@ -143,7 +175,15 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         }
     }
 
-    /** Rote Kanten eines Blocks (ab 26.2 gibt es keinen fertigen ShapeRenderer mehr). */
+    /**
+     * Die zwoelf Kanten einer Box als Linien.
+     *
+     * @param pose aktuelle Pose
+     * @param vc Linien-Puffer
+     * @param b die Box
+     * @param color Farbe 0xAARRGGBB
+     * @param width Breite in Pixeln
+     */
     private static void lineBox(PoseStack.Pose pose, VertexConsumer vc, AABB b, int color, float width) {
         float[] xs = {(float) b.minX, (float) b.maxX}, ys = {(float) b.minY, (float) b.maxY}, zs = {(float) b.minZ, (float) b.maxZ};
         for (int i = 0; i < 2; i++) for (int j = 0; j < 2; j++) {
@@ -153,6 +193,20 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         }
     }
 
+    /**
+     * Eine Linie mit Normale und Breite.
+     *
+     * @param pose aktuelle Pose
+     * @param vc Linien-Puffer
+     * @param x0 Start x
+     * @param y0 Start y
+     * @param z0 Start z
+     * @param x1 Ende x
+     * @param y1 Ende y
+     * @param z1 Ende z
+     * @param color Farbe 0xAARRGGBB
+     * @param width Breite in Pixeln
+     */
     private static void line(PoseStack.Pose pose, VertexConsumer vc, float x0, float y0, float z0, float x1, float y1, float z1, int color, float width) {
         org.joml.Vector3f n = new org.joml.Vector3f(x1 - x0, y1 - y0, z1 - z0).normalize();
         vc.addVertex(pose, x0, y0, z0).setColor(color).setNormal(pose, n.x, n.y, n.z).setLineWidth(width);
@@ -161,53 +215,118 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
 
     /** Leitet alles weiter, multipliziert aber den Alphakanal (fuer die Geisterbloecke). */
     private record AlphaVertexConsumer(VertexConsumer delegate, float alpha) implements VertexConsumer {
+        /**
+         * Leitet den Eckpunkt unveraendert weiter.
+         *
+         * @param x Position x
+         * @param y Position y
+         * @param z Position z
+         * @return dieser Puffer (zum Verketten)
+         */
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             delegate.addVertex(x, y, z);
             return this;
         }
 
+        /**
+         * Leitet die Farbe weiter, der Alphawert wird mit der Geister-Deckkraft multipliziert.
+         *
+         * @param red Rot 0..255
+         * @param green Gruen 0..255
+         * @param blue Blau 0..255
+         * @param a Alpha 0..255
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setColor(int red, int green, int blue, int a) {
             delegate.setColor(red, green, blue, Math.round(a * alpha));
             return this;
         }
 
+        /**
+         * Setzt die Farbe aus einem ARGB-Wert (die Deckkraft wird dabei abgeschwaecht).
+         *
+         * @param argb Farbe 0xAARRGGBB
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setColor(int argb) {
             return setColor(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24);
         }
 
+        /**
+         * Leitet die Texturkoordinate weiter.
+         *
+         * @param u Koordinate u
+         * @param v Koordinate v
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv(float u, float v) {
             delegate.setUv(u, v);
             return this;
         }
 
+        /**
+         * Leitet die Overlay-Koordinate weiter.
+         *
+         * @param u Koordinate u
+         * @param v Koordinate v
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv1(int u, int v) {
             delegate.setUv1(u, v);
             return this;
         }
 
+        /**
+         * Leitet die Licht-Koordinate weiter.
+         *
+         * @param u Blocklicht
+         * @param v Himmelslicht
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv2(int u, int v) {
             delegate.setUv2(u, v);
             return this;
         }
 
+        /**
+         * Leitet die dritte Texturkoordinate weiter.
+         *
+         * @param u u-Koordinate
+         * @param v v-Koordinate
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setUv3(float u, float v) {
             delegate.setUv3(u, v);
             return this;
         }
 
+        /**
+         * Leitet die Linienbreite weiter.
+         *
+         * @param width Breite in Pixeln
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setLineWidth(float width) {
             delegate.setLineWidth(width);
             return this;
         }
 
+        /**
+         * Leitet die Normale weiter.
+         *
+         * @param x Normale x
+         * @param y Normale y
+         * @param z Normale z
+         * @return dieser Puffer
+         */
         @Override
         public VertexConsumer setNormal(float x, float y, float z) {
             delegate.setNormal(x, y, z);
@@ -215,6 +334,15 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         }
     }
 
+    /**
+     * Zeichnet einen fehlenden Block als durchscheinenden Geist an seiner Sollposition.
+     *
+     * @param pose Pose-Stapel am Controller
+     * @param vc Puffer (durchscheinend)
+     * @param origin Position des Controllers
+     * @param pos Sollposition
+     * @param target erwarteter Blockzustand
+     */
     private static void ghost(PoseStack pose, VertexConsumer vc, BlockPos origin, BlockPos pos, BlockState target) {
         BlockStateModel model = dr4kun3.cosmiccore.client.render.BlockQuads.model(target);
         pose.pushPose();

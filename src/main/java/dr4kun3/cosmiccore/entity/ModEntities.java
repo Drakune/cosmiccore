@@ -31,6 +31,12 @@ public final class ModEntities {
             CosmicAsteroid.Kind.SMALL, SMALL_ASTEROID, CosmicAsteroid.Kind.MEDIUM, MEDIUM_ASTEROID,
             CosmicAsteroid.Kind.LARGE, LARGE_ASTEROID, CosmicAsteroid.Kind.HUGE, HUGE_ASTEROID));
 
+    /**
+     * Registriert eine Asteroidengroesse als eigenen Entity-Typ (Groesse, Sichtweite und Aktualisierung passend).
+     *
+     * @param kind Asteroidengroesse
+     * @return Halter des registrierten Entity-Typs
+     */
     private static DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>> asteroid(CosmicAsteroid.Kind kind) {
         return ENTITIES.register(kind.entityName(),
                 () -> EntityType.Builder.<CosmicAsteroid>of((type, level) -> new CosmicAsteroid(type, level, kind), MobCategory.MISC)
@@ -41,5 +47,6 @@ public final class ModEntities {
                         .build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CosmicCore.id(kind.entityName()))));
     }
 
+    /** Nur statische Registrierungen - keine Instanzen. */
     private ModEntities() {}
 }

@@ -37,5 +37,6 @@ public final class ModBlockEntities {
             BLOCK_ENTITIES.register("star_funnel",
                     () -> new BlockEntityType<>(StarFunnelBlockEntity::new, ModBlocks.STAR_FUNNEL.get()));
 
+    /** Nur statische Registrierungen - keine Instanzen. */
     private ModBlockEntities() {}
 }

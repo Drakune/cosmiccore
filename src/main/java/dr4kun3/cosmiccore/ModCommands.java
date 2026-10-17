@@ -14,6 +14,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /** /cosmiccore cutscene - spielt die Void-Titan-Cutscene des naechsten erwachten ultimativen Kerns erneut ab. */
 @EventBusSubscriber(modid = CosmicCore.MODID)
 public final class ModCommands {
+    /**
+     * Registriert {@code /cosmiccore cutscene}: spielt die Zwischensequenz am naechsten Reaktor (bis 64 Bloecke) ab.
+     *
+     * @param event Ereignis zur Befehlsregistrierung
+     */
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("cosmiccore")
@@ -39,5 +44,6 @@ public final class ModCommands {
                 })));
     }
 
+    /** Nur ein Ereignis-Abonnent - keine Instanzen. */
     private ModCommands() {}
 }

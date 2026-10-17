@@ -15,15 +15,28 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * aeusserste Transaktion abgeschlossen wird. Bricht sie ab, bleibt alles unveraendert.
  */
 public final class LegacyTransfer {
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private LegacyTransfer() {}
 
     /** Eine Huelle je Sicht, damit alle Abfragen in einer Transaktion dieselben Vormerkungen sehen. */
     private static final java.util.Map<Object, Object> CACHE = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
+    /**
+     * Energiespeicher als Transfer-Schnittstelle (eine Huelle je Speicher).
+     *
+     * @param storage der Speicher
+     * @return die Huelle
+     */
     public static EnergyHandler energy(EnergyStore storage) {
         return (EnergyHandler) CACHE.computeIfAbsent(storage, s -> new Energy((EnergyStore) s));
     }
 
+    /**
+     * Item-Schnittstelle als Transfer-Schnittstelle (eine Huelle je Schnittstelle).
+     *
+     * @param handler die Schnittstelle
+     * @return die Huelle
+     */
     @SuppressWarnings("unchecked")
     public static ResourceHandler<ItemResource> items(ItemHandler handler) {
         return (ResourceHandler<ItemResource>) CACHE.computeIfAbsent(handler, h -> new Items((ItemHandler) h));
@@ -33,20 +46,42 @@ public final class LegacyTransfer {
         private final EnergyStore storage;
         private int pendingIn, pendingOut;
 
+        /**
+         * Huelle um einen alten Energiespeicher.
+         *
+         * @param storage der Speicher
+         */
         Energy(EnergyStore storage) {
             this.storage = storage;
         }
 
+        /**
+         * Gespeicherte Energie einschliesslich der Vormerkungen.
+         *
+         * @return Energie in RF
+         */
         @Override
         public long getAmountAsLong() {
             return (long) storage.getEnergyStored() + pendingIn - pendingOut;
         }
 
+        /**
+         * Kapazitaet.
+         *
+         * @return Kapazitaet in RF
+         */
         @Override
         public long getCapacityAsLong() {
             return storage.getMaxEnergyStored();
         }
 
+        /**
+         * Merkt eine Einspeisung vor (ausgefuehrt erst beim Abschluss der Transaktion).
+         *
+         * @param amount Menge in RF
+         * @param transaction laufende Transaktion
+         * @return vorgemerkte Menge
+         */
         @Override
         public int insert(int amount, TransactionContext transaction) {
             TransferPreconditions.checkNonNegative(amount);
@@ -59,6 +94,13 @@ public final class LegacyTransfer {
             return n;
         }
 
+        /**
+         * Merkt eine Entnahme vor (ausgefuehrt erst beim Abschluss der Transaktion).
+         *
+         * @param amount Menge in RF
+         * @param transaction laufende Transaktion
+         * @return vorgemerkte Menge
+         */
         @Override
         public int extract(int amount, TransactionContext transaction) {
             TransferPreconditions.checkNonNegative(amount);
@@ -71,17 +113,32 @@ public final class LegacyTransfer {
             return n;
         }
 
+        /**
+         * Sichert die Vormerkungen.
+         *
+         * @return {eingespeist, entnommen}
+         */
         @Override
         protected int[] createSnapshot() {
             return new int[]{pendingIn, pendingOut};
         }
 
+        /**
+         * Stellt die Vormerkungen wieder her (Transaktion abgebrochen).
+         *
+         * @param snapshot gesicherter Zustand
+         */
         @Override
         protected void revertToSnapshot(int[] snapshot) {
             pendingIn = snapshot[0];
             pendingOut = snapshot[1];
         }
 
+        /**
+         * Transaktion abgeschlossen: Vormerkungen wirklich ausfuehren.
+         *
+         * @param originalState Zustand zu Beginn
+         */
         @Override
         protected void onRootCommit(int[] originalState) {
             if (pendingIn > 0) storage.receiveEnergy(pendingIn, false);
@@ -92,6 +149,11 @@ public final class LegacyTransfer {
 
     /** Vorgemerkte Aenderungen je Slot: entweder ein Stapel zum Einfuegen oder eine Menge zum Entnehmen. */
     private record Pending(ItemStack[] insert, int[] extract) {
+        /**
+         * Tiefe Kopie der Vormerkungen.
+         *
+         * @return die Kopie
+         */
         Pending copy() {
             ItemStack[] ins = new ItemStack[insert.length];
             for (int i = 0; i < ins.length; i++) ins[i] = insert[i].copy();
@@ -103,11 +165,20 @@ public final class LegacyTransfer {
         private final ItemHandler handler;
         private Pending pending = new Pending(new ItemStack[0], new int[0]);
 
+        /**
+         * Huelle um eine alte Item-Schnittstelle.
+         *
+         * @param handler die Schnittstelle
+         */
         Items(ItemHandler handler) {
             this.handler = handler;
         }
 
-        /** Die Anzahl der Slots kann sich aendern (Struktur zerfaellt) - Vormerkungen wachsen mit. */
+        /**
+         * Die Vormerkungen; die Anzahl der Slots kann sich aendern (Struktur zerfaellt) - sie wachsen mit.
+         *
+         * @return die Vormerkungen
+         */
         private Pending pending() {
             int n = handler.getSlots();
             if (pending.insert().length < n) {
@@ -118,11 +189,22 @@ public final class LegacyTransfer {
             return pending;
         }
 
+        /**
+         * Anzahl Plaetze.
+         *
+         * @return Anzahl
+         */
         @Override
         public int size() {
             return handler.getSlots();
         }
 
+        /**
+         * Item im Platz (oder das vorgemerkte, wenn der Platz leer ist).
+         *
+         * @param index Platz
+         * @return das Item
+         */
         @Override
         public ItemResource getResource(int index) {
             ItemStack stack = handler.getStackInSlot(index);
@@ -130,22 +212,51 @@ public final class LegacyTransfer {
             return ItemResource.of(stack.isEmpty() ? ins : stack);
         }
 
+        /**
+         * Menge im Platz einschliesslich der Vormerkungen.
+         *
+         * @param index Platz
+         * @return Menge
+         */
         @Override
         public long getAmountAsLong(int index) {
             Pending p = pending();
             return handler.getStackInSlot(index).getCount() + p.insert()[index].getCount() - p.extract()[index];
         }
 
+        /**
+         * Groesste Menge des Items im Platz.
+         *
+         * @param index Platz
+         * @param resource welches Item (leer = beliebig)
+         * @return Grenze
+         */
         @Override
         public long getCapacityAsLong(int index, ItemResource resource) {
             return resource.isEmpty() ? handler.getSlotLimit(index) : Math.min(handler.getSlotLimit(index), resource.getMaxStackSize());
         }
 
+        /**
+         * Darf das Item in diesen Platz?
+         *
+         * @param index Platz
+         * @param resource welches Item
+         * @return {@code true}, wenn erlaubt
+         */
         @Override
         public boolean isValid(int index, ItemResource resource) {
             return handler.isItemValid(index, resource.toStack());
         }
 
+        /**
+         * Merkt ein Einfuegen vor.
+         *
+         * @param index Platz
+         * @param resource welches Item
+         * @param amount Menge
+         * @param transaction laufende Transaktion
+         * @return vorgemerkte Menge
+         */
         @Override
         public int insert(int index, ItemResource resource, int amount, TransactionContext transaction) {
             TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
@@ -163,6 +274,15 @@ public final class LegacyTransfer {
             return n;
         }
 
+        /**
+         * Merkt eine Entnahme vor.
+         *
+         * @param index Platz
+         * @param resource welches Item
+         * @param amount Menge
+         * @param transaction laufende Transaktion
+         * @return vorgemerkte Menge
+         */
         @Override
         public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
             TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
@@ -178,16 +298,31 @@ public final class LegacyTransfer {
             return n;
         }
 
+        /**
+         * Sichert die Vormerkungen.
+         *
+         * @return Kopie der Vormerkungen
+         */
         @Override
         protected Pending createSnapshot() {
             return pending().copy();
         }
 
+        /**
+         * Stellt die Vormerkungen wieder her (Transaktion abgebrochen).
+         *
+         * @param snapshot gesicherter Zustand
+         */
         @Override
         protected void revertToSnapshot(Pending snapshot) {
             pending = snapshot;
         }
 
+        /**
+         * Transaktion abgeschlossen: Vormerkungen wirklich ausfuehren.
+         *
+         * @param originalState Zustand zu Beginn
+         */
         @Override
         protected void onRootCommit(Pending originalState) {
             Pending p = pending();

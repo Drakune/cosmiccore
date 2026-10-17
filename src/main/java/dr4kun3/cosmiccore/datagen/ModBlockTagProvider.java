@@ -10,10 +10,21 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 
 public class ModBlockTagProvider extends BlockTagsProvider {
+    /**
+     * Legt den Erzeuger der Block-Tags an.
+     *
+     * @param output Ausgabeordner
+     * @param lookup Registry-Zugriff (asynchron)
+     */
     public ModBlockTagProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
         super(output, lookup, CosmicCore.MODID);
     }
 
+    /**
+     * Alle Bloecke der Mod brauchen eine Spitzhacke ab Eisen.
+     *
+     * @param provider Registry-Zugriff
+     */
     @Override
     protected void addTags(HolderLookup.Provider provider) {
         for (var entry : ModBlocks.BLOCKS.getEntries()) {

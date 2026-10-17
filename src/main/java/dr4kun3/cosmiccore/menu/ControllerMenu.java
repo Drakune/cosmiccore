@@ -67,17 +67,40 @@ public class ControllerMenu extends AbstractContainerMenu {
     @Nullable
     private final ControllerBlockEntity be;
 
-    /** Client: Daten kommen vom Server. */
+    /**
+     * Client: baut das Menue aus den Daten des Servers (Inventar und Werte werden gespiegelt).
+     *
+     * @param id Fensternummer
+     * @param playerInv Inventar des Spielers
+     * @param buf Daten vom Server (Position)
+     */
     public ControllerMenu(int id, Inventory playerInv, RegistryFriendlyByteBuf buf) {
         this(id, playerInv, buf.readBlockPos(), new ControllerBlockEntity.CoreInventory(() -> {}),
                 new SimpleContainerData(DATA_COUNT), null);
     }
 
-    /** Server. */
+    /**
+     * Server: Menue auf dem echten Controller.
+     *
+     * @param id Fensternummer
+     * @param playerInv Inventar des Spielers
+     * @param be der Controller
+     * @param data Werte, die an den Client gehen
+     */
     public ControllerMenu(int id, Inventory playerInv, ControllerBlockEntity be, ContainerData data) {
         this(id, playerInv, be.getBlockPos(), be.getInventory(), data, be);
     }
 
+    /**
+     * Legt Slots (Brennstoff, Stabilisator, Module, Farbe, Spielerinventar) und den Datenabgleich an.
+     *
+     * @param id Fensternummer
+     * @param playerInv Inventar des Spielers
+     * @param pos Position des Controllers
+     * @param machine Inventar des Controllers (echt oder gespiegelt)
+     * @param data Werte fuer die Anzeige
+     * @param be der Controller (nur auf dem Server, sonst {@code null})
+     */
     private ControllerMenu(int id, Inventory playerInv, BlockPos pos, ItemHandler machine, ContainerData data,
                            @Nullable ControllerBlockEntity be) {
         super(ModMenus.CONTROLLER.get(), id);
@@ -109,124 +132,263 @@ public class ControllerMenu extends AbstractContainerMenu {
     /** Anzahl der Maschinen-Slots im Menue (Brennstoff, Stabilisator, vier Module). */
     public static final int MACHINE_SLOTS = 6;
 
-    /** Menue-Slot zu einem Slot des Controller-Inventars (null = nicht im Menue, z. B. der Beute-Puffer). */
+    /**
+     * Menue-Slot zu einem Slot des Controller-Inventars.
+     *
+     * @param inventoryIndex Nummer im Controller-Inventar
+     * @return der Menue-Slot oder {@code null}, wenn er nicht im Menue liegt
+     */
     @Nullable
     public Slot machineSlot(int inventoryIndex) {
         for (int i = 0; i < MACHINE_SLOTS; i++) if (slots.get(i).getSlotIndex() == inventoryIndex) return slots.get(i);
         return null;
     }
 
+    /**
+     * Position des Controllers.
+     *
+     * @return die Position
+     */
     public BlockPos getPos() {
         return pos;
     }
 
+    /**
+     * Setzt einen 32-Bit-Wert aus zwei 16-Bit-Datenfeldern zusammen (Minecraft gleicht nur kurze Werte ab).
+     *
+     * @param lo Index der unteren Haelfte
+     * @param hi Index der oberen Haelfte
+     * @return der Wert
+     */
     private int wide(int lo, int hi) {
         return (data.get(hi) << 16) | (data.get(lo) & 0xFFFF);
     }
 
-    /** Energie in RF (uebertragen in kRF). */
+    /**
+     * Energie im Puffer (uebertragen in kRF).
+     *
+     * @return RF
+     */
     public long energy() {
         return (wide(D_ENERGY_LO, D_ENERGY_HI) & 0xFFFFFFFFL) * 1000L;
     }
 
+    /**
+     * Kapazitaet des Puffers.
+     *
+     * @return RF
+     */
     public long capacity() {
         return (wide(D_CAPACITY_LO, D_CAPACITY_HI) & 0xFFFFFFFFL) * 1000L;
     }
 
-    /** Restlaufzeit des Brennstoffs in Sekunden (oder ControllerBlockEntity.TIME_*). */
+    /**
+     * Restlaufzeit des Brennstoffs.
+     *
+     * @return Sekunden oder ein Sonderwert ({@code ControllerBlockEntity.TIME_*})
+     */
     public int fuelSeconds() {
         return wide(D_FUEL_TIME_LO, D_FUEL_TIME_HI);
     }
 
+    /**
+     * Restlaufzeit des Stabilisators.
+     *
+     * @return Sekunden oder ein Sonderwert ({@code ControllerBlockEntity.TIME_*})
+     */
     public int stabSeconds() {
         return wide(D_STAB_TIME_LO, D_STAB_TIME_HI);
     }
 
+    /**
+     * Aktuelle Leistung.
+     *
+     * @return RF je Tick
+     */
     public int output() {
         return wide(D_OUTPUT_LO, D_OUTPUT_HI);
     }
 
+    /**
+     * Instabilitaet des Kerns.
+     *
+     * @return Prozent
+     */
     public float instability() {
         return data.get(D_INSTABILITY) / 100f;
     }
 
+    /**
+     * Resonanz (Wirkung der Stabilisierung).
+     *
+     * @return Prozent
+     */
     public int resonance() {
         return data.get(D_RESONANCE);
     }
 
+    /**
+     * Eingestellte Leistungsstufe.
+     *
+     * @return Stufe
+     */
     public int scale() {
         return data.get(D_SCALE);
     }
 
+    /**
+     * Hoechste Leistungsstufe der Baugroesse.
+     *
+     * @return Stufe
+     */
     public int maxScale() {
         return data.get(D_MAX_SCALE);
     }
 
+    /**
+     * Gewaehlte Baugroesse.
+     *
+     * @return Kantenlaenge oder 0, solange keine gewaehlt ist
+     */
     public int size() {
         return data.get(D_SIZE);
     }
 
+    /**
+     * Ist die Baugroesse schon gewaehlt?
+     *
+     * @return {@code true} nach der Wahl
+     */
     public boolean sizeChosen() {
         return size() > 0;
     }
 
+    /**
+     * Prueft ein Zustandsbit (laeuft, gebildet, Vorschau, Trichter, Laser ...).
+     *
+     * @param f das Bit ({@code F_*})
+     * @return {@code true}, wenn gesetzt
+     */
     public boolean flag(int f) {
         return (data.get(D_FLAGS) & f) != 0;
     }
 
+    /**
+     * Kosmischer Faktor (Himmelsverbindung, Trichter, Laser).
+     *
+     * @return Faktor
+     */
     public float cosmic() {
         return data.get(D_COSMIC) / 100f;
     }
 
+    /**
+     * Verbrauch des aktuellen Brennstoffs.
+     *
+     * @return 0..1
+     */
     public float burnProgress() {
         return data.get(D_BURN) / 1000f;
     }
 
+    /**
+     * Verbrauch des aktuellen Stabilisators.
+     *
+     * @return 0..1
+     */
     public float stabProgress() {
         return data.get(D_STAB) / 1000f;
     }
 
+    /**
+     * Verbleibende Zeit des Kollaps-Countdowns (aeltere Anzeige).
+     *
+     * @return Sekunden
+     */
     public int collapseSeconds() {
         return data.get(D_COLLAPSE);
     }
 
+    /**
+     * Anzahl der Baufehler der Struktur.
+     *
+     * @return Anzahl
+     */
     public int errors() {
         return data.get(D_ERRORS);
     }
 
-    /** Sekunden bis zum Kollaps (0 = kein Countdown). */
+    /**
+     * Sekunden bis zum Kollaps.
+     *
+     * @return Sekunden (0 = kein Countdown)
+     */
     public int meltdown() {
         return data.get(D_MELTDOWN);
     }
 
-    /** Hoechste dauerhaft freigeschaltete Leistungsstufe. */
+    /**
+     * Hoechste dauerhaft freigeschaltete Leistungsstufe.
+     *
+     * @return Stufe (mindestens 1)
+     */
     public int unlocked() {
         return Math.max(1, data.get(D_UNLOCKED));
     }
 
-    /** Aktueller Farbsatz des Controllers. */
+    /**
+     * Aktueller Farbsatz des Controllers.
+     *
+     * @return der Farbsatz
+     */
     public dr4kun3.cosmiccore.color.CoreColors.Config colorConfig() {
         int[] c = new int[dr4kun3.cosmiccore.color.CoreColors.CHANNELS];
         for (int i = 0; i < c.length; i++) c[i] = data.get(D_COLOR_FIRST + i);
         return new dr4kun3.cosmiccore.color.CoreColors.Config(data.get(D_COLOR_MASK), c);
     }
 
+    /**
+     * Overdrive-Stufe.
+     *
+     * @return Stufe 0..4
+     */
     public int overdrive() {
         return data.get(D_OVERDRIVE);
     }
 
     // ------------------------------------------------------------------ Logik
 
+    /**
+     * Knopfdruck im Fenster: leitet an den Controller weiter (Start, Stufe, Overdrive, Bauen ...).
+     *
+     * @param player klickender Spieler
+     * @param id Nummer des Knopfs ({@code BTN_*})
+     * @return {@code true}, wenn verarbeitet
+     */
     @Override
     public boolean clickMenuButton(Player player, int id) {
         return be != null && be.handleButton(player, id);
     }
 
+    /**
+     * Offen bleibt das Menue, solange der Controller existiert und der Spieler nah genug ist.
+     *
+     * @param player der Spieler
+     * @return {@code true}, wenn weiter gueltig
+     */
     @Override
     public boolean stillValid(Player player) {
         return stillValid(access, player, ModBlocks.CONTROLLER.get());
     }
 
+    /**
+     * Umschalt-Klick: zwischen Controller-Slots und Inventar verschieben (Brennstoff und Stabilisator landen in
+     * ihrem Slot, Module im passenden Modulplatz).
+     *
+     * @param player der Spieler
+     * @param index Nummer des angeklickten Slots
+     * @return Kopie des verschobenen Stapels oder leer, wenn nichts ging
+     */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
@@ -258,10 +420,23 @@ public class ControllerMenu extends AbstractContainerMenu {
     /** Solange die Baugroesse nicht gewaehlt ist, zeigt der Screen nur die Auswahl - Slots sind dann aus. */
     /** Modul-Slot im Seiten-Tab: auf dem Client nur sichtbar und klickbar, solange der Tab ausgeklappt ist. */
     private final class ModuleSlot extends HandlerSlot {
+        /**
+         * Modulplatz im ausklappbaren Tab.
+         *
+         * @param handler Inventar des Controllers
+         * @param index Nummer im Inventar
+         * @param x Position x im Fenster
+         * @param y Position y im Fenster
+         */
         ModuleSlot(ItemHandler handler, int index, int x, int y) {
             super(handler, index, x, y);
         }
 
+        /**
+         * Nur sichtbar, wenn die Baugroesse gewaehlt und der Modul-Tab offen ist.
+         *
+         * @return {@code true}, wenn aktiv
+         */
         @Override
         public boolean isActive() {
             return sizeChosen() && modulesOpen;
@@ -269,10 +444,23 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     private final class MachineSlot extends HandlerSlot {
+        /**
+         * Slot fuer Brennstoff oder Stabilisator.
+         *
+         * @param handler Inventar des Controllers
+         * @param index Nummer im Inventar
+         * @param x Position x im Fenster
+         * @param y Position y im Fenster
+         */
         MachineSlot(ItemHandler handler, int index, int x, int y) {
             super(handler, index, x, y);
         }
 
+        /**
+         * Erst nach der Wahl der Baugroesse sichtbar.
+         *
+         * @return {@code true}, wenn aktiv
+         */
         @Override
         public boolean isActive() {
             return sizeChosen();
@@ -280,10 +468,23 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     private final class PlayerSlot extends Slot {
+        /**
+         * Slot des Spielerinventars.
+         *
+         * @param container Inventar des Spielers
+         * @param index Nummer im Inventar
+         * @param x Position x im Fenster
+         * @param y Position y im Fenster
+         */
         PlayerSlot(Container container, int index, int x, int y) {
             super(container, index, x, y);
         }
 
+        /**
+         * Erst nach der Wahl der Baugroesse sichtbar (vorher zeigt das Fenster die Groessenwahl).
+         *
+         * @return {@code true}, wenn aktiv
+         */
         @Override
         public boolean isActive() {
             return sizeChosen();

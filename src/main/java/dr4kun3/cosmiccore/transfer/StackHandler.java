@@ -13,25 +13,52 @@ import net.minecraft.world.level.storage.ValueOutput;
 public class StackHandler implements ModifiableItemHandler {
     protected NonNullList<ItemStack> stacks;
 
+    /**
+     * Legt ein leeres Lager an.
+     *
+     * @param size Anzahl Plaetze
+     */
     public StackHandler(int size) {
         stacks = NonNullList.withSize(size, ItemStack.EMPTY);
     }
 
+    /**
+     * Leert das Lager und setzt die Anzahl der Plaetze.
+     *
+     * @param size Anzahl Plaetze
+     */
     public void setSize(int size) {
         stacks = NonNullList.withSize(size, ItemStack.EMPTY);
     }
 
+    /**
+     * Anzahl Plaetze.
+     *
+     * @return Anzahl
+     */
     @Override
     public int getSlots() {
         return stacks.size();
     }
 
+    /**
+     * Inhalt eines Platzes.
+     *
+     * @param slot Slot-Nummer
+     * @return der Stapel
+     */
     @Override
     public ItemStack getStackInSlot(int slot) {
         validateSlotIndex(slot);
         return stacks.get(slot);
     }
 
+    /**
+     * Setzt den Inhalt eines Platzes direkt.
+     *
+     * @param slot Slot-Nummer
+     * @param stack der neue Stapel
+     */
     @Override
     public void setStackInSlot(int slot, ItemStack stack) {
         validateSlotIndex(slot);
@@ -39,6 +66,14 @@ public class StackHandler implements ModifiableItemHandler {
         onContentsChanged(slot);
     }
 
+    /**
+     * Fuegt ein und liefert den Rest, der nicht gepasst hat.
+     *
+     * @param slot Slot-Nummer
+     * @param stack einzufuegender Stapel
+     * @param simulate nur pruefen
+     * @return der Rest
+     */
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
         if (stack.isEmpty()) return ItemStack.EMPTY;
@@ -60,6 +95,14 @@ public class StackHandler implements ModifiableItemHandler {
         return reachedLimit ? stack.copyWithCount(stack.getCount() - limit) : ItemStack.EMPTY;
     }
 
+    /**
+     * Entnimmt bis zu {@code amount} Items.
+     *
+     * @param slot Slot-Nummer
+     * @param amount gewuenschte Menge
+     * @param simulate nur pruefen
+     * @return entnommener Stapel
+     */
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
         if (amount <= 0) return ItemStack.EMPTY;
@@ -82,20 +125,45 @@ public class StackHandler implements ModifiableItemHandler {
         return existing.copyWithCount(toExtract);
     }
 
+    /**
+     * Groesste Menge je Platz.
+     *
+     * @param slot Slot-Nummer
+     * @return 99
+     */
     @Override
     public int getSlotLimit(int slot) {
         return 99;
     }
 
+    /**
+     * Groesste Menge dieses Items im Platz.
+     *
+     * @param slot Slot-Nummer
+     * @param stack das Item
+     * @return Grenze
+     */
     protected int getStackLimit(int slot, ItemStack stack) {
         return Math.min(getSlotLimit(slot), stack.getMaxStackSize());
     }
 
+    /**
+     * Jedes Item ist erlaubt (Unterklassen schraenken ein).
+     *
+     * @param slot Slot-Nummer
+     * @param stack zu pruefender Stapel
+     * @return immer {@code true}
+     */
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
         return true;
     }
 
+    /**
+     * Speichert das Lager (Format "Items"/"Size").
+     *
+     * @param output Ziel der Daten
+     */
     public void serialize(ValueOutput output) {
         ValueOutput.TypedOutputList<ItemStackWithSlot> list = output.list("Items", ItemStackWithSlot.CODEC);
         for (int i = 0; i < stacks.size(); i++) {
@@ -104,6 +172,11 @@ public class StackHandler implements ModifiableItemHandler {
         output.putInt("Size", stacks.size());
     }
 
+    /**
+     * Laedt das Lager (Format "Items"/"Size").
+     *
+     * @param input gespeicherte Daten
+     */
     public void deserialize(ValueInput input) {
         setSize(input.getIntOr("Size", stacks.size()));
         input.listOrEmpty("Items", ItemStackWithSlot.CODEC).forEach(s -> {
@@ -112,11 +185,23 @@ public class StackHandler implements ModifiableItemHandler {
         onLoad();
     }
 
+    /**
+     * Prueft die Slot-Nummer.
+     *
+     * @param slot Slot-Nummer
+     * @throws RuntimeException ausserhalb des gueltigen Bereichs
+     */
     protected void validateSlotIndex(int slot) {
         if (slot < 0 || slot >= stacks.size()) throw new RuntimeException("Slot " + slot + " not in valid range - [0," + stacks.size() + ")");
     }
 
+    /** Wird nach dem Laden aufgerufen (fuer Unterklassen). */
     protected void onLoad() {}
 
+    /**
+     * Wird nach jeder Aenderung aufgerufen (fuer Unterklassen).
+     *
+     * @param slot Slot-Nummer
+     */
     protected void onContentsChanged(int slot) {}
 }

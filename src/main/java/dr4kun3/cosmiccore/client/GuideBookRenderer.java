@@ -29,6 +29,7 @@ import org.joml.Vector3f;
  */
 @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
 public final class GuideBookRenderer {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private GuideBookRenderer() {}
 
     private static final Identifier TEX = CosmicCore.id("textures/item/cosmic_book.png");
@@ -45,6 +46,11 @@ public final class GuideBookRenderer {
     /** Seit wann haelt der Spieler das Buch (je Hand); -1 = nicht in der Hand. */
     private static final long[] heldSince = {-1, -1};
 
+    /**
+     * Merkt sich je Hand, seit wann das Buch gehalten wird (fuer das Aufklappen beim In-die-Hand-Nehmen).
+     *
+     * @param event Ende eines Client-Ticks
+     */
     @SubscribeEvent
     public static void onTick(ClientTickEvent.Post event) {
         var player = Minecraft.getInstance().player;
@@ -56,7 +62,12 @@ public final class GuideBookRenderer {
         }
     }
 
-    /** Aufgeklappt 0..1 fuer die Hand, in der das Buch gezeichnet wird. */
+    /**
+     * Wie weit das Buch in dieser Ansicht aufgeklappt ist: in der Hand oeffnet es sich, im Inventar bleibt es zu.
+     *
+     * @param ctx Anzeigeart (Hand, Inventar, Boden ...)
+     * @return 0 (zu) bis 1 (offen)
+     */
     private static float openness(ItemDisplayContext ctx) {
         if (!ctx.firstPerson() && ctx != ItemDisplayContext.THIRD_PERSON_LEFT_HAND && ctx != ItemDisplayContext.THIRD_PERSON_RIGHT_HAND) {
             return 0.0F;
@@ -74,6 +85,18 @@ public final class GuideBookRenderer {
         return f * f * (3.0F - 2.0F * f);
     }
 
+    /**
+     * Zeichnet das 3D-Buch: zwei Haelften mit Deckel und Seitenblock, Buchruecken, ein regelmaessig umblaetterndes
+     * Blatt
+     * und ueber der aufgeschlagenen Doppelseite ein Sternsiegel mit Funken.
+     *
+     * @param ctx Anzeigeart (bestimmt, wie weit das Buch offen ist)
+     * @param pose Pose-Stapel in der Item-Mitte
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param t Animationszeit in Ticks
+     */
     public static void render(ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay, float t) {
         float open = openness(ctx);
         float ang = open * 78.0F; // Oeffnungswinkel je Haelfte
@@ -145,7 +168,16 @@ public final class GuideBookRenderer {
         pose.popPose();
     }
 
-    /** Eine Buchhaelfte: Deckel aussen, Seitenblock innen; side = +1 vorn, -1 hinten. */
+    /**
+     * Eine Buchhaelfte: Deckel aussen, Seitenblock innen, um das Gelenk gedreht.
+     *
+     * @param vc Puffer
+     * @param pose Pose-Stapel am Gelenk
+     * @param angle Oeffnungswinkel in Grad
+     * @param side +1 vordere, -1 hintere Haelfte
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     private static void half(VertexConsumer vc, PoseStack pose, float angle, int side, int light, int overlay) {
         pose.pushPose();
         pose.rotate(Axis.YP.rotationDegrees(angle));
@@ -163,7 +195,15 @@ public final class GuideBookRenderer {
         pose.popPose();
     }
 
-    /** Das umblaetternde Blatt, beidseitig mit Seitentextur, mittig etwas gewoelbt. */
+    /**
+     * Das umblaetternde Blatt, beidseitig mit Seitentextur und mittig etwas gewoelbt.
+     *
+     * @param vc Puffer
+     * @param pose Pose-Stapel am Gelenk (bereits gedreht)
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param e Fortschritt des Umblaetterns 0..1 (staerkste Woelbung in der Mitte)
+     */
     private static void sheet(VertexConsumer vc, PoseStack pose, int light, int overlay, float e) {
         Matrix4f m = pose.last().pose();
         float bend = Mth.sin(e * Mth.PI) * 0.05F;
@@ -175,7 +215,24 @@ public final class GuideBookRenderer {
     }
 
     /**
-     * Quader mit je eigener Textur pro Seite: -X (Gelenk), +X (Kante), -Z, +Z, +Y (oben), -Y (unten).
+     * Quader mit eigener Textur je Seite.
+     *
+     * @param vc Puffer
+     * @param pose Pose-Stapel
+     * @param x0 kleinste x
+     * @param y0 kleinste y
+     * @param z0 kleinste z
+     * @param x1 groesste x
+     * @param y1 groesste y
+     * @param z1 groesste z
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param west Atlas-Bereich der Seite -X (Gelenk)
+     * @param east Atlas-Bereich der Seite +X (Kante)
+     * @param north Atlas-Bereich der Seite -Z
+     * @param south Atlas-Bereich der Seite +Z
+     * @param up Atlas-Bereich oben
+     * @param down Atlas-Bereich unten
      */
     private static void box(VertexConsumer vc, PoseStack pose, float x0, float y0, float z0, float x1, float y1, float z1,
                             int light, int overlay, int[] west, int[] east, int[] north, int[] south, int[] up, int[] down) {
@@ -188,17 +245,73 @@ public final class GuideBookRenderer {
         quad(vc, m, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1, uv(down), 0, -1, 0, light, overlay);
     }
 
+    /**
+     * Rechnet einen Atlas-Bereich in Texturkoordinaten um.
+     *
+     * @param r Bereich {x, y, Breite, Hoehe} in Pixeln
+     * @return {u0, v0, u1, v1}
+     */
     private static float[] uv(int[] r) {
         return new float[]{r[0] / TW, (r[1] + r[3]) / TH, (r[0] + r[2]) / TW, r[1] / TH};
     }
 
+    /**
+     * Viereck a-b-c-d mit Texturkoordinaten aus einem Feld.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param ax Ecke a x
+     * @param ay Ecke a y
+     * @param az Ecke a z
+     * @param bx Ecke b x
+     * @param by Ecke b y
+     * @param bz Ecke b z
+     * @param cx Ecke c x
+     * @param cy Ecke c y
+     * @param cz Ecke c z
+     * @param dx Ecke d x
+     * @param dy Ecke d y
+     * @param dz Ecke d z
+     * @param uv Texturkoordinaten {u0, v0, u1, v1}
+     * @param nx Normale x
+     * @param ny Normale y
+     * @param nz Normale z
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     private static void quad(VertexConsumer vc, Matrix4f m, float ax, float ay, float az, float bx, float by, float bz,
                              float cx, float cy, float cz, float dx, float dy, float dz, float[] uv, float nx, float ny, float nz,
                              int light, int overlay) {
         quad(vc, m, ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, uv[0], uv[1], uv[2], uv[3], nx, ny, nz, light, overlay);
     }
 
-    /** Viereck a-b-c-d, UV: a = (u0, v0), b = (u1, v0), c = (u1, v1), d = (u0, v1). */
+    /**
+     * Viereck a-b-c-d; Texturkoordinaten: a = (u0, v0), b = (u1, v0), c = (u1, v1), d = (u0, v1).
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param ax Ecke a x
+     * @param ay Ecke a y
+     * @param az Ecke a z
+     * @param bx Ecke b x
+     * @param by Ecke b y
+     * @param bz Ecke b z
+     * @param cx Ecke c x
+     * @param cy Ecke c y
+     * @param cz Ecke c z
+     * @param dx Ecke d x
+     * @param dy Ecke d y
+     * @param dz Ecke d z
+     * @param u0 linke Texturkante
+     * @param v0 obere Texturkante
+     * @param u1 rechte Texturkante
+     * @param v1 untere Texturkante
+     * @param nx Normale x
+     * @param ny Normale y
+     * @param nz Normale z
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     private static void quad(VertexConsumer vc, Matrix4f m, float ax, float ay, float az, float bx, float by, float bz,
                              float cx, float cy, float cz, float dx, float dy, float dz, float u0, float v0, float u1, float v1,
                              float nx, float ny, float nz, int light, int overlay) {
@@ -208,6 +321,22 @@ public final class GuideBookRenderer {
         vertex(vc, m, dx, dy, dz, u0, v1, nx, ny, nz, light, overlay);
     }
 
+    /**
+     * Ein Eckpunkt mit allen Attributen des Entity-Formats.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param x Position x
+     * @param y Position y
+     * @param z Position z
+     * @param u Texturkoordinate u
+     * @param v Texturkoordinate v
+     * @param nx Normale x
+     * @param ny Normale y
+     * @param nz Normale z
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     private static void vertex(VertexConsumer vc, Matrix4f m, float x, float y, float z, float u, float v, float nx, float ny, float nz,
                                int light, int overlay) {
         vc.addVertex(m, x, y, z).setColor(255, 255, 255, 255).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);

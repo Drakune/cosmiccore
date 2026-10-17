@@ -8,8 +8,24 @@ import org.joml.Matrix4f;
 
 /** Schrift in der Welt: ab 26.2 nur noch ueber den SubmitNodeCollector (ersetzt Font.drawInBatch). */
 public final class WorldText {
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private WorldText() {}
 
+    /**
+     * Zeichnet Text in der Welt (ueber den Submit-Sammler der Puffer).
+     *
+     * @param font Schrift
+     * @param text Text
+     * @param x Position x in Schriftpixeln
+     * @param y Position y in Schriftpixeln
+     * @param color Farbe 0xAARRGGBB
+     * @param shadow mit Schatten
+     * @param matrix Matrix des Textraums
+     * @param buffers Puffer (muessen DeferredBuffers sein)
+     * @param mode Darstellungsart
+     * @param background Hintergrundfarbe
+     * @param light Lichtwert
+     */
     public static void draw(Font font, String text, float x, float y, int color, boolean shadow, Matrix4f matrix, MultiBufferSource buffers,
                             Font.DisplayMode mode, int background, int light) {
         if (!(buffers instanceof DeferredBuffers d)) return;

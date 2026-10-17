@@ -23,20 +23,42 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class BlockQuads {
     private static final Direction[] SIDES = {Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null};
 
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private BlockQuads() {}
 
-    /** Das Modell eines Blockzustands. */
+    /**
+     * Das Modell eines Blockzustands.
+     *
+     * @param state Blockzustand
+     * @return das Modell
+     */
     public static BlockStateModel model(BlockState state) {
         return Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(state);
     }
 
-    /** Alle Quads eines Modells in einen Puffer (Farbe weiss). */
+    /**
+     * Alle Quads eines Modells in einen Puffer (Farbe weiss).
+     *
+     * @param pose aktuelle Pose
+     * @param vc Puffer
+     * @param model das Modell
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     public static void render(PoseStack.Pose pose, VertexConsumer vc, BlockStateModel model, int light, int overlay) {
         QuadInstance inst = instance(light, overlay);
         for (BakedQuad q : quads(model)) vc.putBakedQuad(pose, q, inst);
     }
 
-    /** Einen Blockzustand zeichnen, je Quad im passenden Render-Typ (fest, ausgeschnitten, durchscheinend). */
+    /**
+     * Einen Blockzustand zeichnen, je Quad im passenden Render-Typ (fest, ausgeschnitten, durchscheinend).
+     *
+     * @param state Blockzustand
+     * @param pose Pose-Stapel
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     */
     public static void render(BlockState state, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         render(state, pose, buffers, light, overlay, true);
     }
@@ -44,6 +66,13 @@ public final class BlockQuads {
     /**
      * Wie oben; ohne feste Flaechen, wenn {@code solid} false ist. Bis 1.21.11 kamen feste Blockflaechen aus den
      * Block-Renderern der Kammer nie auf den Bildschirm - so bleibt das Aussehen gleich.
+     *
+     * @param state Blockzustand
+     * @param pose Pose-Stapel
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param solid {@code false}: feste Flaechen weglassen
      */
     public static void render(BlockState state, PoseStack pose, MultiBufferSource buffers, int light, int overlay, boolean solid) {
         List<BakedQuad> all = quads(model(state));
@@ -63,6 +92,13 @@ public final class BlockQuads {
         }
     }
 
+    /**
+     * Quad-Einstellungen: Farbe weiss, Licht und Overlay.
+     *
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @return die Einstellungen
+     */
     private static QuadInstance instance(int light, int overlay) {
         QuadInstance inst = new QuadInstance();
         inst.setColor(-1);
@@ -71,6 +107,12 @@ public final class BlockQuads {
         return inst;
     }
 
+    /**
+     * Alle Quads eines Modells (alle Seiten und ungerichtete), mit festem Zufallswert.
+     *
+     * @param model das Modell
+     * @return die Quads
+     */
     private static List<BakedQuad> quads(BlockStateModel model) {
         List<BlockStateModelPart> parts = new ArrayList<>();
         model.collectParts(RandomSource.create(42L), parts);

@@ -4,5 +4,11 @@ import net.minecraft.world.item.ItemStack;
 
 /** Inventar, dessen Slots direkt gesetzt werden duerfen (fuer Menues). */
 public interface ModifiableItemHandler extends ItemHandler {
+    /**
+     * Setzt den Inhalt eines Platzes direkt.
+     *
+     * @param slot Slot-Nummer
+     * @param stack der neue Stapel
+     */
     void setStackInSlot(int slot, ItemStack stack);
 }

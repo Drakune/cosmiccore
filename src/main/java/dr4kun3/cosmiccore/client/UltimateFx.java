@@ -21,6 +21,7 @@ import org.joml.Matrix4f;
  * </ul>
  */
 public final class UltimateFx {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private UltimateFx() {}
 
     private static final float[] GOLD_DEF = {1.0F, 0.82F, 0.4F};
@@ -31,6 +32,21 @@ public final class UltimateFx {
     private static float[] CYAN = CYAN_DEF;
     private static final float[] VIOLET = {0.6F, 0.35F, 1.0F};
 
+    /**
+     * Zeichnet die Zusatzeffekte des ultimativen Kerns: Spiralgalaxie in der Scheibenebene, drei kreisende Sterne mit
+     * Lichtschweifen und eine goldene Krone um den Horizont.
+     *
+     * @param pose Pose-Stapel mit Ursprung in der Kernmitte
+     * @param vc Puffer fuer additives Leuchten
+     * @param rh Radius des Ereignishorizonts
+     * @param inner Innenradius der Akkretionsscheibe
+     * @param outer Aussenradius der Akkretionsscheibe
+     * @param reach Radius der Kammer (aeusserste Bahn)
+     * @param t Animationszeit in Ticks
+     * @param spin Drehgeschwindigkeit (1 = normal, hoeher im Overdrive)
+     * @param energy Helligkeit 0..1 (0 = nichts zeichnen)
+     * @param tilt Neigung der Scheibe in Grad
+     */
     public static void render(PoseStack pose, VertexConsumer vc, float rh, float inner, float outer, float reach, float t,
                               float spin, float energy, float tilt) {
         int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;

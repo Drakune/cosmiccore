@@ -35,9 +35,14 @@ public final class CutsceneTestHarness {
     private static final boolean BOOK = System.getProperty("cosmiccore.bookTest") != null;
     private static final boolean CONSOLE = System.getProperty("cosmiccore.consoleTest") != null;
 
+    /** Nur statische Testroutinen - keine Instanzen. */
     private CutsceneTestHarness() {}
 
-    /** Buch-Test: Handbuch in der Hand (Aufklappen, Blaettern), von aussen und im Inventar. */
+    /**
+     * Buch-Test: Handbuch in der Hand (Aufklappen, Blaettern), von aussen und im Inventar - mit Screenshots.
+     *
+     * @param mc der Client
+     */
     private static void bookTest(Minecraft mc) {
         var server = mc.getSingleplayerServer();
         if (server == null) return;
@@ -72,7 +77,12 @@ public final class CutsceneTestHarness {
         }
     }
 
-    /** Konsolen-Test: Kreativ-Bau (gebildet, mit Trichter am Item-Port), einzelne Ports, eine ruhende Konsole und das Menue. */
+    /**
+     * Konsolen-Test: Kreativ-Bau (gebildet, mit Trichter am Item-Port), einzelne Ports, eine ruhende Konsole und das
+     * Menue - aus festen Blickwinkeln fotografiert.
+     *
+     * @param mc der Client
+     */
     private static void consoleTest(Minecraft mc) {
         var server = mc.getSingleplayerServer();
         if (server == null) return;
@@ -178,14 +188,22 @@ public final class CutsceneTestHarness {
         }
     }
 
-    /** Ab 26.2 liegt das Ausblenden der Oberflaeche (F1) im Hud und laesst sich nur umschalten. */
+    /**
+     * Blendet die Spieleroberflaeche aus oder ein.
+     *
+     * @param mc der Client
+     * @param hidden {@code true}: ausblenden
+     */
     private static void setHudHidden(Minecraft mc, boolean hidden) {
         if (mc.gui.hud.isHidden() != hidden) mc.gui.hud.toggle();
     }
 
     /**
-     * Die Testwelt stammt aus einer aelteren Minecraft-Version. Neuere Versionen fragen beim Oeffnen nach einer Sicherung
+     * Die Testwelt stammt aus einer aelteren Minecraft-Version. Neuere Versionen fragen beim Oeffnen nach einer
+     * Sicherung
      * ("Ich weiss, was ich tue") - im Test ohne Sicherung fortfahren, damit der Lauf nicht haengen bleibt.
+     *
+     * @param mc der Client
      */
     private static void skipBackupWarning(Minecraft mc) {
         // ab 26.1: nach dem Welt-Upgrade "Jetzt beitreten" bestaetigen
@@ -211,6 +229,11 @@ public final class CutsceneTestHarness {
         }
     }
 
+    /**
+     * Steuert den gewaehlten Test Tick fuer Tick (nur mit {@code -Dcosmiccore.cutsceneTest=true}).
+     *
+     * @param event Ende eines Client-Ticks
+     */
     @SubscribeEvent
     public static void onTick(ClientTickEvent.Post event) {
         if (!ENABLED || finished) return;
@@ -286,6 +309,11 @@ public final class CutsceneTestHarness {
         }
     }
 
+    /**
+     * Handbuch-Test: fotografiert Aufklappen, Blaettern und Zuklappen bildgenau in festen Abstaenden.
+     *
+     * @param event Ende eines gezeichneten Bildes
+     */
     @SubscribeEvent
     public static void onFrame(RenderFrameEvent.Post event) {
         if (GUIDE && guidePhase != null && !finished) {

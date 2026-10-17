@@ -89,6 +89,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private Button overdriveUp, overdriveDown;
     private float dragYaw, dragPitch;
 
+    /**
+     * Legt das Controller-Fenster an: vor der Groessenwahl gross (Auswahl), danach kompakt (Steuerung).
+     *
+     * @param menu das Menue
+     * @param inv Inventar des Spielers
+     * @param title Fenstertitel
+     */
     public ControllerScreen(ControllerMenu menu, Inventory inv, Component title) {
         super(menu, inv, title, W, menu.sizeChosen() ? H_MAIN : H);
         menu.modulesOpen = tabOpen; // Tab-Zustand bleibt fuer die Sitzung erhalten (wie bei Mekanism)
@@ -98,6 +105,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         titleLabelY = 6;
     }
 
+    /**
+     * Baut die Knoepfe auf: Groessen-Reiter, Trichter/Laser-Haken, Bestaetigen, Start/Stopp, Stufe, Overdrive,
+     * Vorschau, Bauen, Entfernen und Farbmenue.
+     */
     @Override
     protected void init() {
         super.init();
@@ -141,7 +152,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         updateWidgets();
     }
 
-    /** Warnung vor dem Aktivieren bzw. Entfernen einer Overdrive-Stufe. */
+    /**
+     * Warnung vor dem Aktivieren bzw. Entfernen einer Overdrive-Stufe (beim Ultimate-Schritt mit eigenem Text).
+     *
+     * @param up {@code true}: Stufe erhoehen, sonst senken
+     */
     private void confirmOverdrive(boolean up) {
         if (minecraft == null) return;
         ReactorSize current = ReactorSize.bySize(menu.size());
@@ -162,21 +177,45 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // Farbfeld unter dem Farb-Modul-Slot: zeigt den Farbsatz als Streifen, Klick oeffnet das Farbmenue
     private static final int COLOR_SW_X = ControllerMenu.MOD_X + ControllerMenu.MOD_STEP_X;
 
-    /** Lasche bzw. ausgeklappter Tab (relativ zum Fenster). */
+    /**
+     * Lasche bzw. ausgeklappter Modul-Tab.
+     *
+     * @return {x, y, Breite, Hoehe} relativ zum Fenster
+     */
     private int[] tabRect() {
         return menu.modulesOpen ? new int[]{MTAB_X, TAB_Y0, TAB_OPEN_W, TAB_OPEN_H} : new int[]{MTAB_X, TAB_Y0, TAB_CLOSED, TAB_CLOSED};
     }
 
-    /** Lager-Tab direkt unter dem Modul-Tab: oeffnet das Lager des Item-Ports. */
+    /**
+     * Lager-Tab direkt unter dem Modul-Tab: oeffnet das Lager des Item-Ports.
+     *
+     * @return {x, y, Breite, Hoehe} relativ zum Fenster
+     */
     private int[] storageTabRect() {
         int[] r = tabRect();
         return new int[]{MTAB_X, r[1] + r[3] + 2, TAB_CLOSED, TAB_CLOSED};
     }
 
+    /**
+     * Liegt ein Punkt auf der Kopfzeile des Modul-Tabs (zum Auf- und Zuklappen)?
+     *
+     * @param mx x relativ zum Fenster
+     * @param my y relativ zum Fenster
+     * @return {@code true}, wenn ja
+     */
     private boolean inTabHeader(int mx, int my) {
         return in(mx, my, MTAB_X, TAB_Y0, menu.modulesOpen ? TAB_OPEN_W : TAB_CLOSED, menu.modulesOpen ? 20 : TAB_CLOSED);
     }
 
+    /**
+     * Zeichnet den Modul-Tab: zu als Lasche mit Symbol, offen mit den Modulplaetzen, Anti-Asteroiden-Schalter und
+     * Farbfeld.
+     *
+     * @param g Grafik-Kontext
+     * @param x linke Kante des Fensters
+     * @param y obere Kante des Fensters
+     * @param t Animationszeit
+     */
     private void drawModuleTab(GuiGraphicsExtractor g, int x, int y, float t) {
         if (!menu.sizeChosen()) return;
         int[] r = tabRect();
@@ -205,6 +244,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         }
     }
 
+    /**
+     * Farbfeld zum Oeffnen des Farbmenues (grau ohne Farb-Modul, sonst die Kanalfarben im Wechsel).
+     *
+     * @param g Grafik-Kontext
+     * @param sx linke Kante
+     * @param sy obere Kante
+     * @param t Animationszeit
+     */
     private void drawColorSwatch(GuiGraphicsExtractor g, int sx, int sy, float t) {
         boolean installed = menu.flag(ControllerMenu.F_COLOR_INSTALLED);
         g.fill(sx - 1, sy - 1, sx + ANTI_SW_W + 1, sy + ANTI_SW_H + 1, 0xFF120A20);
@@ -221,6 +268,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (gx >= sx && gx < sx + ANTI_SW_W) g.fill(gx, sy, Math.min(gx + 2, sx + ANTI_SW_W), sy + ANTI_SW_H, 0x60FFFFFF);
     }
 
+    /**
+     * Schalter der Asteroidenabwehr (grau ohne Modul, gruen an, rot aus).
+     *
+     * @param g Grafik-Kontext
+     * @param sx linke Kante
+     * @param sy obere Kante
+     */
     private void drawAntiSwitch(GuiGraphicsExtractor g, int sx, int sy) {
         boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
         int track = !installed ? 0xFF3A3448 : on ? 0xFF2FB872 : 0xFF6A2E3A;
@@ -230,6 +284,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fill(kx, sy, kx + 7, sy + ANTI_SW_H, installed ? 0xFFF0ECF8 : 0xFF8A8498);
     }
 
+    /**
+     * Klicks auf die Reiter neben dem Fenster gelten nicht als ausserhalb (sonst wuerden Items fallen gelassen).
+     *
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     * @param left linke Kante des Fensters
+     * @param top obere Kante des Fensters
+     * @return {@code true}, wenn wirklich ausserhalb
+     */
     @Override
     protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top) {
         int[] r = tabRect(), sr = storageTabRect();
@@ -238,7 +301,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return super.hasClickedOutside(mouseX, mouseY, left, top);
     }
 
-    /** Bereiche ausserhalb des Fensters (fuer JEI/EMI/REI, damit die Item-Liste den Tab nicht verdeckt). */
+    /**
+     * Bereiche ausserhalb des Fensters (fuer JEI/EMI/REI, damit die Item-Liste die Tabs nicht verdeckt).
+     *
+     * @return die Bereiche in Bildschirmkoordinaten
+     */
     public List<net.minecraft.client.renderer.Rect2i> extraAreas() {
         if (!menu.sizeChosen()) return List.of();
         int[] r = tabRect(), sr = storageTabRect();
@@ -246,6 +313,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                 new net.minecraft.client.renderer.Rect2i(leftPos + sr[0], topPos + sr[1], sr[2], sr[3]));
     }
 
+    /**
+     * Klick auf Reiter, Groessenkarten, Schalter oder Bildlaufleiste.
+     *
+     * @param event Mausereignis (Position und Taste)
+     * @param doubleClick Doppelklick
+     * @return {@code true}, wenn verarbeitet
+     */
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x(), mouseY = event.y();
@@ -294,12 +368,18 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return super.mouseClicked(event, doubleClick);
     }
 
+    /**
+     * Schickt einen Knopfdruck an den Server.
+     *
+     * @param id Nummer des Knopfs ({@code ControllerMenu.BTN_*})
+     */
     private void press(int id) {
         if (minecraft != null && minecraft.gameMode != null) {
             minecraft.gameMode.handleInventoryButtonClick(menu.containerId, id);
         }
     }
 
+    /** Jeden Tick: Knoepfe anpassen und nach der Groessenwahl auf das kompakte Fenster wechseln. */
     @Override
     protected void containerTick() {
         super.containerTick();
@@ -312,6 +392,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         updateWidgets();
     }
 
+    /**
+     * Sichtbarkeit und Freigabe der Knoepfe nach Zustand (Groessenwahl, laeuft, freigeschaltet, Overdrive moeglich).
+     */
     private void updateWidgets() {
         boolean chosen = menu.sizeChosen();
         // Leistungsstufe und Overdrive erst bei laufendem Generator
@@ -345,6 +428,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     // ------------------------------------------------------------------ Zeichnen
 
+    /**
+     * Hintergrund: Rahmen mit Weltraum, Slots, Anzeigen und Knoepfe - bzw. die Karten der Groessenwahl.
+     *
+     * @param g Grafik-Kontext
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     * @param partialTick Teil-Tick
+     */
     @Override
     public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(g, mouseX, mouseY, partialTick);
@@ -431,6 +522,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.centeredText(font, menu.scale() + "/" + menu.maxScale(), x + (sx0 + sx1) / 2, y + ROW_Y + 3, 0xFFFFFFFF);
     }
 
+    /**
+     * Funkelnde Sterne im Hintergrund.
+     *
+     * @param g Grafik-Kontext
+     * @param x linke Kante
+     * @param y obere Kante
+     * @param t Animationszeit
+     */
     private void drawStars(GuiGraphicsExtractor g, int x, int y, float t) {
         for (int i = 0; i < 46; i++) {
             int h = i * 0x9E3779B1;
@@ -443,18 +542,44 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         }
     }
 
-    /** Einheitliche Karte: dunkle Flaeche, violetter Rahmen, feine Akzentlinie oben. */
+    /**
+     * Einheitliche Karte: dunkle Flaeche, violetter Rahmen, feine Akzentlinie oben.
+     *
+     * @param g Grafik-Kontext
+     * @param px linke Kante
+     * @param py obere Kante
+     * @param pw Breite
+     * @param ph Hoehe
+     */
     private static void drawPanel(GuiGraphicsExtractor g, int px, int py, int pw, int ph) {
         g.fill(px, py, px + pw, py + ph, PANEL_BORDER);
         g.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, PANEL_FILL);
         g.fill(px + 3, py + 1, px + pw - 3, py + 2, PANEL_ACCENT);
     }
 
+    /**
+     * Rahmen eines Slots.
+     *
+     * @param g Grafik-Kontext
+     * @param sx linke Kante
+     * @param sy obere Kante
+     * @param border Farbe des Rahmens
+     */
     private static void drawSlotBox(GuiGraphicsExtractor g, int sx, int sy, int border) {
         g.fill(sx - 1, sy - 1, sx + 17, sy + 17, border);
         g.fill(sx, sy, sx + 16, sy + 16, 0xFF0C0818);
     }
 
+    /**
+     * Senkrechter Fuellbalken mit Farbverlauf.
+     *
+     * @param g Grafik-Kontext
+     * @param bx linke Kante
+     * @param by obere Kante
+     * @param frac Fuellung 0..1
+     * @param top Farbe oben
+     * @param bottom Farbe unten
+     */
     private static void drawVBar(GuiGraphicsExtractor g, int bx, int by, float frac, int top, int bottom) {
         g.fill(bx - 1, by - 1, bx + BAR_W + 1, by + BAR_H + 1, PANEL_BORDER);
         g.fill(bx, by, bx + BAR_W, by + BAR_H, 0xFF0C0818);
@@ -462,12 +587,30 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (h > 0) g.fillGradient(bx, by + BAR_H - h, bx + BAR_W, by + BAR_H, top, bottom);
     }
 
+    /**
+     * Waagrechter Fortschrittsbalken mit Farbverlauf.
+     *
+     * @param g Grafik-Kontext
+     * @param bx linke Kante
+     * @param by obere Kante
+     * @param w Breite
+     * @param frac Fuellung 0..1
+     * @param left Farbe links
+     * @param right Farbe rechts
+     */
     private static void drawHBar(GuiGraphicsExtractor g, int bx, int by, int w, float frac, int left, int right) {
         g.fill(bx, by, bx + w, by + 3, 0xFF0C0818);
         int fw = Math.round(w * Mth.clamp(frac, 0f, 1f));
         if (fw > 0) g.fillGradient(bx, by, bx + fw, by + 3, left, right);
     }
 
+    /**
+     * Beschriftungen: Titel, Werte und Zustandsmeldungen (in der Groessenwahl die Kartentexte).
+     *
+     * @param g Grafik-Kontext
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     */
     @Override
     protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         // in der Groessenwahl tragen die Karten eigene Ueberschriften - kein Fenstertitel
@@ -550,6 +693,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     // ------------------------------------------------------------------ Groessenwahl
 
+    /**
+     * Groessenwahl: Reiter je Baugroesse, Kennwerte, 3D-Vorschau und die Liste benoetigter Bloecke.
+     *
+     * @param g Grafik-Kontext
+     * @param x linke Kante des Fensters
+     * @param y obere Kante des Fensters
+     * @param t Animationszeit
+     */
     private void renderSizeSelection(GuiGraphicsExtractor g, int x, int y, float t) {
         // Markierung des gewaehlten Reiters
         int ty = y + TAB_Y + selected * TAB_STEP;
@@ -609,14 +760,31 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private int blocksScroll;
     private boolean draggingScroll;
 
+    /**
+     * Breite der Liste benoetigter Bloecke.
+     *
+     * @param count Anzahl Eintraege
+     * @return Breite in Pixeln
+     */
     private static int blocksContentW(int count) {
         return count * 24 - 6;
     }
 
+    /**
+     * Wie weit sich die Liste verschieben laesst.
+     *
+     * @param count Anzahl Eintraege
+     * @return Pixel
+     */
     private static int blocksMaxScroll(int count) {
         return Math.max(0, blocksContentW(count) - (BLOCKS_IN_X1 - BLOCKS_IN_X0));
     }
 
+    /**
+     * Verschiebt die Liste passend zur Mausposition auf dem Scrollbalken.
+     *
+     * @param mouseX Mausposition x
+     */
     private void scrollTo(double mouseX) {
         int count = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers).size();
         int maxScroll = blocksMaxScroll(count);
@@ -624,6 +792,15 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         blocksScroll = Math.round(Mth.clamp(f, 0.0F, 1.0F) * maxScroll);
     }
 
+    /**
+     * Mausrad ueber der Blockliste verschiebt sie.
+     *
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     * @param scrollX waagrechtes Scrollen
+     * @param scrollY senkrechtes Scrollen
+     * @return {@code true}, wenn verarbeitet
+     */
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (!menu.sizeChosen() && in((int) mouseX - leftPos, (int) mouseY - topPos, VIEW_X, BLOCKS_Y, VIEW_W, BLOCKS_H)) {
@@ -633,6 +810,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
+    /**
+     * Beendet das Ziehen der Bildlaufleiste.
+     *
+     * @param event Mausereignis (Position und Taste)
+     * @return {@code true}, wenn verarbeitet
+     */
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
         double mouseX = event.x(), mouseY = event.y();
@@ -641,24 +824,54 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return super.mouseReleased(event);
     }
 
-    /** Icons der benoetigten Bloecke: buendig unter der Ueberschrift "Benoetigte Bloecke" (x = 8). */
+    /**
+     * Position eines Block-Symbols, buendig unter der Ueberschrift "Benoetigte Bloecke".
+     *
+     * @param i Nummer des Eintrags
+     * @param count Anzahl Eintraege
+     * @return x relativ zum Fenster
+     */
     private static int iconX(int i, int count) {
         return ICON_LEFT + i * 24;
     }
 
     private static final int ICON_LEFT = VIEW_X + 1 + PAD + 1;
 
+    /**
+     * Benoetigte Bloecke einer Baugroesse.
+     *
+     * @param size Baugroesse
+     * @param funnel Trichter mitzaehlen
+     * @param lasers Laser mitzaehlen
+     * @return Stapel mit Anzahl
+     */
     private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         return StructurePreview.requiredBlocks(size, funnel, lasers);
     }
 
-    /** Dreht die echte Struktur als 3D-Modell im Vorschaufenster (mit der Maus ziehbar). */
+    /**
+     * Dreht die echte Struktur als 3D-Modell im Vorschaufenster (mit der Maus ziehbar).
+     *
+     * @param g Grafik-Kontext
+     * @param size Baugroesse
+     * @param cx Mitte x
+     * @param cy Mitte y
+     * @param t Animationszeit
+     */
     private void renderStructure(GuiGraphicsExtractor g, ReactorSize size, int cx, int cy, float t) {
         StructurePreview.render(g, size, cx, cy,
                 new int[]{leftPos + VIEW_X, topPos + VIEW_Y, leftPos + VIEW_X + VIEW_W, topPos + VIEW_Y + VIEW_H},
                 128.0F, t * 0.8F + 30.0F + dragYaw, dragPitch, withFunnel, withLasers);
     }
 
+    /**
+     * Ziehen der Bildlaufleiste.
+     *
+     * @param event Mausereignis (Position und Taste)
+     * @param dragX Bewegung x
+     * @param dragY Bewegung y
+     * @return {@code true}, wenn verarbeitet
+     */
     @Override
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
         double mouseX = event.x(), mouseY = event.y();
@@ -675,7 +888,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return super.mouseDragged(event, dragX, dragY);
     }
 
-    /** Puffer kurz: ganze Gigawerte ohne Nachkommastellen ("5G RF"). */
+    /**
+     * Puffer kurz: ganze Gigawerte ohne Nachkommastellen.
+     *
+     * @param rf Menge in RF
+     * @return z. B. "5G RF"
+     */
     private static String bufferText(long rf) {
         if (rf >= 1_000_000_000L && rf % 1_000_000_000L == 0) return rf / 1_000_000_000L + "G RF";
         return compact(rf) + " RF";
@@ -687,19 +905,37 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final String[] SPEC_KEYS = {"gui.cosmiccore.info_levels", "gui.cosmiccore.info_buffer",
             "gui.cosmiccore.info_overdrive", "gui.cosmiccore.info_unlock"};
 
-    /** Tabulatorkante der Kennwerte: hinter der laengsten Bezeichnung, damit alle Werte genau untereinander stehen. */
+    /**
+     * Tabulatorkante der Kennwerte: hinter der laengsten Bezeichnung, damit alle Werte genau untereinander stehen.
+     *
+     * @return Abstand in Pixeln
+     */
     private int specTab() {
         int w = 0;
         for (String k : SPEC_KEYS) w = Math.max(w, font.width(Component.translatable(k)));
         return w + 8;
     }
 
-    /** Kennwert-Zeile: Bezeichnung gedimmt links, Wert an der Tabulatorkante. */
+    /**
+     * Kennwert-Zeile: Bezeichnung gedimmt links, Wert an der Tabulatorkante.
+     *
+     * @param g Grafik-Kontext
+     * @param ix linke Kante
+     * @param iy obere Kante
+     * @param key Uebersetzungsschluessel der Bezeichnung
+     * @param value Wert
+     * @param color Farbe des Werts
+     */
     private void spec(GuiGraphicsExtractor g, int ix, int iy, String key, String value, int color) {
         g.text(font, Component.translatable(key), ix, iy, 0xFF908AA8, false);
         g.text(font, value, ix + specTab(), iy, color, false);
     }
 
+    /**
+     * Statuszeile: fehlender Pflicht-Port, Baufehler, Countdown, laeuft, kein Brennstoff ...
+     *
+     * @return farbiger Text
+     */
     private Component statusLine() {
         if (!menu.flag(ControllerMenu.F_FORMED)) {
             // Pflicht-Ports: klar sagen, welcher fehlt
@@ -732,11 +968,22 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         return Component.translatable("gui.cosmiccore.status.active").withStyle(ChatFormatting.GREEN);
     }
 
+    /**
+     * Steckt ein Modul im Platz?
+     *
+     * @param inventoryIndex Nummer im Controller-Inventar
+     * @return {@code true}, wenn belegt
+     */
     private boolean hasModule(int inventoryIndex) {
         Slot slot = menu.machineSlot(inventoryIndex);
         return slot != null && slot.hasItem();
     }
 
+    /**
+     * Farbe der Instabilitaet (gruen, gelb, rot).
+     *
+     * @return Farbe 0xAARRGGBB
+     */
     private int instColor() {
         float i = menu.instability();
         return i < 40f ? 0xFF80FF90 : i < ControllerBlockEntity.UNSTABLE_ON ? 0xFFFFE060 : 0xFFFF5060;
@@ -744,6 +991,14 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     // ------------------------------------------------------------------ Tooltips
 
+    /**
+     * Zeichnet das Fenster samt Bauteil-Liste der Groessenwahl und Tooltips.
+     *
+     * @param g Grafik-Kontext
+     * @param mouseX Mausposition x
+     * @param mouseY Mausposition y
+     * @param partialTick Teil-Tick
+     */
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
@@ -824,14 +1079,37 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (!tip.isEmpty()) g.setComponentTooltipForNextFrame(font, tip, mouseX, mouseY);
     }
 
+    /**
+     * Liegt ein Punkt in einem Rechteck?
+     *
+     * @param mx Punkt x
+     * @param my Punkt y
+     * @param x linke Kante
+     * @param y obere Kante
+     * @param w Breite
+     * @param h Hoehe
+     * @return {@code true}, wenn ja
+     */
     private static boolean in(int mx, int my, int x, int y, int w, int h) {
         return mx >= x && mx < x + w && my >= y && my < y + h;
     }
 
+    /**
+     * Zahl mit Tausenderpunkten.
+     *
+     * @param n die Zahl
+     * @return der Text
+     */
     private static String fmt(long n) {
         return NumberFormat.getIntegerInstance().format(n);
     }
 
+    /**
+     * Grosse Zahl kurz: 1.25G, 3.4M, 12.5k.
+     *
+     * @param n die Zahl
+     * @return der Text
+     */
     private static String compact(long n) {
         if (n >= 1_000_000_000L) return String.format("%.2fG", n / 1e9);
         if (n >= 1_000_000L) return String.format("%.1fM", n / 1e6);

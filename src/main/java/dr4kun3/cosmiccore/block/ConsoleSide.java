@@ -11,15 +11,31 @@ public enum ConsoleSide implements StringRepresentable {
     @Nullable
     private final Direction direction;
 
+    /**
+     * Legt eine Konsolenseite an.
+     *
+     * @param direction Blickrichtung der Konsole oder {@code null} fuer "keine Konsole"
+     */
     ConsoleSide(@Nullable Direction direction) {
         this.direction = direction;
     }
 
+    /**
+     * Richtung, in die die Konsole zeigt.
+     *
+     * @return die Richtung oder {@code null}, wenn der Port zu keiner Konsole gehoert
+     */
     @Nullable
     public Direction direction() {
         return direction;
     }
 
+    /**
+     * Konsolenseite zu einer waagrechten Richtung.
+     *
+     * @param d Richtung (oben/unten werden zu Norden)
+     * @return die passende Seite
+     */
     public static ConsoleSide of(Direction d) {
         return switch (d) {
             case EAST -> EAST;
@@ -29,6 +45,11 @@ public enum ConsoleSide implements StringRepresentable {
         };
     }
 
+    /**
+     * Name im Blockzustand.
+     *
+     * @return der Name in Kleinbuchstaben
+     */
     @Override
     public String getSerializedName() {
         return name().toLowerCase(java.util.Locale.ROOT);

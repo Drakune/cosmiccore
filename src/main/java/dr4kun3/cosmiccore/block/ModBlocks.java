@@ -12,7 +12,15 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(CosmicCore.MODID);
 
-    /** Ab 26.1 erwartet NeoForge die Eigenschaften als Lieferant. */
+    /**
+     * Registriert einen Block mit festen Eigenschaften.
+     *
+     * @param name Registry-Name
+     * @param factory erzeugt den Block aus den Eigenschaften
+     * @param properties Eigenschaften des Blocks
+     * @param <B> Block-Klasse
+     * @return der registrierte Block
+     */
     private static <B extends net.minecraft.world.level.block.Block> DeferredBlock<B> block(String name,
             java.util.function.Function<BlockBehaviour.Properties, B> factory, BlockBehaviour.Properties properties) {
         return BLOCKS.registerBlock(name, factory, () -> properties);
@@ -69,6 +77,17 @@ public final class ModBlocks {
                     .mapColor(MapColor.COLOR_CYAN).strength(5.0F, 600.0F).sound(SoundType.NETHERITE_BLOCK)
                     .requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 5));
 
+    /**
+     * Gemeinsame Eigenschaften der Strukturbloecke: hart wie Metall, nur mit passendem Werkzeug abbaubar und je nach
+     * Reaktorphase leuchtend.
+     *
+     * @param color Kartenfarbe
+     * @param sound Geraeusche des Blocks
+     * @param formed Lichtstaerke 0..15, wenn die Struktur gebildet ist
+     * @param active Lichtstaerke, wenn der Reaktor laeuft
+     * @param unstable Lichtstaerke, wenn der Kern instabil ist
+     * @return die fertigen Blockeigenschaften
+     */
     private static BlockBehaviour.Properties metal(MapColor color, SoundType sound, int formed, int active, int unstable) {
         return BlockBehaviour.Properties.of()
                 .mapColor(color)
@@ -78,6 +97,14 @@ public final class ModBlocks {
                 .lightLevel(light(formed, active, unstable));
     }
 
+    /**
+     * Lichtstaerke abhaengig von der Reaktorphase (ruhend = dunkel).
+     *
+     * @param formed Lichtstaerke in der Phase "gebildet"
+     * @param active Lichtstaerke in der Phase "aktiv"
+     * @param unstable Lichtstaerke in der Phase "instabil"
+     * @return Funktion Blockzustand -> Lichtstaerke
+     */
     private static ToIntFunction<BlockState> light(int formed, int active, int unstable) {
         return state -> switch (state.getValue(ModProperties.PHASE)) {
             case DORMANT -> 0;
@@ -87,5 +114,6 @@ public final class ModBlocks {
         };
     }
 
+    /** Nur statische Registrierungen - keine Instanzen. */
     private ModBlocks() {}
 }

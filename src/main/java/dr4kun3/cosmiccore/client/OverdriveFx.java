@@ -18,8 +18,23 @@ import org.joml.Matrix4f;
  * steuert der Kern-Renderer ueber die Palette.
  */
 public final class OverdriveFx {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private OverdriveFx() {}
 
+    /**
+     * Zeichnet die Overdrive-Steigerung: dichtere Korona um den Horizont, einen Strahlenkranz und ab Stufe 3 eine
+     * atmende Aura. Alles ist zur Kamera ausgerichtet, damit es aus jeder Richtung gleich wirkt.
+     *
+     * @param pose Pose-Stapel mit Ursprung in der Kernmitte
+     * @param vc Puffer fuer additives Leuchten
+     * @param od Overdrive-Stufe (0 = nichts zeichnen)
+     * @param rh Radius des Ereignishorizonts in Bloecken
+     * @param t Animationszeit in Ticks
+     * @param energy Helligkeit 0..1
+     * @param camYaw Gierwinkel der Kamera in Bogenmass (zum Ausrichten)
+     * @param camPitch Neigung der Kamera in Bogenmass
+     * @param pal Farbpalette {heiss, warm, kuehl} als RGB 0..1
+     */
     public static void render(PoseStack pose, VertexConsumer vc, int od, float rh, float t, float energy,
                               float camYaw, float camPitch, float[][] pal) {
         if (od <= 0 || energy <= 0.01F) return;
