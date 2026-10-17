@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Erzeugt die Assets des Void-Titanen fuer die Cutscene des Ultimate-Modus (GeckoLib, optional):
-  assets/cosmiccore/geckolib/models/void_titan.geo.json              - Oberkoerper (Becken, Rumpf, Kopf, Arme, Fluegel)
+Erzeugt die Assets des Void-Titanen für die Cutscene des Ultimate-Modus (GeckoLib, optional):
+  assets/cosmiccore/geckolib/models/void_titan.geo.json              - Oberkörper (Becken, Rumpf, Kopf, Arme, Flügel)
   assets/cosmiccore/geo/void_titan_tail.geo.json         - ein Schweifsegment (wird je Teil der Entity gezeichnet)
-  assets/cosmiccore/animations/void_titan.animation.json - Kinofilm-Animation (14 s, weiche Uebergaenge)
-  assets/cosmiccore/textures/entity/void_titan.png        - EINE bemalte Textur fuer beide Modelle
+  assets/cosmiccore/animations/void_titan.animation.json - Kinofilm-Animation (14 s, weiche Übergänge)
+  assets/cosmiccore/textures/entity/void_titan.png        - EINE bemalte Textur für beide Modelle
 
-Jeder Wuerfel bekommt einen eigenen Bereich im Textur-Atlas und wird flaechenweise nach seinem Material bemalt
+Jeder Würfel bekommt einen eigenen Bereich im Textur-Atlas und wird flächenweise nach seinem Material bemalt
 (Panzer, Leerenfleisch, Horn, Leuchten, Stoff) - mit Kanten, Lichtkante oben, Nieten, Rissen und Rauschen.
 
 Aufruf: python3 tools/generate_titan.py (wird auch von generate_resources.py aufgerufen)
@@ -27,7 +27,7 @@ ARMOR, FLESH, HORN, GLOW, CLOTH = 'armor', 'flesh', 'horn', 'glow', 'cloth'
 
 
 class Atlas:
-    """Einfacher Regal-Packer fuer Box-UVs."""
+    """Einfacher Regal-Packer für Box-UVs."""
 
     def __init__(self):
         self.x = self.y = self.row = 0
@@ -78,14 +78,14 @@ def geometry(identifier, bones, bounds):
         'bones': bones}]}
 
 
-# ----------------------------------------------------------------- Oberkoerper
+# ----------------------------------------------------------------- Oberkörper
 
 def body_model():
     """Gepanzerter Kriegsherr der Leere: breite Schultern, schmale Taille, langer Schweif (separates Modell)."""
     BONES.clear()
     bone('root', [0, 0, 0])
     bone('body', [0, 0, 0], parent='root', cubes=[
-        cube([-9, 0, -6], [18, 5, 12], ARMOR),                                         # Guertel
+        cube([-9, 0, -6], [18, 5, 12], ARMOR),                                         # Gürtel
         cube([-7, -6, -7], [6, 7, 2], ARMOR, rotation=[10, 0, 0], pivot=[-4, 1, -6]),  # Schurzplatten vorn
         cube([1, -6, -7], [6, 7, 2], ARMOR, rotation=[10, 0, 0], pivot=[4, 1, -6]),
         cube([-11, -5, -4], [3, 6, 8], ARMOR), cube([8, -5, -4], [3, 6, 8], ARMOR),     # Seitenplatten
@@ -103,11 +103,11 @@ def body_model():
         cube([-12, 14, -4], [2, 10, 8], ARMOR), cube([10, 14, -4], [2, 10, 8], ARMOR),       # Flankenplatten
         cube([-12.5, 16, -1], [1, 6, 2], GLOW), cube([11.5, 16, -1], [1, 6, 2], GLOW),       # Leuchtadern
     ]
-    for i in range(5):  # Rueckengrat mit Stacheln
+    for i in range(5):  # Rückengrat mit Stacheln
         chest.append(cube([-2.5, 13 + i * 3.5, 6], [5, 3, 2], ARMOR))
         chest.append(cube([-1, 14 + i * 3.5, 8], [2, 2, 3 + i], HORN, rotation=[-35, 0, 0], pivot=[0, 15 + i * 3.5, 8]))
     bone('chest', [0, 13, 0], parent='body', cubes=chest)
-    bone('core', [0, 23.5, -10], parent='chest')  # Markierung: Herzkern (fuer das Leuchten)
+    bone('core', [0, 23.5, -10], parent='chest')  # Markierung: Herzkern (für das Leuchten)
 
     for side, s in (('l', 1), ('r', -1)):
         def X(x0, w):
@@ -140,7 +140,7 @@ def body_model():
                 y -= 5
         bone(f'thumb_{side}', [X(12, 2) + 1, -2, -3], parent=f'hand_{side}', rotation=[-25, 0, 30 * s],
              cubes=[cube([X(12, 2), -7, -4], [2, 5, 2], HORN)])
-        # Fluegel: fuenf Knochenspeichen mit Haeuten
+        # Flügel: fünf Knochenspeichen mit Häuten
         bone(f'wing_{side}', [6 * s, 28, 7], parent='chest')
         for i, (length, ang) in enumerate(((34, 5), (30, 22), (26, 40), (22, 58), (16, 76))):
             wx = 6 if s > 0 else -6 - length
@@ -160,13 +160,13 @@ def body_model():
         cube([1, 40, -9.6], [3, 1, 1], GLOW, rotation=[0, 0, -12], pivot=[2.5, 40.5, -9.1]),
         cube([-1, 45, -7], [2, 6, 2], GLOW), cube([-3.5, 44.5, -6], [1, 4, 1], GLOW), cube([2.5, 44.5, -6], [1, 4, 1], GLOW),
     ])
-    bone('eye_l', [2.5, 40.5, -9.8], parent='head')   # Markierungen fuer das Augenleuchten
+    bone('eye_l', [2.5, 40.5, -9.8], parent='head')   # Markierungen für das Augenleuchten
     bone('eye_r', [-2.5, 40.5, -9.8], parent='head')
     bone('jaw', [0, 37, -5], parent='head', cubes=[
         cube([-3.5, 33, -9], [7, 3, 6], ARMOR),
         cube([-2.5, 36, -9.2], [1, 2, 1], GLOW), cube([1.5, 36, -9.2], [1, 2, 1], GLOW),
     ])
-    for side, s in (('l', 1), ('r', -1)):  # zurueckgeschwungene Hoerner
+    for side, s in (('l', 1), ('r', -1)):  # zurückgeschwungene Hörner
         parent, px, py = 'head', 4.5 * s, 44
         for i in range(5):
             w = 3 - i * 0.45
@@ -179,11 +179,11 @@ def body_model():
         cube([math.cos(a) * 12 - 1, 41 + math.sin(a) * 12 - 1.5, 5.5], [2, 3, 1], GLOW,
              rotation=[0, 0, math.degrees(a) - 90], pivot=[math.cos(a) * 12, 41 + math.sin(a) * 12, 6])
         for a in [i * math.pi / 6 for i in range(12)]])
-    bone('orb', [0, 22, -30], parent='root')  # Markierung: Energiekugel zwischen den Haenden
+    bone('orb', [0, 22, -30], parent='root')  # Markierung: Energiekugel zwischen den Händen
     return geometry('geometry.void_titan', list(BONES), 14)
 
 
-# ----------------------------------------------------------------- Schweifsegment (Laengsachse nach unten)
+# ----------------------------------------------------------------- Schweifsegment (Längsachse nach unten)
 
 def tail_model():
     BONES.clear()
@@ -211,7 +211,7 @@ def kf(points, easing='easeInOutSine'):
 def animation():
     L = 14.0
     b = {
-        # zusammengekauert - erwacht (3-4.5 s) - bruellt (4.5-5.5 s) - laedt (6.5-9.5 s) - schleudert (9.5 s)
+        # zusammengekauert - erwacht (3-4.5 s) - brüllt (4.5-5.5 s) - lädt (6.5-9.5 s) - schleudert (9.5 s)
         'body': {'rotation': kf([(0, [30, 0, 0]), (3.0, [26, 0, 0]), (4.5, [-10, 0, 0], 'easeOutBack'), (6.0, [-2, 0, 0]),
                                  (9.4, [-12, 0, 0]), (9.7, [18, 0, 0], 'easeOutQuad'), (10.4, [-6, 0, 0]), (12.0, [0, 0, 0])])},
         'chest': {'rotation': kf([(0, [20, 0, 0]), (3.2, [20, 0, 0]), (4.6, [-14, 0, 0], 'easeOutBack'), (6.0, [0, 0, 0]),

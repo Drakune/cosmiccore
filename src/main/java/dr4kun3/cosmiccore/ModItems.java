@@ -3,9 +3,11 @@ package dr4kun3.cosmiccore;
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.item.GuideBookItem;
 import dr4kun3.cosmiccore.item.OverdriveParticleItem;
-import net.minecraft.world.item.Rarity;
+import dr4kun3.cosmiccore.item.QuasarOverdriveItem;
+import java.util.function.Function;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -21,7 +23,7 @@ public final class ModItems {
      * @param <I> Item-Klasse
      * @return das registrierte Item
      */
-    private static <I extends Item> DeferredItem<I> item(String name, java.util.function.Function<Item.Properties, I> factory, Item.Properties properties) {
+    private static <I extends Item> DeferredItem<I> item(String name, Function<Item.Properties, I> factory, Item.Properties properties) {
         return ITEMS.registerItem(name, factory, () -> properties);
     }
 
@@ -49,13 +51,13 @@ public final class ModItems {
 
     public static final DeferredItem<BlockItem> COSMIC_LASER = ITEMS.registerSimpleBlockItem("cosmic_laser", ModBlocks.COSMIC_LASER);
 
-    // Module fuer den Controller (bis zu 4 je Slot)
+    // Module für den Controller (bis zu 4 je Slot)
     public static final DeferredItem<Item> EFFICIENCY_MODULE = item("efficiency_module", Item::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<Item> STABILITY_MODULE = item("stability_module", Item::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
-    /** Haelt Asteroiden im Umkreis des Reaktors fern (im Controller per Schalter an/aus). */
-    /** Faerbt Scheibe, Jets und Licht des Kerns um (Farbschema wird im Controller gewaehlt). */
+    /** Hält Asteroiden im Umkreis des Reaktors fern (im Controller per Schalter an/aus). */
+    /** Färbt Scheibe, Jets und Licht des Kerns um (Farbschema wird im Controller gewählt). */
     public static final DeferredItem<Item> COLOR_MODULE = item("color_module", Item::new,
             new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<Item> ANTI_ASTEROID_MODULE = item("anti_asteroid_module", Item::new,
@@ -64,8 +66,8 @@ public final class ModItems {
     public static final DeferredItem<OverdriveParticleItem> OVERDRIVE_PARTICLE = item("overdrive_particle",
             OverdriveParticleItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.EPIC));
     /** Quasar-Overdrive-Partikel: 4 davon schalten beim ultimativen Kern nach Overdrive 3 den Ultimate-Modus frei. */
-    public static final DeferredItem<dr4kun3.cosmiccore.item.QuasarOverdriveItem> QUASAR_OVERDRIVE_PARTICLE = item(
-            "quasar_overdrive_particle", dr4kun3.cosmiccore.item.QuasarOverdriveItem::new,
+    public static final DeferredItem<QuasarOverdriveItem> QUASAR_OVERDRIVE_PARTICLE = item(
+            "quasar_overdrive_particle", QuasarOverdriveItem::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.EPIC));
 
     /** Nur statische Registrierungen - keine Instanzen. */

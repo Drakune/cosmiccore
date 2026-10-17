@@ -4,7 +4,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.ModBlocks;
+import dr4kun3.cosmiccore.block.Terminal;
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
+import dr4kun3.cosmiccore.client.render.BlockQuads;
+import dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer;
 import dr4kun3.cosmiccore.multiblock.CorePattern;
 import dr4kun3.cosmiccore.multiblock.ReactorSize;
 import java.util.ArrayList;
@@ -12,26 +15,30 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.ShapeRenderer;
 import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
 
 /**
  * Bauvorschau: Solange die Struktur nicht steht und die Vorschau aktiv ist, zeigt der Controller jeden fehlenden
- * Block als halbtransparenten "Geist" an seiner Zielposition. Falsche Bloecke (oder Bloecke, wo Luft sein muss)
+ * Block als halbtransparenten "Geist" an seiner Zielposition. Falsche Blöcke (oder Blöcke, wo Luft sein muss)
  * werden rot umrandet.
  */
-public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<ControllerBlockEntity> {
+public class ControllerRenderer extends LegacyBlockEntityRenderer<ControllerBlockEntity> {
     /**
      * Legt den Renderer der Bauvorschau an.
      *
@@ -39,39 +46,23 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
      */
     public ControllerRenderer(BlockEntityRendererProvider.Context context) {}
 
-    /**
-     * Sichtbarkeitsbox: die ganze geplante Struktur um den Controller.
-     *
-     * @param be der Controller
-     * @return die Box
-     */
     @Override
     public AABB getRenderBoundingBox(ControllerBlockEntity be) {
         return new AABB(be.getBlockPos()).inflate(10.0);
     }
 
-    /**
-     * Auch zeichnen, wenn der Controller selbst nicht im Bild ist.
-     *
-     * @return immer {@code true}
-     */
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
     }
 
-    /**
-     * Sichtweite der Bauvorschau in Bloecken.
-     *
-     * @return 96
-     */
     @Override
     public int getViewDistance() {
         return 96;
     }
 
     /**
-     * Zeichnet die Bauvorschau: fehlende Bloecke als Geister, falsche rot umrandet.
+     * Zeichnet die Bauvorschau: fehlende Blöcke als Geister, falsche rot umrandet.
      *
      * @param be der Controller
      * @param partialTick Teil-Tick
@@ -82,7 +73,7 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
      * @param cameraPos Position der Kamera
      */
     @Override
-    public void render(ControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
+    public void render(ControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, Vec3 cameraPos) {
         Level level = be.getLevel();
         ReactorSize size = be.getSize();
         if (level == null || size == null || !be.isPreview() || be.isFormed()) return;
@@ -99,34 +90,34 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         VertexConsumer ghost = new AlphaVertexConsumer(buffers.getBuffer(Sheets.translucentItemSheet()), alpha);
         List<BlockPos> wrong = new ArrayList<>();
 
-        // 1) Geisterbloecke (Linien erst danach - ein Wechsel des RenderTypes schliesst den vorherigen Puffer ab)
+        // 1) Geisterblöcke (Linien erst danach - ein Wechsel des RenderTypes schließt den vorherigen Puffer ab)
         pattern.forEach(center, facing, (pos, cell) -> {
             if (cell == CorePattern.Cell.ANY || pos.equals(origin) || CorePattern.isDock(pos, origin, facing)) return;
             BlockState current = level.getBlockState(pos);
             if (CorePattern.matches(cell, current, false)) return;
             // Steuerkonsole: rechts der Energie-Port, links der Item-Port
-            if (pos.equals(origin.relative(dr4kun3.cosmiccore.block.Terminal.right(facing))) && current.isAir()) {
-                ghost(pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState());
+            if (pos.equals(origin.relative(Terminal.right(facing))) && current.isAir()) {
+                ghost(pose, ghost, origin, pos, ModBlocks.ENERGY_PORT.get().defaultBlockState());
                 return;
             }
-            if (pos.equals(origin.relative(dr4kun3.cosmiccore.block.Terminal.left(facing))) && current.isAir()) {
-                ghost(pose, ghost, origin, pos, dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState());
+            if (pos.equals(origin.relative(Terminal.left(facing))) && current.isAir()) {
+                ghost(pose, ghost, origin, pos, ModBlocks.ITEM_PORT.get().defaultBlockState());
                 return;
             }
 
-            // in der Kammer stoert jeder Block (auch Gras), sonst nur Bloecke, die man nicht einfach ueberbauen kann
+            // in der Kammer stört jeder Block (auch Gras), sonst nur Blöcke, die man nicht einfach überbauen kann
             if (!current.isAir() && (cell == CorePattern.Cell.AIR || !current.canBeReplaced())) {
                 wrong.add(pos.immutable());
                 return;
             }
             BlockState target = CorePattern.blockFor(cell);
             if (target == null) return;
-            BlockStateModel model = dr4kun3.cosmiccore.client.render.BlockQuads.model(target);
+            BlockStateModel model = BlockQuads.model(target);
             pose.pushPose();
             pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
             pose.scale(0.82F, 0.82F, 0.82F);
             pose.translate(-0.5, -0.5, -0.5);
-            dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), ghost, model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            BlockQuads.render(pose.last(), ghost, model, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         });
 
@@ -141,7 +132,7 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
                     BlockState funnel = ModBlocks.STAR_FUNNEL.get().defaultBlockState();
                     pose.pushPose();
                     pose.translate(top.getX() - origin.getX(), top.getY() - origin.getY(), top.getZ() - origin.getZ());
-                    dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), ghost, dr4kun3.cosmiccore.client.render.BlockQuads.model(funnel), net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                    BlockQuads.render(pose.last(), ghost, BlockQuads.model(funnel), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                     pose.popPose();
                 }
             }
@@ -150,7 +141,7 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         // optionale Kosmos-Laser rund um die Deckenmitte
         if (be.isWithLasers()) {
             BlockState laser = ModBlocks.COSMIC_LASER.get().defaultBlockState();
-            for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+            for (Direction d : Direction.Plane.HORIZONTAL) {
                 BlockPos lp = center.above(pattern.half() + 1).relative(d);
                 BlockState there = level.getBlockState(lp);
                 if (there.is(ModBlocks.COSMIC_LASER.get())) continue;
@@ -160,27 +151,27 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
                 }
                 pose.pushPose();
                 pose.translate(lp.getX() - origin.getX(), lp.getY() - origin.getY(), lp.getZ() - origin.getZ());
-                dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), ghost, dr4kun3.cosmiccore.client.render.BlockQuads.model(laser), net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                BlockQuads.render(pose.last(), ghost, BlockQuads.model(laser), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                 pose.popPose();
             }
         }
 
-        // 2) falsche Bloecke rot markieren
+        // 2) falsche Blöcke rot markieren
         if (!wrong.isEmpty()) {
             VertexConsumer lines = buffers.getBuffer(RenderTypes.lines());
             for (BlockPos pos : wrong) {
                 double ox = pos.getX() - origin.getX(), oy = pos.getY() - origin.getY(), oz = pos.getZ() - origin.getZ();
-                net.minecraft.client.renderer.ShapeRenderer.renderShape(pose, lines,
-                        net.minecraft.world.phys.shapes.Shapes.create(new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01)),
+                ShapeRenderer.renderShape(pose, lines,
+                        Shapes.create(new AABB(ox, oy, oz, ox + 1, oy + 1, oz + 1).inflate(0.01)),
                         0, 0, 0, 0xFFFF3340, 2.0F);
             }
         }
     }
 
-    /** Leitet alles weiter, multipliziert aber den Alphakanal (fuer die Geisterbloecke). */
+    /** Leitet alles weiter, multipliziert aber den Alphakanal (für die Geisterblöcke). */
     private record AlphaVertexConsumer(VertexConsumer delegate, float alpha) implements VertexConsumer {
         /**
-         * Leitet den Eckpunkt unveraendert weiter.
+         * Leitet den Eckpunkt unverändert weiter.
          *
          * @param x Position x
          * @param y Position y
@@ -197,7 +188,7 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
          * Leitet die Farbe weiter, der Alphawert wird mit der Geister-Deckkraft multipliziert.
          *
          * @param red Rot 0..255
-         * @param green Gruen 0..255
+         * @param green Grün 0..255
          * @param blue Blau 0..255
          * @param a Alpha 0..255
          * @return dieser Puffer
@@ -208,12 +199,6 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
             return this;
         }
 
-        /**
-         * Setzt die Farbe aus einem ARGB-Wert (die Deckkraft wird dabei abgeschwaecht).
-         *
-         * @param argb Farbe 0xAARRGGBB
-         * @return dieser Puffer
-         */
         @Override
         public VertexConsumer setColor(int argb) {
             return setColor(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24);
@@ -295,12 +280,12 @@ public class ControllerRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
      * @param target erwarteter Blockzustand
      */
     private static void ghost(PoseStack pose, VertexConsumer vc, BlockPos origin, BlockPos pos, BlockState target) {
-        BlockStateModel model = dr4kun3.cosmiccore.client.render.BlockQuads.model(target);
+        BlockStateModel model = BlockQuads.model(target);
         pose.pushPose();
         pose.translate(pos.getX() - origin.getX() + 0.5, pos.getY() - origin.getY() + 0.5, pos.getZ() - origin.getZ() + 0.5);
         pose.scale(0.82F, 0.82F, 0.82F);
         pose.translate(-0.5, -0.5, -0.5);
-        dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), vc, model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+        BlockQuads.render(pose.last(), vc, model, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
         pose.popPose();
     }
 }

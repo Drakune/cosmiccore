@@ -9,11 +9,12 @@ import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import dr4kun3.cosmiccore.color.CoreColors;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 /**
- * Besondere Effekte des ultimativen Kerns (11x11x11) - zusaetzlich zum normalen Bild:
+ * Besondere Effekte des ultimativen Kerns (11x11x11) - zusätzlich zum normalen Bild:
  * <ul>
  *   <li><b>Spiralgalaxie:</b> drei Arme aus Sternen winden sich in der Scheibenebene um das Loch.</li>
  *   <li><b>Sonnensystem:</b> drei Sterne umkreisen den Kern auf geneigten Bahnen und ziehen Lichtschweife.</li>
@@ -37,19 +38,19 @@ public final class UltimateFx {
      * Lichtschweifen und eine goldene Krone um den Horizont.
      *
      * @param pose Pose-Stapel mit Ursprung in der Kernmitte
-     * @param vc Puffer fuer additives Leuchten
+     * @param vc Puffer für additives Leuchten
      * @param rh Radius des Ereignishorizonts
      * @param inner Innenradius der Akkretionsscheibe
-     * @param outer Aussenradius der Akkretionsscheibe
-     * @param reach Radius der Kammer (aeusserste Bahn)
+     * @param outer Außenradius der Akkretionsscheibe
+     * @param reach Radius der Kammer (äußerste Bahn)
      * @param t Animationszeit in Ticks
-     * @param spin Drehgeschwindigkeit (1 = normal, hoeher im Overdrive)
+     * @param spin Drehgeschwindigkeit (1 = normal, höher im Overdrive)
      * @param energy Helligkeit 0..1 (0 = nichts zeichnen)
      * @param tilt Neigung der Scheibe in Grad
      */
     public static void render(PoseStack pose, VertexConsumer vc, float rh, float inner, float outer, float reach, float t,
                               float spin, float energy, float tilt) {
-        int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;
+        int ch = CoreColors.PARTICLES;
         GOLD = ColorOverride.get(ch, GOLD_DEF);
         CYAN = ColorOverride.light(ch, CYAN_DEF, 0.45F);
         ROSE = ColorOverride.dark(ch, ROSE_DEF, 0.3F);
@@ -66,7 +67,7 @@ public final class UltimateFx {
             float[] prev = null;
             for (int i = 0; i < stars; i++) {
                 float f = i / (float) stars;
-                // ausserhalb der Akkretionsscheibe, bis kurz vor die Kammerwand - eigene Zone, keine Ueberlagerung
+                // außerhalb der Akkretionsscheibe, bis kurz vor die Kammerwand - eigene Zone, keine Überlagerung
                 float r = Mth.lerp(f, Math.max(outer * 1.02F, inner * 1.6F), Math.max(outer * 1.05F, reach * 0.96F));
                 float ang = rot + a * Mth.TWO_PI / arms + (float) Math.log(1.0F + 5.0F * f) * 2.2F;
                 float jitter = 0.08F * hash(a * 101 + i * 7) * r;
@@ -107,7 +108,7 @@ public final class UltimateFx {
         }
 
         // Krone: zwei senkrechte Lichtringe um den Horizont
-        // Krone: ein einzelner senkrechter Ring dicht am Horizont (innerhalb der Scheibe, ueber den anderen Effekten)
+        // Krone: ein einzelner senkrechter Ring dicht am Horizont (innerhalb der Scheibe, über den anderen Effekten)
         ring(pose, vc, rh * 1.3F, 0.01F, t * 0.6F * spin, 90.0F, 0.0F, t, GOLD, 0.6F * energy);
     }
 }

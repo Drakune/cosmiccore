@@ -1,10 +1,11 @@
 package dr4kun3.cosmiccore.block;
 
+import java.util.Locale;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.Nullable;
 
-/** Blickrichtung der Steuerkonsole, zu der ein Port gehoert (NONE = einzelner Port). */
+/** Blickrichtung der Steuerkonsole, zu der ein Port gehört (NONE = einzelner Port). */
 public enum ConsoleSide implements StringRepresentable {
     NONE(null), NORTH(Direction.NORTH), EAST(Direction.EAST), SOUTH(Direction.SOUTH), WEST(Direction.WEST);
 
@@ -14,7 +15,7 @@ public enum ConsoleSide implements StringRepresentable {
     /**
      * Legt eine Konsolenseite an.
      *
-     * @param direction Blickrichtung der Konsole oder {@code null} fuer "keine Konsole"
+     * @param direction Blickrichtung der Konsole oder {@code null} für "keine Konsole"
      */
     ConsoleSide(@Nullable Direction direction) {
         this.direction = direction;
@@ -23,7 +24,7 @@ public enum ConsoleSide implements StringRepresentable {
     /**
      * Richtung, in die die Konsole zeigt.
      *
-     * @return die Richtung oder {@code null}, wenn der Port zu keiner Konsole gehoert
+     * @return die Richtung oder {@code null}, wenn der Port zu keiner Konsole gehört
      */
     @Nullable
     public Direction direction() {
@@ -45,13 +46,8 @@ public enum ConsoleSide implements StringRepresentable {
         };
     }
 
-    /**
-     * Name im Blockzustand.
-     *
-     * @return der Name in Kleinbuchstaben
-     */
     @Override
     public String getSerializedName() {
-        return name().toLowerCase(java.util.Locale.ROOT);
+        return name().toLowerCase(Locale.ROOT);
     }
 }

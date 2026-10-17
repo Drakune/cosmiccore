@@ -1,9 +1,13 @@
 package dr4kun3.cosmiccore.block.entity;
 
+import dr4kun3.cosmiccore.data.NbtBridge;
 import dr4kun3.cosmiccore.menu.ItemPortMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
@@ -14,13 +18,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Item-Port: hat ein eigenes Lager so gross wie eine Truhe, in dem die Asteroiden-Beute landet (Rechtsklick oeffnet es).
- * Rohre und Trichter fuellen ueber ihn Brennstoff, Stabilisatoren und Module in den Controller und ziehen die Beute ab.
+ * Item-Port: hat ein eigenes Lager so groß wie eine Truhe, in dem die Asteroiden-Beute landet (Rechtsklick öffnet es).
+ * Rohre und Trichter füllen über ihn Brennstoff, Stabilisatoren und Module in den Controller und ziehen die Beute ab.
  */
 public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider {
     public static final int STORAGE_SLOTS = 27;
@@ -29,7 +35,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            // die Stationen zeigen jeden Platz mit Item und Anzahl - bei jeder sichtbaren Aenderung neu senden,
+            // die Stationen zeigen jeden Platz mit Item und Anzahl - bei jeder sichtbaren Änderung neu senden,
             // beim gemeinsamen Lager an allen Item-Ports der Struktur
             if (level == null || level.isClientSide()) return;
             ControllerBlockEntity c = controller();
@@ -41,11 +47,11 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         }
     };
     private final IItemHandler itemView = new View();
-    /** Pruefwert des zuletzt an die Clients gesendeten Lagerinhalts. */
+    /** Prüfwert des zuletzt an die Clients gesendeten Lagerinhalts. */
     private int syncedSignature;
-    /** Nur Client: belegte Lagerplaetze (fuer das Hologramm). */
+    /** Nur Client: belegte Lagerplätze (für das Hologramm). */
     private int clientUsed;
-    /** Nur Client: Lagerinhalt laut Server (fuer die Anzeige auf der Station). */
+    /** Nur Client: Lagerinhalt laut Server (für die Anzeige auf der Station). */
     private final ItemStackHandler clientView = new ItemStackHandler(STORAGE_SLOTS);
 
     /**
@@ -58,20 +64,10 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         super(ModBlockEntities.ITEM_PORT.get(), pos, state);
     }
 
-    /**
-     * Sicht fuer Rohre: vorn die Eingaenge des Controllers (nur einfuegen), dahinter das Lager (nur entnehmen).
-     *
-     * @return die Item-Schnittstelle
-     */
     public IItemHandler getItemView() {
         return itemView;
     }
 
-    /**
-     * Das Beutelager (27 Plaetze) - in einer gebildeten Struktur das gemeinsame Lager aller Item-Ports.
-     *
-     * @return das Lager
-     */
     public ItemStackHandler getStorage() {
         return active();
     }
@@ -92,7 +88,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Gibt den eigenen Lagerinhalt an das gemeinsame Lager ab; was dort keinen Platz hat, faellt am Port heraus.
+     * Gibt den eigenen Lagerinhalt an das gemeinsame Lager ab; was dort keinen Platz hat, fällt am Port heraus.
      *
      * @param shared der Port mit dem gemeinsamen Lager
      */
@@ -108,7 +104,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Schickt den Lagerinhalt an die Clients, wenn er sich seit dem letzten Senden sichtbar geaendert hat.
+     * Schickt den Lagerinhalt an die Clients, wenn er sich seit dem letzten Senden sichtbar geändert hat.
      */
     void refreshClients() {
         if (level == null || level.isClientSide()) return;
@@ -132,7 +128,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Zaehlt die belegten Lagerplaetze.
+     * Zählt die belegten Lagerplätze.
      *
      * @return Anzahl 0..27
      */
@@ -143,11 +139,6 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         return n;
     }
 
-    /**
-     * Client: belegte Plaetze laut Server (fuer die Anzeige auf der Station).
-     *
-     * @return Anzahl 0..27
-     */
     public int getClientUsed() {
         return clientUsed;
     }
@@ -164,25 +155,19 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         if (level != null) dropContents(level, pos);
     }
 
-    /**
-     * Client: Inhalt eines Lagerplatzes laut Server.
-     *
-     * @param slot Platz 0..26
-     * @return der Stapel (leer, wenn frei)
-     */
     public ItemStack getClientStack(int slot) {
         return clientView.getStackInSlot(slot);
     }
 
     /**
-     * Lagerinhalt als Liste fuer die Clients (Platz und Stapel).
+     * Lagerinhalt als Liste für die Clients (Platz und Stapel).
      *
      * @param registries Registry-Zugriff
      * @return die Liste
      */
-    private net.minecraft.nbt.ListTag writeView(HolderLookup.Provider registries) {
-        var ops = registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
-        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+    private ListTag writeView(HolderLookup.Provider registries) {
+        var ops = registries.createSerializationContext(NbtOps.INSTANCE);
+        ListTag list = new ListTag();
         for (int i = 0; i < STORAGE_SLOTS; i++) {
             ItemStack st = active().getStackInSlot(i);
             if (st.isEmpty()) continue;
@@ -195,15 +180,15 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Client: uebernimmt den gesendeten Lagerinhalt.
+     * Client: übernimmt den gesendeten Lagerinhalt.
      *
      * @param list die Liste aus {@link #writeView}
      * @param registries Registry-Zugriff
      */
-    private void readView(net.minecraft.nbt.ListTag list, HolderLookup.Provider registries) {
-        var ops = registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
+    private void readView(ListTag list, HolderLookup.Provider registries) {
+        var ops = registries.createSerializationContext(NbtOps.INSTANCE);
         for (int i = 0; i < STORAGE_SLOTS; i++) clientView.setStackInSlot(i, ItemStack.EMPTY);
-        for (net.minecraft.nbt.Tag t : list) {
+        for (Tag t : list) {
             if (!(t instanceof CompoundTag e)) continue;
             int slot = e.getIntOr("Slot", -1);
             if (slot < 0 || slot >= STORAGE_SLOTS || e.get("Stack") == null) continue;
@@ -212,7 +197,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Pruefwert ueber Items und Anzahlen aller Lagerplaetze (um Aenderungen zu erkennen).
+     * Prüfwert über Items und Anzahlen aller Lagerplätze (um Änderungen zu erkennen).
      *
      * @return Hashwert
      */
@@ -227,7 +212,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Laesst den ganzen Lagerinhalt als Items fallen und leert das Lager.
+     * Lässt den ganzen Lagerinhalt als Items fallen und leert das Lager.
      *
      * @param level Welt
      * @param pos Position, an der die Items erscheinen
@@ -242,24 +227,11 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         }
     }
 
-    /**
-     * Fenstertitel des Lagers.
-     *
-     * @return "Item-Port"
-     */
     @Override
     public Component getDisplayName() {
         return Component.translatable("block.cosmiccore.item_port");
     }
 
-    /**
-     * Oeffnet das Lager direkt (ohne Rueckweg zum Controller).
-     *
-     * @param id Fensternummer
-     * @param inv Inventar des Spielers
-     * @param player der Spieler
-     * @return das Menue
-     */
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
@@ -267,7 +239,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Daten fuer den Client: Controller-Position und Anzahl belegter Plaetze.
+     * Daten für den Client: Controller-Position und Anzahl belegter Plätze.
      *
      * @param registries Registry-Zugriff
      * @return die zu sendenden Daten
@@ -286,20 +258,20 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
      * @param tag Ziel der Daten
      */
     @Override
-    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
+    protected void saveAdditional(ValueOutput tag) {
         super.saveAdditional(tag);
         storage.serialize(tag.child("storage"));
     }
 
     /**
-     * Laedt das Lager (und auf dem Client die Anzahl belegter Plaetze).
+     * Lädt das Lager (und auf dem Client die Anzahl belegter Plätze).
      *
      * @param input gespeicherte Daten
      */
     @Override
-    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+    protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
+        CompoundTag tag = NbtBridge.read(input);
         if (tag.contains("storage")) storage.deserialize(input.childOrEmpty("storage"));
         if (tag.contains("used")) clientUsed = tag.getIntOr("used", 0);
         if (tag.contains("view")) readView(tag.getListOrEmpty("view"), input.lookup());
@@ -307,14 +279,14 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Sicht fuer Rohre: zuerst die Eingaenge des Controllers (nur einfuegen), dahinter das Lager (nur entnehmen).
+     * Sicht für Rohre: zuerst die Eingänge des Controllers (nur einfügen), dahinter das Lager (nur entnehmen).
      * Ohne gebildete Struktur bleibt das Lager trotzdem leerbar.
      */
     private final class View implements IItemHandler {
         private static final int INPUTS = ControllerBlockEntity.INVENTORY_SIZE;
 
         /**
-         * Item-Eingaenge des angeschlossenen Controllers.
+         * Item-Eingänge des angeschlossenen Controllers.
          *
          * @return die Schnittstelle oder {@code null} ohne gebildete Struktur
          */
@@ -324,11 +296,6 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
             return c == null ? null : c.getItemView();
         }
 
-        /**
-         * Anzahl Plaetze: Eingaenge des Controllers plus Lager.
-         *
-         * @return Anzahl
-         */
         @Override
         public int getSlots() {
             return INPUTS + STORAGE_SLOTS;
@@ -337,7 +304,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         /**
          * Inhalt eines Platzes.
          *
-         * @param slot Nummer (erst Eingaenge, dann Lager)
+         * @param slot Nummer (erst Eingänge, dann Lager)
          * @return der Stapel
          */
         @Override
@@ -348,12 +315,12 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         }
 
         /**
-         * Einfuegen nur in die Eingaenge des Controllers (Brennstoff, Stabilisator).
+         * Einfügen nur in die Eingänge des Controllers (Brennstoff, Stabilisator).
          *
          * @param slot Nummer
-         * @param stack einzufuegender Stapel
-         * @param simulate nur pruefen
-         * @return was nicht eingefuegt werden konnte
+         * @param stack einzufügender Stapel
+         * @param simulate nur prüfen
+         * @return was nicht eingefügt werden konnte
          */
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
@@ -362,21 +329,13 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
             return t == null ? stack : t.insertItem(slot, stack, simulate);
         }
 
-        /**
-         * Entnehmen nur aus dem Lager.
-         *
-         * @param slot Nummer
-         * @param amount gewuenschte Menge
-         * @param simulate nur pruefen
-         * @return entnommener Stapel
-         */
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
             return slot >= INPUTS ? active().extractItem(slot - INPUTS, amount, simulate) : ItemStack.EMPTY;
         }
 
         /**
-         * Groesste Menge je Platz.
+         * Größte Menge je Platz.
          *
          * @param slot Nummer
          * @return Grenze
@@ -389,10 +348,10 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         }
 
         /**
-         * Darf das Item in diesen Platz (nur Eingaenge, nur passende Items)?
+         * Darf das Item in diesen Platz (nur Eingänge, nur passende Items)?
          *
          * @param slot Nummer
-         * @param stack zu pruefender Stapel
+         * @param stack zu prüfender Stapel
          * @return {@code true}, wenn erlaubt
          */
         @Override

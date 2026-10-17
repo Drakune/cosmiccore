@@ -7,7 +7,7 @@ import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.util.GeckoLibUtil;
 
-/** Animationszustand des Oberkoerpers einer Void-Titan-Entity (je Entity eine Instanz, nur clientseitig). */
+/** Animationszustand des Oberkörpers einer Void-Titan-Entity (je Entity eine Instanz, nur clientseitig). */
 public class VoidTitan implements GeoAnimatable {
     private static final RawAnimation CINEMATIC = RawAnimation.begin().thenPlayAndHold("animation.void_titan.cinematic");
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.void_titan.idle");
@@ -16,21 +16,11 @@ public class VoidTitan implements GeoAnimatable {
     double ticks;
     boolean cinematic;
 
-    /**
-     * Ein Animations-Controller: im Film die Choreografie (einmal, dann halten), sonst die Ruhe-Animation in Schleife.
-     *
-     * @param controllers Sammelstelle der Controller
-     */
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<VoidTitan>("main", 0, state -> state.setAndContinue(cinematic ? CINEMATIC : IDLE)));
     }
 
-    /**
-     * Zwischenspeicher der Animationszustaende dieser Instanz.
-     *
-     * @return der Zwischenspeicher
-     */
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;

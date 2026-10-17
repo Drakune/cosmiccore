@@ -3,7 +3,12 @@ package dr4kun3.cosmiccore.block;
 import dr4kun3.cosmiccore.block.entity.EnergyPortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.ModBlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -26,54 +31,23 @@ public class EnergyPortBlock extends Block implements EntityBlock {
                 .setValue(ModProperties.DOCKED, false));
     }
 
-    /**
-     * Zustaende: Reaktorphase, Konsolenseite und "angedockt" (Kabel daneben).
-     *
-     * @param builder Bauplan der Zustaende
-     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ModProperties.PHASE, ModProperties.CONSOLE, ModProperties.DOCKED);
     }
 
-    /**
-     * Beim Setzen pruefen, ob der Port neben einem Controller Teil der Steuerkonsole wird.
-     *
-     * @param ctx Kontext des Setzens
-     * @return der Startzustand
-     */
     @Override
-    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         return Terminal.portState(defaultBlockState(), ctx.getLevel(), ctx.getClickedPos(), true);
     }
 
-    /**
-     * Passt den Zustand an, wenn sich ein Nachbar aendert: Teil der Steuerkonsole und Ausrichtung zum Controller.
-     *
-     * @param state bisheriger Zustand
-     * @param level Welt
-     * @param ticks geplante Ticks
-     * @param pos Position
-     * @param dir Richtung zum Nachbarn
-     * @param neighborPos Position des Nachbarn
-     * @param neighbor Zustand des Nachbarn
-     * @param random Zufall
-     * @return der neue Zustand
-     */
     @Override
-    protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level, net.minecraft.world.level.ScheduledTickAccess ticks,
-                                     BlockPos pos, net.minecraft.core.Direction dir, BlockPos neighborPos, BlockState neighbor,
-                                     net.minecraft.util.RandomSource random) {
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,
+                                     BlockPos pos, Direction dir, BlockPos neighborPos, BlockState neighbor,
+                                     RandomSource random) {
         return Terminal.portState(state, level, pos, true);
     }
 
-    /**
-     * Der Energie-Port hat einen Blockinhalt, der Strom an Nachbarn abgibt.
-     *
-     * @param pos Position
-     * @param state Blockzustand
-     * @return neuer {@link EnergyPortBlockEntity}
-     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
