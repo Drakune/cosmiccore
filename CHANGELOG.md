@@ -6,6 +6,12 @@ Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), die V
 [Semantic Versioning](https://semver.org/lang/de/): `MAJOR.MINOR.PATCH`. MINOR steht für neue Funktionen, PATCH für Fehlerbehebungen.
 Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 
+## [1.2.3] - 2026-10-18
+
+### Behoben
+- Von unten oder schräg von unten durch die Kammer gesehen verschwand der Sternentrichter ganz oder teilweise hinter
+  dem Kern. Er bleibt jetzt aus jedem Blickwinkel vollständig sichtbar.
+
 ## [1.2.2] - 2026-10-18
 
 ### Hinzugefügt
@@ -30,7 +36,6 @@ Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 ### Behoben
 - Das Haltenetz um den Kern verdeckte das untere Ende des Sternentrichters. Oben im Netz ist jetzt eine Öffnung für
   den Trichter.
-- Von unten durch die Kammer gesehen verschwand der Sternentrichter hinter dem Kern. Er bleibt jetzt sichtbar.
 - Ab Minecraft 1.21.11 lagen die Strahlen vom Kern zu Controller und Ports vor den Bildschirmen statt dahinter.
 - Minecraft 26.x: Sockel unter Konsole und Ports sowie die eingesaugten Blöcke beim Bilden fehlten.
 
