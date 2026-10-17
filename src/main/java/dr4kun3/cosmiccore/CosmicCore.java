@@ -6,6 +6,8 @@ import dr4kun3.cosmiccore.block.entity.ModBlockEntities;
 import dr4kun3.cosmiccore.data.ModDataMaps;
 import dr4kun3.cosmiccore.entity.ModEntities;
 import dr4kun3.cosmiccore.menu.ModMenus;
+import dr4kun3.cosmiccore.network.ModNetwork;
+import dr4kun3.cosmiccore.transfer.LegacyTransfer;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -22,11 +24,11 @@ public class CosmicCore {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     /**
-     * Einstieg der Mod: registriert Bloecke, Items, Blockinhalte, Menues, Entities, Netzwerk, Faehigkeiten, Data Maps
+     * Einstieg der Mod: registriert Blöcke, Items, Blockinhalte, Menüs, Entities, Netzwerk, Fähigkeiten, Data Maps
      * und die Einstellungen.
      *
      * @param modEventBus Ereignisbus der Mod
-     * @param modContainer Container der Mod (fuer die Einstellungen)
+     * @param modContainer Container der Mod (für die Einstellungen)
      */
     public CosmicCore(IEventBus modEventBus, ModContainer modContainer) {
         ModBlocks.BLOCKS.register(modEventBus);
@@ -38,7 +40,7 @@ public class CosmicCore {
 
         modEventBus.addListener(CosmicCore::registerCapabilities);
         modEventBus.addListener(CosmicCore::registerDataMaps);
-        modEventBus.addListener(dr4kun3.cosmiccore.network.ModNetwork::register);
+        modEventBus.addListener(ModNetwork::register);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CoreConfig.SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
@@ -55,19 +57,19 @@ public class CosmicCore {
     }
 
     /**
-     * Stellt Energie (Energie-Port, Controller) und Items (Item-Port, Controller) fuer Kabel und Rohre bereit.
+     * Stellt Energie (Energie-Port, Controller) und Items (Item-Port, Controller) für Kabel und Rohre bereit.
      *
-     * @param event Ereignis zur Registrierung der Faehigkeiten
+     * @param event Ereignis zur Registrierung der Fähigkeiten
      */
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(Capabilities.Energy.BLOCK, ModBlockEntities.ENERGY_PORT.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.energy(be.getEnergyView()));
-        event.registerBlockEntity(Capabilities.Energy.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.energy(be.getEnergyView()));
-        event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.ITEM_PORT.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.items(be.getItemView()));
-        event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> dr4kun3.cosmiccore.transfer.LegacyTransfer.items(be.getItemView()));
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ModBlockEntities.ENERGY_PORT.get(), (be, side) -> LegacyTransfer.energy(be.getEnergyView()));
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> LegacyTransfer.energy(be.getEnergyView()));
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.ITEM_PORT.get(), (be, side) -> LegacyTransfer.items(be.getItemView()));
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> LegacyTransfer.items(be.getItemView()));
     }
 
     /**
-     * Meldet die Data Maps fuer Brennstoffe und Stabilisatoren an.
+     * Meldet die Data Maps für Brennstoffe und Stabilisatoren an.
      *
      * @param event Ereignis zur Registrierung der Data-Map-Typen
      */

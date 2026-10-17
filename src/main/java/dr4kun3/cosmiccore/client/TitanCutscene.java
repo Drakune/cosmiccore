@@ -3,8 +3,10 @@ package dr4kun3.cosmiccore.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dr4kun3.cosmiccore.CosmicCore;
+import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import dr4kun3.cosmiccore.entity.ModEntities;
 import dr4kun3.cosmiccore.entity.VoidTitanEntity;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -12,14 +14,18 @@ import net.minecraft.client.player.ClientInput;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Marker;
+import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -40,13 +46,13 @@ import org.joml.Vector3f;
 /**
  * Kurzfilm beim ersten Ultimate-Modus (ca. 40 s):
  * <ol>
- *   <li>Eroeffnung: Kranfahrt um den laufenden Reaktor.</li>
- *   <li>Der Ruf: ein Lichtimpuls schiesst aus dem Trichter, die Kamera folgt ihm durch die Wolken.</li>
- *   <li>Die Erde bleibt zurueck: der Erdball schrumpft, der Mond zieht vorbei, die Sonne gleisst.</li>
+ *   <li>Eröffnung: Kranfahrt um den laufenden Reaktor.</li>
+ *   <li>Der Ruf: ein Lichtimpuls schießt aus dem Trichter, die Kamera folgt ihm durch die Wolken.</li>
+ *   <li>Die Erde bleibt zurück: der Erdball schrumpft, der Mond zieht vorbei, die Sonne gleißt.</li>
  *   <li>Lichtgeschwindigkeit: Sternenstreifen und ein Leuchten am Ende des Tunnels.</li>
- *   <li>Ein anderes Universum: Gasriese mit Ring, Galaxie, Doppelsonne, Nebel - der Void-Titan erwacht, bruellt
+ *   <li>Ein anderes Universum: Gasriese mit Ring, Galaxie, Doppelsonne, Nebel - der Void-Titan erwacht, brüllt
  *       (Boss-Titel), sammelt die Energie des Kosmos und feuert.</li>
- *   <li>Rueckflug am Strahl, die Erde waechst heran, Sturz durch die Atmosphaere, Einschlag im Trichter.</li>
+ *   <li>Rückflug am Strahl, die Erde wächst heran, Sturz durch die Atmosphäre, Einschlag im Trichter.</li>
  * </ol>
  * Ohne GeckoLib gibt es keine Cutscene. Kamera = clientseitiger Marker, Titan = clientseitige Entity.
  */
@@ -59,7 +65,7 @@ public final class TitanCutscene {
     private static final int CALL = 80, RISE = 120, SPACE = 210, WARP = 300, UNIVERSE = 390, AWAKE = 450, ROAR = 485,
             CHARGE = 515, FIRE = 582, RETURN = 600, HOME = 640, ATMO = 660, IMPACT = 700, AFTER = 706, LENGTH = 800;
     private static final int TITAN_START = UNIVERSE;
-    /** Buehne im anderen Universum, weit ueber der Welt (relativ zur Kernmitte). */
+    /** Bühne im anderen Universum, weit über der Welt (relativ zur Kernmitte). */
     private static final Vector3f STAGE = new Vector3f(0.0F, 2600.0F, 0.0F);
     private static final Vector3f TITAN_POS = new Vector3f(STAGE).add(0.0F, 0.0F, -60.0F);
     private static final Vector3f SUN_DIR = new Vector3f(0.55F, 0.35F, -0.75F).normalize();
@@ -80,7 +86,7 @@ public final class TitanCutscene {
     // ------------------------------------------------------------------ Steuerung
 
     /**
-     * Startet den Film; vom Server beim ersten Ultimate-Modus ausgeloest. Ohne GeckoLib oder zu weit entfernt passiert
+     * Startet den Film; vom Server beim ersten Ultimate-Modus ausgelöst. Ohne GeckoLib oder zu weit entfernt passiert
      * nichts.
      *
      * @param corePos Position der Kernmitte
@@ -93,7 +99,7 @@ public final class TitanCutscene {
         core = corePos.immutable();
         tick = 0;
         skipHeld = 0;
-        camera = EntityType.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+        camera = EntityType.MARKER.create(mc.level, EntitySpawnReason.LOAD);
         if (camera == null) return;
         spawnTitan(mc.level);
         mc.setScreen(null);
@@ -102,11 +108,6 @@ public final class TitanCutscene {
         mc.setCameraEntity(camera);
     }
 
-    /**
-     * Laeuft der Film gerade?
-     *
-     * @return {@code true} waehrend der Zwischensequenz
-     */
     public static boolean isActive() {
         return active;
     }
@@ -130,7 +131,7 @@ public final class TitanCutscene {
     }
 
     /**
-     * Nur fuer den Entwicklungs-Test: an eine Stelle des Drehbuchs springen.
+     * Nur für den Entwicklungs-Test: an eine Stelle des Drehbuchs springen.
      *
      * @param t Ziel-Tick
      */
@@ -139,7 +140,7 @@ public final class TitanCutscene {
     }
 
     /**
-     * Waehrend des Films zeichnet er den Strahl selbst; danach uebernimmt der Kern.
+     * Während des Films zeichnet er den Strahl selbst; danach übernimmt der Kern.
      *
      * @param pos Position eines Kerns
      * @return {@code true}, wenn der Kern seinen Strahl jetzt nicht zeichnen soll
@@ -148,7 +149,7 @@ public final class TitanCutscene {
         return active && pos.equals(core);
     }
 
-    /** Beendet den Film: Kamera zurueck zum Spieler, Titan entfernen, Oberflaeche wieder zeigen. */
+    /** Beendet den Film: Kamera zurück zum Spieler, Titan entfernen, Oberfläche wieder zeigen. */
     private static void stop() {
         Minecraft mc = Minecraft.getInstance();
         active = false;
@@ -159,16 +160,16 @@ public final class TitanCutscene {
     }
 
     /**
-     * Erzeugt den Titanen nur auf dem Client, mit der Vorderseite zur Buehnenmitte.
+     * Erzeugt den Titanen nur auf dem Client, mit der Vorderseite zur Bühnenmitte.
      *
      * @param level Client-Welt
      */
     private static void spawnTitan(ClientLevel level) {
-        titan = ModEntities.VOID_TITAN.get().create(level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+        titan = ModEntities.VOID_TITAN.get().create(level, EntitySpawnReason.LOAD);
         if (titan == null) return;
         titan.setId(-7_700_000); // clientseitige ID
         Vec3 p = world(TITAN_POS);
-        titan.snapTo(p.x, p.y, p.z, 180.0F, 0.0F); // Vorderseite zur Buehnenmitte
+        titan.snapTo(p.x, p.y, p.z, 180.0F, 0.0F); // Vorderseite zur Bühnenmitte
         titan.scriptTime = 0.0F;
         titan.updateParts();
         level.addEntity(titan);
@@ -219,22 +220,22 @@ public final class TitanCutscene {
     }
 
     /**
-     * Hoehe der Trichteroeffnung (mit Sternentrichter hoeher).
+     * Höhe der Trichteröffnung (mit Sternentrichter höher).
      *
-     * @return Hoehe relativ zur Kernmitte
+     * @return Höhe relativ zur Kernmitte
      */
     private static float mouthY() {
         Minecraft mc = Minecraft.getInstance();
         boolean funnel = mc.level != null && mc.level.getBlockEntity(core)
-                instanceof dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity sc && sc.hasFunnel();
-        return funnel ? 6.35F : 5.6F; // ultimativ: halbe Kantenlaenge 5
+                instanceof SingularityCoreBlockEntity sc && sc.hasFunnel();
+        return funnel ? 6.35F : 5.6F; // ultimativ: halbe Kantenlänge 5
     }
 
     /**
      * Weicher Verlauf (langsamer Anfang und Ende).
      *
      * @param x Eingabe 0..1
-     * @return geglaettet 0..1
+     * @return geglättet 0..1
      */
     private static float ease(float x) {
         x = Mth.clamp(x, 0.0F, 1.0F);
@@ -245,7 +246,7 @@ public final class TitanCutscene {
      * Kubisch beschleunigen und abbremsen.
      *
      * @param x Eingabe 0..1
-     * @return geglaettet 0..1
+     * @return geglättet 0..1
      */
     private static float easeInOut(float x) {
         x = Mth.clamp(x, 0.0F, 1.0F);
@@ -279,8 +280,8 @@ public final class TitanCutscene {
      * Liegt die Zeit in einem Abschnitt?
      *
      * @param t aktuelle Zeit
-     * @param a Beginn (einschliesslich)
-     * @param b Ende (ausschliesslich)
+     * @param a Beginn (einschließlich)
+     * @param b Ende (ausschließlich)
      * @return {@code true}, wenn ja
      */
     private static boolean in(float t, int a, int b) {
@@ -290,9 +291,9 @@ public final class TitanCutscene {
     // ------------------------------------------------------------------ Kamera
 
     /**
-     * Setzt Position, Blickrichtung und Neigung der Kamera fuer die aktuelle Szene (Kranfahrt, Aufstieg, All,
+     * Setzt Position, Blickrichtung und Neigung der Kamera für die aktuelle Szene (Kranfahrt, Aufstieg, All,
      * Universum,
-     * Rueckflug, Einschlag).
+     * Rückflug, Einschlag).
      *
      * @param t Zeit im Drehbuch
      */
@@ -300,7 +301,7 @@ public final class TitanCutscene {
         Vector3f pos, look;
         float roll = 0.0F;
         if (t < CALL) {
-            // 1: Eroeffnung - langsame Kranfahrt um den Reaktor
+            // 1: Eröffnung - langsame Kranfahrt um den Reaktor
             float f = easeInOut(span(t, 0, CALL));
             float a = 0.4F + 0.9F * f;
             float d = Mth.lerp(f, 30.0F, 22.0F);
@@ -319,7 +320,7 @@ public final class TitanCutscene {
             look = new Vector3f(pos).add(-2.0F, 40.0F, -3.0F);
             roll = 4.0F * f;
         } else if (t < WARP) {
-            // 4: im All - Blick zurueck auf die schrumpfende Erde
+            // 4: im All - Blick zurück auf die schrumpfende Erde
             float f = easeInOut(span(t, SPACE, WARP));
             pos = new Vector3f(6.0F, 900.0F, 8.0F);
             Vector3f lookDown = new Vector3f(pos).add(0.3F, -40.0F, 18.0F);
@@ -332,17 +333,17 @@ public final class TitanCutscene {
             look = new Vector3f(pos).add(0.0F, 30.0F, -40.0F);
             roll = 8.0F * Mth.sin(t * 0.05F) * span(t, WARP, WARP + 30);
         } else if (t < AWAKE) {
-            // 6: Enthuellung - weite Fahrt auf den schlafenden Titanen
+            // 6: Enthüllung - weite Fahrt auf den schlafenden Titanen
             float f = easeInOut(span(t, UNIVERSE, AWAKE));
             pos = new Vector3f(TITAN_POS).add(Mth.lerp(f, -40.0F, -24.0F), Mth.lerp(f, 12.0F, 4.0F), Mth.lerp(f, 52.0F, 38.0F));
             look = new Vector3f(TITAN_POS).add(0, -4.0F, 0);
         } else if (t < ROAR) {
-            // 7: Erwachen - Untersicht, die Kamera schleicht naeher
+            // 7: Erwachen - Untersicht, die Kamera schleicht näher
             float f = easeInOut(span(t, AWAKE, ROAR));
             pos = new Vector3f(TITAN_POS).add(Mth.lerp(f, 22.0F, 16.0F), Mth.lerp(f, -6.0F, -3.0F), Mth.lerp(f, 40.0F, 30.0F));
             look = head();
         } else if (t < CHARGE) {
-            // 8: Bruellen - Nahaufnahme des Gesichts
+            // 8: Brüllen - Nahaufnahme des Gesichts
             float f = easeInOut(span(t, ROAR, CHARGE));
             pos = new Vector3f(head()).add(Mth.lerp(f, 12.0F, 8.0F), 0.5F, Mth.lerp(f, 24.0F, 19.0F));
             look = head();
@@ -356,24 +357,24 @@ public final class TitanCutscene {
             pos = new Vector3f(orb()).add(2.0F, 1.5F, 36.0F);
             look = orb();
         } else if (t < ATMO) {
-            // 11: am Strahl zurueck - die Erde waechst heran
+            // 11: am Strahl zurück - die Erde wächst heran
             pos = new Vector3f(6.0F, 900.0F, 8.0F);
             look = new Vector3f(pos).add(0.2F, -40.0F, 8.0F);
             roll = 10.0F * Mth.sin(t * 0.07F);
         } else if (t < AFTER) {
-            // 12: Sturz durch die Atmosphaere am Strahl hinab, Einschlag
+            // 12: Sturz durch die Atmosphäre am Strahl hinab, Einschlag
             float f = easeIn(span(t, ATMO, IMPACT));
             pos = new Vector3f(3.0F, 320.0F, 5.0F).lerp(new Vector3f(14.0F, 7.0F, 18.0F), f);
             look = new Vector3f(0, mouthY(), 0);
         } else {
-            // 13: Ausklang - Kran nach oben und zurueck, der Strahl bleibt
+            // 13: Ausklang - Kran nach oben und zurück, der Strahl bleibt
             float f = easeInOut(span(t, AFTER, LENGTH));
             float a = 0.9F + f * 0.7F;
             float d = Mth.lerp(f, 20.0F, 38.0F);
             pos = new Vector3f(Mth.cos(a) * d, Mth.lerp(f, 5.0F, 16.0F), Mth.sin(a) * d);
             look = new Vector3f(0, Mth.lerp(f, 2.0F, 12.0F), 0);
         }
-        // Handkamera-Gefuehl (sehr leicht) und Erschuetterungen
+        // Handkamera-Gefühl (sehr leicht) und Erschütterungen
         float hand = 0.08F;
         pos.add(Mth.sin(t * 0.13F) * hand, Mth.sin(t * 0.11F + 1.3F) * hand, Mth.sin(t * 0.09F + 2.1F) * hand);
         float shake = 0.0F;
@@ -401,7 +402,7 @@ public final class TitanCutscene {
     }
 
     /**
-     * Leichte Kameraneigung (Roll) fuer Dynamik.
+     * Leichte Kameraneigung (Roll) für Dynamik.
      *
      * @param event Berechnung der Kamerawinkel
      */
@@ -428,7 +429,7 @@ public final class TitanCutscene {
     // ------------------------------------------------------------------ Takt: Klang und Partikel
 
     /**
-     * Jeden Tick: Drehbuch weiterzaehlen, Klaenge und Partikel ausloesen, Ueberspringen pruefen und am Ende beenden.
+     * Jeden Tick: Drehbuch weiterzählen, Klänge und Partikel auslösen, Überspringen prüfen und am Ende beenden.
      *
      * @param event Ende eines Client-Ticks
      */
@@ -440,7 +441,7 @@ public final class TitanCutscene {
             stop();
             return;
         }
-        skipHeld = mc.options.keyShift.isDown() ? skipHeld + 1 : 0; // Schleichen halten = ueberspringen
+        skipHeld = mc.options.keyShift.isDown() ? skipHeld + 1 : 0; // Schleichen halten = überspringen
         if (skipHeld > 15 || ++tick >= LENGTH) {
             stop();
             return;
@@ -490,8 +491,8 @@ public final class TitanCutscene {
      * Spielt einen Klang ohne Position ab.
      *
      * @param s der Klang
-     * @param pitch Tonhoehe
-     * @param volume Lautstaerke
+     * @param pitch Tonhöhe
+     * @param volume Lautstärke
      */
     private static void sound(SoundEvent s, float pitch, float volume) {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(s, pitch, volume));
@@ -504,7 +505,7 @@ public final class TitanCutscene {
      */
     private static void impactParticles(ClientLevel level) {
         Vec3 c = world(new Vector3f(0, mouthY(), 0));
-        level.addParticle(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, -1), c.x, c.y, c.z, 0, 0, 0);
+        level.addParticle(ColorParticleOption.create(ParticleTypes.FLASH, -1), c.x, c.y, c.z, 0, 0, 0);
         level.addParticle(ParticleTypes.EXPLOSION_EMITTER, c.x, c.y + 1, c.z, 0, 0, 0);
         level.addParticle(ParticleTypes.SONIC_BOOM, c.x, c.y + 1, c.z, 0, 0, 0);
         for (int i = 0; i < 160; i++) {
@@ -547,7 +548,7 @@ public final class TitanCutscene {
         if (!active) return;
         Minecraft mc = Minecraft.getInstance();
         float t = tick + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        net.minecraft.client.Camera camera = mc.gameRenderer.getMainCamera();
+        Camera camera = mc.gameRenderer.getMainCamera();
         Vec3 cam = camera.getPosition();
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());
@@ -576,7 +577,7 @@ public final class TitanCutscene {
     }
 
     /**
-     * Der Ruf: ein Lichtimpuls schiesst aus dem Trichter senkrecht in den Himmel.
+     * Der Ruf: ein Lichtimpuls schießt aus dem Trichter senkrecht in den Himmel.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param buffers Puffer
@@ -602,14 +603,14 @@ public final class TitanCutscene {
     }
 
     /**
-     * Die Erde aus dem All: schrumpfend (Hinflug) bzw. wachsend (Rueckflug), dazu Mond, Sonne und Sterne.
+     * Die Erde aus dem All: schrumpfend (Hinflug) bzw. wachsend (Rückflug), dazu Mond, Sonne und Sterne.
      *
      * @param cm kamerazentrierte Matrix
      * @param buffers Puffer
      * @param right Kamera-Rechts-Vektor
      * @param up Kamera-Oben-Vektor
      * @param t Zeit im Drehbuch
-     * @param back {@code true} fuer den Rueckflug
+     * @param back {@code true} für den Rückflug
      */
     private static void earthView(Matrix4f cm, MultiBufferSource.BufferSource buffers, Vector3f right, Vector3f up, float t, boolean back) {
         float f = back ? span(t, HOME, ATMO) : span(t, SPACE, WARP + 20);
@@ -639,12 +640,12 @@ public final class TitanCutscene {
     }
 
     /**
-     * Lichtgeschwindigkeits-Tunnel (Hinflug nach vorn, Rueckflug nach unten mit dem Strahl voraus).
+     * Lichtgeschwindigkeits-Tunnel (Hinflug nach vorn, Rückflug nach unten mit dem Strahl voraus).
      *
      * @param cm kamerazentrierte Matrix
      * @param buffers Puffer
      * @param t Zeit im Drehbuch
-     * @param back {@code true} fuer den Rueckflug
+     * @param back {@code true} für den Rückflug
      */
     private static void warpView(Matrix4f cm, MultiBufferSource.BufferSource buffers, float t, boolean back) {
         float local = back ? t - RETURN : t - WARP;
@@ -652,7 +653,7 @@ public final class TitanCutscene {
         float speed = back ? 1.0F - 0.5F * span(local, total - 20, total) : easeIn(span(local, 0, 40));
         float alpha = back ? 1.0F - span(t, HOME, ATMO) : 1.0F;
         Vector3f fwd = back ? new Vector3f(0.0F, -0.98F, 0.2F).normalize() : new Vector3f(0.0F, 0.6F, -0.8F).normalize();
-        if (!back) { // der Tunnel blendet ueber die schwindende Erde ein
+        if (!back) { // der Tunnel blendet über die schwindende Erde ein
             VertexConsumer tint = buffers.getBuffer(CosmicRenderTypes.spaceTint());
             int a = (int) (255 * span(t, WARP, WARP + 30));
             CutsceneScenery.colorSphere(tint, cm, new Vector3f(), 88.0F, 8, 12, 0.0F, (x, y, z) -> (a << 24) | 0x020210);
@@ -664,7 +665,7 @@ public final class TitanCutscene {
         }
         VertexConsumer sg = buffers.getBuffer(CosmicRenderTypes.spaceGlow());
         CutsceneScenery.warp(sg, cm, fwd, local, speed, alpha);
-        if (back) { // der Strahl, auf dem die Kamera zurueckrast
+        if (back) { // der Strahl, auf dem die Kamera zurückrast
             Vector3f a = new Vector3f(fwd).mul(3.0F), b = new Vector3f(fwd).mul(85.0F);
             RenderUtil.segment(sg, cm, a.x, a.y, a.z, b.x, b.y, b.z, 0.9F, CYAN[0], CYAN[1], CYAN[2], 0.35F * alpha, 0.0F);
             RenderUtil.segment(sg, cm, a.x, a.y, a.z, b.x, b.y, b.z, 0.2F, 1, 1, 1, 0.8F * alpha, 0.0F);
@@ -696,7 +697,7 @@ public final class TitanCutscene {
         CutsceneScenery.sun(sg, cm, right, up, sunA, 2.4F, new float[]{1.0F, 0.6F, 0.3F}, 1.0F);
         CutsceneScenery.sun(sg, cm, right, up, sunB, 1.3F, new float[]{0.4F, 0.7F, 1.0F}, 0.9F);
         buffers.endBatch(CosmicRenderTypes.spaceGlow());
-        // Gasriese mit Ring (hintere Ringhaelfte, Planet, vordere Ringhaelfte)
+        // Gasriese mit Ring (hintere Ringhälfte, Planet, vordere Ringhälfte)
         Vector3f giant = new Vector3f(-0.7F, -0.42F, 0.25F).normalize().mul(78.0F);
         Vector3f light = new Vector3f(sunA).sub(giant).normalize();
         VertexConsumer tint = buffers.getBuffer(CosmicRenderTypes.spaceTint());
@@ -709,12 +710,12 @@ public final class TitanCutscene {
         CutsceneScenery.ring(tint, cm, giant, 38.0F, 62.0F, 0.35F, 0.25F, true, new Vector3f());
         buffers.endBatch(CosmicRenderTypes.spaceTint());
         sg = buffers.getBuffer(CosmicRenderTypes.spaceGlow());
-        CutsceneScenery.disc(sg, cm, giant, right, up, 29.0F, 34.0F, new float[]{1.0F, 0.6F, 0.4F}, 0.25F, 0.0F); // Atmosphaerensaum
+        CutsceneScenery.disc(sg, cm, giant, right, up, 29.0F, 34.0F, new float[]{1.0F, 0.6F, 0.4F}, 0.25F, 0.0F); // Atmosphärensaum
         buffers.endBatch(CosmicRenderTypes.spaceGlow());
     }
 
     /**
-     * Im fremden Universum: Aura, Augen, Herzkern, Bruell-Schockwelle, Aufladen und Schuss.
+     * Im fremden Universum: Aura, Augen, Herzkern, Brüll-Schockwelle, Aufladen und Schuss.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param buffers Puffer
@@ -724,7 +725,7 @@ public final class TitanCutscene {
      */
     private static void universeFx(Matrix4f m, MultiBufferSource.BufferSource buffers, Vector3f right, Vector3f up, float t) {
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
-        // Aura: violette Lichtpunkte steigen spiralfoermig um den Titanen auf
+        // Aura: violette Lichtpunkte steigen spiralförmig um den Titanen auf
         for (int k = 0; k < 70; k++) {
             float s = Mth.frac(t * 0.006F + k / 70.0F);
             float a = k * 2.39996F + s * 4.0F;
@@ -744,7 +745,7 @@ public final class TitanCutscene {
         Vector3f coreB = bone("core", new Vector3f(TITAN_POS).add(0, 9, 4));
         float beat = 0.7F + 0.3F * Mth.sin(t * (0.15F + 0.25F * awake));
         RenderUtil.glowSphere(glow, new Matrix4f(m).translate(coreB.x, coreB.y, coreB.z), 0.6F + 1.4F * awake * beat, 8, 12, CYAN, 0.2F + 0.4F * awake);
-        // Bruellen: Schockwellen-Ringe vom Kopf aus
+        // Brüllen: Schockwellen-Ringe vom Kopf aus
         if (in(t, ROAR, ROAR + 40)) {
             for (int k = 0; k < 3; k++) {
                 float ph = span(t, ROAR + k * 7, ROAR + 26 + k * 7);
@@ -754,7 +755,7 @@ public final class TitanCutscene {
                 RenderUtil.flatCircle(glow, hm, 2.0F + 34.0F * ph, 0.2F + 0.4F * (1 - ph), 96, k == 1 ? CYAN : VOID, (1.0F - ph) * 0.8F);
             }
         }
-        // Aufladen: Energie strudelt aus dem All in die Kugel zwischen den Haenden
+        // Aufladen: Energie strudelt aus dem All in die Kugel zwischen den Händen
         Vector3f o = orb();
         float charge = span(t, CHARGE, FIRE);
         if (charge > 0 && t < FIRE + 5) {
@@ -764,7 +765,7 @@ public final class TitanCutscene {
             RenderUtil.glowSphere(glow, om, r * pulse * 0.6F, 12, 16, WHITE, 0.6F);
             RenderUtil.glowSphere(glow, om, r * 1.2F, 12, 16, CYAN, 0.25F);
             RenderUtil.glowSphere(glow, om, r * 1.7F, 10, 14, VOID, 0.08F);
-            for (int k = 0; k < 36; k++) { // Spiralstroeme
+            for (int k = 0; k < 36; k++) { // Spiralströme
                 float s = Mth.frac(t * 0.02F + k / 36.0F);
                 float ang = k * 2.39996F + s * 9.0F;
                 float el = RenderUtil.hash(k * 5) * 0.9F;
@@ -776,7 +777,7 @@ public final class TitanCutscene {
                 float[] c = RenderUtil.lerp(CYAN, k % 3 == 0 ? MAGENTA : WHITE, s);
                 RenderUtil.segment(glow, om, q.x, q.y, q.z, p.x, p.y, p.z, 0.1F + 0.15F * s, c[0], c[1], c[2], 0.0F, 0.9F * s);
             }
-            // Blitze zwischen den Haenden und der Kugel
+            // Blitze zwischen den Händen und der Kugel
             for (String hand : new String[]{"hand_l", "hand_r"}) {
                 Vector3f h = bone(hand, o);
                 lightning(glow, m, h, o, (int) (t * 1.5F) + hand.length() * 31 + hand.charAt(5), charge);
@@ -798,7 +799,7 @@ public final class TitanCutscene {
      * @param m Matrix
      * @param a Start
      * @param b Ende
-     * @param seed Zufallswert fuer den Verlauf
+     * @param seed Zufallswert für den Verlauf
      * @param alpha Helligkeit 0..1
      */
     private static void lightning(VertexConsumer vc, Matrix4f m, Vector3f a, Vector3f b, int seed, float alpha) {
@@ -813,7 +814,7 @@ public final class TitanCutscene {
     }
 
     /**
-     * Zurueck auf der Erde: der Strahl faellt vom Tor am Himmel in den Trichter, Einschlag mit Bodenwelle.
+     * Zurück auf der Erde: der Strahl fällt vom Tor am Himmel in den Trichter, Einschlag mit Bodenwelle.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param buffers Puffer
@@ -836,7 +837,7 @@ public final class TitanCutscene {
             Matrix4f im = new Matrix4f(m).translate(0, mouthY(), 0);
             RenderUtil.glowSphere(glow, im, 1.0F + 3.0F * e, 14, 20, WHITE, 0.45F * (1.0F - f) * (1.0F - f));
             RenderUtil.glowSphere(glow, im, 2.0F + 6.0F * e, 12, 16, CYAN, 0.12F * (1.0F - f));
-            // Bodenwelle auf Hoehe des Bodens unter dem Reaktor
+            // Bodenwelle auf Höhe des Bodens unter dem Reaktor
             Matrix4f gm = new Matrix4f(m).translate(0, -5.4F, 0);
             for (int k = 0; k < 3; k++) {
                 float g = span(t, IMPACT + k * 5, IMPACT + 40 + k * 5);
@@ -850,7 +851,7 @@ public final class TitanCutscene {
     }
 
     /**
-     * Waehrend des Films keine Nebelwand (die Kulissen liegen weit entfernt).
+     * Während des Films keine Nebelwand (die Kulissen liegen weit entfernt).
      *
      * @param event Nebelberechnung
      */
@@ -864,9 +865,9 @@ public final class TitanCutscene {
     // ------------------------------------------------------------------ Bildschirm: Breitbild, Vignette, Titel, Untertitel
 
     /**
-     * Blendet die normale Oberflaeche (Hotbar, Leben ...) aus.
+     * Blendet die normale Oberfläche (Hotbar, Leben ...) aus.
      *
-     * @param event Zeichnen einer Oberflaechenebene
+     * @param event Zeichnen einer Oberflächenebene
      */
     @SubscribeEvent
     public static void onGuiLayer(RenderGuiLayerEvent.Pre event) {
@@ -884,9 +885,9 @@ public final class TitanCutscene {
     }
 
     /**
-     * Film-Oberflaeche: Kinobalken, Vignette, Blenden, Untertitel, Boss-Titel und der Hinweis zum Ueberspringen.
+     * Film-Oberfläche: Kinobalken, Vignette, Blenden, Untertitel, Boss-Titel und der Hinweis zum Überspringen.
      *
-     * @param event nach dem Zeichnen der Oberflaeche
+     * @param event nach dem Zeichnen der Oberfläche
      */
     @SubscribeEvent
     public static void onGui(RenderGuiEvent.Post event) {
@@ -905,7 +906,7 @@ public final class TitanCutscene {
             g.fill(i * bw, 0, (i + 1) * bw, h, a << 24);
             g.fill(w - (i + 1) * bw, 0, w - i * bw, h, a << 24);
         }
-        // Blenden: Ein-/Ausblende, Uebergaenge ins All, in das andere Universum und zurueck
+        // Blenden: Ein-/Ausblende, Übergänge ins All, in das andere Universum und zurück
         fade(g, w, h, 0x000000, 1.0F - span(t, 0, 18));
         fade(g, w, h, 0x000000, span(t, LENGTH - 22, LENGTH));
         fade(g, w, h, 0xFFFFFF, bell(t, SPACE - 6, SPACE, SPACE + 10) * 0.9F);
@@ -936,7 +937,7 @@ public final class TitanCutscene {
      *
      * @param t aktuelle Zeit
      * @param a Beginn
-     * @param b Hoehepunkt
+     * @param b Höhepunkt
      * @param c Ende
      * @return 0..1
      */
@@ -950,7 +951,7 @@ public final class TitanCutscene {
      *
      * @param g Grafik-Kontext
      * @param w Bildschirmbreite
-     * @param h Bildschirmhoehe
+     * @param h Bildschirmhöhe
      * @param rgb Farbe 0xRRGGBB
      * @param a Deckkraft 0..1
      */
@@ -960,13 +961,13 @@ public final class TitanCutscene {
     }
 
     /**
-     * Boss-Vorstellung wie bei grossen Endgegnern: Name gross, Beiname darunter, Zierlinien.
+     * Boss-Vorstellung wie bei großen Endgegnern: Name groß, Beiname darunter, Zierlinien.
      *
      * @param g Grafik-Kontext
      * @param mc der Client
      * @param t Zeit im Drehbuch
      * @param w Bildschirmbreite
-     * @param h Bildschirmhoehe
+     * @param h Bildschirmhöhe
      */
     private static void bossTitle(GuiGraphics g, Minecraft mc, float t, int w, int h) {
         float a = Math.min(span(t, ROAR + 8, ROAR + 22), 1.0F - span(t, CHARGE + 30, CHARGE + 45));
@@ -1001,10 +1002,10 @@ public final class TitanCutscene {
      * @param t Zeit im Drehbuch
      * @param from Beginn
      * @param to Ende
-     * @param key Uebersetzungsschluessel
+     * @param key Übersetzungsschlüssel
      * @param w Bildschirmbreite
-     * @param h Bildschirmhoehe
-     * @param bh Hoehe des unteren Kinobalkens
+     * @param h Bildschirmhöhe
+     * @param bh Höhe des unteren Kinobalkens
      */
     private static void subtitle(GuiGraphics g, Minecraft mc, float t, float from, float to, String key, int w, int h, int bh) {
         if (t < from || t > to) return;
@@ -1021,7 +1022,7 @@ public final class TitanCutscene {
     }
 
     /**
-     * Der Spieler steht still, solange der Film laeuft.
+     * Der Spieler steht still, solange der Film läuft.
      *
      * @param event Aktualisierung der Bewegungseingabe
      */
@@ -1029,14 +1030,14 @@ public final class TitanCutscene {
     public static void onInput(MovementInputUpdateEvent event) {
         if (!active) return;
         ClientInput in = event.getInput();
-        // Bewegungsvektor ist geschuetzt: per Reflexion auf null setzen (Feldname in Mojang-Namen, gilt auch im Spiel)
+        // Bewegungsvektor ist geschützt: per Reflexion auf null setzen (Feldname in Mojang-Namen, gilt auch im Spiel)
         try {
             var f = ClientInput.class.getDeclaredField("moveVector");
             f.setAccessible(true);
-            f.set(in, net.minecraft.world.phys.Vec2.ZERO);
+            f.set(in, Vec2.ZERO);
         } catch (ReflectiveOperationException ignored) {
         }
-        in.keyPresses = net.minecraft.world.entity.player.Input.EMPTY;
+        in.keyPresses = Input.EMPTY;
     }
 
     /**

@@ -9,14 +9,16 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.PageButton;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -24,7 +26,7 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Das kosmische Handbuch als eigene Doppelseite: klickbares Inhaltsverzeichnis, Textseiten, drehende 3D-Ansichten
- * jeder Baugroesse mit Blockliste sowie Brennstoff- und Stabilisator-Tabellen direkt aus den Data Maps.
+ * jeder Baugröße mit Blockliste sowie Brennstoff- und Stabilisator-Tabellen direkt aus den Data Maps.
  */
 public class GuideScreen extends Screen {
     private static final int PW = 146, PH = 192, GAP = 10;
@@ -37,7 +39,7 @@ public class GuideScreen extends Screen {
          * @param g Grafik-Kontext
          * @param x linke Kante der Seite
          * @param y obere Kante der Seite
-         * @param mouseX Mausposition x (fuer Tooltips; -1 = keine)
+         * @param mouseX Mausposition x (für Tooltips; -1 = keine)
          * @param mouseY Mausposition y
          * @param t Animationszeit
          */
@@ -61,7 +63,7 @@ public class GuideScreen extends Screen {
 
     /**
      * Baut die Seiten auf (braucht die Schrift, deshalb erst in init()). Lange Texte werden automatisch auf Folgeseiten
-     * verteilt, damit nichts ueber den Seitenrand laeuft - in jeder Sprache.
+     * verteilt, damit nichts über den Seitenrand läuft - in jeder Sprache.
      */
     private void buildPages() {
         pages.clear();
@@ -82,9 +84,9 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Beginnt ein Kapitel (fuer das Inhaltsverzeichnis) und haengt seine Seiten an.
+     * Beginnt ein Kapitel (für das Inhaltsverzeichnis) und hängt seine Seiten an.
      *
-     * @param key Schluessel des Kapitels
+     * @param key Schlüssel des Kapitels
      * @param content die Seiten (einzeln oder in Gruppen)
      */
     private void chapter(String key, Page... content) {
@@ -93,9 +95,9 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Beginnt ein Kapitel (fuer das Inhaltsverzeichnis) und haengt seine Seiten an.
+     * Beginnt ein Kapitel (für das Inhaltsverzeichnis) und hängt seine Seiten an.
      *
-     * @param key Schluessel des Kapitels
+     * @param key Schlüssel des Kapitels
      * @param content die Seiten (einzeln oder in Gruppen)
      */
     private void chapter(String key, Page[]... content) {
@@ -130,7 +132,7 @@ public class GuideScreen extends Screen {
         return (pages.size() + 1) / 2;
     }
 
-    /** Baut Seiten und Knoepfe (zurueck, weiter, Inhalt) auf. */
+    /** Baut Seiten und Knöpfe (zurück, weiter, Inhalt) auf. */
     @Override
     protected void init() {
         buildPages();
@@ -144,16 +146,16 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Eine Doppelseite weiter oder zurueck (auch fuer den Entwicklungs-Test).
+     * Eine Doppelseite weiter oder zurück (auch für den Entwicklungs-Test).
      *
-     * @param dir +1 vorwaerts, -1 rueckwaerts
+     * @param dir +1 vorwärts, -1 rückwärts
      */
     void turn(int dir) {
         goTo(spread + dir);
     }
 
     /**
-     * Blaettert zu einer Doppelseite - das Blatt dreht sich dabei sichtbar um den Buchruecken.
+     * Blättert zu einer Doppelseite - das Blatt dreht sich dabei sichtbar um den Buchrücken.
      *
      * @param target Nummer der Doppelseite
      */
@@ -169,7 +171,7 @@ public class GuideScreen extends Screen {
         updateButtons();
     }
 
-    /** Knoepfe nur zeigen, wenn das Buch offen ist und es in die Richtung weitergeht. */
+    /** Knöpfe nur zeigen, wenn das Buch offen ist und es in die Richtung weitergeht. */
     private void updateButtons() {
         boolean ready = opening() >= 1.0F && closeStart < 0;
         if (back != null) back.visible = ready && spread > 0;
@@ -182,11 +184,11 @@ public class GuideScreen extends Screen {
     private static final long OPEN_MS = 1100, TURN_MS = 520, CLOSE_MS = 650;
     private long openStart = -1, turnStart = -1, closeStart = -1;
     private int turnFrom;
-    /** Waehrend eine Seite umklappt, wird die 3D-Vorschau auf ihr nicht gezeichnet (die Schere waere sonst falsch). */
+    /** Während eine Seite umklappt, wird die 3D-Vorschau auf ihr nicht gezeichnet (die Schere wäre sonst falsch). */
     private boolean flat;
 
     /**
-     * Fortschritt des Aufklappens (beim Schliessen rueckwaerts).
+     * Fortschritt des Aufklappens (beim Schließen rückwärts).
      *
      * @return 0 (zu) bis 1 (offen)
      */
@@ -198,9 +200,9 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Fortschritt des Umblaetterns.
+     * Fortschritt des Umblätterns.
      *
-     * @return 0..1 (1 = kein Umblaettern aktiv)
+     * @return 0..1 (1 = kein Umblättern aktiv)
      */
     private float turning() {
         if (turnStart < 0) return 1.0F;
@@ -213,14 +215,14 @@ public class GuideScreen extends Screen {
      * Weicher Verlauf (langsamer Anfang und Ende).
      *
      * @param x Eingabe 0..1
-     * @return geglaettet 0..1
+     * @return geglättet 0..1
      */
     private static float smooth(float x) {
         x = Mth.clamp(x, 0.0F, 1.0F);
         return x * x * (3.0F - 2.0F * x);
     }
 
-    /** Knoepfe aktualisieren und nach dem Zuklappen das Fenster schliessen. */
+    /** Knöpfe aktualisieren und nach dem Zuklappen das Fenster schließen. */
     @Override
     public void tick() {
         super.tick();
@@ -228,7 +230,7 @@ public class GuideScreen extends Screen {
         if (closeStart >= 0 && Util.getMillis() - closeStart >= CLOSE_MS && minecraft != null) minecraft.setScreen(null);
     }
 
-    /** Schliessen: das Buch klappt erst zu, dann verschwindet das Fenster. */
+    /** Schließen: das Buch klappt erst zu, dann verschwindet das Fenster. */
     @Override
     public void onClose() {
         if (closeStart < 0 && opening() >= 1.0F) {
@@ -241,7 +243,7 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Zeichnet das Buch: beim Oeffnen heranfliegend und aufklappend, beim Blaettern mit drehendem Blatt, sonst die
+     * Zeichnet das Buch: beim Öffnen heranfliegend und aufklappend, beim Blättern mit drehendem Blatt, sonst die
      * aufgeschlagene Doppelseite.
      *
      * @param g Grafik-Kontext
@@ -273,17 +275,17 @@ public class GuideScreen extends Screen {
                 spineLine(g, spine, y);
             }
         }
-        // Knoepfe erst bei aufgeschlagenem Buch (ueber dem Buch gezeichnet)
-        for (var w : renderables) if (w instanceof net.minecraft.client.gui.components.AbstractWidget aw && aw.visible) aw.render(g, mouseX, mouseY, partialTick);
+        // Knöpfe erst bei aufgeschlagenem Buch (über dem Buch gezeichnet)
+        for (var w : renderables) if (w instanceof AbstractWidget aw && aw.visible) aw.render(g, mouseX, mouseY, partialTick);
     }
 
     /**
-     * Oeffnen: geschlossen aus der Tiefe in die Mitte, dann klappt der Einband um den Buchruecken auf.
+     * Öffnen: geschlossen aus der Tiefe in die Mitte, dann klappt der Einband um den Buchrücken auf.
      *
      * @param g Grafik-Kontext
      * @param x linke Kante der Doppelseite
      * @param y obere Kante
-     * @param spine x des Buchrueckens
+     * @param spine x des Buchrückens
      * @param o Fortschritt 0..1
      * @param mouseX Mausposition x
      * @param mouseY Mausposition y
@@ -293,14 +295,14 @@ public class GuideScreen extends Screen {
         float fly = smooth(o / 0.4F);              // 0..0.4: heranfliegen
         float open = smooth((o - 0.4F) / 0.6F);    // 0.4..1: aufklappen
         float scale = Mth.lerp(fly, 0.35F, 1.0F);
-        // geschlossen liegt das Buch mittig; beim Aufklappen rueckt es zur Doppelseite
+        // geschlossen liegt das Buch mittig; beim Aufklappen rückt es zur Doppelseite
         float shift = Mth.lerp(open, -(PW + GAP) / 2.0F, 0.0F);
         g.pose().pushMatrix();
         float cx = width / 2.0F, cy = height / 2.0F;
         g.pose().translate(cx, cy + (1.0F - fly) * 40.0F);
         g.pose().scale(scale, scale);
         g.pose().translate(-cx + shift, -cy);
-        // rechte Haelfte: Seitenblock mit Seite 2
+        // rechte Hälfte: Seitenblock mit Seite 2
         frame(g, (int) spine, x + PW * 2 + GAP, y);
         page(g, 1, x + PW + GAP, y, -1, -1, t);
         float angle = open * Mth.PI;
@@ -310,7 +312,7 @@ public class GuideScreen extends Screen {
             squeezed(g, spine, c, () -> cover(g, x + PW + GAP, y));
             shade(g, (int) spine, (int) (spine + PW * c), y, 1.0F - c);
         } else {
-            // Einband ist ueber den Ruecken - seine Innenseite wird zur linken Seite (Inhaltsverzeichnis)
+            // Einband ist über den Rücken - seine Innenseite wird zur linken Seite (Inhaltsverzeichnis)
             float k = -c;
             frameLeft(g, spine, k, y);
             flat = true;
@@ -323,13 +325,13 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Blaettern: das Blatt dreht sich um den Buchruecken (vorwaerts von rechts nach links, rueckwaerts umgekehrt);
+     * Blättern: das Blatt dreht sich um den Buchrücken (vorwärts von rechts nach links, rückwärts umgekehrt);
      * darunter liegen schon die Seiten des Ziels.
      *
      * @param g Grafik-Kontext
      * @param x linke Kante der Doppelseite
      * @param y obere Kante
-     * @param spine x des Buchrueckens
+     * @param spine x des Buchrückens
      * @param p Fortschritt 0..1
      * @param mouseX Mausposition x
      * @param mouseY Mausposition y
@@ -368,23 +370,23 @@ public class GuideScreen extends Screen {
         if (sw > 0) {
             int a = (int) (90 * (1.0F - k));
             g.pose().pushMatrix();
-            if (right) g.fillGradient(x1, y, x1 + sw, y + PH, a << 24, 0); // Kante wirft Schatten nach aussen
+            if (right) g.fillGradient(x1, y, x1 + sw, y + PH, a << 24, 0); // Kante wirft Schatten nach außen
             else g.fillGradient(x0 - sw, y, x0, y + PH, 0, a << 24);
             g.pose().popMatrix();
         }
     }
 
     /**
-     * Zeichnet etwas zur Mitte hin gestaucht (das Blatt im Drehen) - in einer Ebene ueber allem, was darunter liegt.
+     * Zeichnet etwas zur Mitte hin gestaucht (das Blatt im Drehen) - in einer Ebene über allem, was darunter liegt.
      *
      * @param g Grafik-Kontext
-     * @param spine x des Buchrueckens
+     * @param spine x des Buchrückens
      * @param factor 1 = flach, 0 = senkrecht
      * @param draw was gezeichnet wird
      */
     private void squeezed(GuiGraphics g, float spine, float factor, Runnable draw) {
         if (factor <= 0.01F) return;
-        g.nextStratum(); // Blatt liegt ueber allem, was darunter auf den Seiten ist (auch Items und 3D-Vorschau)
+        g.nextStratum(); // Blatt liegt über allem, was darunter auf den Seiten ist (auch Items und 3D-Vorschau)
         g.pose().pushMatrix();
         g.pose().translate(spine, 0);
         g.pose().scale(factor, 1.0F);
@@ -400,7 +402,7 @@ public class GuideScreen extends Screen {
      * @param x0 linke Kante
      * @param x1 rechte Kante
      * @param y obere Kante
-     * @param amount Staerke 0..1
+     * @param amount Stärke 0..1
      */
     private void shade(GuiGraphics g, int x0, int x1, int y, float amount) {
         int a = (int) (110 * Mth.clamp(amount, 0, 1));
@@ -425,10 +427,10 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Linker Deckel, der beim Aufklappen mitwaechst.
+     * Linker Deckel, der beim Aufklappen mitwächst.
      *
      * @param g Grafik-Kontext
-     * @param spine x des Buchrueckens
+     * @param spine x des Buchrückens
      * @param k Breite 0..1
      * @param y obere Kante
      */
@@ -440,10 +442,10 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Goldene Linie des Buchrueckens.
+     * Goldene Linie des Buchrückens.
      *
      * @param g Grafik-Kontext
-     * @param spine x des Buchrueckens
+     * @param spine x des Buchrückens
      * @param y obere Kante
      */
     private void spineLine(GuiGraphics g, float spine, int y) {
@@ -500,14 +502,6 @@ public class GuideScreen extends Screen {
         g.drawString(font, String.valueOf(index + 1), px + PW / 2 - 3, y + PH - 12, GOLD, false);
     }
 
-    /**
-     * Abgedunkelter Hintergrund (die Welt bleibt sichtbar).
-     *
-     * @param g Grafik-Kontext
-     * @param mouseX Mausposition x
-     * @param mouseY Mausposition y
-     * @param partialTick Teil-Tick
-     */
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderTransparentBackground(g);
@@ -516,10 +510,10 @@ public class GuideScreen extends Screen {
     // ------------------------------------------------------------------ Seitentypen
 
     /**
-     * Zentrierte Ueberschrift mit Goldlinie.
+     * Zentrierte Überschrift mit Goldlinie.
      *
      * @param g Grafik-Kontext
-     * @param text die Ueberschrift
+     * @param text die Überschrift
      * @param x linke Kante der Seite
      * @param y obere Kante der Seite
      */
@@ -556,10 +550,10 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Text fuer das helle Papier: zu blasse Farben (Gelb, Hellblau, Hellgruen, Weiss) werden dunkler, damit sie lesbar
+     * Text für das helle Papier: zu blasse Farben (Gelb, Hellblau, Hellgrün, Weiß) werden dunkler, damit sie lesbar
      * bleiben.
      *
-     * @param key Uebersetzungsschluessel
+     * @param key Übersetzungsschlüssel
      * @return der angepasste Text
      */
     private static Component onPaper(String key) {
@@ -568,13 +562,13 @@ public class GuideScreen extends Screen {
                 .replace("\u00A7f", "\u00A78"));
     }
 
-    /** Zeilen pro Textseite: unten bleiben Seitenzahl und Blaetterknoepfe frei. */
+    /** Zeilen pro Textseite: unten bleiben Seitenzahl und Blätterknöpfe frei. */
     private static final int LINES_PER_PAGE = 15;
 
     /**
-     * Textseite(n): ist der Text laenger als eine Seite, geht er auf der naechsten Seite weiter.
+     * Textseite(n): ist der Text länger als eine Seite, geht er auf der nächsten Seite weiter.
      *
-     * @param key Uebersetzungsschluessel
+     * @param key Übersetzungsschlüssel
      * @return eine oder mehrere Seiten
      */
     private Page[] text(String key) {
@@ -595,9 +589,9 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Seite einer Baugroesse: drehende 3D-Vorschau (mit der Maus ziehbar), Leistungsstufen und benoetigte Bloecke.
+     * Seite einer Baugröße: drehende 3D-Vorschau (mit der Maus ziehbar), Leistungsstufen und benötigte Blöcke.
      *
-     * @param size Baugroesse
+     * @param size Baugröße
      * @return die Seite
      */
     private Page structure(ReactorSize size) {
@@ -644,7 +638,7 @@ public class GuideScreen extends Screen {
             if (ly > y + PH - 30) break;
             g.renderItem(st, x + 8, ly - 4);
             String line = f.power() + " RF/t · " + f.burnTime() / 20 + " s" + (f.heat() != 1.0F ? " · ♨" + String.format("%.1f", f.heat()) : "");
-            // zu breite Zeilen (z. B. mit Hitze-Angabe) werden passend verkleinert statt ueber den Rand zu laufen
+            // zu breite Zeilen (z. B. mit Hitze-Angabe) werden passend verkleinert statt über den Rand zu laufen
             float room = PW - 28 - 8, w = font.width(line), sc = Math.min(1.0F, room / w);
             g.pose().pushMatrix();
             g.pose().translate(x + 28, ly + (1.0F - sc) * 4.0F);
@@ -659,7 +653,7 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Seite "Stabilisatoren": jedes Stabilisator-Item mit seinem Kuehlwert.
+     * Seite "Stabilisatoren": jedes Stabilisator-Item mit seinem Kühlwert.
      *
      * @param g Grafik-Kontext
      * @param x linke Kante
@@ -701,7 +695,7 @@ public class GuideScreen extends Screen {
      * @return {@code true}, wenn verarbeitet
      */
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         for (int[] h : tocHits) {
@@ -722,7 +716,7 @@ public class GuideScreen extends Screen {
      * @return immer {@code true}
      */
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         dragYaw += (float) dragX * 1.5F;
@@ -731,12 +725,12 @@ public class GuideScreen extends Screen {
     }
 
     /**
-     * Mausrad blaettert.
+     * Mausrad blättert.
      *
      * @param mouseX Mausposition x
      * @param mouseY Mausposition y
      * @param scrollX waagrechtes Scrollen
-     * @param scrollY senkrechtes Scrollen (hoch = zurueck)
+     * @param scrollY senkrechtes Scrollen (hoch = zurück)
      * @return immer {@code true}
      */
     @Override
@@ -745,11 +739,6 @@ public class GuideScreen extends Screen {
         return true;
     }
 
-    /**
-     * Das Spiel laeuft weiter, waehrend man liest.
-     *
-     * @return immer {@code false}
-     */
     @Override
     public boolean isPauseScreen() {
         return false;

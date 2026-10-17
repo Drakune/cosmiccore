@@ -14,6 +14,10 @@ import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
+import dr4kun3.cosmiccore.client.render.DeferredBuffers;
+import dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer;
+import dr4kun3.cosmiccore.color.CoreColors;
+import dr4kun3.cosmiccore.entity.CosmicAsteroid;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -26,71 +30,56 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 /**
  * Das kosmische Loch im Herzen des Reaktors:
  * <ul>
- *   <li><b>Ereignishorizont:</b> tiefschwarz, waechst mit der Leistungsstufe, pulsiert bei Instabilitaet wie ein Herzschlag.</li>
- *   <li><b>Photonenring + Gravitationslinse:</b> gleissender Doppelring mit Lichtstrahlen, die Rueckseite der Scheibe
- *       woelbt sich als Lichtbogen ueber und unter das Loch - immer zum Betrachter gedreht.</li>
- *   <li><b>Akkretionsscheibe:</b> drei Lagen, innen weissgluehend, aussen violett, differentielle Rotation, Doppler-Aufhellung,
- *       Hotspots am Innenrand und eine Dunsthuelle.</li>
- *   <li><b>Materiefaeden:</b> werden von aussen durch das Schild gerissen und spiralen in die Scheibe.</li>
- *   <li><b>Jets</b> entlang der Pole; mit Himmelssicht schiesst der obere Jet ins All.</li>
- *   <li><b>Eindaemmungsfeld</b> des Emitters unter dem Kern ({@link FieldFx}) und <b>Kammer</b> ({@link ReactorShellRenderer}).</li>
+ *   <li><b>Ereignishorizont:</b> tiefschwarz, wächst mit der Leistungsstufe, pulsiert bei Instabilität wie ein Herzschlag.</li>
+ *   <li><b>Photonenring + Gravitationslinse:</b> gleißender Doppelring mit Lichtstrahlen, die Rückseite der Scheibe
+ *       wölbt sich als Lichtbogen über und unter das Loch - immer zum Betrachter gedreht.</li>
+ *   <li><b>Akkretionsscheibe:</b> drei Lagen, innen weißglühend, außen violett, differentielle Rotation, Doppler-Aufhellung,
+ *       Hotspots am Innenrand und eine Dunsthülle.</li>
+ *   <li><b>Materiefäden:</b> werden von außen durch das Schild gerissen und spiralen in die Scheibe.</li>
+ *   <li><b>Jets</b> entlang der Pole; mit Himmelssicht schießt der obere Jet ins All.</li>
+ *   <li><b>Eindämmungsfeld</b> des Emitters unter dem Kern ({@link FieldFx}) und <b>Kammer</b> ({@link ReactorShellRenderer}).</li>
  * </ul>
- * Reihenfolge der Puffer beachten: ein getBuffer() mit anderem RenderType schliesst den vorherigen Puffer ab.
+ * Reihenfolge der Puffer beachten: ein getBuffer() mit anderem RenderType schließt den vorherigen Puffer ab.
  */
-public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<SingularityCoreBlockEntity> {
+public class SingularityCoreRenderer extends LegacyBlockEntityRenderer<SingularityCoreBlockEntity> {
     private static final float[] HOT = {1.0F, 0.95F, 0.85F};
     private static final float[] WARM = {1.0F, 0.55F, 0.2F};
     private static final float[] COOL = {0.62F, 0.28F, 0.95F};
     private static final float[] JET = {0.6F, 0.8F, 1.0F};
 
-    /** Farbwelten je Overdrive-Stufe: {heiss, warm, kuehl, Jet}. */
+    /** Farbwelten je Overdrive-Stufe: {heiß, warm, kühl, Jet}. */
     private static final float[][][] PALETTES = {
             {{1.0F, 0.95F, 0.85F}, {1.0F, 0.55F, 0.2F}, {0.62F, 0.28F, 0.95F}, {0.6F, 0.8F, 1.0F}},
-            {{0.9F, 0.97F, 1.0F}, {0.3F, 0.65F, 1.0F}, {0.25F, 0.2F, 1.0F}, {0.5F, 0.9F, 1.0F}},      // Ueberladung
+            {{0.9F, 0.97F, 1.0F}, {0.3F, 0.65F, 1.0F}, {0.25F, 0.2F, 1.0F}, {0.5F, 0.9F, 1.0F}},      // Überladung
             {{1.0F, 0.95F, 0.7F}, {1.0F, 0.72F, 0.15F}, {1.0F, 0.2F, 0.75F}, {1.0F, 0.85F, 0.4F}},    // Supernova
             {{1.0F, 1.0F, 1.0F}, {0.85F, 0.55F, 1.0F}, {0.5F, 0.25F, 1.0F}, {0.9F, 0.75F, 1.0F}},     // Quasar
-            {{0.95F, 0.85F, 0.55F}, {0.85F, 0.5F, 0.08F}, {0.05F, 0.55F, 0.6F}, {0.85F, 0.7F, 0.3F}}}; // Ultimate-Modus (satt, nicht weiss)
-    // pro Frame gesetzt (Rendering laeuft nur im Render-Thread)
+            {{0.95F, 0.85F, 0.55F}, {0.85F, 0.5F, 0.08F}, {0.05F, 0.55F, 0.6F}, {0.85F, 0.7F, 0.3F}}}; // Ultimate-Modus (satt, nicht weiß)
+    // pro Frame gesetzt (Rendering läuft nur im Render-Thread)
     private static float[] pHot = HOT, pWarm = WARM, pCool = COOL, pJet = JET;
     private static final float[] CRITICAL = {1.0F, 0.1F, 0.1F};
 
     /**
-     * Legt den Renderer des Singularitaetskerns an.
+     * Legt den Renderer des Singularitätskerns an.
      *
      * @param context Kontext der Blockinhalt-Renderer
      */
     public SingularityCoreRenderer(BlockEntityRendererProvider.Context context) {}
 
-    /**
-     * Unbegrenzte Sichtbarkeitsbox (der Jet reicht bis in den Himmel).
-     *
-     * @param be der Kern
-     * @return unendliche Box
-     */
     @Override
     public AABB getRenderBoundingBox(SingularityCoreBlockEntity be) {
         return AABB.INFINITE; // Jet in den Himmel
     }
 
-    /**
-     * Auch zeichnen, wenn der Block selbst nicht im Bild ist.
-     *
-     * @return immer {@code true}
-     */
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
     }
 
-    /**
-     * Sichtweite des Kerns in Bloecken.
-     *
-     * @return 256
-     */
     @Override
     public int getViewDistance() {
         return 256;
@@ -98,9 +87,9 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
 
     /**
      * Zeichnet den ganzen Reaktor: Kammer und Konsole, schwarzes Loch mit Akkretionsscheibe, Photonenring und Linse,
-     * Jets, Eindaemmungsfeld, Laser, Overdrive- und Ultimate-Effekte sowie Zuendung und Materialisieren.
+     * Jets, Eindämmungsfeld, Laser, Overdrive- und Ultimate-Effekte sowie Zündung und Materialisieren.
      *
-     * @param be der (primaere) Kern
+     * @param be der (primäre) Kern
      * @param partialTick Teil-Tick
      * @param pose Pose-Stapel am Block
      * @param buffers Puffer
@@ -110,7 +99,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      */
     @Override
     public void render(SingularityCoreBlockEntity be, float partialTick, PoseStack pose,
-                       MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
+                       MultiBufferSource buffers, int light, int overlay, Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         CorePhase phase = be.getBlockState().getValue(ModProperties.PHASE);
@@ -125,10 +114,10 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         // Farb-Modul: jeder Kanal mit eigener Farbe ersetzt die Farbwelt, sonst gilt die normale (inkl. Overdrive)
         ColorOverride.begin(be.getColors());
         float[][] base = PALETTES[od];
-        pHot = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.DISK_INNER, base[0]);
-        pWarm = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.DISK_MID, base[1]);
-        pCool = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.DISK_OUTER, base[2]);
-        pJet = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.JETS, base[3]);
+        pHot = ColorOverride.get(CoreColors.DISK_INNER, base[0]);
+        pWarm = ColorOverride.get(CoreColors.DISK_MID, base[1]);
+        pCool = ColorOverride.get(CoreColors.DISK_OUTER, base[2]);
+        pJet = ColorOverride.get(CoreColors.JETS, base[3]);
         float[][] pal = {pHot, pWarm, pCool, pJet};
         final float reach = be.getReach();
         final int half = be.getStructureSize() / 2;
@@ -136,10 +125,10 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         final float form = be.getFormProgress(partialTick);
         final float energy = (unstable ? 1.0F : active ? 0.9F : 0.35F)
                 * (unstable ? 0.75F + 0.25F * (0.5F + 0.5F * hash((int) (t * 0.8F))) : 1.0F);
-        // das Loch waechst, waehrend die Bloecke eingesaugt werden
+        // das Loch wächst, während die Blöcke eingesaugt werden
         final float coreFade = Mth.clamp(0.15F + form / 0.6F, 0.0F, 1.0F);
         final float spin = (unstable ? 1.8F : active ? 1.0F : 0.25F) * (1.0F + 0.6F * growth);
-        // Herzschlag bei Instabilitaet: doppelter Puls
+        // Herzschlag bei Instabilität: doppelter Puls
         float beatPhase = Mth.frac(t * (0.02F + heat * 0.03F));
         float beat = heat > 0.5F
                 ? ((float) Math.exp(-beatPhase * 18) + 0.6F * (float) Math.exp(-Math.abs(beatPhase - 0.18F) * 18)) * (heat - 0.5F) * 2
@@ -150,7 +139,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
             float[] jc = lerp(pJet, CRITICAL, heat * heat);
             int color = ARGB.color(255, (int) (jc[0] * 255), (int) (jc[1] * 255), (int) (jc[2] * 255));
             float w = 0.12F + 0.1F * growth + 0.06F * Math.max(0.0F, be.getCosmic() - 1.0F);
-            if (buffers instanceof dr4kun3.cosmiccore.client.render.DeferredBuffers d) {
+            if (buffers instanceof DeferredBuffers d) {
                 BeaconRenderer.submitBeaconBeam(pose, d.collector(), BeaconRenderer.BEAM_LOCATION, 1.0F,
                         Math.floorMod(level.getGameTime(), 40) + partialTick, half + (be.hasFunnel() ? 2 : 1), 1024, color, w, w + 0.15F);
             }
@@ -164,12 +153,12 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
                 form, Math.max(0.4F, energy), heat, active, unstable, growth, od, be, be.getSettle(partialTick));
         ReactorShellRenderer.solid(pose, buffers, shell);
 
-        // Kosmos-Laser: Energiepartikel ueber der Decke
+        // Kosmos-Laser: Energiepartikel über der Decke
         Vec3 laserTarget = null;
         float targetSize = 1.0F, harvest = 0.0F;
         boolean lasers = be.hasLaserArray() && form >= 1.0F;
         if (lasers && be.getLaserTarget() >= 0
-                && level.getEntity(be.getLaserTarget()) instanceof dr4kun3.cosmiccore.entity.CosmicAsteroid target) {
+                && level.getEntity(be.getLaserTarget()) instanceof CosmicAsteroid target) {
             laserTarget = target.getPosition(partialTick).add(0, target.getBbHeight() / 2, 0)
                     .subtract(Vec3.atCenterOf(be.getBlockPos()));
             targetSize = target.getBbWidth() * target.getPullScale();
@@ -177,8 +166,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
             be.lastLaserTarget = laserTarget;
         }
 
-        // Groessen
-        // Kern skaliert mit der Kammergroesse und waechst mit jeder Leistungsstufe
+        // Größen
+        // Kern skaliert mit der Kammergröße und wächst mit jeder Leistungsstufe
         float rh = reach * (active ? 0.2F + 0.22F * growth : 0.14F) * Math.max(0.05F, coreFade);
         rh *= 1.0F + 0.03F * Mth.sin(t * 0.1F) + 0.12F * beat + 0.15F * od;
         float inner = rh * 1.5F;
@@ -202,7 +191,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         double dx = cam.x - center.x, dy = cam.y - center.y, dz = cam.z - center.z;
         float camYaw = (float) Math.atan2(dx, dz);
         float camPitch = (float) Math.atan2(dy, Math.sqrt(dx * dx + dz * dz));
-        // die Overdrive-Effekte addieren viel Licht - je Stufe gedaempft, damit Details erkennbar bleiben
+        // die Overdrive-Effekte addieren viel Licht - je Stufe gedämpft, damit Details erkennbar bleiben
         float odDim = od >= 4 ? 0.55F : od == 3 ? 0.7F : od == 2 ? 0.82F : od == 1 ? 0.92F : 1.0F;
         float e = energy * coreFade * odDim;
 
@@ -211,7 +200,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         pose.mulPose(Axis.XP.rotationDegrees(tilt));
         pose.mulPose(Axis.ZP.rotationDegrees(tilt * 0.4F * Mth.sin(t * 0.013F)));
         Matrix4f dm = pose.last().pose();
-        // drei Lagen fuer Volumen
+        // drei Lagen für Volumen
         int layers = RenderQuality.detail() < 0.5F ? 0 : 1; // bei wenig Detail nur die mittlere Lage
         for (int layer = -layers; layer <= layers; layer++) {
             Matrix4f lm = new Matrix4f(dm).translate(0, layer * 0.035F, 0);
@@ -226,7 +215,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         }
         pose.popPose();
         if (od >= 1) {
-            // Ueberladung: zweite, steil gekippte Scheibe im Gegenlauf
+            // Überladung: zweite, steil gekippte Scheibe im Gegenlauf
             pose.pushPose();
             pose.mulPose(Axis.ZP.rotationDegrees(62.0F));
             pose.mulPose(Axis.YP.rotationDegrees(t * 0.3F));
@@ -239,7 +228,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
             pose.pushPose();
             pose.mulPose(Axis.XP.rotationDegrees(-62.0F));
             pose.mulPose(Axis.YP.rotationDegrees(-t * 0.45F));
-            // aeusseres Band - schneidet die zweite Scheibe nicht im selben Radius
+            // äußeres Band - schneidet die zweite Scheibe nicht im selben Radius
             accretionDisk(pose.last().pose(), glow, Mth.lerp(0.55F, inner, outer), outer * 0.95F, t, spin * 1.6F, e * 0.22F, heat, camYaw, 0, 0);
             pose.popPose();
         }
@@ -254,10 +243,10 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         FieldFx.render(pose.last().pose(), glow, reach + 0.5F, reach, t, e, heat, be.getShield(), unstable, od);
         pose.popPose(); // Zittern
 
-        // Zuenden: Sterne rasen aus dem Himmel in die Mitte (bei jedem Kern)
+        // Zünden: Sterne rasen aus dem Himmel in die Mitte (bei jedem Kern)
         IgnitionFx.render(pose.last().pose(), glow, be.getStructureSize(), be.getIgnitePhase(partialTick), 1.0F);
         if (active && form >= 1.0F) {
-            // Mittelpunkt der Trichteroeffnung bzw. Deckenmitte
+            // Mittelpunkt der Trichteröffnung bzw. Deckenmitte
             float mouth = be.hasFunnel() ? half + 1.35F : half + 0.6F;
             IgnitionFx.ambient(pose.last().pose(), glow, be.getStructureSize(), mouth, t, 0.9F);
         }
@@ -265,34 +254,34 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
         // Energieleitung vom Sternentrichter durch die Decke zum Fokuskristall
         if (be.hasFunnel() && form >= 1.0F) funnelLink(pose.last().pose(), glow, reach + 0.5F, half, t, Math.max(0.4F, energy), heat);
 
-        // 4) Licht der Kammer und des Geschuetzes
+        // 4) Licht der Kammer und des Geschützes
         ReactorShellRenderer.glow(pose.last().pose(), glow, shell);
         if (lasers) {
             EnergyLaserFx.render(pose.last().pose(), glow, half, t, laserTarget, targetSize,
                     laserTarget != null ? be.getLaserCharge(partialTick) : 0.0F, harvest, Math.max(0.6F, energy),
                     be.getDeliverPhase(partialTick), be.getDeliverSource() != null ? be.getDeliverSource() : be.lastLaserTarget, be.hasFunnel() ? half + 1.35F : half + 0.6F, be.getDeliverSize());
         }
-        // Strahl des Void-Titanen: seit dem Erwachen faellt er senkrecht vom Tor am Himmel in den Trichter -
-        // aber nur, solange der Ultimate-Modus aktiv ist (waehrend der Cutscene zeichnet diese ihn selbst)
+        // Strahl des Void-Titanen: seit dem Erwachen fällt er senkrecht vom Tor am Himmel in den Trichter -
+        // aber nur, solange der Ultimate-Modus aktiv ist (während der Cutscene zeichnet diese ihn selbst)
         if (be.isAwakened() && be.getOverdrive() >= 4 && !TitanCutscene.hidesPermanentBeam(be.getBlockPos())) {
-            org.joml.Vector3f camRel = new org.joml.Vector3f((float) dx, (float) dy, (float) dz);
+            Vector3f camRel = new Vector3f((float) dx, (float) dy, (float) dz);
             float mouthY = be.hasFunnel() ? half + 1.35F : half + 0.6F;
             float gs = TitanBeam.skyScale(TitanBeam.SKY_TOP, camRel);
             TitanBeam.skyGate(TitanBeam.skyFrame(pose.last().pose(), camRel, gs), glow, t, 0.8F, camRel);
-            org.joml.Vector3f from = TitanBeam.skyPoint(TitanBeam.SKY_TOP, camRel, gs);
+            Vector3f from = TitanBeam.skyPoint(TitanBeam.SKY_TOP, camRel, gs);
             float bi = active ? 0.8F : 0.45F;
-            TitanBeam.beam(pose.last().pose(), glow, from, new org.joml.Vector3f(0, mouthY, 0), t, 1.0F, bi);
+            TitanBeam.beam(pose.last().pose(), glow, from, new Vector3f(0, mouthY, 0), t, 1.0F, bi);
             TitanBeam.inlet(pose.last().pose(), glow, mouthY, t, bi);
         }
-        // 5) zuletzt: Rueckwand der Kammerkugel als reiner Tiefen-Abschluss - Wolken und Regen dahinter verschwinden,
-        //    alles im Inneren (auch spaeter gezeichnete Effekte) liegt davor und bleibt sichtbar
+        // 5) zuletzt: Rückwand der Kammerkugel als reiner Tiefen-Abschluss - Wolken und Regen dahinter verschwinden,
+        //    alles im Inneren (auch später gezeichnete Effekte) liegt davor und bleibt sichtbar
         if (form > 0.0F) depthBackSphere(buffers.getBuffer(CosmicRenderTypes.depthBack()), pose.last().pose(), half + 0.2F);
         pose.popPose();
         ColorOverride.end();
     }
 
     /**
-     * Kugel nur aus nach innen gewandten Flaechen (mit Culling sieht man von aussen genau die Rueckseite) - fuer den
+     * Kugel nur aus nach innen gewandten Flächen (mit Culling sieht man von außen genau die Rückseite) - für den
      * unsichtbaren Tiefen-Abschluss der Kammer.
      *
      * @param vc Puffer (Tiefen-Abschluss)
@@ -320,8 +309,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      * @param vc Puffer
      * @param m Matrix
      * @param r Radius
-     * @param phi Breite (Bogenmass)
-     * @param lam Laenge (Bogenmass)
+     * @param phi Breite (Bogenmaß)
+     * @param lam Länge (Bogenmaß)
      */
     private static void sphereVertex(VertexConsumer vc, Matrix4f m, float r, float phi, float lam) {
         float c = Mth.cos(phi);
@@ -329,10 +318,10 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     }
 
     /**
-     * Farbe der Scheibe: innen heiss, aussen kuehl, mit der Instabilitaet nach Rot verschoben.
+     * Farbe der Scheibe: innen heiß, außen kühl, mit der Instabilität nach Rot verschoben.
      *
-     * @param f Position von innen (0) nach aussen (1)
-     * @param heat Instabilitaet 0..1
+     * @param f Position von innen (0) nach außen (1)
+     * @param heat Instabilität 0..1
      * @return Farbe RGB 0..1
      */
     private static float[] diskColor(float f, float heat) {
@@ -341,16 +330,16 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     }
 
     /**
-     * Flache Akkretionsscheibe in der XZ-Ebene aus Ringbaendern; innen schneller (differentielle Rotation).
+     * Flache Akkretionsscheibe in der XZ-Ebene aus Ringbändern; innen schneller (differentielle Rotation).
      *
      * @param m Matrix der Scheibenebene
-     * @param vc Puffer fuer additives Leuchten
+     * @param vc Puffer für additives Leuchten
      * @param inner Innenradius
-     * @param outer Aussenradius
+     * @param outer Außenradius
      * @param t Animationszeit
      * @param spin Drehgeschwindigkeit
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      * @param camYaw Gierwinkel der Kamera (Doppler-Aufhellung der zukommenden Seite)
      * @param layer 0 = Hauptscheibe, 1 = zweite Scheibe ab Overdrive 1
      * @param od Overdrive-Stufe (Ringstruktur ab Stufe 2)
@@ -358,14 +347,14 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     private static void accretionDisk(Matrix4f m, VertexConsumer vc, float inner, float outer, float t, float spin,
                                       float energy, float heat, float camYaw, int layer, int od) {
         final int bands = RenderQuality.scale(20, 8), seg = RenderQuality.scale(80, 32);
-        float out = layer == 0 ? outer : inner + (outer - inner) * 0.75F; // aeussere Lagen enden frueher
+        float out = layer == 0 ? outer : inner + (outer - inner) * 0.75F; // äußere Lagen enden früher
         for (int b = 0; b < bands; b++) {
             float f0 = b / (float) bands, f1 = (b + 1) / (float) bands;
             float r0 = Mth.lerp(f0, inner, out), r1 = Mth.lerp(f1, inner, out);
             float[] col = diskColor(f0, heat);
             float base = energy * (float) Math.pow(1.0F - f0, 0.7) * Math.min(1.0F, 0.4F + b * 0.5F) * 1.15F;
             if (od >= 2) {
-                // Supernova: die Scheibe zerfaellt in leuchtende Ringe mit Luecken
+                // Supernova: die Scheibe zerfällt in leuchtende Ringe mit Lücken
                 float ringWave = 0.5F + 0.5F * Mth.sin(f0 * Mth.PI * 7.0F - t * 0.02F);
                 base *= 0.45F + 0.75F * ringWave * ringWave;
             }
@@ -386,13 +375,13 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     }
 
     /**
-     * Leuchtende Dunsthuelle am Rand der Scheibe.
+     * Leuchtende Dunsthülle am Rand der Scheibe.
      *
      * @param m Matrix der Scheibenebene
      * @param vc Puffer
-     * @param outer Aussenradius der Scheibe
+     * @param outer Außenradius der Scheibe
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      */
     private static void haze(Matrix4f m, VertexConsumer vc, float outer, float energy, float heat) {
         float[] col = lerp(pCool, CRITICAL, heat * heat * 0.6F);
@@ -406,7 +395,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     }
 
     /**
-     * Hotspots: gleissende Materieklumpen, die am Innenrand umlaufen.
+     * Hotspots: gleißende Materieklumpen, die am Innenrand umlaufen.
      *
      * @param m Matrix der Scheibenebene
      * @param vc Puffer
@@ -414,7 +403,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      * @param t Animationszeit
      * @param spin Drehgeschwindigkeit
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      */
     private static void hotspots(Matrix4f m, VertexConsumer vc, float inner, float t, float spin, float energy, float heat) {
         float[] c = diskColor(0.02F, heat);
@@ -430,7 +419,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     }
 
     /**
-     * Materiefaeden werden von aussen durch das Feld gerissen und spiralen in die Scheibe (mehr bei Instabilitaet).
+     * Materiefäden werden von außen durch das Feld gerissen und spiralen in die Scheibe (mehr bei Instabilität).
      *
      * @param m Matrix der Scheibenebene
      * @param vc Puffer
@@ -438,7 +427,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      * @param inner Innenradius der Scheibe
      * @param t Animationszeit
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      * @param active nur bei laufendem Reaktor
      */
     private static void tendrils(Matrix4f m, VertexConsumer vc, float reach, float inner, float t, float energy,
@@ -467,8 +456,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     }
 
     /**
-     * Lichtpunkte, die ruhig in einer Spirale in die Singularitaet sinken (ersetzt die flackernden Portal-Partikel).
-     * Jeder Punkt braucht etwa zehn Sekunden fuer seinen Weg, blendet weich ein und aus und zieht eine kurze Spur.
+     * Lichtpunkte, die ruhig in einer Spirale in die Singularität sinken (ersetzt die flackernden Portal-Partikel).
+     * Jeder Punkt braucht etwa zehn Sekunden für seinen Weg, blendet weich ein und aus und zieht eine kurze Spur.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param vc Puffer
@@ -476,8 +465,8 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      * @param rh Radius des Ereignishorizonts
      * @param t Animationszeit
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
-     * @param active Reaktor laeuft
+     * @param heat Instabilität 0..1
+     * @param active Reaktor läuft
      * @param unstable Reaktor ist instabil
      * @param growth Leistungsstufe 0..1
      */
@@ -501,11 +490,11 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      * Ort eines einfallenden Lichtpunkts: der Radius schrumpft beschleunigt, der Umlauf wird nach innen schneller,
      * die Neigung flacht zur Scheibe hin ab.
      *
-     * @param s Fortschritt 0 (aussen) .. 1 (am Horizont)
+     * @param s Fortschritt 0 (außen) .. 1 (am Horizont)
      * @param reach Radius der Kammer
      * @param rh Radius des Ereignishorizonts
-     * @param lon0 Startlaenge (Bogenmass)
-     * @param lat0 Startbreite (Bogenmass)
+     * @param lon0 Startlänge (Bogenmaß)
+     * @param lat0 Startbreite (Bogenmaß)
      * @return Punkt {x, y, z} relativ zur Kernmitte
      */
     private static float[] infallPos(float s, float reach, float rh, float lon0, float lat0) {
@@ -524,7 +513,7 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      * @param inner Innenradius der Scheibe
      * @param t Animationszeit
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      * @param camYaw Gierwinkel der Kamera
      * @param camPitch Neigung der Kamera
      * @param beat Herzschlag 0..1 (pulsierendes Aufleuchten)
@@ -564,16 +553,16 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
     }
 
     /**
-     * Leitung vom Sternentrichter (ueber der Decke) zum oberen Fokuskristall: Pulse stroemen hinab, eine Helix
+     * Leitung vom Sternentrichter (über der Decke) zum oberen Fokuskristall: Pulse strömen hinab, eine Helix
      * windet sich.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param vc Puffer
      * @param focus Abstand Kern -> Kristall
-     * @param half halbe Kantenlaenge der Struktur
+     * @param half halbe Kantenlänge der Struktur
      * @param t Animationszeit
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      */
     private static void funnelLink(Matrix4f m, VertexConsumer vc, float focus, int half, float t, float energy, float heat) {
         float[] col = lerp(lerp(pJet, pCool, 0.4F), CRITICAL, heat * heat * 0.6F);
@@ -606,10 +595,10 @@ public class SingularityCoreRenderer extends dr4kun3.cosmiccore.client.render.Le
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param vc Puffer
      * @param rh Radius des Ereignishorizonts
-     * @param reach Laenge bis zur Kammerwand
+     * @param reach Länge bis zur Kammerwand
      * @param t Animationszeit
      * @param energy Helligkeit 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      * @param growth Leistungsstufe 0..1 (breitere Jets)
      */
     private static void jets(Matrix4f m, VertexConsumer vc, float rh, float reach, float t, float energy, float heat, float growth) {

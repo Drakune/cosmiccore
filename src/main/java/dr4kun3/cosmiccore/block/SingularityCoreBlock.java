@@ -2,7 +2,9 @@ package dr4kun3.cosmiccore.block;
 
 import dr4kun3.cosmiccore.block.entity.ModBlockEntities;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
+import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -12,6 +14,8 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +24,7 @@ public class SingularityCoreBlock extends Block implements EntityBlock {
     private static final VoxelShape SHAPE = Block.box(4, 4, 4, 12, 12, 12);
 
     /**
-     * Erzeugt den Singularitaetskern (ruhend).
+     * Erzeugt den Singularitätskern (ruhend).
      *
      * @param props Blockeigenschaften aus der Registrierung
      */
@@ -29,25 +33,11 @@ public class SingularityCoreBlock extends Block implements EntityBlock {
         registerDefaultState(stateDefinition.any().setValue(ModProperties.PHASE, CorePhase.DORMANT));
     }
 
-    /**
-     * Zustand: Reaktorphase.
-     *
-     * @param builder Bauplan der Zustaende
-     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ModProperties.PHASE);
     }
 
-    /**
-     * Umriss des Kerns (kleiner als ein Block).
-     *
-     * @param state Blockzustand
-     * @param level Welt
-     * @param pos Position
-     * @param ctx Kontext der Abfrage
-     * @return der Umriss
-     */
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return SHAPE;
@@ -61,22 +51,15 @@ public class SingularityCoreBlock extends Block implements EntityBlock {
      * @return die Drops, beim verschmolzenen Kern keine
      */
     @Override
-    protected java.util.List<net.minecraft.world.item.ItemStack> getDrops(BlockState state,
-            net.minecraft.world.level.storage.loot.LootParams.Builder params) {
-        if (params.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY)
+    protected List<ItemStack> getDrops(BlockState state,
+            LootParams.Builder params) {
+        if (params.getOptionalParameter(LootContextParams.BLOCK_ENTITY)
                 instanceof SingularityCoreBlockEntity core && core.isFused()) {
-            return java.util.List.of();
+            return List.of();
         }
         return super.getDrops(state, params);
     }
 
-    /**
-     * Der Kern hat einen Blockinhalt mit dem ganzen sichtbaren Reaktorzustand.
-     *
-     * @param pos Position
-     * @param state Blockzustand
-     * @return neuer {@link SingularityCoreBlockEntity}
-     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -84,7 +67,7 @@ public class SingularityCoreBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Nur auf dem Client: Partikel und Klaenge des Kerns.
+     * Nur auf dem Client: Partikel und Klänge des Kerns.
      *
      * @param level Welt
      * @param state Blockzustand

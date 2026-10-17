@@ -1,14 +1,19 @@
 package dr4kun3.cosmiccore.block;
 
+import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 /**
- * Steuerkonsole aus drei Bloecken: Item-Port links, Controller in der Mitte, Energie-Port rechts (von vorn gesehen).
+ * Steuerkonsole aus drei Blöcken: Item-Port links, Controller in der Mitte, Energie-Port rechts (von vorn gesehen).
  * Liegen die drei so nebeneinander, verschmelzen sie optisch zu einer Konsole; Rohre und Kabel docken weiterhin an
- * den aeusseren Seiten der Ports an.
+ * den äußeren Seiten der Ports an.
  */
 public final class Terminal {
     /** Nur statische Hilfsfunktionen - keine Instanzen. */
@@ -34,25 +39,17 @@ public final class Terminal {
         return facing.getClockWise();
     }
 
-    /**
-     * Bildet der Controller mit beiden Ports eine Steuerkonsole (Energie-Port rechts, Item-Port links)?
-     *
-     * @param level Welt
-     * @param controller Position des Controllers
-     * @param facing Blickrichtung des Controllers
-     * @return {@code true}, wenn beide Ports an ihrem Platz sind
-     */
     public static boolean isTerminal(BlockGetter level, BlockPos controller, Direction facing) {
         return level.getBlockState(controller.relative(right(facing))).is(ModBlocks.ENERGY_PORT.get())
                 && level.getBlockState(controller.relative(left(facing))).is(ModBlocks.ITEM_PORT.get());
     }
 
     /**
-     * Aussenseite eines Konsolen-Ports (vom Controller weg) - hier docken Kabel und Rohre an.
+     * Außenseite eines Konsolen-Ports (vom Controller weg) - hier docken Kabel und Rohre an.
      *
      * @param console Konsolenseite des Ports
-     * @param energy {@code true} fuer den Energie-Port
-     * @return die Richtung nach aussen (ohne Konsole: oben)
+     * @param energy {@code true} für den Energie-Port
+     * @return die Richtung nach außen (ohne Konsole: oben)
      */
     public static Direction outer(ConsoleSide console, boolean energy) {
         Direction facing = console.direction();
@@ -61,26 +58,26 @@ public final class Terminal {
     }
 
     /**
-     * Ist an der Aussenseite etwas angedockt: ein Block mit passender Schnittstelle oder ein Block einer anderen Mod?
+     * Ist an der Außenseite etwas angedockt: ein Block mit passender Schnittstelle oder ein Block einer anderen Mod?
      *
      * @param level Welt
      * @param port Position des Ports
      * @param console Konsolenseite des Ports
-     * @param energy {@code true} fuer den Energie-Port
+     * @param energy {@code true} für den Energie-Port
      * @return {@code true}, wenn etwas angeschlossen ist
      */
-    public static boolean docked(net.minecraft.world.level.LevelReader level, BlockPos port, ConsoleSide console, boolean energy) {
+    public static boolean docked(LevelReader level, BlockPos port, ConsoleSide console, boolean energy) {
         if (console == ConsoleSide.NONE) return false;
         Direction out = outer(console, energy);
         BlockPos n = port.relative(out);
         BlockState s = level.getBlockState(n);
         if (s.isAir()) return false;
-        String ns = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getNamespace();
-        if (ns.equals(dr4kun3.cosmiccore.CosmicCore.MODID)) return false;
+        String ns = BuiltInRegistries.BLOCK.getKey(s.getBlock()).getNamespace();
+        if (ns.equals(CosmicCore.MODID)) return false;
         if (!ns.equals("minecraft")) return true;
-        if (level instanceof net.minecraft.world.level.Level l) {
-            return energy ? l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Energy.BLOCK, n, out.getOpposite()) != null
-                    : l.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, n, out.getOpposite()) != null;
+        if (level instanceof Level l) {
+            return energy ? l.getCapability(Capabilities.Energy.BLOCK, n, out.getOpposite()) != null
+                    : l.getCapability(Capabilities.Item.BLOCK, n, out.getOpposite()) != null;
         }
         return false;
     }
@@ -91,20 +88,20 @@ public final class Terminal {
      * @param state bisheriger Zustand
      * @param level Welt
      * @param pos Position des Ports
-     * @param energy {@code true} fuer den Energie-Port
+     * @param energy {@code true} für den Energie-Port
      * @return der aktualisierte Zustand
      */
-    public static BlockState portState(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos, boolean energy) {
+    public static BlockState portState(BlockState state, LevelReader level, BlockPos pos, boolean energy) {
         ConsoleSide console = consoleFor(level, pos, energy);
         return state.setValue(ModProperties.CONSOLE, console).setValue(ModProperties.DOCKED, docked(level, pos, console, energy));
     }
 
     /**
-     * Zu welcher Konsole gehoert dieser Port (Blickrichtung des Controllers) - oder zu keiner?
+     * Zu welcher Konsole gehört dieser Port (Blickrichtung des Controllers) - oder zu keiner?
      *
      * @param level Welt
      * @param port Position des Ports
-     * @param energy {@code true} fuer den Energie-Port
+     * @param energy {@code true} für den Energie-Port
      * @return die Konsolenseite oder {@link ConsoleSide#NONE}
      */
     public static ConsoleSide consoleFor(BlockGetter level, BlockPos port, boolean energy) {

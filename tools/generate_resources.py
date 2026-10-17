@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Erzeugt alle Texturen (inkl. Animationen), Modelle, Blockstates, Sprachdateien und das Mod-Logo fuer Cosmic Core.
+Erzeugt alle Texturen (inkl. Animationen), Modelle, Blockstates, Sprachdateien und das Mod-Logo für Cosmic Core.
 Rezepte, Loot-Tables, Tags, Data Maps kommen aus der NeoForge-Datengenerierung (./gradlew runData). Braucht nur Pillow:  pip install pillow
 Aufruf (im Projektordner):  python3 tools/generate_resources.py
 Alles hier ist absichtlich in einer Datei, damit du Farben/Texte/Zahlen leicht anpassen kannst.
@@ -77,7 +77,7 @@ def glow_color(phase, k, n, f, nf, rnd):
         mix = 0.5 + 0.5 * math.sin(2 * math.pi * (ph + k / max(n, 1)))
         col = lerp((130, 80, 255), (70, 235, 255), mix)
         return lerp((38, 30, 90), col, 0.25 + 0.75 * pulse)
-    # unstable: rotes Flackern + vereinzelte weisse Funken
+    # unstable: rotes Flackern + vereinzelte weiße Funken
     r = rnd.random()
     if r < 0.07:
         return (255, 225, 230)
@@ -345,7 +345,7 @@ def draw_star_dust(f, nf):
 
 
 def draw_funnel_side(f=0, nf=1):
-    """Seite des Sternentrichters: Energiekanaele, in denen Licht nach oben pulst, und ein gluehender Rand."""
+    """Seite des Sternentrichters: Energiekanäle, in denen Licht nach oben pulst, und ein glühender Rand."""
     img = plate(21, base=(18, 12, 34), noise=4)
     px = img.load()
     for x in range(16):  # Stufenkanten passend zum Modell
@@ -355,14 +355,14 @@ def draw_funnel_side(f=0, nf=1):
         path = [(x, y) for y in range(14, 0, -1) if y not in (3, 4, 8, 9)]
         glow_path(px, path, 'active', f, nf, 21 + k)
     ph = f / nf
-    for x in range(1, 15):  # oberer Rand: Lichtwelle laeuft rundum
+    for x in range(1, 15):  # oberer Rand: Lichtwelle läuft rundum
         i = 0.5 + 0.5 * math.sin(2 * math.pi * (ph - x / 15.0))
         put(px, x, 1, lerp((60, 120, 220), (200, 240, 255), i))
     return img
 
 
 def draw_funnel_top(f=0, nf=1):
-    """Oberseite des Sternentrichters: drehender Spiralwirbel um eine dunkle Oeffnung mit pulsierendem Ring."""
+    """Oberseite des Sternentrichters: drehender Spiralwirbel um eine dunkle Öffnung mit pulsierendem Ring."""
     img = Image.new('RGBA', (16, 16))
     px = img.load()
     ph = f / nf
@@ -438,8 +438,8 @@ def draw_port_socket():
 
 
 def draw_port_plug(energy, phase):
-    """Flacher Stecker fuer das Flachbandkabel: Metallrahmen mit Schrauben, Kontaktleiste mit zwei Reihen Stiften,
-    Leuchtkanten in der Farbe des Ports (gebildet gedimmt, instabil rot verfaerbt)."""
+    """Flacher Stecker für das Flachbandkabel: Metallrahmen mit Schrauben, Kontaktleiste mit zwei Reihen Stiften,
+    Leuchtkanten in der Farbe des Ports (gebildet gedimmt, instabil rot verfärbt)."""
     accent = (110, 210, 255) if energy else (255, 170, 70)
     if phase == 'unstable':
         accent = lerp(accent, (255, 80, 90), 0.55)
@@ -576,7 +576,7 @@ def draw_neutron_fragment(f, nf):
 
 
 def draw_quasar_essence(f, nf):
-    """Quasar-Essenz: gleissende Kugel mit zwei Jets und rotierender Scheibe."""
+    """Quasar-Essenz: gleißende Kugel mit zwei Jets und rotierender Scheibe."""
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     px = img.load()
     ph = f / nf
@@ -617,10 +617,10 @@ def draw_module(f, nf, accent, symbol):
 EFF_SYMBOL = [(6, 5), (7, 5), (8, 5), (9, 5), (6, 6), (6, 7), (7, 7), (8, 7), (6, 8), (6, 9), (6, 10), (7, 10), (8, 10), (9, 10)]
 STAB_SYMBOL = [(7, 4), (8, 4), (6, 5), (9, 5), (5, 6), (10, 6), (5, 7), (10, 7), (5, 8), (10, 8), (6, 9), (9, 9), (7, 10), (8, 10),
                (7, 7), (8, 7)]
-# durchgestrichener Asteroid (Ring mit Schraegstrich)
+# durchgestrichener Asteroid (Ring mit Schrägstrich)
 ANTI_SYMBOL = [(7, 4), (8, 4), (5, 5), (6, 5), (9, 5), (10, 5), (4, 6), (11, 6), (4, 7), (11, 7), (4, 8), (11, 8), (4, 9), (11, 9),
                (5, 10), (6, 10), (9, 10), (10, 10), (7, 11), (8, 11), (10, 6), (9, 7), (8, 8), (7, 8), (6, 9)]
-# Farbrad (Ring) fuer das Farb-Modul
+# Farbrad (Ring) für das Farb-Modul
 COLOR_SYMBOL = [(7, 4), (8, 4), (5, 5), (6, 5), (9, 5), (10, 5), (4, 6), (11, 6), (4, 7), (11, 7), (4, 8), (11, 8), (4, 9), (11, 9),
                 (5, 10), (6, 10), (9, 10), (10, 10), (7, 11), (8, 11), (7, 7), (8, 7), (7, 8), (8, 8)]
 
@@ -632,7 +632,7 @@ def hue_rgb(h):
 
 
 def draw_color_module(f, nf):
-    """Farb-Modul: Platine wie die anderen Module, das Farbrad durchlaeuft den Farbkreis."""
+    """Farb-Modul: Platine wie die anderen Module, das Farbrad durchläuft den Farbkreis."""
     img = draw_module(f, nf, hue_rgb(f / nf), COLOR_SYMBOL)
     px = img.load()
     for (x, y) in COLOR_SYMBOL:  # jedes Ringsegment in seinem eigenen Farbton
@@ -647,7 +647,7 @@ def draw_guide_book():
     for y in range(2, 15):
         for x in range(3, 14):
             px[x, y] = lerp((60, 30, 120), (25, 12, 55), (x + y) / 26) + (255,)
-    for y in range(2, 15):  # Buchruecken
+    for y in range(2, 15):  # Buchrücken
         put(px, 3, y, (110, 70, 200)); put(px, 4, y, (40, 20, 80))
     for x in range(5, 14):  # Seiten
         put(px, x, 14, (225, 215, 240))
@@ -674,11 +674,11 @@ def terminal_tile(part, phase, f, nf):
     for x in range(16):  # durchgehende Leisten oben und unten
         put(px, x, 0, (70, 55, 105)); put(px, x, 1, (40, 31, 64)); put(px, x, 2, (60, 48, 96))
         put(px, x, 13, (60, 48, 96)); put(px, x, 14, (16, 11, 28)); put(px, x, 15, (6, 4, 12))
-    for y in range(3, 13):  # Bildschirmflaeche ueber alle drei Bloecke
+    for y in range(3, 13):  # Bildschirmfläche über alle drei Blöcke
         for x in range(16):
             put(px, x, y, (9, 5, 18))
     edge = 0 if part == 0 else 15 if part == 2 else None
-    if edge is not None:  # nur die Aussenkanten der Konsole bekommen einen Rahmen
+    if edge is not None:  # nur die Außenkanten der Konsole bekommen einen Rahmen
         for y in range(16):
             put(px, edge, y, (70, 55, 105) if edge == 0 else (6, 4, 12))
             put(px, 1 if edge == 0 else 14, y, (60, 48, 96) if 2 <= y <= 13 else (40, 31, 64))
@@ -734,7 +734,7 @@ def draw_terminal_right(phase, f, nf):
 
 
 def draw_terminal_trim(phase, f, nf):
-    """Zierleiste fuer Pult und Blende: dunkles Metall mit durchgehender Leuchtlinie in der Mitte (Zeile 7)."""
+    """Zierleiste für Pult und Blende: dunkles Metall mit durchgehender Leuchtlinie in der Mitte (Zeile 7)."""
     img = Image.new('RGBA', (16, 16))
     px = img.load()
     for y in range(16):
@@ -748,7 +748,7 @@ def draw_terminal_trim(phase, f, nf):
 
 # ----------------------------------------------------------------- Kosmisches Handbuch (3D-Buch, eine Atlas-Textur 128x64)
 BOOK_ATLAS = {
-    # Bereich: (x, y, Breite, Hoehe) - muss zu client/GuideBookRenderer.java passen
+    # Bereich: (x, y, Breite, Höhe) - muss zu client/GuideBookRenderer.java passen
     'cover': (0, 0, 30, 40), 'page': (30, 0, 30, 40), 'fore': (60, 0, 6, 40), 'spine': (66, 0, 10, 40),
     'inside': (76, 0, 30, 40), 'edge': (0, 40, 30, 6), 'violet': (30, 40, 4, 4), 'gold': (34, 40, 4, 4),
 }
@@ -848,7 +848,7 @@ def draw_cosmic_book():
     def edge(x, y, w, h):
         return (226, 204, 150, 255) if y % 2 == 0 else (190, 160, 104, 255)
     fill('edge', edge)
-    # Ruecken: Leder mit vier Goldbuenden
+    # Rücken: Leder mit vier Goldbünden
     def spine(x, y, w, h):
         c = leather(x, y, w, h)
         if y in (5, 6, 15, 16, 24, 25, 34, 35):
@@ -947,7 +947,7 @@ def preview(sheets):
 
 
 # ----------------------------------------------------------------- Modelle / Blockstates
-# Ports bleiben sichtbar (Andockpunkte fuer Rohre/Kabel), der Rest geht in der runden Kammer auf
+# Ports bleiben sichtbar (Andockpunkte für Rohre/Kabel), der Rest geht in der runden Kammer auf
 COSMIC = ['resonance_coil', 'focus_crystal', 'rune_frame', 'void_casing']
 SIMPLE = ['void_casing', 'rune_frame', 'resonance_coil', 'focus_crystal', 'energy_port', 'item_port']
 
@@ -958,7 +958,7 @@ def models():
             wjson(f'{ASSETS}/models/block/{b}_{p}.json',
                   {'parent': 'minecraft:block/cube_all', 'textures': {'all': f'{MOD}:block/{b}_{p}'}})
         if b in COSMIC:
-            # gebildete Struktur: Modell ausblenden, ResonatorRenderer zeichnet den Sternenfeld-Koerper
+            # gebildete Struktur: Modell ausblenden, ResonatorRenderer zeichnet den Sternenfeld-Körper
             wjson(f'{ASSETS}/models/block/{b}_hidden.json', {'textures': {'particle': f'{MOD}:block/{b}_formed'}})
             variants = {f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'} for p in PHASES}
         else:
@@ -966,7 +966,7 @@ def models():
         wjson(f'{ASSETS}/blockstates/{b}.json', {'variants': variants})
         wjson(f'{ASSETS}/models/item/{b}.json', {'parent': f'{MOD}:block/{b}_formed'})
 
-    # Ports: flacher Stecker am Ende des Flachbandkabels (duenn entlang Z, Vorderseite nach Sueden)
+    # Ports: flacher Stecker am Ende des Flachbandkabels (dünn entlang Z, Vorderseite nach Süden)
     def plug(tex):
         def face(uv):
             return {'texture': '#plug', 'uv': uv}
@@ -984,7 +984,7 @@ def models():
             f'phase={p}': {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'} for p in PHASES}})
 
     # Steuerkonsole: Controller + Item-Port links + Energie-Port rechts (Modelle mit Front nach Norden).
-    # Durchgehende Bildschirmfront, unten ein Pult, oben eine Blende; aussen an den Ports die Anschlussbuchse.
+    # Durchgehende Bildschirmfront, unten ein Pult, oben eine Blende; außen an den Ports die Anschlussbuchse.
     def terminal(front, p, socket_side=None):
         casing = f'{MOD}:block/void_casing_{p}'
         trim = f'{MOD}:block/terminal_trim_{p}'
@@ -1012,10 +1012,10 @@ def models():
                              strip(14, 16, 2)]}  # Blende
     for p in PHASES:
         wjson(f'{ASSETS}/models/block/controller_terminal_{p}.json', terminal('terminal_center', p))
-        # Energie-Port rechts vom Controller (von vorn) = im Modell westlich, Item-Port links = oestlich
+        # Energie-Port rechts vom Controller (von vorn) = im Modell westlich, Item-Port links = östlich
         wjson(f'{ASSETS}/models/block/energy_port_terminal_{p}.json', terminal('terminal_right', p, 'west'))
         wjson(f'{ASSETS}/models/block/item_port_terminal_{p}.json', terminal('terminal_left', p, 'east'))
-        # ohne angedocktes Rohr: Aussenseite schlicht (Gehaeuse), die Buchse erscheint erst beim Andocken
+        # ohne angedocktes Rohr: Außenseite schlicht (Gehäuse), die Buchse erscheint erst beim Andocken
         wjson(f'{ASSETS}/models/block/energy_port_terminal_plain_{p}.json', terminal('terminal_right', p))
         wjson(f'{ASSETS}/models/block/item_port_terminal_plain_{p}.json', terminal('terminal_left', p))
     sides = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
@@ -1025,7 +1025,7 @@ def models():
             for dock in ('false', 'true'):
                 variants[f'console=none,docked={dock},phase={p}'] = {'model': f'{MOD}:block/{b}_{p if p == "dormant" else "hidden"}'}
                 for side, y in sides.items():
-                    # gebildet: Station bzw. Konsolenfluegel werden gerendert
+                    # gebildet: Station bzw. Konsolenflügel werden gerendert
                     name = f'{b}_terminal_dormant' if dock == 'true' else f'{b}_terminal_plain_dormant'
                     e = {'model': f'{MOD}:block/{name}' if p == 'dormant' else f'{MOD}:block/{b}_hidden'}
                     if y and p == 'dormant':
@@ -1043,7 +1043,7 @@ def models():
           {'variants': {f'phase={p}': {'model': f'{MOD}:block/focus_glass_{p if p == "dormant" else "hidden"}'} for p in PHASES}})
     wjson(f'{ASSETS}/models/item/focus_glass.json', {'parent': f'{MOD}:block/focus_glass_formed'})
 
-    # Controller: Front (north) mit Auge, Rest wie Gehaeuse
+    # Controller: Front (north) mit Auge, Rest wie Gehäuse
     rot = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
     for p in PHASES:
         side = f'{MOD}:block/void_casing_{p}'
@@ -1065,7 +1065,7 @@ def models():
     wjson(f'{ASSETS}/blockstates/controller.json', {'variants': variants})
     wjson(f'{ASSETS}/models/item/controller.json', {'parent': f'{MOD}:block/controller_formed'})
 
-    # Singularitaetskern: inaktiv = kleiner dunkler Wuerfel, sonst unsichtbar (der Renderer uebernimmt)
+    # Singularitätskern: inaktiv = kleiner dunkler Würfel, sonst unsichtbar (der Renderer übernimmt)
     faces = {d: {'texture': '#core'} for d in ('down', 'up', 'north', 'south', 'west', 'east')}
     wjson(f'{ASSETS}/models/block/singularity_core_dormant.json',
           {'parent': 'minecraft:block/block',
@@ -1728,7 +1728,7 @@ def draw_logo(size=256):
             # Gravitationslinse: Lichtring
             ring = math.exp(-((r - 0.33) / 0.035) ** 2)
             col = [col[0] + 255 * ring * 0.9, col[1] + 200 * ring, col[2] + 255 * ring]
-            # Ereignishorizont (vor der hinteren Scheibenhaelfte)
+            # Ereignishorizont (vor der hinteren Scheibenhälfte)
             if r < 0.3 and not (dy > 0 and 0.34 < er):
                 col = [0, 0, 0]
             # Rand: goldener Reif
@@ -1751,7 +1751,7 @@ def draw_logo(size=256):
 # ----------------------------------------------------------------- Item-Definitionen (ab Minecraft 1.21.4)
 def client_items():
     """Jedes Item braucht eine Definition unter assets/cosmiccore/items. Animierte 3D-Items (vormals
-    builtin/entity) laufen ueber den Spezial-Renderer cosmiccore:cosmic_item; ihr Modell liefert nur noch
+    builtin/entity) laufen über den Spezial-Renderer cosmiccore:cosmic_item; ihr Modell liefert nur noch
     Ansichten und Partikel."""
     folder = f'{ASSETS}/models/item'
     for name in sorted(os.listdir(folder)):

@@ -3,7 +3,7 @@ package dr4kun3.cosmiccore.data;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-/** Stabilisator: wirkt duration Ticks lang und senkt die Instabilitaet um strength pro Tick. */
+/** Stabilisator: wirkt duration Ticks lang und senkt die Instabilität um strength pro Tick. */
 public record CoreStabilizer(int duration, float strength) {
     public static final Codec<CoreStabilizer> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.intRange(1, Integer.MAX_VALUE).fieldOf("duration").forGetter(CoreStabilizer::duration),
