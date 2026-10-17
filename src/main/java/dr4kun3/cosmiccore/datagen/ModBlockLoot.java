@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.Block;
 /** Jeder Block droppt sich selbst. */
 public class ModBlockLoot extends BlockLootSubProvider {
     /**
-     * Legt den Loot-Generator fuer die Bloecke an.
+     * Legt den Loot-Generator für die Blöcke an.
      *
      * @param registries Registry-Zugriff
      */
@@ -19,17 +19,11 @@ public class ModBlockLoot extends BlockLootSubProvider {
         super(Set.of(), FeatureFlags.REGISTRY.allFlags(), registries);
     }
 
-    /** Jeder Block der Mod droppt sich selbst. */
     @Override
     protected void generate() {
         for (Block b : getKnownBlocks()) dropSelf(b);
     }
 
-    /**
-     * Alle Bloecke der Mod (fuer die Vollstaendigkeitspruefung der Datengenerierung).
-     *
-     * @return die registrierten Bloecke
-     */
     @Override
     protected Iterable<Block> getKnownBlocks() {
         return ModBlocks.BLOCKS.getEntries().stream().map(Holder::value).map(Block.class::cast).toList();

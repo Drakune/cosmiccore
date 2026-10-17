@@ -5,6 +5,7 @@ import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModBlocks;
@@ -14,9 +15,13 @@ import dr4kun3.cosmiccore.block.entity.EnergyPortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.PortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
+import dr4kun3.cosmiccore.client.render.BlockQuads;
+import dr4kun3.cosmiccore.client.render.DeferredBuffers;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
+import dr4kun3.cosmiccore.client.render.WorldText;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import dr4kun3.cosmiccore.client.render.MultiBufferSource;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -24,6 +29,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -37,7 +43,7 @@ import org.joml.Vector3f;
 /**
  * Port einer gebildeten Struktur als kleine Station: Sockel, geneigter Holo-Bildschirm mit Live-Daten und
  * Anschlussknoten - aber nur dort, wo wirklich etwas angedockt ist (Rohr, Kabel, Truhe ... aus beliebigen Mods).
- * Einzelne Ports zeichnet der PortRenderer, die Fluegel der Steuerkonsole der ReactorShellRenderer.
+ * Einzelne Ports zeichnet der PortRenderer, die Flügel der Steuerkonsole der ReactorShellRenderer.
  * Koordinaten: Ursprung in der Blockmitte, +Z zeigt nach vorn (zum Betrachter), +X nach rechts.
  */
 public final class PortStation {
@@ -52,21 +58,21 @@ public final class PortStation {
     private static final float PX = 0.68F / TEXT_SCALE; // Bildschirmbreite in Schriftpixeln
     private static final int ROW_TITLE = 3, ROW_A = 18, ROW_B = 30, ROW_C = 42, BAR = 54;
 
-    /** Daten fuer die Anzeige (Controller und Kern koennen auf dem Client kurz fehlen). */
+    /** Daten für die Anzeige (Controller und Kern können auf dem Client kurz fehlen). */
     public record Data(@Nullable ControllerBlockEntity ctrl, @Nullable SingularityCoreBlockEntity core, float t, float e,
                        @Nullable PortBlockEntity port) {
         /**
-         * Daten fuer einen bestimmten Port (Lagerinhalt beim Item-Port, Durchfluss beim Energie-Port).
+         * Daten für einen bestimmten Port (Lagerinhalt beim Item-Port, Durchfluss beim Energie-Port).
          *
          * @param port der Port oder {@code null}
-         * @return neue Daten fuer diesen Port
+         * @return neue Daten für diesen Port
          */
         public Data withPort(@Nullable PortBlockEntity port) {
             return new Data(ctrl, core, t, e, port);
         }
 
         /**
-         * Belegte Lagerplaetze (nur beim Item-Port).
+         * Belegte Lagerplätze (nur beim Item-Port).
          *
          * @return Anzahl 0..27
          */
@@ -75,16 +81,16 @@ public final class PortStation {
         }
     }
 
-    /** Groesse eines Lagerplatzes im Raster in Schriftpixeln und Oberkante des Rasters. */
+    /** Größe eines Lagerplatzes im Raster in Schriftpixeln und Oberkante des Rasters. */
     static final float CELL = 13.0F, GRID_Y = 15.0F;
 
     /**
-     * Werte des Energie-Ports: Durchfluss, gespeicherte Energie und Kapazitaet - vom Port gemessen, sonst aus dem Kern
-     * geschaetzt.
+     * Werte des Energie-Ports: Durchfluss, gespeicherte Energie und Kapazität - vom Port gemessen, sonst aus dem Kern
+     * geschätzt.
      *
      * @param port der Port oder {@code null}
      * @param core der Kern oder {@code null}
-     * @return {Durchfluss RF/t, gespeichert RF, Kapazitaet RF}
+     * @return {Durchfluss RF/t, gespeichert RF, Kapazität RF}
      */
     static long[] energyValues(@Nullable PortBlockEntity port, @Nullable SingularityCoreBlockEntity core) {
         if (port instanceof EnergyPortBlockEntity ep && ep.getClientCapacity() > 0) {
@@ -96,16 +102,16 @@ public final class PortStation {
     }
 
     /**
-     * Lagerraster: 3 Reihen zu 9 Plaetzen mit den echten Items und ihrer Anzahl.
+     * Lagerraster: 3 Reihen zu 9 Plätzen mit den echten Items und ihrer Anzahl.
      *
      * @param font Schrift
-     * @param tm Matrix fuer die Schrift
+     * @param tm Matrix für die Schrift
      * @param buffers Puffer
      * @param level Welt
      * @param port der Item-Port oder {@code null}
      * @param x0 linke Kante des Rasters in Schriftpixeln
      * @param y0 Oberkante des Rasters in Schriftpixeln
-     * @param cell Kantenlaenge eines Platzes in Schriftpixeln
+     * @param cell Kantenlänge eines Platzes in Schriftpixeln
      */
     static void itemGrid(Font font, Matrix4f tm, MultiBufferSource buffers, Level level, @Nullable PortBlockEntity port, float x0, float y0,
                          float cell) {
@@ -119,19 +125,19 @@ public final class PortStation {
             String n = stack.getCount() < 1000 ? Integer.toString(stack.getCount()) : stack.getCount() / 1000 + "k";
             float ns = cell / 26.0F;
             Matrix4f nm = new Matrix4f(tm).translate(cx + cell - 0.8F, cy + cell - 9.2F * ns, size * 0.75F).scale(ns, ns, ns);
-            dr4kun3.cosmiccore.client.render.WorldText.draw(font, n, -font.width(n), 0, 0xFFFFFFFF, false, nm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+            WorldText.draw(font, n, -font.width(n), 0, 0xFFFFFFFF, false, nm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightCoordsUtil.FULL_BRIGHT);
         }
     }
 
     /**
-     * Leuchtende Rahmen des Lagerrasters: freie Plaetze schwach, belegte hell, ein volles Lager rot.
+     * Leuchtende Rahmen des Lagerrasters: freie Plätze schwach, belegte hell, ein volles Lager rot.
      *
      * @param vc Puffer
-     * @param tm Matrix fuer die Schrift
+     * @param tm Matrix für die Schrift
      * @param port der Item-Port oder {@code null}
      * @param x0 linke Kante des Rasters in Schriftpixeln
      * @param y0 Oberkante des Rasters in Schriftpixeln
-     * @param cell Kantenlaenge eines Platzes in Schriftpixeln
+     * @param cell Kantenlänge eines Platzes in Schriftpixeln
      * @param col Farbe RGB 0..1
      * @param a Deckkraft
      */
@@ -152,14 +158,14 @@ public final class PortStation {
         }
     }
 
-    // ------------------------------------------------------------------ Anschluesse
+    // ------------------------------------------------------------------ Anschlüsse
 
     /**
      * Seiten, an denen etwas angedockt ist - wird alle halbe Sekunde neu ermittelt.
      *
      * @param level Welt
      * @param be der Port
-     * @param energy {@code true} fuer den Energie-Port
+     * @param energy {@code true} für den Energie-Port
      * @return Bitmaske der Weltseiten (Bit = {@code Direction.get3DDataValue()})
      */
     public static int connections(Level level, PortBlockEntity be, boolean energy) {
@@ -180,8 +186,8 @@ public final class PortStation {
      *
      * @param level Welt
      * @param port Position des Ports
-     * @param d zu pruefende Seite
-     * @param energy {@code true} fuer den Energie-Port
+     * @param d zu prüfende Seite
+     * @param energy {@code true} für den Energie-Port
      * @return {@code true}, wenn dort etwas angeschlossen ist
      */
     private static boolean connected(Level level, BlockPos port, Direction d, boolean energy) {
@@ -189,13 +195,13 @@ public final class PortStation {
         BlockState s = level.getBlockState(n);
         if (s.isAir()) return false;
         String ns = BuiltInRegistries.BLOCK.getKey(s.getBlock()).getNamespace();
-        if (ns.equals(CosmicCore.MODID)) return false; // eigene Strukturbloecke
+        if (ns.equals(CosmicCore.MODID)) return false; // eigene Strukturblöcke
         boolean cap = energy ? level.getCapability(Capabilities.Energy.BLOCK, n, d.getOpposite()) != null
                 : level.getCapability(Capabilities.Item.BLOCK, n, d.getOpposite()) != null;
         return cap || !ns.equals("minecraft");
     }
 
-    // ------------------------------------------------------------------ Pass 1: Koerper, Bildschirm, Text
+    // ------------------------------------------------------------------ Pass 1: Körper, Bildschirm, Text
 
     /**
      * Feste Teile einer Station: Sockel, Anschlussknoten, Bildschirmrahmen und Schrift.
@@ -204,13 +210,13 @@ public final class PortStation {
      * @param buffers Puffer
      * @param level Welt
      * @param port Blockzustand des Ports (Phase)
-     * @param energy {@code true} fuer den Energie-Port
+     * @param energy {@code true} für den Energie-Port
      * @param connMask Bitmaske der angedockten Seiten
-     * @param yaw Drehung lokal -> Welt um die Hochachse (Bogenmass)
-     * @param screenYaw zusaetzliche Drehung nur des Bildschirms (Fluegel schauen zur Konsolenmitte)
-     * @param grow Einblenden 0..1 (waechst aus dem Sockel)
+     * @param yaw Drehung lokal -> Welt um die Hochachse (Bogenmaß)
+     * @param screenYaw zusätzliche Drehung nur des Bildschirms (Flügel schauen zur Konsolenmitte)
+     * @param grow Einblenden 0..1 (wächst aus dem Sockel)
      * @param data angezeigte Werte
-     * @param ownBase eigenen Sockel zeichnen (nicht bei Konsolen-Fluegeln)
+     * @param ownBase eigenen Sockel zeichnen (nicht bei Konsolen-Flügeln)
      * @param screen Bildschirm zeichnen
      */
     public static void solid(PoseStack pose, MultiBufferSource buffers, Level level, BlockState port, boolean energy, int connMask,
@@ -219,11 +225,11 @@ public final class PortStation {
         pose.pushPose();
         pose.translate(-0.14F, -0.5F, -0.14F);
         pose.scale(0.28F, 0.4F * grow, 0.28F);
-        dr4kun3.cosmiccore.client.render.BlockQuads.render(ModBlocks.VOID_CASING.get().defaultBlockState(), pose, buffers, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY); // wie bis 1.21.11: feste Flaechen bleiben unsichtbar
+        BlockQuads.render(ModBlocks.VOID_CASING.get().defaultBlockState(), pose, buffers, LightCoordsUtil.FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY); // wie bis 1.21.11: feste Flächen bleiben unsichtbar
         pose.popPose();
         // Anschluss an jeder belegten Seite: flacher Stecker genau in der Mitte der Blockseite, dazu ein Flachbandkabel,
-        // das unter dem Bildschirm aus dem Sockel kommt und aussen um ihn herum zum Stecker biegt
+        // das unter dem Bildschirm aus dem Sockel kommt und außen um ihn herum zum Stecker biegt
         CorePhase phase = port.hasProperty(ModProperties.PHASE) ? port.getValue(ModProperties.PHASE) : CorePhase.FORMED;
         if (phase == CorePhase.DORMANT) phase = CorePhase.FORMED;
         var model = Minecraft.getInstance().getModelManager().getStandaloneModel(PortRenderer.plugModel(energy, phase));
@@ -234,20 +240,20 @@ public final class PortStation {
             Vector3f c = connector(d, yaw);
             pose.pushPose();
             pose.translate(c.x, c.y, c.z);
-            // Modell zeigt nach Sueden (+Z): auf die Blockseite drehen, gleichmaessig skalieren (keine Verzerrung)
-            if (d == Direction.UP) pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
-            else if (d == Direction.DOWN) pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
+            // Modell zeigt nach Süden (+Z): auf die Blockseite drehen, gleichmäßig skalieren (keine Verzerrung)
+            if (d == Direction.UP) pose.mulPose(Axis.XP.rotationDegrees(-90.0F));
+            else if (d == Direction.DOWN) pose.mulPose(Axis.XP.rotationDegrees(90.0F));
             else {
                 Vector3f v = side(d, yaw);
-                pose.mulPose(com.mojang.math.Axis.YP.rotation((float) Math.atan2(v.x, v.z)));
+                pose.mulPose(Axis.YP.rotation((float) Math.atan2(v.x, v.z)));
             }
             pose.scale(0.34F * grow, 0.34F * grow, 0.34F * grow);
             pose.translate(-0.5F, -0.5F, -0.5F);
-            dr4kun3.cosmiccore.client.render.BlockQuads.render(pose.last(), buffers.getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.cutoutMovingBlock()), model, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            BlockQuads.render(pose.last(), buffers.getBuffer(RenderTypes.cutoutMovingBlock()), model, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
         }
         Matrix4f base = pose.last().pose();
-        // Bodenfeld wie ein Portal (bei den Konsolenfluegeln zeichnet die Konsole ein gemeinsames Feld)
+        // Bodenfeld wie ein Portal (bei den Konsolenflügeln zeichnet die Konsole ein gemeinsames Feld)
         if (ownBase) portalCapsule(buffers, new Matrix4f(base).translate(0, -0.495F, 0), 0.0F, 0.34F * Math.max(0.05F, grow));
         VertexConsumer dq = buffers.getBuffer(CosmicRenderTypes.solidColor());
         if (!screen) return; // Port direkt am Controller: seine Anzeige liegt auf dem breiten Konsolenbildschirm
@@ -259,10 +265,10 @@ public final class PortStation {
     }
 
     /**
-     * Lage des Anschlussknotens fuer eine Weltseite im lokalen Rahmen der Station.
+     * Lage des Anschlussknotens für eine Weltseite im lokalen Rahmen der Station.
      *
      * @param d Weltseite
-     * @param yaw Drehung der Station (Bogenmass)
+     * @param yaw Drehung der Station (Bogenmaß)
      * @return Position relativ zur Blockmitte
      */
     private static Vector3f connector(Direction d, float yaw) {
@@ -276,7 +282,7 @@ public final class PortStation {
      * Waagrechte Weltseite im lokalen Rahmen der Station.
      *
      * @param d Weltseite (nicht oben/unten)
-     * @param yaw Drehung der Station (Bogenmass)
+     * @param yaw Drehung der Station (Bogenmaß)
      * @return Einheitsvektor in der XZ-Ebene
      */
     private static Vector3f side(Direction d, float yaw) {
@@ -284,12 +290,12 @@ public final class PortStation {
     }
 
     /**
-     * Verlauf des Flachbandkabels vom Sockel zum Stecker (unten aus dem Sockel, unter dem Bildschirm hindurch, aussen
+     * Verlauf des Flachbandkabels vom Sockel zum Stecker (unten aus dem Sockel, unter dem Bildschirm hindurch, außen
      * herum und mit weichem Bogen in den Stecker).
      *
      * @param d Weltseite
-     * @param yaw Drehung der Station (Bogenmass)
-     * @return Punkte des Verlaufs (leer fuer unten - dort sitzt der Stecker direkt unter dem Sockel)
+     * @param yaw Drehung der Station (Bogenmaß)
+     * @return Punkte des Verlaufs (leer für unten - dort sitzt der Stecker direkt unter dem Sockel)
      */
     private static Vector3f[] ribbonPath(Direction d, float yaw) {
         if (d == Direction.DOWN) return new Vector3f[0];
@@ -310,7 +316,7 @@ public final class PortStation {
      * Querachse des Flachbandes: waagrecht und quer zum Verlauf.
      *
      * @param d Weltseite
-     * @param yaw Drehung der Station (Bogenmass)
+     * @param yaw Drehung der Station (Bogenmaß)
      * @return Einheitsvektor
      */
     private static Vector3f ribbonAcross(Direction d, float yaw) {
@@ -325,7 +331,7 @@ public final class PortStation {
      * @param vc Puffer (deckende Farbe)
      * @param m Matrix der Station
      * @param d Weltseite
-     * @param yaw Drehung der Station (Bogenmass)
+     * @param yaw Drehung der Station (Bogenmaß)
      * @param grow Einblenden 0..1
      */
     private static void ribbonSolid(VertexConsumer vc, Matrix4f m, Direction d, float yaw, float grow) {
@@ -339,14 +345,14 @@ public final class PortStation {
         }
     }
 
-    /** Abstand der Steckermitte von der Blockmitte (der Stecker schliesst buendig mit der Blockseite ab). */
+    /** Abstand der Steckermitte von der Blockmitte (der Stecker schließt bündig mit der Blockseite ab). */
     private static final float PLUG_AT = 0.455F;
     /** Halbe Breite des Flachbandes und seine Farbe. */
     private static final float RIBBON_HALF = 0.07F;
     private static final float[] RIBBON = {0.09F, 0.08F, 0.13F};
 
     /**
-     * Punkt auf der geneigten Bildschirmflaeche.
+     * Punkt auf der geneigten Bildschirmfläche.
      *
      * @param u waagrecht -1..1
      * @param v senkrecht 0..1
@@ -357,11 +363,11 @@ public final class PortStation {
     }
 
     /**
-     * Rahmen fuer Schrift auf dem Bildschirm: links oben beginnend, passend geneigt und skaliert.
+     * Rahmen für Schrift auf dem Bildschirm: links oben beginnend, passend geneigt und skaliert.
      *
      * @param sm Matrix der Station
-     * @param lift Abstand vor der Glasflaeche
-     * @return Matrix fuer die Schrift
+     * @param lift Abstand vor der Glasfläche
+     * @return Matrix für die Schrift
      */
     private static Matrix4f textFrame(Matrix4f sm, float lift) {
         float tilt = (float) Math.atan2(0.16, 0.42);
@@ -370,13 +376,13 @@ public final class PortStation {
     }
 
     /**
-     * Bildschirminhalt: Energie-Port zeigt Leistung, Puffer und Kapazitaet, Item-Port Brennstoff, Stabilisator und
+     * Bildschirminhalt: Energie-Port zeigt Leistung, Puffer und Kapazität, Item-Port Brennstoff, Stabilisator und
      * Lagerbelegung.
      *
      * @param sm Matrix der Station
      * @param buffers Puffer
      * @param level Welt
-     * @param energy {@code true} fuer den Energie-Port
+     * @param energy {@code true} für den Energie-Port
      * @param d angezeigte Werte
      */
     private static void text(Matrix4f sm, MultiBufferSource buffers, Level level, boolean energy, Data d) {
@@ -397,10 +403,10 @@ public final class PortStation {
     }
 
     /**
-     * Zeile "Bezeichnung  [Symbol] Anzahl · Restzeit" - auch fuer den Controller-Bildschirm.
+     * Zeile "Bezeichnung  [Symbol] Anzahl · Restzeit" - auch für den Controller-Bildschirm.
      *
      * @param font Schrift
-     * @param tm Matrix fuer die Schrift
+     * @param tm Matrix für die Schrift
      * @param buffers Puffer
      * @param level Welt
      * @param label Bezeichnung links
@@ -413,16 +419,16 @@ public final class PortStation {
     static void itemRow(Font font, Matrix4f tm, MultiBufferSource buffers, Level level, String label, ItemStack stack, int seconds,
                         int y, int color, float width) {
         String value = (stack.isEmpty() ? "0" : Integer.toString(stack.getCount())) + " · " + duration(seconds);
-        dr4kun3.cosmiccore.client.render.WorldText.draw(font, label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        WorldText.draw(font, label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightCoordsUtil.FULL_BRIGHT);
         float vx = width - 5 - font.width(value);
-        dr4kun3.cosmiccore.client.render.WorldText.draw(font, value, vx, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        WorldText.draw(font, value, vx, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightCoordsUtil.FULL_BRIGHT);
         if (!stack.isEmpty()) icon(tm, buffers, level, stack, vx - 11, y);
     }
 
     /**
      * Kleines Item-Symbol auf dem Bildschirm.
      *
-     * @param tm Matrix fuer die Schrift
+     * @param tm Matrix für die Schrift
      * @param buffers Puffer
      * @param level Welt
      * @param stack das Item
@@ -434,26 +440,26 @@ public final class PortStation {
     }
 
     /**
-     * Item-Symbol beliebiger Groesse auf dem Bildschirm.
+     * Item-Symbol beliebiger Größe auf dem Bildschirm.
      *
-     * @param tm Matrix fuer die Schrift
+     * @param tm Matrix für die Schrift
      * @param buffers Puffer
      * @param level Welt
      * @param stack das Item
      * @param cx Mitte x in Schriftpixeln
      * @param cy Mitte y in Schriftpixeln
-     * @param size Kantenlaenge in Schriftpixeln
+     * @param size Kantenlänge in Schriftpixeln
      */
     static void icon(Matrix4f tm, MultiBufferSource buffers, Level level, ItemStack stack, float cx, float cy, float size) {
         PoseStack ps = new PoseStack();
         ps.last().pose().set(tm);
-        // gleichmaessig skaliert (sonst kippen die Normalen und das Symbol wird schwarz), leicht vor der Glasflaeche
+        // gleichmäßig skaliert (sonst kippen die Normalen und das Symbol wird schwarz), leicht vor der Glasfläche
         ps.translate(cx, cy, size / 8.0F);
         ps.scale(size, -size, size);
-        if (!(buffers instanceof dr4kun3.cosmiccore.client.render.DeferredBuffers d)) return;
-        var state = new net.minecraft.client.renderer.item.ItemStackRenderState();
+        if (!(buffers instanceof DeferredBuffers d)) return;
+        var state = new ItemStackRenderState();
         Minecraft.getInstance().getItemModelResolver().updateForTopItem(state, stack, ItemDisplayContext.GUI, level, null, 0);
-        state.submit(ps, d.collector(), net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+        state.submit(ps, d.collector(), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
     }
 
     /**
@@ -477,22 +483,22 @@ public final class PortStation {
      * Zentrierte Zeile auf dem Bildschirm.
      *
      * @param font Schrift
-     * @param tm Matrix fuer die Schrift
+     * @param tm Matrix für die Schrift
      * @param buffers Puffer
      * @param text der Text
      * @param y Zeile
      * @param color Farbe 0xRRGGBB
      */
     private static void center(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
-        dr4kun3.cosmiccore.client.render.WorldText.draw(font, text, (PX - font.width(text)) / 2.0F, y, 0xFF000000 | color, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        WorldText.draw(font, text, (PX - font.width(text)) / 2.0F, y, 0xFF000000 | color, false, tm, buffers,
+                Font.DisplayMode.POLYGON_OFFSET, 0, LightCoordsUtil.FULL_BRIGHT);
     }
 
     /**
      * Zeile mit Bezeichnung links und Wert rechts.
      *
      * @param font Schrift
-     * @param tm Matrix fuer die Schrift
+     * @param tm Matrix für die Schrift
      * @param buffers Puffer
      * @param label Bezeichnung
      * @param value Wert
@@ -500,9 +506,9 @@ public final class PortStation {
      * @param color Farbe des Werts 0xRRGGBB
      */
     private static void row(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int color) {
-        dr4kun3.cosmiccore.client.render.WorldText.draw(font, label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
-        dr4kun3.cosmiccore.client.render.WorldText.draw(font, value, PX - 5 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
+        WorldText.draw(font, label, 5, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, LightCoordsUtil.FULL_BRIGHT);
+        WorldText.draw(font, value, PX - 5 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
+                Font.DisplayMode.POLYGON_OFFSET, 0, LightCoordsUtil.FULL_BRIGHT);
     }
 
     // ------------------------------------------------------------------ Pass 2: Licht
@@ -511,11 +517,11 @@ public final class PortStation {
      * Leuchtende Teile einer Station: Rand des Portalfelds, Leitungen und Bildschirm-Glanz.
      *
      * @param base Matrix mit Ursprung in der Blockmitte
-     * @param vc Puffer fuer additives Licht
-     * @param energy {@code true} fuer den Energie-Port
+     * @param vc Puffer für additives Licht
+     * @param energy {@code true} für den Energie-Port
      * @param connMask Bitmaske der angedockten Seiten
-     * @param yaw Drehung der Station (Bogenmass)
-     * @param screenYaw zusaetzliche Drehung des Bildschirms
+     * @param yaw Drehung der Station (Bogenmaß)
+     * @param screenYaw zusätzliche Drehung des Bildschirms
      * @param grow Einblenden 0..1
      * @param d angezeigte Werte (Helligkeit)
      * @param ownBase eigenen Sockel mitzeichnen
@@ -554,11 +560,11 @@ public final class PortStation {
      *
      * @param base Matrix
      * @param vc Puffer
-     * @param energy {@code true} fuer den Energie-Port
+     * @param energy {@code true} für den Energie-Port
      * @param connMask Bitmaske der angedockten Seiten
      * @param yaw Drehung der Station
      * @param e Helligkeit 0..1
-     * @param d angezeigte Werte (Zeit fuer den Fluss)
+     * @param d angezeigte Werte (Zeit für den Fluss)
      */
     private static void connectorGlow(Matrix4f base, VertexConsumer vc, boolean energy, int connMask, float yaw, float e, Data d) {
         float[] col = energy ? ENERGY : ITEM;
@@ -566,7 +572,7 @@ public final class PortStation {
             if ((connMask & (1 << dir.get3DDataValue())) == 0) continue;
             Vector3f[] path = ribbonPath(dir, yaw);
             if (path.length < 2) continue;
-            // Adern des Flachbandes: drei feine Leuchtlinien knapp ueber dem Band
+            // Adern des Flachbandes: drei feine Leuchtlinien knapp über dem Band
             Vector3f across = ribbonAcross(dir, yaw);
             for (int lane = -1; lane <= 1; lane++) {
                 Vector3f off = new Vector3f(across).mul(lane * RIBBON_HALF * 0.55F);
@@ -575,7 +581,7 @@ public final class PortStation {
                     segment(vc, base, a.x, a.y, a.z, b.x, b.y, b.z, 0.006F, col[0], col[1], col[2], e * 0.55F, e * 0.55F);
                 }
             }
-            // Lichtpuls laeuft das Band entlang (Energie hinaus, Items hinein)
+            // Lichtpuls läuft das Band entlang (Energie hinaus, Items hinein)
             float s = Mth.frac(d.t() * 0.03F + dir.ordinal() * 0.17F);
             Vector3f q = along(path, energy ? s : 1.0F - s);
             cube(vc, base, q.x, q.y, q.z, 0.022F, 1, 1, 1, e * Mth.sin(s * Mth.PI));
@@ -583,7 +589,7 @@ public final class PortStation {
     }
 
     /**
-     * Punkt auf einem Linienzug nach Anteil der Gesamtlaenge.
+     * Punkt auf einem Linienzug nach Anteil der Gesamtlänge.
      *
      * @param path die Punkte
      * @param f Anteil 0..1
@@ -605,11 +611,11 @@ public final class PortStation {
 
     /**
      * Schwarzes Portalfeld (End-Sternenhimmel) in der XZ-Ebene: Kapsel entlang X - verbindet Controller und Ports der
-     * Steuerkonsole zu einer Flaeche.
+     * Steuerkonsole zu einer Fläche.
      *
      * @param buffers Puffer
      * @param m Matrix
-     * @param halfLen halbe Laenge (0 = runde Scheibe)
+     * @param halfLen halbe Länge (0 = runde Scheibe)
      * @param r Radius
      */
     public static void portalCapsule(MultiBufferSource buffers, Matrix4f m, float halfLen, float r) {
@@ -633,7 +639,7 @@ public final class PortStation {
      *
      * @param vc Puffer
      * @param m Matrix
-     * @param halfLen halbe Laenge
+     * @param halfLen halbe Länge
      * @param r Radius
      * @param col Farbe RGB 0..1
      * @param a Helligkeit 0..1
@@ -699,9 +705,9 @@ public final class PortStation {
     }
 
     /**
-     * Uebersetzter Text als String.
+     * Übersetzter Text als String.
      *
-     * @param key Uebersetzungsschluessel
+     * @param key Übersetzungsschlüssel
      * @param args Platzhalterwerte
      * @return der Text
      */
@@ -710,7 +716,7 @@ public final class PortStation {
     }
 
     /**
-     * Grosse Zahl kurz: 1.25G, 3.4M, 12.5k.
+     * Große Zahl kurz: 1.25G, 3.4M, 12.5k.
      *
      * @param n die Zahl
      * @return der Text

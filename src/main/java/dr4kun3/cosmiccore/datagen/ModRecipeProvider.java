@@ -23,10 +23,10 @@ public class ModRecipeProvider extends RecipeProvider {
         super(registries, output);
     }
 
-    /** Einstieg fuer die Datengenerierung (ab 1.21.2 laeuft der Provider ueber einen Runner). */
+    /** Einstieg für die Datengenerierung (ab 1.21.2 läuft der Provider über einen Runner). */
     public static class Runner extends RecipeProvider.Runner {
         /**
-         * Legt den Einstieg fuer die Datengenerierung an.
+         * Legt den Einstieg für die Datengenerierung an.
          *
          * @param output Ausgabeordner
          * @param registries Registry-Zugriff (asynchron)
@@ -35,23 +35,11 @@ public class ModRecipeProvider extends RecipeProvider {
             super(output, registries);
         }
 
-        /**
-         * Erzeugt den eigentlichen Rezept-Erzeuger.
-         *
-         * @param registries Registry-Zugriff
-         * @param output nimmt die Rezepte auf
-         * @return der Erzeuger
-         */
         @Override
         protected RecipeProvider createRecipeProvider(HolderLookup.Provider registries, RecipeOutput output) {
             return new ModRecipeProvider(registries, output);
         }
 
-        /**
-         * Name in der Ausgabe der Datengenerierung.
-         *
-         * @return "Cosmic Core Rezepte"
-         */
         @Override
         public String getName() {
             return "Cosmic Core Rezepte";

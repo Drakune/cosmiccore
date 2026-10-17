@@ -8,12 +8,15 @@ import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import dr4kun3.cosmiccore.entity.CosmicAsteroid;
+import dr4kun3.cosmiccore.client.render.DeferredBuffers;
 import dr4kun3.cosmiccore.client.render.MultiBufferSource;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
+import dr4kun3.cosmiccore.entity.CosmicAsteroid;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -24,7 +27,7 @@ import org.joml.Vector3f;
 
 /**
  * Asteroid: ein schattierter Gesteinsbrocken mit Kratern, aus dem kosmische Kristalle wachsen, dazu ein feiner
- * Kometenschweif. Unter Laserbeschuss gluehen die dem Strahl zugewandte Seite und die Risse auf, der Brocken zittert
+ * Kometenschweif. Unter Laserbeschuss glühen die dem Strahl zugewandte Seite und die Risse auf, der Brocken zittert
  * und Splitter platzen ab.
  */
 public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, EntityRefState<CosmicAsteroid>> {
@@ -32,7 +35,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
             {0.27F, 0.21F, 0.25F}};
     private static final float[][] CRYSTAL = {{0.45F, 0.85F, 1.0F}, {0.75F, 0.5F, 1.0F}, {1.0F, 0.8F, 0.4F}};
     private static final int[] CLUSTERS = {2, 4, 7, 14};
-    /** Gitterfeinheit je Art: der sehr grosse Brocken braucht mehr Flaechen. */
+    /** Gitterfeinheit je Art: der sehr große Brocken braucht mehr Flächen. */
     private static final int[][] GRID = {{10, 16}, {10, 16}, {12, 18}, {16, 26}};
     private static final float[] TRAIL = {0.6F, 0.75F, 1.0F};
     private static final float[] HOT = {1.0F, 0.45F, 0.12F};
@@ -50,18 +53,13 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
         shadowRadius = 0.0F;
     }
 
-    /**
-     * Neuer Zeichenzustand, der auf die Entity verweist.
-     *
-     * @return der Zustand
-     */
     @Override
     public EntityRefState<CosmicAsteroid> createRenderState() {
         return new EntityRefState<>();
     }
 
     /**
-     * Uebernimmt die Entity in den Zeichenzustand.
+     * Übernimmt die Entity in den Zeichenzustand.
      *
      * @param entity der Asteroid
      * @param state Zeichenzustand
@@ -74,18 +72,18 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
     }
 
     /**
-     * Zeichnet den Asteroiden ueber den Submit-Sammler (die Geometrie wird aufgezeichnet und nachgereicht).
+     * Zeichnet den Asteroiden über den Submit-Sammler (die Geometrie wird aufgezeichnet und nachgereicht).
      *
      * @param state Zeichenzustand
      * @param pose Pose-Stapel
-     * @param collector Sammler der Zeichenauftraege
+     * @param collector Sammler der Zeichenaufträge
      * @param camera Zustand der Kamera
      */
     @Override
-    public void submit(EntityRefState<CosmicAsteroid> state, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
-                       net.minecraft.client.renderer.state.level.CameraRenderState camera) {
+    public void submit(EntityRefState<CosmicAsteroid> state, PoseStack pose, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
         if (state.entity != null) {
-            var buffers = new dr4kun3.cosmiccore.client.render.DeferredBuffers(collector);
+            var buffers = new DeferredBuffers(collector);
             render(state.entity, 0.0F, state.partialTick, pose, buffers, state.lightCoords);
             buffers.submit();
         }
@@ -93,8 +91,8 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
     }
 
     /**
-     * Zeichnet den Asteroiden: unregelmaessiger Felsen mit Kristallen, Lichthof, Glut beim Einfangen und am Ende das
-     * Aufblaehen vor dem Zerplatzen, dazu absplitternde Brocken.
+     * Zeichnet den Asteroiden: unregelmäßiger Felsen mit Kristallen, Lichthof, Glut beim Einfangen und am Ende das
+     * Aufblähen vor dem Zerplatzen, dazu absplitternde Brocken.
      *
      * @param a der Asteroid
      * @param yaw Gierwinkel
@@ -106,7 +104,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
     private void render(CosmicAsteroid a, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         float t = a.tickCount + partialTick;
         float overload = a.getOverload();
-        // zum Schluss blaeht sich der ueberladene Asteroid auf
+        // zum Schluss bläht sich der überladene Asteroid auf
         float swell = overload > 0.75F ? (overload - 0.75F) / 0.25F : 0.0F;
         float r = a.getSizeBlocks() * 0.5F * a.getPullScale() * (1.0F + 0.15F * swell * swell);
         float harvest = Math.max(a.getPull() * 0.6F, overload);
@@ -157,7 +155,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
                         lerp(col, WHITE_HOT, overload), (0.4F + 0.35F * harvest + 0.5F * overload) * pulse);
             }
         }
-        // Risse: werden unter Beschuss heiss
+        // Risse: werden unter Beschuss heiß
         float[] crackCol = lerp(lerp(CRYSTAL[1], HOT, harvest), WHITE_HOT, overload);
         float crackA = 0.25F + 0.75F * harvest;
         float crackW = 1.0F + 2.5F * overload;
@@ -176,7 +174,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
                 prev = p;
             }
         }
-        // Ueberladung: Entladungsblitze zucken ueber die Oberflaeche
+        // Überladung: Entladungsblitze zucken über die Oberfläche
         if (overload > 0.1F) {
             int arcs = 2 + (int) (overload * 6);
             for (int k = 0; k < arcs; k++) {
@@ -195,7 +193,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
         }
         pose.popPose();
 
-        // Ueberladung: pulsierender Hitzeschein und zum Schluss Lichtstrahlen
+        // Überladung: pulsierender Hitzeschein und zum Schluss Lichtstrahlen
         if (overload > 0.0F) {
             float beat = 0.5F + 0.5F * Mth.sin(t * (0.3F + 1.4F * overload));
             float[] hc = lerp(HOT, WHITE_HOT, overload);
@@ -276,13 +274,13 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
     }
 
     /**
-     * Berechnet die Oberflaechenpunkte auf einem Breiten-/Laengengitter.
+     * Berechnet die Oberflächenpunkte auf einem Breiten-/Längengitter.
      *
      * @param r Grundradius
      * @param seed Zufallswert des Asteroiden
      * @param LAT Anzahl Breitenringe
-     * @param LON Anzahl Laengensegmente
-     * @return Punkte [Breite][Laenge] = {x, y, z}
+     * @param LON Anzahl Längensegmente
+     * @return Punkte [Breite][Länge] = {x, y, z}
      */
     private static float[][][] surface(float r, int seed, int LAT, int LON) {
         float[][][] pts = new float[LAT + 1][LON][];
@@ -300,18 +298,18 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
     }
 
     /**
-     * Flach schattierte Gesteinsflaechen: Mondlicht von oben, violettes Reaktorlicht und Laserglut von unten.
+     * Flach schattierte Gesteinsflächen: Mondlicht von oben, violettes Reaktorlicht und Laserglut von unten.
      *
      * @param vc Puffer
      * @param m Matrix
      * @param nm Normalenmatrix
-     * @param pts Oberflaechenpunkte (siehe {@link #surface})
+     * @param pts Oberflächenpunkte (siehe {@link #surface})
      * @param base Gesteinsfarbe RGB 0..1
      * @param harvest Einfangen 0..1 (Glut von unten)
-     * @param overload Ueberladung 0..1 (leuchtende Risse)
+     * @param overload Überladung 0..1 (leuchtende Risse)
      * @param seed Zufallswert
      * @param LAT Breitenringe
-     * @param LON Laengensegmente
+     * @param LON Längensegmente
      */
     private static void rock(VertexConsumer vc, Matrix4f m, Matrix3f nm, float[][][] pts, float[] base, float harvest,
                              float overload, int seed, int LAT, int LON) {
@@ -330,7 +328,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
                 float under = Math.max(0.0F, -wn.y);
                 float shade = 0.22F + 0.7F * diffuse;
                 float tint = 0.9F + 0.1F * hash(seed + i * 31 + j * 7);
-                // Glut: erst die dem Strahl zugewandte Unterseite, bei Ueberladung der ganze Brocken bis zur Weissglut
+                // Glut: erst die dem Strahl zugewandte Unterseite, bei Überladung der ganze Brocken bis zur Weißglut
                 float heat = Math.max(harvest * under * under, overload * (0.55F + 0.45F * under));
                 float[] hc = lerp(HOT, WHITE_HOT, overload * overload);
                 float rr = base[0] * shade * tint * (1.0F - heat) + 0.12F * under + hc[0] * heat;
@@ -343,13 +341,13 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
     }
 
     /**
-     * Kristall: gestreckte Doppelpyramide aus leuchtenden Flaechen mit hellen Kanten.
+     * Kristall: gestreckte Doppelpyramide aus leuchtenden Flächen mit hellen Kanten.
      *
      * @param vc Puffer
      * @param m Matrix
-     * @param base Fusspunkt auf der Oberflaeche
+     * @param base Fußpunkt auf der Oberfläche
      * @param dir Wuchsrichtung
-     * @param len Laenge
+     * @param len Länge
      * @param w Breite
      * @param col Farbe RGB 0..1
      * @param a Deckkraft 0..1
@@ -397,7 +395,7 @@ public class CosmicAsteroidRenderer extends EntityRenderer<CosmicAsteroid, Entit
      * @param vc Puffer
      * @param m Matrix
      * @param p Position
-     * @param s Groesse
+     * @param s Größe
      * @param spin Drehwinkel
      * @param c Farbe RGB 0..1
      */

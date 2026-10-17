@@ -2,18 +2,19 @@ package dr4kun3.cosmiccore.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.ArrayList;
-import java.util.List;
 import dr4kun3.cosmiccore.client.render.MultiBufferSource;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.SubmitNodeCollector;
 
 /**
  * Seit Minecraft 1.21.9 wird nicht mehr direkt gezeichnet, sondern Geometrie beim {@link SubmitNodeCollector} eingereicht.
  * Diese Puffer nehmen die Vertices der bestehenden Zeichenroutinen auf (bereits fertig transformiert) und reichen sie als
- * eigene Geometrie ein. Wie frueher beendet ein Wechsel des Render-Typs den vorigen Abschnitt; die Abschnitte werden in
- * ihrer Reihenfolge gezeichnet (wichtig fuer Tiefen-Abschluesse, die sonst Leuchteffekte verdecken).
+ * eigene Geometrie ein. Wie früher beendet ein Wechsel des Render-Typs den vorigen Abschnitt; die Abschnitte werden in
+ * ihrer Reihenfolge gezeichnet (wichtig für Tiefen-Abschlüsse, die sonst Leuchteffekte verdecken).
  */
 public final class DeferredBuffers implements MultiBufferSource {
     private final SubmitNodeCollector collector;
@@ -23,30 +24,25 @@ public final class DeferredBuffers implements MultiBufferSource {
     private final int orderBase;
     private boolean closed;
 
-    /**
-     * Schliesst den aktuellen Abschnitt ab: der naechste Zugriff beginnt einen neuen, spaeter gezeichneten.
-     *
-     * @param type Render-Typ (ungenutzt)
-     */
     @Override
     public void endBatch(RenderType type) {
         closed = true;
     }
 
     /**
-     * Legt die Puffer fuer einen Sammler an (Reihenfolge ab 0).
+     * Legt die Puffer für einen Sammler an (Reihenfolge ab 0).
      *
-     * @param collector Sammler der Zeichenauftraege
+     * @param collector Sammler der Zeichenaufträge
      */
     public DeferredBuffers(SubmitNodeCollector collector) {
         this(collector, 0);
     }
 
     /**
-     * Legt die Puffer fuer einen Sammler an.
+     * Legt die Puffer für einen Sammler an.
      *
-     * @param collector Sammler der Zeichenauftraege
-     * @param orderBase Zeichenreihenfolge des ersten Abschnitts (kleiner = frueher, z. B. Kulissen hinter allem)
+     * @param collector Sammler der Zeichenaufträge
+     * @param orderBase Zeichenreihenfolge des ersten Abschnitts (kleiner = früher, z. B. Kulissen hinter allem)
      */
     public DeferredBuffers(SubmitNodeCollector collector, int orderBase) {
         this.collector = collector;
@@ -54,7 +50,7 @@ public final class DeferredBuffers implements MultiBufferSource {
     }
 
     /**
-     * Fuer Dinge, die eigene Einreichungen brauchen (Items, Blockmodelle).
+     * Für Dinge, die eigene Einreichungen brauchen (Items, Blockmodelle).
      *
      * @return der Sammler
      */
@@ -63,7 +59,7 @@ public final class DeferredBuffers implements MultiBufferSource {
     }
 
     /**
-     * Puffer fuer einen Render-Typ; ein Wechsel des Typs beginnt einen neuen Abschnitt.
+     * Puffer für einen Render-Typ; ein Wechsel des Typs beginnt einen neuen Abschnitt.
      *
      * @param type Render-Typ
      * @return der aufzeichnende Puffer
@@ -126,10 +122,10 @@ public final class DeferredBuffers implements MultiBufferSource {
          */
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
-            if ((count + 1) * STRIDE > data.length) data = java.util.Arrays.copyOf(data, data.length * 2);
+            if ((count + 1) * STRIDE > data.length) data = Arrays.copyOf(data, data.length * 2);
             count++;
             int b = base();
-            java.util.Arrays.fill(data, b, b + STRIDE, 0.0F);
+            Arrays.fill(data, b, b + STRIDE, 0.0F);
             data[b] = x;
             data[b + 1] = y;
             data[b + 2] = z;
@@ -140,7 +136,7 @@ public final class DeferredBuffers implements MultiBufferSource {
          * Farbe des aktuellen Vertex.
          *
          * @param r Rot 0..255
-         * @param g Gruen 0..255
+         * @param g Grün 0..255
          * @param b Blau 0..255
          * @param a Deckkraft 0..255
          * @return dieser Puffer
@@ -152,12 +148,6 @@ public final class DeferredBuffers implements MultiBufferSource {
             return this;
         }
 
-        /**
-         * Farbe aus einem ARGB-Wert.
-         *
-         * @param argb Farbe 0xAARRGGBB
-         * @return dieser Puffer
-         */
         @Override
         public VertexConsumer setColor(int argb) {
             return setColor(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24);

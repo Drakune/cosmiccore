@@ -9,8 +9,8 @@ import org.joml.Vector3f;
 
 /**
  * Kulissen der Titan-Cutscene, alle kamerazentriert (unendlich fern): Farbverlaufs-Himmel, Sternenfelder, weiche
- * Nebel, eine Spiralgalaxie, Sonnen mit Lichtreflexen, die Erde (Kontinente, Eis, Wolken, Stadtlichter, Atmosphaere),
- * ein Gasriese mit Baendern, Sturm und Ring, ein Mond und der Lichtgeschwindigkeits-Tunnel.
+ * Nebel, eine Spiralgalaxie, Sonnen mit Lichtreflexen, die Erde (Kontinente, Eis, Wolken, Stadtlichter, Atmosphäre),
+ * ein Gasriese mit Bändern, Sturm und Ring, ein Mond und der Lichtgeschwindigkeits-Tunnel.
  * Die Matrix m ist jeweils auf die Kamera zentriert; right/up sind die Bildschirmachsen der Kamera.
  */
 final class CutsceneScenery {
@@ -19,7 +19,7 @@ final class CutsceneScenery {
 
     interface ColorFn {
         /**
-         * Farbe fuer einen Punkt der Einheitskugel (Planeten-Koordinaten).
+         * Farbe für einen Punkt der Einheitskugel (Planeten-Koordinaten).
          *
          * @param x Richtung x
          * @param y Richtung y
@@ -53,8 +53,8 @@ final class CutsceneScenery {
      * @param c Mittelpunkt
      * @param r Radius
      * @param lat Anzahl Breitenringe
-     * @param lon Anzahl Laengensegmente
-     * @param rot Drehung der Oberflaeche um die eigene Achse (Bogenmass)
+     * @param lon Anzahl Längensegmente
+     * @param rot Drehung der Oberfläche um die eigene Achse (Bogenmaß)
      * @param fn liefert die Farbe je Richtung
      */
     static void colorSphere(VertexConsumer vc, Matrix4f m, Vector3f c, float r, int lat, int lon, float rot, ColorFn fn) {
@@ -82,7 +82,7 @@ final class CutsceneScenery {
     }
 
     /**
-     * Weiche Scheibe zur Kamera - Grundbaustein fuer Nebel, Halos und Lichter.
+     * Weiche Scheibe zur Kamera - Grundbaustein für Nebel, Halos und Lichter.
      *
      * @param vc Puffer
      * @param m Matrix
@@ -90,10 +90,10 @@ final class CutsceneScenery {
      * @param right Kamera-Rechts-Vektor
      * @param up Kamera-Oben-Vektor
      * @param r0 Innenradius
-     * @param r1 Aussenradius
+     * @param r1 Außenradius
      * @param col Farbe RGB 0..1
      * @param aIn Deckkraft innen
-     * @param aOut Deckkraft aussen
+     * @param aOut Deckkraft außen
      */
     static void disc(VertexConsumer vc, Matrix4f m, Vector3f c, Vector3f right, Vector3f up, float r0, float r1,
                      float[] col, float aIn, float aOut) {
@@ -128,7 +128,7 @@ final class CutsceneScenery {
      * @param c Mittelpunkt
      * @param dir Richtung des Streifens
      * @param side Querrichtung
-     * @param len halbe Laenge
+     * @param len halbe Länge
      * @param w halbe Breite
      * @param col Farbe RGB 0..1
      * @param a Deckkraft in der Mitte
@@ -197,7 +197,7 @@ final class CutsceneScenery {
     }
 
     /**
-     * Weicher Nebel aus vielen ueberlagerten, transparenten Wolken um eine Richtung.
+     * Weicher Nebel aus vielen überlagerten, transparenten Wolken um eine Richtung.
      *
      * @param vc Puffer
      * @param m Matrix (kamerazentriert)
@@ -235,9 +235,9 @@ final class CutsceneScenery {
      * @param up Kamera-Oben-Vektor
      * @param c Mittelpunkt
      * @param radius Radius
-     * @param tiltX Neigung um x (Bogenmass)
-     * @param tiltZ Neigung um z (Bogenmass)
-     * @param spin Drehung (Bogenmass)
+     * @param tiltX Neigung um x (Bogenmaß)
+     * @param tiltZ Neigung um z (Bogenmaß)
+     * @param spin Drehung (Bogenmaß)
      */
     static void galaxy(VertexConsumer vc, Matrix4f m, Vector3f right, Vector3f up, Vector3f c, float radius, float tiltX,
                        float tiltZ, float spin) {
@@ -267,7 +267,7 @@ final class CutsceneScenery {
      * @param right Kamera-Rechts-Vektor
      * @param up Kamera-Oben-Vektor
      * @param p Position
-     * @param size Groesse des Kerns
+     * @param size Größe des Kerns
      * @param col Farbe des Lichts RGB 0..1
      * @param alpha Deckkraft 0..1
      */
@@ -283,7 +283,7 @@ final class CutsceneScenery {
     // ------------------------------------------------------------------ Planeten
 
     /**
-     * Die Erde: Ozeane, Kontinente, Wuesten, Polkappen, Tag-Nacht-Grenze mit Stadtlichtern.
+     * Die Erde: Ozeane, Kontinente, Wüsten, Polkappen, Tag-Nacht-Grenze mit Stadtlichtern.
      *
      * @param solid deckender Puffer
      * @param m Matrix
@@ -300,9 +300,9 @@ final class CutsceneScenery {
             if (Math.abs(z) > 0.93F + 0.04F * n) col = 0xFFE8F0FF;                      // Eis (Pole liegen seitlich im Bild)
             else if (n > 0.18F) {
                 float dry = Mth.sin(x * 6.1F + z * 4.3F) * 0.5F + 0.5F;
-                col = Math.abs(z) < 0.38F && dry > 0.6F ? 0xFFB49A64 : lerpColor(0xFF2E7A3A, 0xFF1C5A2A, Mth.clamp(n - 0.18F, 0, 1)); // Wueste/Wald
-            } else col = lerpColor(0xFF0A2A6E, 0xFF2A70B4, Mth.clamp((n + 0.1F) / 0.28F, 0, 1)); // Tiefsee -> Kuestenwasser
-            // Licht (nur die Beleuchtung dreht nicht mit der Oberflaeche - naeherungsweise genuegt die Oberflaechennormale)
+                col = Math.abs(z) < 0.38F && dry > 0.6F ? 0xFFB49A64 : lerpColor(0xFF2E7A3A, 0xFF1C5A2A, Mth.clamp(n - 0.18F, 0, 1)); // Wüste/Wald
+            } else col = lerpColor(0xFF0A2A6E, 0xFF2A70B4, Mth.clamp((n + 0.1F) / 0.28F, 0, 1)); // Tiefsee -> Küstenwasser
+            // Licht (nur die Beleuchtung dreht nicht mit der Oberfläche - näherungsweise genügt die Oberflächennormale)
             float light = Mth.clamp(x * s.x + y * s.y + z * s.z, 0.0F, 1.0F);
             int lit = scale(col, 0.06F + 0.94F * light);
             if (light < 0.08F && n > 0.25F && hash((int) (x * 97) * 31 + (int) (y * 89) * 17 + (int) (z * 83)) > 0.55F) {
@@ -313,9 +313,9 @@ final class CutsceneScenery {
     }
 
     /**
-     * Wolkendecke der Erde (additiv) und blau leuchtender Atmosphaerensaum.
+     * Wolkendecke der Erde (additiv) und blau leuchtender Atmosphärensaum.
      *
-     * @param glow Puffer fuer additives Licht
+     * @param glow Puffer für additives Licht
      * @param m Matrix
      * @param right Kamera-Rechts-Vektor
      * @param up Kamera-Oben-Vektor
@@ -338,12 +338,12 @@ final class CutsceneScenery {
     }
 
     /**
-     * Landmaske: Ueberlagerte Wellen ergeben Kontinente (groesser als Schwelle = Land).
+     * Landmaske: Überlagerte Wellen ergeben Kontinente (größer als Schwelle = Land).
      *
      * @param x Richtung x
      * @param y Richtung y
      * @param z Richtung z
-     * @return Hoehenwert (etwa -1..1)
+     * @return Höhenwert (etwa -1..1)
      */
     private static float land(float x, float y, float z) {
         return Mth.sin(2.7F * x + 1.3F) * Mth.cos(2.1F * y + 0.7F) * Mth.sin(3.3F * z + 2.2F)
@@ -371,7 +371,7 @@ final class CutsceneScenery {
     }
 
     /**
-     * Gasriese: Wolkenbaender, Turbulenzen und ein grosser Sturm; Schattengrenze zur Sonne.
+     * Gasriese: Wolkenbänder, Turbulenzen und ein großer Sturm; Schattengrenze zur Sonne.
      *
      * @param solid deckender Puffer
      * @param m Matrix
@@ -398,22 +398,22 @@ final class CutsceneScenery {
     }
 
     /**
-     * Planetenring (halbtransparent) in der Aequatorebene - getrennt in vordere und hintere Haelfte, damit der Planet
+     * Planetenring (halbtransparent) in der Äquatorebene - getrennt in vordere und hintere Hälfte, damit der Planet
      * dazwischen liegen kann.
      *
      * @param tint halbtransparenter Puffer
      * @param m Matrix
      * @param c Mittelpunkt des Planeten
      * @param r0 Innenradius
-     * @param r1 Aussenradius
+     * @param r1 Außenradius
      * @param tiltX Neigung um x
      * @param tiltZ Neigung um z
-     * @param front {@code true}: nur die vordere Haelfte, sonst die hintere
+     * @param front {@code true}: nur die vordere Hälfte, sonst die hintere
      * @param cam Kameraposition
      */
     static void ring(VertexConsumer tint, Matrix4f m, Vector3f c, float r0, float r1, float tiltX, float tiltZ, boolean front, Vector3f cam) {
         Matrix4f rm = new Matrix4f(m).translate(c.x, c.y, c.z).rotateX(tiltX).rotateZ(tiltZ);
-        // Kamerarichtung im Ringraum: welche Haelfte liegt vorn?
+        // Kamerarichtung im Ringraum: welche Hälfte liegt vorn?
         Vector3f toCam = new Vector3f(cam).sub(c);
         Matrix4f inv = new Matrix4f().rotateX(tiltX).rotateZ(tiltZ).invert();
         inv.transformDirection(toCam);
@@ -440,10 +440,10 @@ final class CutsceneScenery {
     // ------------------------------------------------------------------ Lichtgeschwindigkeit
 
     /**
-     * Tunnel aus Sternenstreifen: Streifen entstehen im Fluchtpunkt und werden beim Naeherkommen laenger und heller;
-     * dazu ein Leuchten am Ende und spiralig mitlaufende Lichtfaeden.
+     * Tunnel aus Sternenstreifen: Streifen entstehen im Fluchtpunkt und werden beim Näherkommen länger und heller;
+     * dazu ein Leuchten am Ende und spiralig mitlaufende Lichtfäden.
      *
-     * @param glow Puffer fuer additives Licht
+     * @param glow Puffer für additives Licht
      * @param m Matrix (kamerazentriert)
      * @param fwd Flugrichtung
      * @param local Zeit seit Beginn des Flugs
@@ -466,7 +466,7 @@ final class CutsceneScenery {
             float a = alpha * Mth.clamp(1.0F - d / 80.0F, 0.0F, 1.0F) * (0.3F + 0.7F * speed);
             RenderUtil.segment(glow, m, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, 0.03F + 0.05F * (rr / 26.0F), c[0], c[1], c[2], a, 0.0F);
         }
-        // Licht am Ende des Tunnels und mitlaufende Spiralfaeden
+        // Licht am Ende des Tunnels und mitlaufende Spiralfäden
         Vector3f end = new Vector3f(fwd).mul(85.0F);
         Vector3f right = u, up = v;
         disc(glow, m, end, right, up, 0.0F, 4.0F + 10.0F * speed, white, alpha * (0.3F + 0.6F * speed), 0.0F);

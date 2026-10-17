@@ -17,7 +17,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Zeichnet Blockmodelle direkt als Quads - ab Minecraft 26.1 gibt es dafuer keine fertige Einzelblock-Routine mehr.
+ * Zeichnet Blockmodelle direkt als Quads - ab Minecraft 26.1 gibt es dafür keine fertige Einzelblock-Routine mehr.
  * Ersetzt die bisherigen Aufrufe von renderSingleBlock und ModelBlockRenderer.renderModel.
  */
 public final class BlockQuads {
@@ -37,7 +37,7 @@ public final class BlockQuads {
     }
 
     /**
-     * Alle Quads eines Modells in einen Puffer (Farbe weiss).
+     * Alle Quads eines Modells in einen Puffer (Farbe weiß).
      *
      * @param pose aktuelle Pose
      * @param vc Puffer
@@ -64,14 +64,14 @@ public final class BlockQuads {
     }
 
     /**
-     * Wie oben; ohne feste Flaechen, wenn {@code solid} false ist.
+     * Wie oben; ohne feste Flächen, wenn {@code solid} false ist.
      *
      * @param state Blockzustand
      * @param pose Pose-Stapel
      * @param buffers Puffer
      * @param light Lichtwert
      * @param overlay Overlay-Wert
-     * @param solid {@code false}: feste Flaechen weglassen
+     * @param solid {@code false}: feste Flächen weglassen
      */
     public static void render(BlockState state, PoseStack pose, MultiBufferSource buffers, int light, int overlay, boolean solid) {
         List<BakedQuad> all = quads(model(state));
@@ -92,7 +92,7 @@ public final class BlockQuads {
     }
 
     /**
-     * Quad-Einstellungen: Farbe weiss, Licht und Overlay.
+     * Quad-Einstellungen: Farbe weiß, Licht und Overlay.
      *
      * @param light Lichtwert
      * @param overlay Overlay-Wert

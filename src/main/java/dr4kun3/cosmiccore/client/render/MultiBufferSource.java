@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 @FunctionalInterface
 public interface MultiBufferSource {
     /**
-     * Puffer fuer einen Render-Typ.
+     * Puffer für einen Render-Typ.
      *
      * @param type Render-Typ
      * @return der Puffer
@@ -15,7 +15,7 @@ public interface MultiBufferSource {
     VertexConsumer getBuffer(RenderType type);
 
     /**
-     * Schliesst den Abschnitt dieses Typs ab: Folgendes wird danach gezeichnet (wie das fruehere endBatch).
+     * Schließt den Abschnitt dieses Typs ab: Folgendes wird danach gezeichnet (wie das frühere endBatch).
      *
      * @param type Render-Typ
      */

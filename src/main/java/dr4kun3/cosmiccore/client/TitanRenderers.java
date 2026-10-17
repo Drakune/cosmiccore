@@ -1,10 +1,12 @@
 package dr4kun3.cosmiccore.client;
 
+import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.entity.VoidTitanEntity;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 
-/** Laedt den GeckoLib-Renderer des Titanen erst bei Bedarf (die Klasse existiert nur mit GeckoLib sinnvoll). */
+/** Lädt den GeckoLib-Renderer des Titanen erst bei Bedarf (die Klasse existiert nur mit GeckoLib sinnvoll). */
 final class TitanRenderers {
     /** Nur statische Hilfsfunktion - keine Instanzen. */
     private TitanRenderers() {}
@@ -22,8 +24,8 @@ final class TitanRenderers {
             return (EntityRenderer<VoidTitanEntity, ?>) Class.forName("dr4kun3.cosmiccore.compat.geckolib.VoidTitanRenderer")
                     .getConstructor(EntityRendererProvider.Context.class).newInstance(ctx);
         } catch (ReflectiveOperationException | LinkageError e) {
-            dr4kun3.cosmiccore.CosmicCore.LOGGER.warn("Void-Titan-Renderer nicht verfuegbar: {}", e.toString());
-            return new net.minecraft.client.renderer.entity.NoopRenderer<>(ctx);
+            CosmicCore.LOGGER.warn("Void-Titan-Renderer nicht verfuegbar: {}", e.toString());
+            return new NoopRenderer<>(ctx);
         }
     }
 }

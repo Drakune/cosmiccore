@@ -4,6 +4,7 @@ import dr4kun3.cosmiccore.CosmicCore;
 import java.util.EnumMap;
 import java.util.Map;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -24,7 +25,7 @@ public final class ModEntities {
                     .clientTrackingRange(32)
                     .fireImmune()
                     .noSummon()
-                    .build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CosmicCore.id("void_titan"))));
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE, CosmicCore.id("void_titan"))));
 
     /** Entity-Typ je Asteroiden-Art. */
     public static final Map<CosmicAsteroid.Kind, DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>>> ASTEROIDS = new EnumMap<>(Map.of(
@@ -32,9 +33,9 @@ public final class ModEntities {
             CosmicAsteroid.Kind.LARGE, LARGE_ASTEROID, CosmicAsteroid.Kind.HUGE, HUGE_ASTEROID));
 
     /**
-     * Registriert eine Asteroidengroesse als eigenen Entity-Typ (Groesse, Sichtweite und Aktualisierung passend).
+     * Registriert eine Asteroidengröße als eigenen Entity-Typ (Größe, Sichtweite und Aktualisierung passend).
      *
-     * @param kind Asteroidengroesse
+     * @param kind Asteroidengröße
      * @return Halter des registrierten Entity-Typs
      */
     private static DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>> asteroid(CosmicAsteroid.Kind kind) {
@@ -44,7 +45,7 @@ public final class ModEntities {
                         .clientTrackingRange(kind == CosmicAsteroid.Kind.HUGE ? 24 : 16)
                         .updateInterval(1)
                         .fireImmune()
-                        .build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CosmicCore.id(kind.entityName()))));
+                        .build(ResourceKey.create(Registries.ENTITY_TYPE, CosmicCore.id(kind.entityName()))));
     }
 
     /** Nur statische Registrierungen - keine Instanzen. */

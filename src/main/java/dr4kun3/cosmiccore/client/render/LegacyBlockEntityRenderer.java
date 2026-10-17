@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Grundlage der Block-Renderer ab Minecraft 1.21.9: Der Zustand merkt sich den Block selbst, die bisherige
- * Zeichenroutine laeuft beim Einreichen und schreibt in {@link DeferredBuffers}.
+ * Zeichenroutine läuft beim Einreichen und schreibt in {@link DeferredBuffers}.
  */
 public abstract class LegacyBlockEntityRenderer<T extends BlockEntity> implements BlockEntityRenderer<T, LegacyBlockEntityRenderer.State<T>> {
     /** Renderzustand: der Block und die Werte, die das Zeichnen braucht. */
@@ -25,18 +25,13 @@ public abstract class LegacyBlockEntityRenderer<T extends BlockEntity> implement
         public Vec3 cameraPos = Vec3.ZERO;
     }
 
-    /**
-     * Neuer Zeichenzustand, der auf den Blockinhalt verweist.
-     *
-     * @return der Zustand
-     */
     @Override
     public State<T> createRenderState() {
         return new State<>();
     }
 
     /**
-     * Uebernimmt Blockinhalt, Teil-Tick und Kameraposition in den Zeichenzustand.
+     * Übernimmt Blockinhalt, Teil-Tick und Kameraposition in den Zeichenzustand.
      *
      * @param be der Blockinhalt
      * @param state Zeichenzustand
@@ -57,7 +52,7 @@ public abstract class LegacyBlockEntityRenderer<T extends BlockEntity> implement
      *
      * @param state Zeichenzustand
      * @param pose Pose-Stapel
-     * @param collector Sammler der Zeichenauftraege
+     * @param collector Sammler der Zeichenaufträge
      * @param camera Zustand der Kamera
      */
     @Override
