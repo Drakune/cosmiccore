@@ -255,7 +255,7 @@ public final class ReactorShellRenderer {
     }
 
     private static final int ROW_TITLE = 3, ROW_STATUS = 14, ROW_OUT = 28, ROW_BUF = 39, BAR_BUF = 49, ROW_INST = 56,
-            BAR_INST = 66, ROW_LEVEL = 73, ROW_OD = 84, ROW_FIELD = 95;
+            BAR_INST = 66, ROW_LEVEL = 73, ROW_OD = 84;
 
     /**
      * Live-Daten als Tabelle: Bezeichnung links, Wert mit Einheit rechtsbuendig; dazu die Abschnitte der Ports.
@@ -324,10 +324,11 @@ public final class ReactorShellRenderer {
         row(font, tm, buffers, tr("console.cosmiccore.instability"), inst + " %", ROW_INST, instColor);
         row(font, tm, buffers, tr("console.cosmiccore.level"), core.getScale() + " / " + core.getScaleMax(), ROW_LEVEL, 0xE0A8FF);
         if (maxOd > 0) row(font, tm, buffers, tr("console.cosmiccore.overdrive"), od.toString().trim(), ROW_OD, 0xFFB040);
-        row(font, tm, buffers, tr("console.cosmiccore.field"), Math.round(core.getShield() * 100) + " %", ROW_FIELD, 0x9AD8FF);
     }
 
     private static final float SECTION_PX = SECTION_W / TEXT_SCALE;
+    /** Lagerraster im Seitenabschnitt: Kantenlaenge eines Platzes und Oberkante (in Schriftpixeln). */
+    private static final float SECTION_CELL = 19.0F, SECTION_GRID_Y = 18.0F;
 
     /**
      * Abschnitt eines Ports auf dem breiten Bildschirm: Energie (Leistung, Puffer, Kapazitaet) bzw. Lager (Plaetze).
@@ -343,17 +344,14 @@ public final class ReactorShellRenderer {
         font.drawInBatch(title, (SECTION_PX - font.width(title)) / 2.0F, ROW_TITLE, 0xFF000000 | (ep.energy() ? 0x7AE8FF : 0xFFC070), false, tm, buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, LightTexture.FULL_BRIGHT);
         if (ep.energy()) {
-            SingularityCoreBlockEntity core = p.core();
-            long cap = ReactorSizeCapacity.capacity(core.getStructureSize());
-            long stored = Math.round(cap * core.getEnergyPct() / 100.0);
-            secRow(font, tm, buffers, tr("console.cosmiccore.output"), compact(core.getOutput()) + " RF/t", ROW_OUT, 0x7AE8FF);
-            secRow(font, tm, buffers, tr("console.cosmiccore.buffer"), core.getEnergyPct() + " %", ROW_BUF, 0xC8B8F0);
-            secRow(font, tm, buffers, tr("console.cosmiccore.stored"), compact(stored) + " RF", ROW_INST, 0xC8B8F0);
-            secRow(font, tm, buffers, tr("console.cosmiccore.capacity"), compact(cap) + " RF", ROW_LEVEL, 0xA898C8);
+            long[] ev = PortStation.energyValues(ep.be(), p.core());
+            secRow(font, tm, buffers, tr("console.cosmiccore.transfer"), compact(ev[0]) + " RF/t", ROW_OUT, 0x7AE8FF);
+            secRow(font, tm, buffers, tr("console.cosmiccore.stored"), compact(ev[1]) + " RF", ROW_BUF, 0xC8B8F0);
+            secRow(font, tm, buffers, tr("console.cosmiccore.capacity"), compact(ev[2]) + " RF", ROW_INST, 0xA898C8);
+            secRow(font, tm, buffers, tr("console.cosmiccore.output"), compact(p.core().getOutput()) + " RF/t", ROW_LEVEL, 0xA898C8);
         } else {
-            int used = ep.be() instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip ? ip.getClientUsed() : 0;
-            int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
-            secRow(font, tm, buffers, tr("console.cosmiccore.slots"), used + " / " + slots, ROW_OUT, used >= slots ? 0xFF6060 : 0xFFC070);
+            // das Lager als Raster mit den echten Items
+            PortStation.itemGrid(font, tm, buffers, p.level(), ep.be(), (SECTION_PX - 9 * SECTION_CELL) / 2.0F, SECTION_GRID_Y, SECTION_CELL);
         }
     }
 
@@ -589,7 +587,7 @@ public final class ReactorShellRenderer {
     private static PortStation.Data stationData(Params p, ShellCell c) {
         BlockPos cpos = p.corePos().offset(c.dx(), c.dy(), c.dz());
         return new PortStation.Data(p.level().getBlockEntity(cpos) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity ctrl
-                ? ctrl : null, p.core(), p.t(), Math.max(0.6F, p.energy()), 0);
+                ? ctrl : null, p.core(), p.t(), Math.max(0.6F, p.energy()), null);
     }
 
     /**
@@ -688,20 +686,12 @@ public final class ReactorShellRenderer {
             Matrix4f sm = new Matrix4f(full).translate(x0, 0, 0);
             segment(vc, sm, 6, 12, 0, w - 6, 12, 0, 0.5F, sc[0], sc[1], sc[2], a * 0.6F, a * 0.6F);
             if (ep.energy()) {
-                float fill = Mth.clamp(p.core().getEnergyPct() / 100.0F, 0, 1);
+                long[] ev = PortStation.energyValues(ep.be(), p.core());
+                float fill = ev[2] <= 0 ? 0.0F : Mth.clamp((float) ((double) ev[1] / ev[2]), 0, 1);
                 segment(vc, sm, 6, BAR_BUF, 0, w - 6, BAR_BUF, 0, 1.4F, sc[0], sc[1], sc[2], a * 0.15F, a * 0.15F);
                 if (fill > 0) segment(vc, sm, 6, BAR_BUF, 0, 6 + (w - 12) * fill, BAR_BUF, 0, 1.4F, sc[0], sc[1], sc[2], a, a);
             } else {
-                int used = ep.be() instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip ? ip.getClientUsed() : 0;
-                int slots = dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity.STORAGE_SLOTS;
-                float cw = (w - 12) / 9.0F;
-                for (int k = 0; k < slots; k++) { // 3 Reihen zu 9 wie im Lager
-                    float bx = 6 + (k % 9) * cw, by = 44 + (k / 9) * 9;
-                    boolean full2 = k < used;
-                    float[] cc = full2 && used >= slots ? new float[]{1.0F, 0.35F, 0.35F} : sc;
-                    float al = full2 ? a : a * 0.15F;
-                    segment(vc, sm, bx + 0.8F, by, 0, bx + cw - 0.8F, by, 0, 3.0F, cc[0], cc[1], cc[2], al, al);
-                }
+                PortStation.itemGridGlow(vc, sm, ep.be(), (w - 9 * SECTION_CELL) / 2.0F, SECTION_GRID_Y, SECTION_CELL, sc, a);
             }
         }
         // Trennlinien unter Titel und Status
@@ -938,6 +928,9 @@ public final class ReactorShellRenderer {
         }
     }
 
+    /** Radius der Oeffnung oben im Haltenetz, durch die der Sternentrichter ragt. */
+    private static final float FUNNEL_GAP = 0.75F;
+
     /**
      * Das Partikel-Haltenetz, das das Feld um das Loch zusammenhaelt.
      *
@@ -979,11 +972,18 @@ public final class ReactorShellRenderer {
             push[i] = (bulge + escape) * R;
             pos[i] = new Vector3f(v).mul(R + push[i]);
         }
+        // mit Sternentrichter: oben eine runde Oeffnung, durch die der Trichter ins Netz ragt (sonst laegen die
+        // Partikel und Linien der Kuppel vor seinem unteren Ende)
+        boolean[] open = new boolean[n];
+        if (p.core().hasFunnel()) {
+            for (int i = 0; i < n; i++) open[i] = pos[i].y > 0 && pos[i].x * pos[i].x + pos[i].z * pos[i].z < FUNNEL_GAP * FUNNEL_GAP;
+        }
 
         // Sternbildlinien: nur ausgewaehlte Verbindungen, fein und hell
         float[] lineCol = lerp(seam, new float[]{0.85F, 0.92F, 1.0F}, 0.55F);
         for (int[] l : net.links()) {
             int a = l[0], b = l[1];
+            if (open[a] || open[b]) continue;
             if (hash(a * 7 + b * 13) > 0.1F) continue; // ca. 55 % der Fesseln bilden die Sternbilder
             boolean broken = (danger > 0.2F || strength < 0.6F)
                     && hash(a * 31 + b * 17 + window) > 1.0F - Math.max(danger * 0.45F, (0.6F - strength) * 0.8F);
@@ -996,6 +996,7 @@ public final class ReactorShellRenderer {
 
         // Partikel, ihre Fesseln nach innen und feine Zugspuren zum Kern
         for (int i = 0; i < n; i++) {
+            if (open[i]) continue;
             Vector3f q = pos[i];
             float wave = (float) Math.exp(-Math.pow(home[i].y - waveY, 2) * 18.0);
             float pushing = push[i] / Math.max(0.01F, R);
