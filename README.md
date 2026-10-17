@@ -211,7 +211,9 @@ The other Minecraft versions live in their own branches (`mc/1.21.2` … `mc/26.
 
 ### License
 
-All rights reserved. © DR4KUN3
+[MIT License](LICENSE) · © 2026 DR4KUN3
+
+You may use, modify and share the mod and its code, including in modpacks and your own projects, as long as the copyright notice is kept.
 
 <p align="right"><a href="#english">Back to top ↑</a> · <a href="#deutsch">Deutsch ↓</a></p>
 
@@ -418,6 +420,8 @@ Die anderen Minecraft-Versionen liegen in eigenen Zweigen (`mc/1.21.2` … `mc/2
 
 ### Lizenz
 
-Alle Rechte vorbehalten. © DR4KUN3
+[MIT-Lizenz](LICENSE) · © 2026 DR4KUN3
+
+Du darfst die Mod und ihren Code nutzen, verändern und weitergeben, auch in Modpacks und eigenen Projekten, solange der Urheberrechtshinweis erhalten bleibt.
 
 <p align="right"><a href="#deutsch">Nach oben ↑</a> · <a href="#english">English ↑</a></p>
