@@ -9,7 +9,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/** Basis fuer alle passiven Strukturbloecke (Gehaeuse, Rahmen, Spule, Kristall). */
+/** Basis für alle passiven Strukturblöcke (Gehäuse, Rahmen, Spule, Kristall). */
 public class StructureBlock extends Block {
     /**
      * Erzeugt einen Strukturblock (ruhend, sichtbar).
@@ -22,39 +22,16 @@ public class StructureBlock extends Block {
                 .setValue(ModProperties.PHANTOM, false));
     }
 
-    /**
-     * Zustaende: Reaktorphase und "Phantom" (in der Kammer aufgegangen).
-     *
-     * @param builder Bauplan der Zustaende
-     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ModProperties.PHASE, ModProperties.PHANTOM);
     }
 
-    /**
-     * Als Phantom ohne Umriss, sonst ein voller Block.
-     *
-     * @param state Blockzustand
-     * @param level Welt
-     * @param pos Position
-     * @param ctx Kontext der Abfrage
-     * @return der Umriss
-     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.PHANTOM) ? Shapes.empty() : super.getShape(state, level, pos, ctx);
     }
 
-    /**
-     * Als Phantom ohne Kollision, sonst ein voller Block.
-     *
-     * @param state Blockzustand
-     * @param level Welt
-     * @param pos Position
-     * @param ctx Kontext der Abfrage
-     * @return die Kollisionsform
-     */
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.PHANTOM) ? Shapes.empty() : super.getCollisionShape(state, level, pos, ctx);

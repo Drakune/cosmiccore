@@ -1,9 +1,10 @@
 package dr4kun3.cosmiccore.compat.rei;
 
 import dr4kun3.cosmiccore.CosmicCore;
-import dr4kun3.cosmiccore.compat.ViewerEntries;
+import dr4kun3.cosmiccore.client.ControllerScreen;
 import dr4kun3.cosmiccore.compat.ViewerEntries.Entry;
 import dr4kun3.cosmiccore.compat.ViewerEntries.Kind;
+import dr4kun3.cosmiccore.compat.ViewerEntries;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.category.CategoryRegistry;
 import me.shedaniel.rei.api.client.registry.display.DisplayCategory;
 import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
+import me.shedaniel.rei.api.client.registry.screen.ExclusionZones;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.display.Display;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
@@ -27,7 +29,7 @@ import me.shedaniel.rei.plugin.common.displays.DefaultInformationDisplay;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-/** REI: Kategorien fuer Brennstoffe, Stabilisatoren und Asteroiden-Beute plus Info-Seiten. */
+/** REI: Kategorien für Brennstoffe, Stabilisatoren und Asteroiden-Beute plus Info-Seiten. */
 @REIPluginClient
 public class CosmicReiPlugin implements REIClientPlugin {
     private static final Map<Kind, CategoryIdentifier<CosmicDisplay>> IDS = new EnumMap<>(Kind.class);
@@ -37,13 +39,13 @@ public class CosmicReiPlugin implements REIClientPlugin {
     }
 
     /**
-     * Haelt den Modul- und Lager-Tab rechts am Controller-Fenster frei (REI legt dort sonst seine Liste darueber).
+     * Hält den Modul- und Lager-Tab rechts am Controller-Fenster frei (REI legt dort sonst seine Liste darüber).
      *
      * @param zones Registrierung der freizuhaltenden Bereiche
      */
     @Override
-    public void registerExclusionZones(me.shedaniel.rei.api.client.registry.screen.ExclusionZones zones) {
-        zones.register(dr4kun3.cosmiccore.client.ControllerScreen.class, screen -> {
+    public void registerExclusionZones(ExclusionZones zones) {
+        zones.register(ControllerScreen.class, screen -> {
             List<Rectangle> out = new ArrayList<>();
             for (var r : screen.extraAreas()) out.add(new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight()));
             return out;
@@ -51,7 +53,7 @@ public class CosmicReiPlugin implements REIClientPlugin {
     }
 
     /**
-     * Meldet die Kategorien Brennstoffe, Stabilisatoren und Asteroiden-Beute samt ihrer Werkbank-Bloecke an.
+     * Meldet die Kategorien Brennstoffe, Stabilisatoren und Asteroiden-Beute samt ihrer Werkbank-Blöcke an.
      *
      * @param registry Registrierung der Kategorien
      */
@@ -64,7 +66,7 @@ public class CosmicReiPlugin implements REIClientPlugin {
     }
 
     /**
-     * Meldet alle Eintraege der Kategorien und die Info-Seiten der wichtigsten Bloecke an.
+     * Meldet alle Einträge der Kategorien und die Info-Seiten der wichtigsten Blöcke an.
      *
      * @param registry Registrierung der Anzeigen
      */
@@ -80,31 +82,16 @@ public class CosmicReiPlugin implements REIClientPlugin {
     }
 
     public record CosmicDisplay(Entry entry) implements Display {
-        /**
-         * Eingabe: das Item (bei Asteroiden-Beute keine).
-         *
-         * @return Liste der Eingaben
-         */
         @Override
         public List<EntryIngredient> getInputEntries() {
             return entry.kind() == Kind.LOOT ? List.of() : List.of(EntryIngredients.of(entry.input()));
         }
 
-        /**
-         * Ausgaben dieses Eintrags.
-         *
-         * @return Liste der Ausgaben
-         */
         @Override
         public List<EntryIngredient> getOutputEntries() {
             return entry.outputs().stream().map(o -> EntryIngredients.of(o.stack())).toList();
         }
 
-        /**
-         * Kategorie, zu der der Eintrag gehoert.
-         *
-         * @return Kennung der Kategorie
-         */
         @Override
         public CategoryIdentifier<?> getCategoryIdentifier() {
             return IDS.get(entry.kind());
@@ -112,62 +99,36 @@ public class CosmicReiPlugin implements REIClientPlugin {
     }
 
     private record Category(Kind kind) implements DisplayCategory<CosmicDisplay> {
-        /**
-         * Kennung dieser Kategorie.
-         *
-         * @return die Kennung
-         */
         @Override
         public CategoryIdentifier<? extends CosmicDisplay> getCategoryIdentifier() {
             return IDS.get(kind);
         }
 
-        /**
-         * Titel der Kategorie.
-         *
-         * @return uebersetzter Titel
-         */
         @Override
         public Component getTitle() {
             return ViewerEntries.title(kind);
         }
 
-        /**
-         * Symbol der Kategorie.
-         *
-         * @return Item-Symbol
-         */
         @Override
         public Renderer getIcon() {
             return EntryStacks.of(ViewerEntries.icon(kind));
         }
 
-        /**
-         * Hoehe einer Anzeige (Beute braucht eine Zeile mehr).
-         *
-         * @return Hoehe in Pixeln
-         */
         @Override
         public int getDisplayHeight() {
             return (kind == Kind.LOOT ? 44 : 30) + 10;
         }
 
-        /**
-         * Breite einer Anzeige.
-         *
-         * @param display die Anzeige
-         * @return Breite in Pixeln
-         */
         @Override
         public int getDisplayWidth(CosmicDisplay display) {
             return ViewerEntries.WIDTH + 10;
         }
 
         /**
-         * Baut die Anzeige: Item-Slot und Textzeilen bzw. bei Beute die moeglichen Drops mit Chance.
+         * Baut die Anzeige: Item-Slot und Textzeilen bzw. bei Beute die möglichen Drops mit Chance.
          *
          * @param display die Anzeige
-         * @param bounds verfuegbarer Bereich
+         * @param bounds verfügbarer Bereich
          * @return die Anzeigeelemente
          */
         @Override

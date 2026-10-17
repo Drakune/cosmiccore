@@ -3,7 +3,10 @@ package dr4kun3.cosmiccore.block;
 import dr4kun3.cosmiccore.block.entity.EnergyPortBlockEntity;
 import dr4kun3.cosmiccore.block.entity.ModBlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -26,51 +29,22 @@ public class EnergyPortBlock extends Block implements EntityBlock {
                 .setValue(ModProperties.DOCKED, false));
     }
 
-    /**
-     * Zustaende: Reaktorphase, Konsolenseite und "angedockt" (Kabel daneben).
-     *
-     * @param builder Bauplan der Zustaende
-     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ModProperties.PHASE, ModProperties.CONSOLE, ModProperties.DOCKED);
     }
 
-    /**
-     * Beim Setzen pruefen, ob der Port neben einem Controller Teil der Steuerkonsole wird.
-     *
-     * @param ctx Kontext des Setzens
-     * @return der Startzustand
-     */
     @Override
-    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         return Terminal.portState(defaultBlockState(), ctx.getLevel(), ctx.getClickedPos(), true);
     }
 
-    /**
-     * Nachbar geaendert: gehoert der Port (noch) zu einer Steuerkonsole, ist ein Kabel angedockt?
-     *
-     * @param state bisheriger Zustand
-     * @param dir Richtung zum geaenderten Nachbarn
-     * @param neighbor neuer Zustand des Nachbarn
-     * @param level Welt
-     * @param pos Position des Ports
-     * @param neighborPos Position des Nachbarn
-     * @return der aktualisierte Zustand
-     */
     @Override
-    protected BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighbor,
-                                     net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, Direction dir, BlockState neighbor,
+                                     LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
         return Terminal.portState(state, level, pos, true);
     }
 
-    /**
-     * Der Energie-Port hat einen Blockinhalt, der Strom an Nachbarn abgibt.
-     *
-     * @param pos Position
-     * @param state Blockzustand
-     * @return neuer {@link EnergyPortBlockEntity}
-     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

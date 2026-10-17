@@ -11,9 +11,9 @@ public final class ColorOverride {
     private static int mask;
 
     /**
-     * Uebernimmt den Farbsatz eines Reaktors fuer die folgenden Zeichenaufrufe.
+     * Übernimmt den Farbsatz eines Reaktors für die folgenden Zeichenaufrufe.
      *
-     * @param c Farbsatz (Maske eigener Kanaele und Farben)
+     * @param c Farbsatz (Maske eigener Kanäle und Farben)
      */
     public static void begin(CoreColors.Config c) {
         mask = c.mask();
@@ -29,7 +29,7 @@ public final class ColorOverride {
      * Hat der Kanal eine eigene Farbe?
      *
      * @param channel Nummer des Farbkanals (siehe CoreColors)
-     * @return {@code true}, wenn der Spieler eine Farbe gewaehlt hat
+     * @return {@code true}, wenn der Spieler eine Farbe gewählt hat
      */
     public static boolean custom(int channel) {
         return (mask >> channel & 1) != 0;
@@ -47,11 +47,11 @@ public final class ColorOverride {
     }
 
     /**
-     * Aufgehellte Variante der Kanalfarbe (fuer Kerne und Spitzen von Effekten).
+     * Aufgehellte Variante der Kanalfarbe (für Kerne und Spitzen von Effekten).
      *
      * @param channel Nummer des Farbkanals
-     * @param def Standardfarbe (wird ohne eigene Farbe unveraendert genommen)
-     * @param amount Anteil Weiss 0..1
+     * @param def Standardfarbe (wird ohne eigene Farbe unverändert genommen)
+     * @param amount Anteil Weiß 0..1
      * @return die Farbe
      */
     public static float[] light(int channel, float[] def, float amount) {
@@ -59,10 +59,10 @@ public final class ColorOverride {
     }
 
     /**
-     * Abgedunkelte Variante der Kanalfarbe (fuer Raender und Schatten von Effekten).
+     * Abgedunkelte Variante der Kanalfarbe (für Ränder und Schatten von Effekten).
      *
      * @param channel Nummer des Farbkanals
-     * @param def Standardfarbe (wird ohne eigene Farbe unveraendert genommen)
+     * @param def Standardfarbe (wird ohne eigene Farbe unverändert genommen)
      * @param amount Abdunklung 0..1
      * @return die Farbe
      */

@@ -2,6 +2,7 @@ package dr4kun3.cosmiccore.block.entity;
 
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModProperties;
+import dr4kun3.cosmiccore.color.CoreColors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -14,10 +15,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Traeger der Animation: Der Renderer und die Partikel haengen hier dran, die Logik sitzt im Controller.
- * Der Controller schiebt die fuer die Darstellung noetigen Werte (Groesse, Stufe, Instabilitaet,
+ * Träger der Animation: Der Renderer und die Partikel hängen hier dran, die Logik sitzt im Controller.
+ * Der Controller schiebt die für die Darstellung nötigen Werte (Größe, Stufe, Instabilität,
  * Himmelsverbindung) hierher; sie werden an die Clients synchronisiert.
  */
 public class SingularityCoreBlockEntity extends BlockEntity {
@@ -26,20 +29,15 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     private boolean primary;
     /** Verschmolzener Mittelkern des ultimativen Kerns: vom Controller gesetzt, droppt nichts. */
     private boolean fused;
-    /** Ultimativer Kern: ist der Void-Titan erwacht, faellt sein Strahl dauerhaft in den Kern. */
+    /** Ultimativer Kern: ist der Void-Titan erwacht, fällt sein Strahl dauerhaft in den Kern. */
     private boolean awakened;
 
-    /**
-     * Wurde der Titan schon gerufen (erster Ultimate-Modus)?
-     *
-     * @return {@code true}, wenn ja
-     */
     public boolean isAwakened() {
         return awakened;
     }
 
     /**
-     * Merkt sich, ob der Titan gerufen wurde. Aenderungen gehen sofort an die Clients.
+     * Merkt sich, ob der Titan gerufen wurde. Änderungen gehen sofort an die Clients.
      *
      * @param awakened neuer Wert
      */
@@ -53,23 +51,18 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /** Farbsatz vom Farb-Modul des Controllers. */
-    private dr4kun3.cosmiccore.color.CoreColors.Config colors = dr4kun3.cosmiccore.color.CoreColors.DEFAULT;
+    private CoreColors.Config colors = CoreColors.DEFAULT;
 
-    /**
-     * Farbsatz des Reaktors.
-     *
-     * @return der Farbsatz
-     */
-    public dr4kun3.cosmiccore.color.CoreColors.Config getColors() {
+    public CoreColors.Config getColors() {
         return colors;
     }
 
     /**
-     * Setzt den Farbsatz. Aenderungen gehen sofort an die Clients.
+     * Setzt den Farbsatz. Änderungen gehen sofort an die Clients.
      *
      * @param c neuer Farbsatz
      */
-    public void setColors(dr4kun3.cosmiccore.color.CoreColors.Config c) {
+    public void setColors(CoreColors.Config c) {
         if (c.equals(colors)) return;
         colors = c;
         setChanged();
@@ -78,11 +71,6 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         }
     }
 
-    /**
-     * Ist das der verschmolzene Mittelkern des ultimativen Kerns?
-     *
-     * @return {@code true}, wenn ja
-     */
     public boolean isFused() {
         return fused;
     }
@@ -98,72 +86,72 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
     private int scale = 1;
     private int maxScale = 1;
-    private int instability;      // 0..100 (gerundet, damit nicht jeder Tick ein Paket ausloest)
+    private int instability;      // 0..100 (gerundet, damit nicht jeder Tick ein Paket auslöst)
     private boolean skyLink;
     private int cosmic = 100;     // kosmischer Faktor in Prozent
-    private int shield;           // Staerke des Eindaemmungsschilds 0..100 (Stabilisator-Vorrat)
+    private int shield;           // Stärke des Eindämmungsschilds 0..100 (Stabilisator-Vorrat)
     private boolean funnel;       // Sternentrichter auf der Decke
-    private boolean laserArray;   // vier Kosmos-Laser bilden das grosse Geschuetz
+    private boolean laserArray;   // vier Kosmos-Laser bilden das große Geschütz
     private int laserTarget = -1; // Entity-ID des anvisierten Asteroiden
     private long targetSince;     // nur clientseitig: seit wann das aktuelle Ziel erfasst ist
     private int overdrive;        // installierte Overdrive-Stufen (verwandeln das Loch)
-    private int output;           // aktuelle RF/t (fuer die Konsole)
-    private int energyPct;        // Pufferfuellstand 0..100 (fuer die Konsole)
+    private int output;           // aktuelle RF/t (für die Konsole)
+    private int energyPct;        // Pufferfüllstand 0..100 (für die Konsole)
     private int meltdown;         // Sekunden bis zum Kollaps (0 = kein Countdown)
 
     /** Spielzeit, zu der die Struktur gebildet wurde (vom Controller gesetzt, startet die Verwandlungs-Animation). */
     private long formStart = Long.MIN_VALUE;
-    /** Spielzeit, zu der ein abgeschossener Asteroid sein Energiepartikel abgegeben hat (Uebergabe-Animation). */
+    /** Spielzeit, zu der ein abgeschossener Asteroid sein Energiepartikel abgegeben hat (Übergabe-Animation). */
     private long deliverStart = Long.MIN_VALUE;
-    /** Explosionsort der laufenden Uebergabe relativ zur Kernmitte (vom Server festgehalten). */
-    private net.minecraft.world.phys.Vec3 deliverSource;
+    /** Explosionsort der laufenden Übergabe relativ zur Kernmitte (vom Server festgehalten). */
+    private Vec3 deliverSource;
     private float deliverSize = 2.0F; // sichtbarer Durchmesser des zerbrochenen Asteroiden
     public static final int DELIVER_TICKS = 110;
-    /** Sternen-Trichter am Himmel: Hoehe ueber der Oeffnung und Radius am oberen Rand (Trompetenform). */
+    /** Sternen-Trichter am Himmel: Höhe über der Öffnung und Radius am oberen Rand (Trompetenform). */
     public static final float FUNNEL_HEIGHT = 34.0F;
     public static final float FUNNEL_TOP_RADIUS = 5.0F;
 
     /**
-     * Radius der Trompetenform des Sternentrichters in einer Hoehe (unten eng, oben weit).
+     * Radius der Trompetenform des Sternentrichters in einer Höhe (unten eng, oben weit).
      *
-     * @param h Hoehe ueber dem Hals in Bloecken
-     * @return Radius in Bloecken
+     * @param h Höhe über dem Hals in Blöcken
+     * @return Radius in Blöcken
      */
     public static float funnelRadius(float h) {
         float f = Math.max(0.0F, Math.min(1.0F, h / FUNNEL_HEIGHT));
         return 0.3F + FUNNEL_TOP_RADIUS * f * f * f;
     }
-    /** Zeitplan der Uebergabe (Anteile von DELIVER_TICKS), gemeinsam fuer Animation und Klaenge. */
+    /** Zeitplan der Übergabe (Anteile von DELIVER_TICKS), gemeinsam für Animation und Klänge. */
     public static final int FRAGMENTS = 24;
     public static final float FRAGMENT_TRAVEL = 0.36F;
     public static final float SINK_START = 0.8F;
 
     /**
-     * Startzeit eines Bruchstuecks bei der Uebergabe.
+     * Startzeit eines Bruchstücks bei der Übergabe.
      *
-     * @param k Nummer des Bruchstuecks
-     * @return Zeitpunkt als Anteil der Uebergabe 0..1
+     * @param k Nummer des Bruchstücks
+     * @return Zeitpunkt als Anteil der Übergabe 0..1
      */
     public static float fragmentDelay(int k) {
         return 0.05F + k / (float) FRAGMENTS * 0.4F;
     }
 
     /**
-     * Zeitpunkt, an dem ein Bruchstueck in der Trichteroeffnung ankommt (fuer passende Klaenge).
+     * Zeitpunkt, an dem ein Bruchstück in der Trichteröffnung ankommt (für passende Klänge).
      *
-     * @param k Nummer des Bruchstuecks
-     * @return Zeitpunkt als Anteil der Uebergabe 0..1
+     * @param k Nummer des Bruchstücks
+     * @return Zeitpunkt als Anteil der Übergabe 0..1
      */
     public static float fragmentArrival(int k) {
         return fragmentDelay(k) + FRAGMENT_TRAVEL;
     }
-    /** nur clientseitig: Zuenden des Kerns (Sterne rasen in die Mitte). */
+    /** nur clientseitig: Zünden des Kerns (Sterne rasen in die Mitte). */
     private CorePhase lastClientPhase;
     private long igniteStart = Long.MIN_VALUE;
     public static final int IGNITE_TICKS = 42;
-    /** nur clientseitig: letzte Position des Laserziels relativ zum Kern (Quelle der Bruchstuecke). */
-    @org.jetbrains.annotations.Nullable
-    public net.minecraft.world.phys.Vec3 lastLaserTarget;
+    /** nur clientseitig: letzte Position des Laserziels relativ zum Kern (Quelle der Bruchstücke). */
+    @Nullable
+    public Vec3 lastLaserTarget;
 
     /**
      * Legt den Blockinhalt des Kerns an.
@@ -178,13 +166,13 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     // ------------------------------------------------------------------ vom Controller gesetzt
 
     /**
-     * Uebernimmt den sichtbaren Zustand vom Controller und schickt ihn nur bei echten Aenderungen an die Clients
-     * (Werte sind gerundet, damit nicht jeder Tick ein Paket ausloest).
+     * Übernimmt den sichtbaren Zustand vom Controller und schickt ihn nur bei echten Änderungen an die Clients
+     * (Werte sind gerundet, damit nicht jeder Tick ein Paket auslöst).
      *
-     * @param structureSize Kantenlaenge der Struktur
+     * @param structureSize Kantenlänge der Struktur
      * @param scale Leistungsstufe
-     * @param maxScale hoechste Leistungsstufe
-     * @param instability Instabilitaet in Prozent
+     * @param maxScale höchste Leistungsstufe
+     * @param instability Instabilität in Prozent
      * @param skyLink freie Sicht zum Himmel
      * @param cosmic kosmischer Faktor
      * @param shield Stabilisator-Vorrat in Prozent
@@ -193,7 +181,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
      * @param laserTarget Entity-ID des anvisierten Asteroiden oder -1
      * @param overdrive Overdrive-Stufe
      * @param output aktuelle Leistung in RF je Tick
-     * @param energyPct Fuellstand des Puffers in Prozent
+     * @param energyPct Füllstand des Puffers in Prozent
      * @param meltdown Sekunden bis zum Kollaps (0 = kein Countdown)
      */
     public void setVisuals(int structureSize, int scale, int maxScale, float instability, boolean skyLink, double cosmic,
@@ -233,10 +221,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /**
-     * Fortschritt des Zuend-Effekts.
+     * Fortschritt des Zünd-Effekts.
      *
      * @param partialTick Teil-Tick
-     * @return 0..1 oder -1, wenn keiner laeuft
+     * @return 0..1 oder -1, wenn keiner läuft
      */
     public float getIgnitePhase(float partialTick) {
         if (level == null || igniteStart == Long.MIN_VALUE) return -1.0F;
@@ -245,45 +233,35 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /**
-     * Vom Controller aufgerufen, wenn der Laser einen Asteroiden zerstoert hat: startet die Uebergabe-Animation.
+     * Vom Controller aufgerufen, wenn der Laser einen Asteroiden zerstört hat: startet die Übergabe-Animation.
      *
      * @param gameTime Spielzeit des Abschusses
      * @param source Explosionsort in Weltkoordinaten
-     * @param size Groesse des Asteroiden
+     * @param size Größe des Asteroiden
      */
-    public void markDelivery(long gameTime, net.minecraft.world.phys.Vec3 source, float size) {
+    public void markDelivery(long gameTime, Vec3 source, float size) {
         deliverStart = gameTime;
         deliverSize = size;
-        deliverSource = source.subtract(net.minecraft.world.phys.Vec3.atCenterOf(worldPosition));
+        deliverSource = source.subtract(Vec3.atCenterOf(worldPosition));
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
 
-    /**
-     * Groesse des zuletzt zerplatzten Asteroiden.
-     *
-     * @return Bloecke
-     */
     public float getDeliverSize() {
         return deliverSize;
     }
 
-    /**
-     * Explosionsort der Uebergabe relativ zur Kernmitte.
-     *
-     * @return Position oder {@code null}, falls unbekannt
-     */
-    public net.minecraft.world.phys.Vec3 getDeliverSource() {
+    public Vec3 getDeliverSource() {
         return deliverSource;
     }
 
     /**
-     * Fortschritt der Uebergabe.
+     * Fortschritt der Übergabe.
      *
      * @param partialTick Teil-Tick
-     * @return 0..1 oder -1, wenn keine laeuft
+     * @return 0..1 oder -1, wenn keine läuft
      */
     public float getDeliverPhase(float partialTick) {
         if (level == null || deliverStart == Long.MIN_VALUE) return -1.0F;
@@ -304,28 +282,18 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         }
     }
 
-    /**
-     * Ist das der Kern, der den Reaktor zeichnet (beim ultimativen Kern nur der mittlere)?
-     *
-     * @return {@code true}, wenn ja
-     */
     public boolean isPrimary() {
         return primary;
     }
 
-    /**
-     * Kantenlaenge der Struktur.
-     *
-     * @return Bloecke
-     */
     public int getStructureSize() {
         return structureSize;
     }
 
     /**
-     * Abstand vom Kern zur Innenflaeche der Achsen-Spulen und Kristalle.
+     * Abstand vom Kern zur Innenfläche der Achsen-Spulen und Kristalle.
      *
-     * @return Bloecke
+     * @return Blöcke
      */
     public float getReach() {
         int half = structureSize / 2;
@@ -333,110 +301,50 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         return focus - 0.5F;
     }
 
-    /**
-     * Leistungsstufe als Anteil: 0 bei Stufe 1, 1 bei der hoechsten Stufe der Baugroesse.
-     *
-     * @return 0..1
-     */
     public float getGrowth() {
         return maxScale <= 1 ? 0.0F : (scale - 1) / (float) (maxScale - 1);
     }
 
-    /**
-     * Leistungsstufe.
-     *
-     * @return Stufe
-     */
     public int getScale() {
         return scale;
     }
 
-    /**
-     * Instabilitaet.
-     *
-     * @return Prozent
-     */
     public float getInstability() {
         return instability;
     }
 
-    /**
-     * Freie Sicht zum Himmel (Jet und kosmischer Bonus)?
-     *
-     * @return {@code true}, wenn ja
-     */
     public boolean hasSkyLink() {
         return skyLink;
     }
 
-    /**
-     * Stabilisator-Vorrat.
-     *
-     * @return 0..1
-     */
     public float getShield() {
         return shield / 100.0F;
     }
 
-    /**
-     * Aktuelle Leistung.
-     *
-     * @return RF je Tick
-     */
     public int getOutput() {
         return output;
     }
 
-    /**
-     * Sekunden bis zum Kollaps.
-     *
-     * @return Sekunden (0 = kein Countdown)
-     */
     public int getMeltdown() {
         return meltdown;
     }
 
-    /**
-     * Fuellstand des Puffers.
-     *
-     * @return Prozent
-     */
     public int getEnergyPct() {
         return energyPct;
     }
 
-    /**
-     * Hoechste Leistungsstufe der Baugroesse.
-     *
-     * @return Stufe
-     */
     public int getScaleMax() {
         return maxScale;
     }
 
-    /**
-     * Overdrive-Stufe.
-     *
-     * @return Stufe 0..4
-     */
     public int getOverdrive() {
         return overdrive;
     }
 
-    /**
-     * Sind die Kosmos-Laser verbunden?
-     *
-     * @return {@code true}, wenn ja
-     */
     public boolean hasLaserArray() {
         return laserArray;
     }
 
-    /**
-     * Anvisierter Asteroid.
-     *
-     * @return Entity-ID oder -1
-     */
     public int getLaserTarget() {
         return laserTarget;
     }
@@ -453,20 +361,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         return Math.max(0.0F, Math.min(1.0F, c));
     }
 
-    /**
-     * Steht ein Sternentrichter auf der Decke?
-     *
-     * @return {@code true}, wenn ja
-     */
     public boolean hasFunnel() {
         return funnel;
     }
 
-    /**
-     * Kosmischer Faktor.
-     *
-     * @return Faktor
-     */
     public float getCosmic() {
         return cosmic / 100.0F;
     }
@@ -502,10 +400,10 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /**
-     * Ueberschwingende Einblendung (waechst kurz ueber 1 hinaus und federt zurueck).
+     * Überschwingende Einblendung (wächst kurz über 1 hinaus und federt zurück).
      *
      * @param x Fortschritt 0..1
-     * @return Groesse (kurz ueber 1)
+     * @return Größe (kurz über 1)
      */
     public static float easeOutBack(float x) {
         float c1 = 1.70158F, c3 = c1 + 1.0F, d = x - 1.0F;
@@ -513,7 +411,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /**
-     * Client: erkennt das Zuenden, spielt Klaenge der Uebergabe ab und erzeugt Partikel je nach Phase.
+     * Client: erkennt das Zünden, spielt Klänge der Übergabe ab und erzeugt Partikel je nach Phase.
      *
      * @param level Client-Welt
      * @param pos Position
@@ -522,8 +420,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
      */
     public static void clientTick(Level level, BlockPos pos, BlockState state, SingularityCoreBlockEntity be) {
         CorePhase phase = state.getValue(ModProperties.PHASE);
-        // Zuenden erkannt (bereit -> aktiv): Sterne rasen in die Mitte (nicht beim blossen Laden des Chunks)
-        // (hoechstens einmal pro Minute - z. B. nicht bei jedem Wiederanlaufen nach vollem Puffer)
+        // Zünden erkannt (bereit -> aktiv): Sterne rasen in die Mitte (nicht beim bloßen Laden des Chunks)
+        // (höchstens einmal pro Minute - z. B. nicht bei jedem Wiederanlaufen nach vollem Puffer)
         if (be.lastClientPhase == CorePhase.FORMED && phase == CorePhase.ACTIVE
                 && (be.igniteStart == Long.MIN_VALUE || level.getGameTime() - be.igniteStart > 1200)) {
             be.igniteStart = level.getGameTime();
@@ -532,7 +430,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         if (phase == CorePhase.DORMANT || !be.primary) return;
         float form = be.getFormProgress(0.0F);
         if (form < 0.55F) {
-            // Sog: Teilchen stroemen aus der ganzen Struktur in den Kern
+            // Sog: Teilchen strömen aus der ganzen Struktur in den Kern
             RandomSource rr = level.random;
             int half = be.structureSize / 2;
             for (int i = 0; i < 8; i++) {
@@ -557,14 +455,14 @@ public class SingularityCoreBlockEntity extends BlockEntity {
             level.addParticle(ParticleTypes.ELECTRIC_SPARK, cx + (r.nextDouble() - 0.5) * s, cy + (r.nextDouble() - 0.5) * s,
                     cz + (r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * 0.2, (r.nextDouble() - 0.5) * 0.2, (r.nextDouble() - 0.5) * 0.2);
         }
-        // kurz vor dem Kollaps: Flammenzungen schiessen aus dem Kern
+        // kurz vor dem Kollaps: Flammenzungen schießen aus dem Kern
         if (running && be.instability >= 85 && r.nextInt(3) == 0) {
             double dx = r.nextGaussian(), dy = r.nextGaussian(), dz = r.nextGaussian();
             double len = Math.max(0.001, Math.sqrt(dx * dx + dy * dy + dz * dz));
             level.addParticle(ParticleTypes.SOUL_FIRE_FLAME, cx, cy, cz, dx / len * 0.25, dy / len * 0.25, dz / len * 0.25);
         }
 
-        // Verbindung zum Kosmos: Sternenlicht faellt vom Himmel durch den Strahl in den Reaktor
+        // Verbindung zum Kosmos: Sternenlicht fällt vom Himmel durch den Strahl in den Reaktor
         if (running && be.skyLink) {
             int falls = 1 + Math.round(be.getCosmic() * 1.5F);
             for (int i = 0; i < falls; i++) {
@@ -593,7 +491,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /**
-     * Laedt den sichtbaren Zustand (auch beim Empfang auf dem Client); ein neues Laserziel startet die Aufladung.
+     * Lädt den sichtbaren Zustand (auch beim Empfang auf dem Client); ein neues Laserziel startet die Aufladung.
      *
      * @param tag gespeicherte Daten
      * @param registries Registry-Zugriff
@@ -605,8 +503,8 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         fused = tag.getBoolean("fused");
         awakened = tag.getBoolean("awakened");
         colors = tag.contains("colors")
-                ? new dr4kun3.cosmiccore.color.CoreColors.Config(tag.getInt("colorMask"), tag.getIntArray("colors"))
-                : dr4kun3.cosmiccore.color.CoreColors.DEFAULT;
+                ? new CoreColors.Config(tag.getInt("colorMask"), tag.getIntArray("colors"))
+                : CoreColors.DEFAULT;
         if (tag.contains("structureSize")) structureSize = tag.getInt("structureSize");
         scale = Math.max(1, tag.getInt("scale"));
         maxScale = Math.max(1, tag.getInt("maxScale"));
@@ -627,11 +525,11 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         deliverStart = tag.contains("deliverStart") ? tag.getLong("deliverStart") : Long.MIN_VALUE;
         if (tag.contains("deliverSize")) deliverSize = tag.getFloat("deliverSize");
         deliverSource = tag.contains("deliverX")
-                ? new net.minecraft.world.phys.Vec3(tag.getDouble("deliverX"), tag.getDouble("deliverY"), tag.getDouble("deliverZ")) : null;
+                ? new Vec3(tag.getDouble("deliverX"), tag.getDouble("deliverY"), tag.getDouble("deliverZ")) : null;
     }
 
     /**
-     * Schreibt alle sichtbaren Werte (fuer Speichern und Client).
+     * Schreibt alle sichtbaren Werte (für Speichern und Client).
      *
      * @param tag Ziel der Daten
      */
@@ -666,7 +564,7 @@ public class SingularityCoreBlockEntity extends BlockEntity {
     }
 
     /**
-     * Daten fuer den Client: der sichtbare Zustand.
+     * Daten für den Client: der sichtbare Zustand.
      *
      * @param registries Registry-Zugriff
      * @return die Daten
@@ -678,11 +576,6 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         return tag;
     }
 
-    /**
-     * Paket, mit dem Aenderungen an den Client gehen.
-     *
-     * @return das Paket
-     */
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);

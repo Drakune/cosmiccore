@@ -8,8 +8,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 /**
- * Overdrive-Partikel: wird ueber die GUI des Controllers im Reaktor installiert und dabei verbraucht.
- * Jede Stufe verdoppelt die Leistung und verdreifacht die Instabilitaet.
+ * Overdrive-Partikel: wird über die GUI des Controllers im Reaktor installiert und dabei verbraucht.
+ * Jede Stufe verdoppelt die Leistung und verdreifacht die Instabilität.
  */
 public class OverdriveParticleItem extends Item {
     /**
@@ -21,12 +21,6 @@ public class OverdriveParticleItem extends Item {
         super(props);
     }
 
-    /**
-     * Das Partikel schimmert immer.
-     *
-     * @param stack der Stapel
-     * @return immer {@code true}
-     */
     @Override
     public boolean isFoil(ItemStack stack) {
         return true;
@@ -37,7 +31,7 @@ public class OverdriveParticleItem extends Item {
      *
      * @param stack der Stapel
      * @param ctx Kontext des Tooltips
-     * @param tooltip Zeilen, an die angehaengt wird
+     * @param tooltip Zeilen, an die angehängt wird
      * @param flag erweiterte Anzeige (F3+H)
      */
     @Override

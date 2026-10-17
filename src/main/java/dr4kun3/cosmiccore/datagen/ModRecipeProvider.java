@@ -39,9 +39,9 @@ public class ModRecipeProvider extends RecipeProvider {
     }
 
     /**
-     * Alle Rezepte der Mod: Strukturbloecke, Controller, Ports, Brennstoffstufen, Module und Overdrive-Partikel.
+     * Alle Rezepte der Mod: Strukturblöcke, Controller, Ports, Brennstoffstufen, Module und Overdrive-Partikel.
      *
-     * @param out Empfaenger der fertigen Rezepte
+     * @param out Empfänger der fertigen Rezepte
      */
     @Override
     protected void buildRecipes(RecipeOutput out) {

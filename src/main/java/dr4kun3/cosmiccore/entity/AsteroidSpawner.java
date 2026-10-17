@@ -19,15 +19,15 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /**
- * Laesst nachts (Overworld) und im End jederzeit Asteroiden ueber gebildete Reaktoren hinwegziehen - aber nur, wenn
- * ein Spieler in der Naehe ist und kein aktives Anti-Asteroiden-Modul im Umkreis steht.
+ * Lässt nachts (Overworld) und im End jederzeit Asteroiden über gebildete Reaktoren hinwegziehen - aber nur, wenn
+ * ein Spieler in der Nähe ist und kein aktives Anti-Asteroiden-Modul im Umkreis steht.
  */
 @EventBusSubscriber(modid = CosmicCore.MODID)
 public final class AsteroidSpawner {
     private static final int MAX_NEARBY = 3;
 
     /**
-     * Alle 5 Sekunden: nachts in der Oberwelt (und im End) laesst ueber Reaktoren gelegentlich Asteroiden
+     * Alle 5 Sekunden: nachts in der Oberwelt (und im End) lässt über Reaktoren gelegentlich Asteroiden
      * vorbeiziehen - nicht in Bereichen mit Anti-Asteroiden-Modul.
      *
      * @param event Ende eines Welt-Ticks
@@ -69,10 +69,10 @@ public final class AsteroidSpawner {
     /**
      * Liegt eine Position im Schutzbereich eines Anti-Asteroiden-Moduls?
      *
-     * @param pos zu pruefende Position
-     * @param shields Positionen der geschuetzten Reaktoren
-     * @param range Schutzradius in Bloecken
-     * @return {@code true}, wenn geschuetzt
+     * @param pos zu prüfende Position
+     * @param shields Positionen der geschützten Reaktoren
+     * @param range Schutzradius in Blöcken
+     * @return {@code true}, wenn geschützt
      */
     private static boolean shielded(BlockPos pos, List<BlockPos> shields, double range) {
         for (BlockPos s : shields) {
@@ -82,12 +82,12 @@ public final class AsteroidSpawner {
     }
 
     /**
-     * Erzeugt einen Asteroiden mit Flugbahn quer ueber den Reaktor hinweg (leicht versetzt); Start ausserhalb
-     * geschuetzter Bereiche.
+     * Erzeugt einen Asteroiden mit Flugbahn quer über den Reaktor hinweg (leicht versetzt); Start außerhalb
+     * geschützter Bereiche.
      *
      * @param level Server-Welt
      * @param reactor Mitte des Reaktors
-     * @param shields Positionen geschuetzter Reaktoren
+     * @param shields Positionen geschützter Reaktoren
      * @param shieldRange Schutzradius
      * @param r Zufallsquelle
      */
@@ -111,10 +111,10 @@ public final class AsteroidSpawner {
     }
 
     /**
-     * Waehlt eine Asteroidengroesse nach Gewicht (klein haeufig, sehr gross selten).
+     * Wählt eine Asteroidengröße nach Gewicht (klein häufig, sehr groß selten).
      *
      * @param r Zufallsquelle
-     * @return die gewaehlte Groesse
+     * @return die gewählte Größe
      */
     private static CosmicAsteroid.Kind pick(RandomSource r) {
         int total = 0;

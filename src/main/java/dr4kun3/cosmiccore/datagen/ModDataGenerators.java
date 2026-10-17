@@ -21,7 +21,7 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 @EventBusSubscriber(modid = CosmicCore.MODID, bus = EventBusSubscriber.Bus.MOD)
 public final class ModDataGenerators {
     /**
-     * Meldet alle Generatoren an: Rezepte, Loot-Tables (Bloecke und Asteroiden), Block-Tags und Data Maps.
+     * Meldet alle Generatoren an: Rezepte, Loot-Tables (Blöcke und Asteroiden), Block-Tags und Data Maps.
      *
      * @param event Ereignis der Datengenerierung
      */

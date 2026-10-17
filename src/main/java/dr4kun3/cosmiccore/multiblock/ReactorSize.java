@@ -1,17 +1,20 @@
 package dr4kun3.cosmiccore.multiblock;
 
+import dr4kun3.cosmiccore.CoreConfig;
+import dr4kun3.cosmiccore.ModItems;
+import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Baugroessen des Kerngenerators. Groessere Reaktoren erlauben hoehere Leistungsstufen, sind pro Stufe
- * stabiler (mehr Spulen verteilen die Last) und haben einen groesseren Energiepuffer.
+ * Baugrößen des Kerngenerators. Größere Reaktoren erlauben höhere Leistungsstufen, sind pro Stufe
+ * stabiler (mehr Spulen verteilen die Last) und haben einen größeren Energiepuffer.
  */
 public enum ReactorSize {
-    // Leistungsstufen 4 / 6 / 8 / 10; groessere Reaktoren liefern mehr pro Stufe und sind stabiler
+    // Leistungsstufen 4 / 6 / 8 / 10; größere Reaktoren liefern mehr pro Stufe und sind stabiler
     SMALL(5, 4, 0.6, 0.5, 1.0, 1.0, 1),
     MEDIUM(7, 6, 0.85, 1.0, 0.8, 1.25, 2),
     LARGE(9, 8, 1.1, 2.5, 0.6, 1.6, 3),
-    /** Ultimativer Kern: Stufen 1-10, staerkster und stabilster Reaktor, erzeugt zusaetzlich Vakuum-Energie. */
+    /** Ultimativer Kern: Stufen 1-10, stärkster und stabilster Reaktor, erzeugt zusätzlich Vakuum-Energie. */
     ULTIMATE(11, 10, 1.3, 4.0, 0.45, 2.0, 3);
 
     private final int size;
@@ -24,15 +27,15 @@ public enum ReactorSize {
     private final CorePattern pattern;
 
     /**
-     * Legt eine Baugroesse mit ihren Kennwerten an.
+     * Legt eine Baugröße mit ihren Kennwerten an.
      *
-     * @param size Kantenlaenge in Bloecken
-     * @param maxScale hoechste Leistungsstufe
+     * @param size Kantenlänge in Blöcken
+     * @param maxScale höchste Leistungsstufe
      * @param outputFactor Leistungsfaktor je Stufe
-     * @param capacityFactor Faktor fuer den Puffer (aeltere Berechnung)
-     * @param instabilityFactor wie schnell die Instabilitaet steigt
+     * @param capacityFactor Faktor für den Puffer (ältere Berechnung)
+     * @param instabilityFactor wie schnell die Instabilität steigt
      * @param stabilizerFactor wie stark Stabilisatoren wirken
-     * @param maxOverdrive hoechste Overdrive-Stufe ohne Ultimate-Modus
+     * @param maxOverdrive höchste Overdrive-Stufe ohne Ultimate-Modus
      */
     ReactorSize(int size, int maxScale, double outputFactor, double capacityFactor, double instabilityFactor, double stabilizerFactor, int maxOverdrive) {
         this.size = size;
@@ -46,14 +49,14 @@ public enum ReactorSize {
     }
 
     /**
-     * RF-Puffer dieser Baustufe: 1G je Stufe (5er 1G, 7er 2G, 9er 3G), der ultimative Kern 5G - unabhaengig von der
+     * RF-Puffer dieser Baustufe: 1G je Stufe (5er 1G, 7er 2G, 9er 3G), der ultimative Kern 5G - unabhängig von der
      * Leistungsstufe (Werte aus der Konfiguration).
      *
-     * @return Kapazitaet in RF
+     * @return Kapazität in RF
      */
     public long buffer() {
-        if (this == ULTIMATE) return dr4kun3.cosmiccore.CoreConfig.ULTIMATE_BUFFER.get();
-        return dr4kun3.cosmiccore.CoreConfig.BUFFER_PER_TIER.get() * (ordinal() + 1);
+        if (this == ULTIMATE) return CoreConfig.ULTIMATE_BUFFER.get();
+        return CoreConfig.BUFFER_PER_TIER.get() * (ordinal() + 1);
     }
 
     /**
@@ -61,35 +64,35 @@ public enum ReactorSize {
      *
      * @return Sternenstaub, verdichteter Sternenstaub, Neutronenstern bzw. Quasar-Essenz
      */
-    public net.minecraft.world.item.Item unlockItem() {
+    public Item unlockItem() {
         return switch (this) {
-            case SMALL -> dr4kun3.cosmiccore.ModItems.STAR_DUST.get();
-            case MEDIUM -> dr4kun3.cosmiccore.ModItems.COMPRESSED_STAR_DUST.get();
-            case LARGE -> dr4kun3.cosmiccore.ModItems.NEUTRON_FRAGMENT.get();
-            case ULTIMATE -> dr4kun3.cosmiccore.ModItems.QUASAR_ESSENCE.get();
+            case SMALL -> ModItems.STAR_DUST.get();
+            case MEDIUM -> ModItems.COMPRESSED_STAR_DUST.get();
+            case LARGE -> ModItems.NEUTRON_FRAGMENT.get();
+            case ULTIMATE -> ModItems.QUASAR_ESSENCE.get();
         };
     }
 
     /**
-     * Kantenlaenge der Struktur.
+     * Kantenlänge der Struktur.
      *
-     * @return 5, 7, 9 oder 11 Bloecke
+     * @return 5, 7, 9 oder 11 Blöcke
      */
     public int size() {
         return size;
     }
 
     /**
-     * Halbe Kantenlaenge (Abstand Mitte -> Wand).
+     * Halbe Kantenlänge (Abstand Mitte -> Wand).
      *
-     * @return Bloecke
+     * @return Blöcke
      */
     public int half() {
         return size / 2;
     }
 
     /**
-     * Hoechste einstellbare Leistungsstufe fuer diese Baugroesse.
+     * Höchste einstellbare Leistungsstufe für diese Baugröße.
      *
      * @return 4, 6, 8 bzw. 10
      */
@@ -98,7 +101,7 @@ public enum ReactorSize {
     }
 
     /**
-     * Leistungsfaktor der Baugroesse (wirkt auf jede Stufe).
+     * Leistungsfaktor der Baugröße (wirkt auf jede Stufe).
      *
      * @return Faktor
      */
@@ -107,7 +110,7 @@ public enum ReactorSize {
     }
 
     /**
-     * Faktor fuer die Kapazitaet.
+     * Faktor für die Kapazität.
      *
      * @return Faktor
      */
@@ -116,7 +119,7 @@ public enum ReactorSize {
     }
 
     /**
-     * Wie schnell die Instabilitaet bei dieser Groesse steigt.
+     * Wie schnell die Instabilität bei dieser Größe steigt.
      *
      * @return Faktor
      */
@@ -125,7 +128,7 @@ public enum ReactorSize {
     }
 
     /**
-     * Wie stark Stabilisatoren bei dieser Groesse kuehlen.
+     * Wie stark Stabilisatoren bei dieser Größe kühlen.
      *
      * @return Faktor
      */
@@ -134,18 +137,18 @@ public enum ReactorSize {
     }
 
     /**
-     * Hoechste Overdrive-Stufe inklusive Ultimate-Modus (nur der ultimative Kern hat eine Stufe mehr).
+     * Höchste Overdrive-Stufe inklusive Ultimate-Modus (nur der ultimative Kern hat eine Stufe mehr).
      *
-     * @return hoechste Stufe
+     * @return höchste Stufe
      */
     public int maxOverdriveTotal() {
         return isUltimate() ? maxOverdrive() + 1 : maxOverdrive();
     }
 
     /**
-     * Wie viele Overdrive-Partikel diese Baugroesse aufnehmen kann (ohne Ultimate-Modus).
+     * Wie viele Overdrive-Partikel diese Baugröße aufnehmen kann (ohne Ultimate-Modus).
      *
-     * @return hoechste Overdrive-Stufe
+     * @return höchste Overdrive-Stufe
      */
     public int maxOverdrive() {
         return maxOverdrive;
@@ -154,26 +157,21 @@ public enum ReactorSize {
     /**
      * Bauplan der Struktur.
      *
-     * @return das Muster aller Bloecke
+     * @return das Muster aller Blöcke
      */
     public CorePattern pattern() {
         return pattern;
     }
 
-    /**
-     * Ist das der ultimative Kern (11x11x11)?
-     *
-     * @return {@code true} fuer den ultimativen Kern
-     */
     public boolean isUltimate() {
         return this == ULTIMATE;
     }
 
     /**
-     * Baugroesse zu einer Kantenlaenge.
+     * Baugröße zu einer Kantenlänge.
      *
-     * @param size Kantenlaenge in Bloecken
-     * @return die Baugroesse oder {@code null}, wenn es keine gibt
+     * @param size Kantenlänge in Blöcken
+     * @return die Baugröße oder {@code null}, wenn es keine gibt
      */
     @Nullable
     public static ReactorSize bySize(int size) {

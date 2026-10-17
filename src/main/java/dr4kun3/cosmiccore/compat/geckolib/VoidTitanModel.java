@@ -8,50 +8,32 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 
 /**
- * Oberkoerper des Void-Titanen: eine bemalte Textur, normal schattiert. Zur Keyframe-Animation kommt prozedurale
- * Sekundaerbewegung: die Fluegelspeichen fachern leicht, Finger kruemmen sich beim Aufladen, die Kugel pulsiert.
+ * Oberkörper des Void-Titanen: eine bemalte Textur, normal schattiert. Zur Keyframe-Animation kommt prozedurale
+ * Sekundärbewegung: die Flügelspeichen fachern leicht, Finger krümmen sich beim Aufladen, die Kugel pulsiert.
  */
 public class VoidTitanModel extends GeoModel<VoidTitan> {
     private static final int FINGERS = 4, FINGER_SEGS = 2;
-    /** Markierungs-Knochen, deren Lage die Cutscene fuer Leuchteffekte braucht. */
+    /** Markierungs-Knochen, deren Lage die Cutscene für Leuchteffekte braucht. */
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
-    /**
-     * Modell des Oberkoerpers.
-     *
-     * @param animatable Animationszustand (nicht verwendet)
-     * @return Pfad der Modelldatei
-     */
     @Override
     public ResourceLocation getModelResource(VoidTitan animatable) {
         return CosmicCore.id("geo/void_titan.geo.json");
     }
 
-    /**
-     * Textur des Titanen.
-     *
-     * @param animatable Animationszustand (nicht verwendet)
-     * @return Pfad der Textur
-     */
     @Override
     public ResourceLocation getTextureResource(VoidTitan animatable) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 
-    /**
-     * Animationen (Ruhe und Film).
-     *
-     * @param animatable Animationszustand (nicht verwendet)
-     * @return Pfad der Animationsdatei
-     */
     @Override
     public ResourceLocation getAnimationResource(VoidTitan animatable) {
         return CosmicCore.id("animations/void_titan.animation.json");
     }
 
     /**
-     * Prozedurale Zusatzbewegung zur Keyframe-Animation: Fluegelspeichen fachern, Finger kruemmen sich beim Aufladen;
-     * ausserdem werden die Leuchtpunkte (Augen, Haende, Kern) zum Mitverfolgen markiert.
+     * Prozedurale Zusatzbewegung zur Keyframe-Animation: Flügelspeichen fachern, Finger krümmen sich beim Aufladen;
+     * außerdem werden die Leuchtpunkte (Augen, Hände, Kern) zum Mitverfolgen markiert.
      *
      * @param animatable Zustand des gezeichneten Titanen
      * @param instanceId Kennung der Instanz
@@ -80,7 +62,7 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     }
 
     /**
-     * Weicher Bogen zwischen zwei Zeitpunkten (0 ausserhalb, 1 in der Mitte).
+     * Weicher Bogen zwischen zwei Zeitpunkten (0 außerhalb, 1 in der Mitte).
      *
      * @param t aktuelle Zeit in Sekunden
      * @param a Beginn
@@ -93,7 +75,7 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     }
 
     /**
-     * Haelt den Import von GeoBone fuer die Lambdas oben (wird nie aufgerufen).
+     * Hält den Import von GeoBone für die Lambdas oben (wird nie aufgerufen).
      *
      * @param b beliebiger Knochen
      */

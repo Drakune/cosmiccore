@@ -1,5 +1,7 @@
 package dr4kun3.cosmiccore.entity;
 
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
@@ -13,25 +15,25 @@ import net.neoforged.neoforge.entity.PartEntity;
 import org.joml.Vector3f;
 
 /**
- * Der Void-Titan: ein kolossaler Waechter aus einem anderen Universum - gepanzerter Oberkoerper mit Kopf und Armen,
+ * Der Void-Titan: ein kolossaler Wächter aus einem anderen Universum - gepanzerter Oberkörper mit Kopf und Armen,
  * darunter ein langer Schlangenschweif. Wie der Enderdrache besteht er aus mehreren Teilen (Rumpf, Kopf, Arme und
- * zwoelf Schweifsegmente), jedes mit eigener Hitbox; der Schweif schlaengelt sich und folgt dem Koerper.
+ * zwölf Schweifsegmente), jedes mit eigener Hitbox; der Schweif schlängelt sich und folgt dem Körper.
  * <p>
- * Er wird nur fuer die Cutscene des Ultimate-Modus clientseitig erzeugt (gezeichnet von GeckoLib, falls vorhanden) und
+ * Er wird nur für die Cutscene des Ultimate-Modus clientseitig erzeugt (gezeichnet von GeckoLib, falls vorhanden) und
  * nie gespeichert. Die Entity selbst kennt GeckoLib nicht - so passen Server und Clients mit und ohne GeckoLib zusammen.
  */
 public class VoidTitanEntity extends Entity {
-    /** Massstab: Bloecke je Modellpixel (1 px = SCALE / 16 Bloecke). */
+    /** Maßstab: Blöcke je Modellpixel (1 px = SCALE / 16 Blöcke). */
     public static final float SCALE = 6.0F;
     public static final int TAIL = 12;
-    /** Laenge eines vollen Schweifsegments in Modellpixeln. */
+    /** Länge eines vollen Schweifsegments in Modellpixeln. */
     public static final float SEGMENT_PX = 11.0F;
 
     public final VoidTitanPart body, head, armLeft, armRight;
     public final VoidTitanPart[] tail = new VoidTitanPart[TAIL];
     private final VoidTitanPart[] parts;
     /** Nur Client: Lage animierter Knochen relativ zur Entity (vom Renderer gesetzt, z. B. "eye_l", "orb"). */
-    public final java.util.Map<String, Vec3> bones = new java.util.HashMap<>();
+    public final Map<String, Vec3> bones = new HashMap<>();
     /** Zeit der Cutscene in Ticks (clientseitig gesetzt); negativ = freie Leerlauf-Bewegung. */
     public float scriptTime = -1.0F;
 
@@ -45,7 +47,7 @@ public class VoidTitanEntity extends Entity {
         super(type, level);
         noPhysics = true;
         setNoGravity(true);
-        float b = SCALE / 16.0F; // Bloecke je Pixel
+        float b = SCALE / 16.0F; // Blöcke je Pixel
         body = new VoidTitanPart(this, "body", 22 * b, 30 * b, 1.0F);
         head = new VoidTitanPart(this, "head", 12 * b, 12 * b, 1.0F);
         armLeft = new VoidTitanPart(this, "arm_left", 8 * b, 30 * b, 1.0F);
@@ -84,21 +86,11 @@ public class VoidTitanEntity extends Entity {
         for (int i = 0; i < parts.length; i++) parts[i].setId(id + i + 1);
     }
 
-    /**
-     * Der Titan besteht aus mehreren Teilen.
-     *
-     * @return immer {@code true}
-     */
     @Override
     public boolean isMultipartEntity() {
         return true;
     }
 
-    /**
-     * Die Teile des Titanen.
-     *
-     * @return Rumpf, Kopf, Arme und Schweifsegmente
-     */
     @Override
     public PartEntity<?>[] getParts() {
         return parts;
@@ -112,8 +104,8 @@ public class VoidTitanEntity extends Entity {
     }
 
     /**
-     * Teile nachfuehren: Rumpf, Kopf und Arme sitzen fest am Koerper, der Schweif bildet eine schlaengelnde S-Kurve,
-     * die vom Becken nach hinten unten haengt (die Welle laeuft von der Wurzel zur Spitze).
+     * Teile nachführen: Rumpf, Kopf und Arme sitzen fest am Körper, der Schweif bildet eine schlängelnde S-Kurve,
+     * die vom Becken nach hinten unten hängt (die Welle läuft von der Wurzel zur Spitze).
      */
     public void updateParts() {
         float t = scriptTime >= 0 ? scriptTime : tickCount;
@@ -144,12 +136,12 @@ public class VoidTitanEntity extends Entity {
     }
 
     /**
-     * Setzt ein Teil an eine Stelle relativ zum Titanen (mit dessen Drehung) und merkt die alte Lage fuer weiche
+     * Setzt ein Teil an eine Stelle relativ zum Titanen (mit dessen Drehung) und merkt die alte Lage für weiche
      * Bewegung.
      *
      * @param part das Teil
      * @param local Versatz relativ zum Titanen
-     * @param yawRad Drehung des Titanen in Bogenmass
+     * @param yawRad Drehung des Titanen in Bogenmaß
      */
     private void place(VoidTitanPart part, Vector3f local, float yawRad) {
         Vector3f w = new Vector3f(local).rotateY(yawRad);
@@ -162,68 +154,30 @@ public class VoidTitanEntity extends Entity {
         part.setPos(getX() + w.x, getY() + w.y - part.getBbHeight() / 2.0, getZ() + w.z);
     }
 
-    /**
-     * Keine abgeglichenen Daten - der Film laeuft auf jedem Client selbst.
-     *
-     * @param builder Bauplan der abgeglichenen Daten
-     */
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {}
 
-    /**
-     * Nichts zu laden - der Titan wird nie gespeichert.
-     *
-     * @param tag gespeicherte Daten
-     */
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {}
 
-    /**
-     * Nichts zu speichern - der Titan wird nie gespeichert.
-     *
-     * @param tag Ziel der Daten
-     */
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {}
 
-    /**
-     * Der Titan ist unverwundbar.
-     *
-     * @param source Schadensquelle
-     * @param amount Schadensmenge
-     * @return immer {@code false}
-     */
     @Override
     public boolean hurt(DamageSource source, float amount) {
         return false;
     }
 
-    /**
-     * Der Titan existiert nur waehrend des Films.
-     *
-     * @return immer {@code false}
-     */
     @Override
     public boolean shouldBeSaved() {
         return false;
     }
 
-    /**
-     * Sehr grosse Sichtweite (bis 1024 Bloecke), er erscheint im All weit entfernt.
-     *
-     * @param distance quadrierte Entfernung zur Kamera
-     * @return {@code true}, wenn er gezeichnet werden soll
-     */
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < 1024.0 * 1024.0;
     }
 
-    /**
-     * Sichtbarkeitsbox: weit ueber die Hitbox hinaus (Fluegel und Schweif).
-     *
-     * @return die Box
-     */
     @Override
     public AABB getBoundingBoxForCulling() {
         return getBoundingBox().inflate(70.0);

@@ -6,7 +6,7 @@ plugins {
 }
 
 tasks.named('wrapper', Wrapper).configure {
-    // Define wrapper values here so as to not have to always do so when updating gradlew.properties.
+    // Define wrapper valüs here so as to not have to always do so when updating gradlew.properties.
     // Switching this to Wrapper.DistributionType.ALL will download the full gradle sources that comes with
     // documentation attached on cursor hover of gradle classes and methods. However, this comes with increased
     // file size for Gradle. If you do switch this to ALL, run the Gradle wrapper task twice afterwards.
@@ -143,7 +143,7 @@ dependencies {
     compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
     compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}"
     compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge:${rei_version}"
-    // GeckoLib (optional): animiertes Modell des Void-Titanen fuer die Erwachen-Cutscene
+    // GeckoLib (optional): animiertes Modell des Void-Titanen für die Erwachen-Cutscene
     compileOnly "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     if (project.findProperty('geckolib') != 'off') localRuntime "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     // Zum Testen im Dev-Client einen Viewer aktivieren (nur einen gleichzeitig):

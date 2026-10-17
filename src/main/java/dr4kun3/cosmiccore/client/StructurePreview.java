@@ -4,8 +4,11 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.ModItems;
+import dr4kun3.cosmiccore.block.ConsoleSide;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.ModBlocks;
+import dr4kun3.cosmiccore.block.ModProperties;
+import dr4kun3.cosmiccore.block.Terminal;
 import dr4kun3.cosmiccore.multiblock.CorePattern;
 import dr4kun3.cosmiccore.multiblock.ReactorSize;
 import java.util.ArrayList;
@@ -22,7 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
-/** Drehende 3D-Vorschau einer Reaktorstruktur im GUI (Groessenwahl und Handbuch) und die Liste benoetigter Bloecke. */
+/** Drehende 3D-Vorschau einer Reaktorstruktur im GUI (Größenwahl und Handbuch) und die Liste benötigter Blöcke. */
 public final class StructurePreview {
     /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private StructurePreview() {}
@@ -32,13 +35,13 @@ public final class StructurePreview {
      * Ausschnitt des Fensters.
      *
      * @param g Grafik-Kontext des Fensters
-     * @param size Baugroesse
+     * @param size Baugröße
      * @param cx Bildschirm-x der Strukturmitte
      * @param cy Bildschirm-y der Strukturmitte
      * @param box Ausschnitt {x0, y0, x1, y1} in Bildschirmkoordinaten (Scissor)
-     * @param fit Kantenlaenge in Pixeln, in die die Struktur passen soll
+     * @param fit Kantenlänge in Pixeln, in die die Struktur passen soll
      * @param yaw Drehung um die Hochachse in Grad
-     * @param pitch zusaetzliche Neigung in Grad
+     * @param pitch zusätzliche Neigung in Grad
      * @param funnel Sternentrichter auf der Decke zeigen
      * @param lasers Kosmos-Laser auf der Decke zeigen
      */
@@ -61,19 +64,19 @@ public final class StructurePreview {
         Lighting.setupFor3DItems();
         MultiBufferSource.BufferSource buffers = g.bufferSource();
         p.forEach(BlockPos.ZERO, Direction.SOUTH, (pos, cell) -> {
-            if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei fuer Rohre
+            if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei für Rohre
             BlockState state = CorePattern.blockFor(cell);
             if (state == null) return;
             // Steuerkonsole: Item-Port links, Controller, Energie-Port rechts
             if (pos.equals(controller)) {
                 state = ModBlocks.CONTROLLER.get().defaultBlockState().setValue(ControllerBlock.FACING, Direction.SOUTH)
-                        .setValue(dr4kun3.cosmiccore.block.ModProperties.TERMINAL, true);
-            } else if (pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.right(Direction.SOUTH)))) {
+                        .setValue(ModProperties.TERMINAL, true);
+            } else if (pos.equals(controller.relative(Terminal.right(Direction.SOUTH)))) {
                 state = ModBlocks.ENERGY_PORT.get().defaultBlockState()
-                        .setValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE, dr4kun3.cosmiccore.block.ConsoleSide.SOUTH);
-            } else if (pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.left(Direction.SOUTH)))) {
+                        .setValue(ModProperties.CONSOLE, ConsoleSide.SOUTH);
+            } else if (pos.equals(controller.relative(Terminal.left(Direction.SOUTH)))) {
                 state = ModBlocks.ITEM_PORT.get().defaultBlockState()
-                        .setValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE, dr4kun3.cosmiccore.block.ConsoleSide.SOUTH);
+                        .setValue(ModProperties.CONSOLE, ConsoleSide.SOUTH);
             }
             block(dispatcher, ps, buffers, state, pos.getX() - 0.5F, pos.getY() - 0.5F, pos.getZ() - 0.5F);
         });
@@ -98,7 +101,7 @@ public final class StructurePreview {
      * @param ps Pose-Stapel der Vorschau
      * @param buffers Puffer
      * @param state zu zeichnender Blockzustand
-     * @param x Position x (Bloecke, relativ zur Mitte)
+     * @param x Position x (Blöcke, relativ zur Mitte)
      * @param y Position y
      * @param z Position z
      */
@@ -110,12 +113,12 @@ public final class StructurePreview {
     }
 
     /**
-     * Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen).
+     * Die für eine Baugröße benötigten Blöcke als Stapel (Anzahl = Stapelgröße, darf über 64 liegen).
      *
-     * @param size Baugroesse
-     * @param funnel Sternentrichter mitzaehlen
-     * @param lasers die vier Kosmos-Laser mitzaehlen
-     * @return Liste der Bloecke mit Anzahl
+     * @param size Baugröße
+     * @param funnel Sternentrichter mitzählen
+     * @param lasers die vier Kosmos-Laser mitzählen
+     * @return Liste der Blöcke mit Anzahl
      */
     public static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         CorePattern p = size.pattern();

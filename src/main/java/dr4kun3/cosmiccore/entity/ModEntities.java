@@ -32,9 +32,9 @@ public final class ModEntities {
             CosmicAsteroid.Kind.LARGE, LARGE_ASTEROID, CosmicAsteroid.Kind.HUGE, HUGE_ASTEROID));
 
     /**
-     * Registriert eine Asteroidengroesse als eigenen Entity-Typ (Groesse, Sichtweite und Aktualisierung passend).
+     * Registriert eine Asteroidengröße als eigenen Entity-Typ (Größe, Sichtweite und Aktualisierung passend).
      *
-     * @param kind Asteroidengroesse
+     * @param kind Asteroidengröße
      * @return Halter des registrierten Entity-Typs
      */
     private static DeferredHolder<EntityType<?>, EntityType<CosmicAsteroid>> asteroid(CosmicAsteroid.Kind kind) {

@@ -14,7 +14,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -24,7 +26,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -47,11 +48,6 @@ public class ControllerBlock extends Block implements EntityBlock {
                 .setValue(ModProperties.TERMINAL, false));
     }
 
-    /**
-     * Zustaende: Blickrichtung, Reaktorphase und "Steuerkonsole" (Ports links und rechts).
-     *
-     * @param builder Bauplan der Zustaende
-     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, ModProperties.PHASE, ModProperties.TERMINAL);
@@ -59,16 +55,6 @@ public class ControllerBlock extends Block implements EntityBlock {
 
     private static final VoxelShape NODE = Block.box(3, 3, 3, 13, 13, 13);
 
-    /**
-     * Ruhend ein voller Block; bei gebildeter Struktur schwebt der Controller als Interface-Knoten - nur dieser ist
-     * anwaehlbar.
-     *
-     * @param state Blockzustand
-     * @param level Welt
-     * @param pos Position
-     * @param ctx Kontext der Abfrage
-     * @return der Umriss
-     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.PHASE) == CorePhase.DORMANT ? Shapes.block() : NODE;
@@ -87,30 +73,12 @@ public class ControllerBlock extends Block implements EntityBlock {
                 .setValue(ModProperties.TERMINAL, Terminal.isTerminal(ctx.getLevel(), ctx.getClickedPos(), facing));
     }
 
-    /**
-     * Item-Port links und Energie-Port rechts daneben machen den Controller zur Steuerkonsole.
-     *
-     * @param state bisheriger Zustand
-     * @param dir Richtung zum geaenderten Nachbarn
-     * @param neighbor neuer Zustand des Nachbarn
-     * @param level Welt
-     * @param pos Position des Controllers
-     * @param neighborPos Position des Nachbarn
-     * @return der aktualisierte Zustand
-     */
     @Override
-    protected BlockState updateShape(BlockState state, Direction dir, BlockState neighbor, net.minecraft.world.level.LevelAccessor level,
+    protected BlockState updateShape(BlockState state, Direction dir, BlockState neighbor, LevelAccessor level,
                                      BlockPos pos, BlockPos neighborPos) {
         return state.setValue(ModProperties.TERMINAL, Terminal.isTerminal(level, pos, state.getValue(FACING)));
     }
 
-    /**
-     * Der Controller hat den Blockinhalt mit der ganzen Reaktorlogik.
-     *
-     * @param pos Position
-     * @param state Blockzustand
-     * @return neuer {@link ControllerBlockEntity}
-     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -118,7 +86,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Nur auf dem Server: jeden Tick die Reaktorlogik ausfuehren.
+     * Nur auf dem Server: jeden Tick die Reaktorlogik ausführen.
      *
      * @param level Welt
      * @param state Blockzustand
@@ -134,7 +102,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Direkt nach dem Platzieren oeffnet sich die (einmalige) Wahl der Baugroesse.
+     * Direkt nach dem Platzieren öffnet sich die (einmalige) Wahl der Baugröße.
      *
      * @param level Welt
      * @param pos Position
@@ -151,7 +119,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Rechtsklick mit Brennstoff oder Stabilisator fuettert den Kern direkt.
+     * Rechtsklick mit Brennstoff oder Stabilisator füttert den Kern direkt.
      *
      * @param stack Item in der Hand
      * @param state Blockzustand
@@ -160,7 +128,7 @@ public class ControllerBlock extends Block implements EntityBlock {
      * @param player klickender Spieler
      * @param hand benutzte Hand
      * @param hit getroffene Stelle
-     * @return Erfolg, wenn gefuettert wurde, sonst weiter zur normalen Benutzung
+     * @return Erfolg, wenn gefüttert wurde, sonst weiter zur normalen Benutzung
      */
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
@@ -182,7 +150,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Rechtsklick oeffnet das Fenster, Schleichen + Rechtsklick zeigt den Status bzw. den ersten Baufehler im Chat.
+     * Rechtsklick öffnet das Fenster, Schleichen + Rechtsklick zeigt den Status bzw. den ersten Baufehler im Chat.
      *
      * @param state Blockzustand
      * @param level Welt
@@ -204,7 +172,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Beim Abbauen loest sich der Reaktor auf (Phasen zuruecksetzen, Inventar fallen lassen).
+     * Beim Abbauen löst sich der Reaktor auf (Phasen zurücksetzen, Inventar fallen lassen).
      *
      * @param state alter Zustand
      * @param level Welt
