@@ -19,7 +19,7 @@ public final class CoreConfig {
             .defineInRange("outputMultiplier", 1.0, 0.0, 1000.0);
     public static final ModConfigSpec.IntValue RAMP_UP_TICKS = B
             .comment("Ticks, bis die Resonanz voll aufgebaut ist (Leistung steigt von 20% auf 100%)")
-            .defineInRange("rampUpTicks", 600, 1, 72_000);
+            .defineInRange("rampUpTicks", 3600, 1, 72_000);
     public static final ModConfigSpec.DoubleValue INSTABILITY_RATE = B
             .comment("Instabilitaet pro Tick bei 1000 RF/t Brennstoffleistung (0-100 Skala)")
             .defineInRange("instabilityRate", 0.015, 0.0, 10.0);
