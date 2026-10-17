@@ -183,7 +183,9 @@ You can run the test client with a recipe viewer (`-Pviewer=jei` or `-Pviewer=em
 
 ### License
 
-All rights reserved. © DR4KUN3
+[MIT License](LICENSE) · © 2026 DR4KUN3
+
+You may use, modify and share the mod and its code, including in modpacks and your own projects, as long as the copyright notice is kept.
 
 <p align="right"><a href="#english">Back to top ↑</a> · <a href="#deutsch">Deutsch ↓</a></p>
 
@@ -362,6 +364,8 @@ Den Test-Client kannst du mit einem Rezept-Viewer starten (`-Pviewer=jei` oder `
 
 ### Lizenz
 
-Alle Rechte vorbehalten. © DR4KUN3
+[MIT-Lizenz](LICENSE) · © 2026 DR4KUN3
+
+Du darfst die Mod und ihren Code nutzen, verändern und weitergeben, auch in Modpacks und eigenen Projekten, solange der Urheberrechtshinweis erhalten bleibt.
 
 <p align="right"><a href="#deutsch">Nach oben ↑</a> · <a href="#english">English ↑</a></p>
