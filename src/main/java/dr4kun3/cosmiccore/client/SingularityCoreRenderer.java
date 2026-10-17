@@ -276,23 +276,31 @@ public class SingularityCoreRenderer extends LegacyBlockEntityRenderer<Singulari
         }
         // 5) zuletzt: Rückwand der Kammerkugel als reiner Tiefen-Abschluss - Wolken und Regen dahinter verschwinden,
         //    alles im Inneren (auch später gezeichnete Effekte) liegt davor und bleibt sichtbar
-        if (form > 0.0F) depthBackSphere(buffers.getBuffer(CosmicRenderTypes.depthBack()), pose.last().pose(), half + 0.2F);
+        if (form > 0.0F) depthBackSphere(buffers.getBuffer(CosmicRenderTypes.depthBack()), pose.last().pose(), half + 0.2F, be.hasFunnel());
         pose.popPose();
         ColorOverride.end();
     }
+
+    /** Radius der Öffnung oben im Tiefen-Abschluss, durch die der Sternentrichter sichtbar bleibt. */
+    private static final float FUNNEL_OPENING = 1.2F;
 
     /**
      * Kugel nur aus nach innen gewandten Flächen (mit Culling sieht man von außen genau die Rückseite) - für den
      * unsichtbaren Tiefen-Abschluss der Kammer.
      *
+     * Mit Sternentrichter bleibt oben eine runde Öffnung frei, sonst verdeckt die Kugel den Trichter, wenn man von unten
+     * durch die Kammer nach oben schaut.
+     *
      * @param vc Puffer (Tiefen-Abschluss)
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param r Radius
+     * @param funnel Sternentrichter auf dem Dach
      */
-    private static void depthBackSphere(VertexConsumer vc, Matrix4f m, float r) {
+    private static void depthBackSphere(VertexConsumer vc, Matrix4f m, float r, boolean funnel) {
         final int lat = 16, lon = 24;
         for (int i = 0; i < lat; i++) {
             float p0 = (float) (Math.PI * i / lat - Math.PI / 2), p1 = (float) (Math.PI * (i + 1) / lat - Math.PI / 2);
+            if (funnel && p0 > 0 && r * Mth.cos(p0) < FUNNEL_OPENING) continue;
             for (int j = 0; j < lon; j++) {
                 float l0 = Mth.TWO_PI * j / lon, l1 = Mth.TWO_PI * (j + 1) / lon;
                 // Reihenfolge a, d, c, b = Vorderseite zeigt nach innen
