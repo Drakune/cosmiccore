@@ -2,7 +2,7 @@ package dr4kun3.cosmiccore;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-/** Client-Einstellungen (config/cosmiccore-client.toml): Detailgrad der Effekte fuer schwaechere Rechner. */
+/** Client-Einstellungen (config/cosmiccore-client.toml): Detailgrad der Effekte für schwächere Rechner. */
 public final class ClientConfig {
     private static final ModConfigSpec.Builder B = new ModConfigSpec.Builder();
 

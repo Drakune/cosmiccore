@@ -21,12 +21,6 @@ public class QuasarOverdriveItem extends Item {
         super(props);
     }
 
-    /**
-     * Das Partikel schimmert immer.
-     *
-     * @param stack der Stapel
-     * @return immer {@code true}
-     */
     @Override
     public boolean isFoil(ItemStack stack) {
         return true;
@@ -37,7 +31,7 @@ public class QuasarOverdriveItem extends Item {
      *
      * @param stack der Stapel
      * @param ctx Kontext des Tooltips
-     * @param tooltip Zeilen, an die angehaengt wird
+     * @param tooltip Zeilen, an die angehängt wird
      * @param flag erweiterte Anzeige (F3+H)
      */
     @Override

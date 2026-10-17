@@ -8,16 +8,17 @@ import static dr4kun3.cosmiccore.client.RenderUtil.quadFade;
 import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import dr4kun3.cosmiccore.color.CoreColors;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 /**
- * Das Eindaemmungsfeld des Resonanzschild-Emitters: Vom Emitter unter dem Kern woelben sich Feldlinien um das
- * kosmische Loch bis zum Fokuskristall darueber (wie die Linien eines Magnetfelds). Zwischen ihnen liegt eine
+ * Das Eindämmungsfeld des Resonanzschild-Emitters: Vom Emitter unter dem Kern wölben sich Feldlinien um das
+ * kosmische Loch bis zum Fokuskristall darüber (wie die Linien eines Magnetfelds). Zwischen ihnen liegt eine
  * zarte Membran, Lichtpulse und Ringe steigen am Feld empor.
  * <ul>
- *   <li>Die Staerke zeigt den Stabilisator-Vorrat - wird er knapp, reissen einzelne Feldlinien weg.</li>
- *   <li>Instabilitaet verzerrt das Feld, faerbt es rot und laesst Entladungen zwischen den Linien springen.</li>
+ *   <li>Die Stärke zeigt den Stabilisator-Vorrat - wird er knapp, reißen einzelne Feldlinien weg.</li>
+ *   <li>Instabilität verzerrt das Feld, färbt es rot und lässt Entladungen zwischen den Linien springen.</li>
  * </ul>
  */
 public final class FieldFx {
@@ -33,24 +34,24 @@ public final class FieldFx {
     private static final int FULL_LINES = 12, FULL_STEPS = 28;
 
     /**
-     * Zeichnet das Eindaemmungsfeld: Feldlinien vom Emitter unter dem Kern um das Loch bis zum Kristall darueber, die
-     * Membran dazwischen und aufsteigende Lichtpulse. Mit sinkendem Stabilisator reissen Linien weg, Hitze faerbt rot.
+     * Zeichnet das Eindämmungsfeld: Feldlinien vom Emitter unter dem Kern um das Loch bis zum Kristall darüber, die
+     * Membran dazwischen und aufsteigende Lichtpulse. Mit sinkendem Stabilisator reißen Linien weg, Hitze färbt rot.
      *
      * @param m Transformationsmatrix (Ursprung in der Kernmitte)
-     * @param vc Puffer fuer additives Leuchten
-     * @param focus Abstand Kern -> Emitter/Kristall in Bloecken
-     * @param reach Radius der Kammer in Bloecken (wie weit sich das Feld woelbt)
+     * @param vc Puffer für additives Leuchten
+     * @param focus Abstand Kern -> Emitter/Kristall in Blöcken
+     * @param reach Radius der Kammer in Blöcken (wie weit sich das Feld wölbt)
      * @param t Animationszeit in Ticks
      * @param energy Helligkeit 0..1 (0 = nichts zeichnen)
-     * @param heat Instabilitaet 0..1 (ab 0.4 faerbt sich das Feld rot)
+     * @param heat Instabilität 0..1 (ab 0.4 färbt sich das Feld rot)
      * @param shield Stabilisator-Vorrat 0..1
      * @param unstable {@code true}, wenn der Kern kurz vor dem Kollaps steht (Entladungen)
      * @param overdrive Overdrive-Stufe 0..4 (Farbe der Pulse)
      */
     public static void render(Matrix4f m, VertexConsumer vc, float focus, float reach, float t, float energy, float heat,
                               float shield, boolean unstable, int overdrive) {
-        BLUE = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.FIELD, BLUE_DEF);
-        VIOLET = ColorOverride.dark(dr4kun3.cosmiccore.color.CoreColors.FIELD, VIOLET_DEF, 0.3F);
+        BLUE = ColorOverride.get(CoreColors.FIELD, BLUE_DEF);
+        VIOLET = ColorOverride.dark(CoreColors.FIELD, VIOLET_DEF, 0.3F);
         if (energy <= 0.01F) return;
         final int LINES = RenderQuality.scale(FULL_LINES, 6), STEPS = RenderQuality.scale(FULL_STEPS, 14);
         float strength = 0.3F + 0.7F * shield;
@@ -85,9 +86,9 @@ public final class FieldFx {
             for (int i = 0; i < STEPS; i++) {
                 float s = i / (float) STEPS;
                 float[] a = pts[k][i], b = pts[k][i + 1];
-                // Lichtpuls laeuft vom Emitter nach oben
+                // Lichtpuls läuft vom Emitter nach oben
                 float pulse = 0.5F + 0.5F * Mth.sin((s - t * 0.025F) * Mth.TWO_PI * 2.0F + k);
-                float edge = Mth.sin(s * Mth.PI); // an den Polen gebuendelt, in der Mitte offen
+                float edge = Mth.sin(s * Mth.PI); // an den Polen gebündelt, in der Mitte offen
                 float la = energy * strength * flick * (0.2F + 0.55F * pulse * pulse) * (0.5F + 0.5F * edge);
                 if (alive[k]) {
                     segment(vc, m, a[0], a[1], a[2], b[0], b[1], b[2], 0.006F, col[0], col[1], col[2], la * 0.8F, la * 0.8F);

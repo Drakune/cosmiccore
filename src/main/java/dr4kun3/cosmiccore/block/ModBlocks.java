@@ -12,8 +12,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(CosmicCore.MODID);
 
-    // Alle Huellenbloecke sind noOcclusion: bei gebildeter Struktur ist ihr Modell ausgeblendet (die runde Kammer
-    // wird gerendert). Wuerden sie Nachbarflaechen verdecken, saehe man durch die Welt.
+    // Alle Hüllenblöcke sind noOcclusion: bei gebildeter Struktur ist ihr Modell ausgeblendet (die runde Kammer
+    // wird gerendert). Würden sie Nachbarflächen verdecken, sähe man durch die Welt.
     public static final DeferredBlock<StructureBlock> VOID_CASING = BLOCKS.registerBlock("void_casing",
             StructureBlock::new, metal(MapColor.COLOR_BLACK, SoundType.NETHERITE_BLOCK, 2, 5, 5).noOcclusion());
 
@@ -64,14 +64,14 @@ public final class ModBlocks {
                     .requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 5));
 
     /**
-     * Gemeinsame Eigenschaften der Strukturbloecke: hart wie Metall, nur mit passendem Werkzeug abbaubar und je nach
+     * Gemeinsame Eigenschaften der Strukturblöcke: hart wie Metall, nur mit passendem Werkzeug abbaubar und je nach
      * Reaktorphase leuchtend.
      *
      * @param color Kartenfarbe
-     * @param sound Geraeusche des Blocks
-     * @param formed Lichtstaerke 0..15, wenn die Struktur gebildet ist
-     * @param active Lichtstaerke, wenn der Reaktor laeuft
-     * @param unstable Lichtstaerke, wenn der Kern instabil ist
+     * @param sound Geräusche des Blocks
+     * @param formed Lichtstärke 0..15, wenn die Struktur gebildet ist
+     * @param active Lichtstärke, wenn der Reaktor läuft
+     * @param unstable Lichtstärke, wenn der Kern instabil ist
      * @return die fertigen Blockeigenschaften
      */
     private static BlockBehaviour.Properties metal(MapColor color, SoundType sound, int formed, int active, int unstable) {
@@ -84,12 +84,12 @@ public final class ModBlocks {
     }
 
     /**
-     * Lichtstaerke abhaengig von der Reaktorphase (ruhend = dunkel).
+     * Lichtstärke abhängig von der Reaktorphase (ruhend = dunkel).
      *
-     * @param formed Lichtstaerke in der Phase "gebildet"
-     * @param active Lichtstaerke in der Phase "aktiv"
-     * @param unstable Lichtstaerke in der Phase "instabil"
-     * @return Funktion Blockzustand -> Lichtstaerke
+     * @param formed Lichtstärke in der Phase "gebildet"
+     * @param active Lichtstärke in der Phase "aktiv"
+     * @param unstable Lichtstärke in der Phase "instabil"
+     * @return Funktion Blockzustand -> Lichtstärke
      */
     private static ToIntFunction<BlockState> light(int formed, int active, int unstable) {
         return state -> switch (state.getValue(ModProperties.PHASE)) {

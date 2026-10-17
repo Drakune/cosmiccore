@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.ModItems;
+import java.awt.Color;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -20,16 +21,16 @@ import org.joml.Matrix4f;
  * Animierte 3D-Items:
  * <ul>
  *   <li>Sternenstaub: kleine schwebende Sternenfeld-Kristalle, die umeinander kreisen, mit Funkeln.</li>
- *   <li>Overdrive-Partikel: gleissender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold und Violett.</li>
- *   <li>Quasar-Overdrive-Partikel: Sternkristall mit goldenen Kanten ueber einer Spiralgalaxie, Polarjets und eine
+ *   <li>Overdrive-Partikel: gleißender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold und Violett.</li>
+ *   <li>Quasar-Overdrive-Partikel: Sternkristall mit goldenen Kanten über einer Spiralgalaxie, Polarjets und eine
  *       goldene Druckwelle.</li>
- *   <li>Verdichteter Sternenstaub: dichter Sternenfeld-Kristall, um den sich Pressringe zusammenziehen, waehrend
- *       Staubkoernchen spiralfoermig hineingezogen werden.</li>
- *   <li>Neutronenstern-Fragment: winziger Pulsar - rasend schnell drehend, mit Leuchtturm-Strahlen und Magnetfeldboegen.</li>
- *   <li>Quasar-Essenz: Mini-Quasar - schwarzer Kern, gluehende Akkretionsscheibe und pulsierende Jets.</li>
- *   <li>Module: schwebende Platine mit wandernden Lichtimpulsen und einem Hologramm-Symbol darueber.</li>
+ *   <li>Verdichteter Sternenstaub: dichter Sternenfeld-Kristall, um den sich Pressringe zusammenziehen, während
+ *       Staubkörnchen spiralförmig hineingezogen werden.</li>
+ *   <li>Neutronenstern-Fragment: winziger Pulsar - rasend schnell drehend, mit Leuchtturm-Strahlen und Magnetfeldbögen.</li>
+ *   <li>Quasar-Essenz: Mini-Quasar - schwarzer Kern, glühende Akkretionsscheibe und pulsierende Jets.</li>
+ *   <li>Module: schwebende Platine mit wandernden Lichtimpulsen und einem Hologramm-Symbol darüber.</li>
  * </ul>
- * Zeichenraum ist der Einheitswuerfel (0..1), die Display-Transformationen stehen im Item-Modell.
+ * Zeichenraum ist der Einheitswürfel (0..1), die Display-Transformationen stehen im Item-Modell.
  */
 public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float[] GOLD = {1.0F, 0.75F, 0.25F};
@@ -45,7 +46,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     /**
-     * Animationszeit: Spielzeit mit Teil-Tick, im Hauptmenue die Systemzeit.
+     * Animationszeit: Spielzeit mit Teil-Tick, im Hauptmenü die Systemzeit.
      *
      * @return Zeit in Ticks
      */
@@ -56,7 +57,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     /**
-     * Waehlt die passende Animation fuer das Item (Handbuch, Sternenstaub, Partikel, Neutronenstern, Quasar, Module).
+     * Wählt die passende Animation für das Item (Handbuch, Sternenstaub, Partikel, Neutronenstern, Quasar, Module).
      *
      * @param stack das gezeichnete Item
      * @param ctx Anzeigeart (Hand, Inventar, Boden ...)
@@ -93,14 +94,14 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         } else if (stack.is(ModItems.COLOR_MODULE.get())) {
             // Akzentfarbe wandert durch den Farbkreis
             float h = (t * 0.004F) % 1.0F;
-            int rgb = java.awt.Color.HSBtoRGB(h, 0.65F, 1.0F);
+            int rgb = Color.HSBtoRGB(h, 0.65F, 1.0F);
             renderModule(pose, buffers, t, new float[]{((rgb >> 16) & 255) / 255.0F, ((rgb >> 8) & 255) / 255.0F, (rgb & 255) / 255.0F}, 3);
         }
         pose.popPose();
     }
 
     /**
-     * Overdrive-Partikel: gleissender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold, Cyan und Violett.
+     * Overdrive-Partikel: gleißender Kern aus Sternenfeld mit drei kreisenden Ringen in Gold, Cyan und Violett.
      *
      * @param pose Pose-Stapel in der Item-Mitte
      * @param buffers Puffer
@@ -177,7 +178,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
      * @param t Animationszeit
      */
     private static void renderCompressedDust(PoseStack pose, MultiBufferSource buffers, float t) {
-        // Pressen im Takt: die Ringe ziehen sich zusammen, der Kristall leuchtet beim Zusammendruecken auf
+        // Pressen im Takt: die Ringe ziehen sich zusammen, der Kristall leuchtet beim Zusammendrücken auf
         float press = 0.5F + 0.5F * Mth.sin(t * 0.12F);
         float squeeze = press * press;
         pose.pushPose();
@@ -205,9 +206,9 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             float r = 0.42F - 0.14F * squeeze - i * 0.03F;
             ring(pose, glow, r, 0.012F, t * (3.0F - i), 60.0F * i - 20.0F, 35.0F * i, t + i * 15.0F, i == 1 ? CYAN : VIOLET, 0.55F + 0.35F * squeeze);
         }
-        // Staubkoernchen werden spiralfoermig hineingezogen
+        // Staubkörnchen werden spiralförmig hineingezogen
         for (int i = 0; i < 10; i++) {
-            float s = Mth.frac(t * 0.02F + i * 0.1F); // 0 = aussen, 1 = im Kristall
+            float s = Mth.frac(t * 0.02F + i * 0.1F); // 0 = außen, 1 = im Kristall
             float a = i * 2.39996F + s * 6.0F;
             float r = 0.46F * (1.0F - s);
             float y = (hashY(i) - 0.5F) * 0.5F * (1.0F - s);
@@ -254,7 +255,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             RenderUtil.segment(glow, m, 0, 0.09F * dir, 0, 0, 0.62F * dir, 0, 0.06F, CYAN[0], CYAN[1], CYAN[2], 0.7F, 0.0F);
             RenderUtil.segment(glow, m, 0, 0.09F * dir, 0, 0, 0.5F * dir, 0, 0.015F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F);
         }
-        // Magnetfeldboegen (Dipol: r = L * sin^2(theta))
+        // Magnetfeldbögen (Dipol: r = L * sin^2(theta))
         for (int k = 0; k < 4; k++) {
             float phi = k * Mth.HALF_PI;
             float px = 0, py = 0, pz = 0;
@@ -271,7 +272,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             }
         }
         pose.popPose();
-        // Bruchstuecke kreisen um den Stern
+        // Bruchstücke kreisen um den Stern
         Matrix4f wm = pose.last().pose();
         for (int i = 0; i < 4; i++) {
             float[] p = RenderUtil.orbitPoint(0.34F, t * 0.06F + i * 1.57F, 20.0F + i * 15.0F, i * 45.0F);
@@ -285,7 +286,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     /**
      * Quasar-Overdrive-Partikel: ein Sternkristall (zwei verdrehte Sternenfeld-Doppelpyramiden) mit goldenen Kanten
-     * ueber einer kleinen Spiralgalaxie, schmale Polarjets mit wandernden Knoten und eine goldene Druckwelle.
+     * über einer kleinen Spiralgalaxie, schmale Polarjets mit wandernden Knoten und eine goldene Druckwelle.
      *
      * @param pose Pose-Stapel in der Item-Mitte
      * @param buffers Puffer
@@ -350,7 +351,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     // ------------------------------------------------------------------ Quasar
 
     /**
-     * Quasar-Essenz: gleissender Kern mit Akkretionsscheibe und pulsierenden Jets.
+     * Quasar-Essenz: gleißender Kern mit Akkretionsscheibe und pulsierenden Jets.
      *
      * @param pose Pose-Stapel in der Item-Mitte
      * @param buffers Puffer
@@ -364,14 +365,14 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         RenderUtil.solidSphere(buffers.getBuffer(RenderType.debugQuads()), pose.last().pose(), 0.075F, 8, 12, 0.0F, 0.0F, 0.0F);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
-        // Photonenring und Akkretionsscheibe: innen weissgluehend, aussen violett
+        // Photonenring und Akkretionsscheibe: innen weißglühend, außen violett
         RenderUtil.glowSphere(glow, m, 0.095F, 8, 12, WHITE, 0.25F);
         float[][] cols = {WHITE, {1.0F, 0.9F, 0.6F}, GOLD, ORANGE, {0.9F, 0.35F, 0.6F}, VIOLET};
         for (int i = 0; i < cols.length; i++) {
             float r = 0.12F + i * 0.045F;
             ring(pose, glow, r, 0.022F, t * (9.0F - i * 1.2F), 0.0F, 0.0F, t * 2.0F + i * 9.0F, cols[i], 0.95F - i * 0.1F);
         }
-        // relativistische Jets mit Knoten, die nach aussen jagen
+        // relativistische Jets mit Knoten, die nach außen jagen
         for (int dir = -1; dir <= 1; dir += 2) {
             RenderUtil.segment(glow, m, 0, 0.06F * dir, 0, 0, 0.62F * dir, 0, 0.045F + 0.015F * beat, CYAN[0], CYAN[1], CYAN[2], 0.75F, 0.0F);
             RenderUtil.segment(glow, m, 0, 0.06F * dir, 0, 0, 0.55F * dir, 0, 0.012F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F);
@@ -387,13 +388,13 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     // ------------------------------------------------------------------ Module
 
     /**
-     * Modul: schwebende Platine mit leuchtenden Leiterbahnen und einem Symbol darueber.
+     * Modul: schwebende Platine mit leuchtenden Leiterbahnen und einem Symbol darüber.
      *
      * @param pose Pose-Stapel in der Item-Mitte
      * @param buffers Puffer
      * @param t Animationszeit
      * @param accent Akzentfarbe RGB 0..1
-     * @param symbol 0 = Effizienz (Zahnrad-Ring), 1 = Stabilitaet (Sechseck-Schild), 2 = Anti-Asteroid, 3 = Farbe
+     * @param symbol 0 = Effizienz (Zahnrad-Ring), 1 = Stabilität (Sechseck-Schild), 2 = Anti-Asteroid, 3 = Farbe
      */
     private static void renderModule(PoseStack pose, MultiBufferSource buffers, float t, float[] accent, int symbol) {
         float bob = 0.02F * Mth.sin(t * 0.08F);
@@ -428,7 +429,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         RenderUtil.glowSphere(glow, new Matrix4f(m).translate(0, 0.08F, 0), 0.07F + 0.02F * pulse, 8, 12, accent, 0.4F + 0.3F * pulse);
         pose.popPose();
 
-        // Hologramm-Symbol schwebt ueber der Platine
+        // Hologramm-Symbol schwebt über der Platine
         pose.pushPose();
         pose.translate(0.0F, 0.14F + bob * 1.5F, 0.0F);
         pose.mulPose(Axis.YP.rotationDegrees(-t * 2.5F));
@@ -436,7 +437,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
         float a = 0.6F + 0.4F * pulse;
         RenderUtil.segment(glow, new Matrix4f(m), 0, 0.08F, 0, 0, 0.26F + bob, 0, 0.04F, accent[0], accent[1], accent[2], 0.25F, 0.0F);
         switch (symbol) {
-            case 0 -> { // Zahnrad: Ring mit Zaehnen
+            case 0 -> { // Zahnrad: Ring mit Zähnen
                 RenderUtil.flatCircle(glow, hm, 0.13F, 0.012F, 32, accent, a);
                 for (int k = 0; k < 8; k++) {
                     float ang = k * Mth.TWO_PI / 8;
@@ -454,7 +455,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
             }
             case 3 -> { // Farbe: Farbrad aus sechs Segmenten in Regenbogenfarben
                 for (int k = 0; k < 6; k++) {
-                    int rgb = java.awt.Color.HSBtoRGB(k / 6.0F, 0.75F, 1.0F);
+                    int rgb = Color.HSBtoRGB(k / 6.0F, 0.75F, 1.0F);
                     float[] c = {((rgb >> 16) & 255) / 255.0F, ((rgb >> 8) & 255) / 255.0F, (rgb & 255) / 255.0F};
                     float a0 = k * Mth.TWO_PI / 6 + 0.08F, a1 = (k + 1) * Mth.TWO_PI / 6 - 0.08F;
                     RenderUtil.segment(glow, hm, Mth.cos(a0) * 0.16F, 0, Mth.sin(a0) * 0.16F, Mth.cos(a1) * 0.16F, 0,
@@ -462,7 +463,7 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
                 }
                 RenderUtil.flatCircle(glow, hm, 0.07F, 0.01F, 20, WHITE, a * 0.8F);
             }
-            default -> { // Anti-Asteroid: Ring mit Schraegstrich, darin ein kleiner Brocken
+            default -> { // Anti-Asteroid: Ring mit Schrägstrich, darin ein kleiner Brocken
                 RenderUtil.flatCircle(glow, hm, 0.17F, 0.014F, 32, accent, a);
                 RenderUtil.segment(glow, hm, -0.12F, 0, -0.12F, 0.12F, 0, 0.12F, 0.014F, accent[0], accent[1], accent[2], a, a);
                 cube(glow, hm, 0.06F, 0.0F, -0.06F, 0.03F, 0.75F, 0.65F, 0.6F, 0.8F);
@@ -472,18 +473,18 @@ public class CosmicItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     /**
-     * Deckender Quader mit einfacher Flaechenschattierung.
+     * Deckender Quader mit einfacher Flächenschattierung.
      *
      * @param vc Puffer
      * @param m Matrix
      * @param x0 kleinste x
      * @param y0 kleinste y
      * @param z0 kleinste z
-     * @param x1 groesste x
-     * @param y1 groesste y
-     * @param z1 groesste z
+     * @param x1 größte x
+     * @param y1 größte y
+     * @param z1 größte z
      * @param r Rot 0..1
-     * @param g Gruen 0..1
+     * @param g Grün 0..1
      * @param b Blau 0..1
      */
     private static void box(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, float x1, float y1, float z1,
