@@ -2,7 +2,7 @@ package dr4kun3.cosmiccore.block;
 
 import net.minecraft.util.StringRepresentable;
 
-/** Zustand der gesamten Struktur - wird auf alle Strukturbloecke gespiegelt (Textur, Licht, Animation). */
+/** Zustand der gesamten Struktur - wird auf alle Strukturblöcke gespiegelt (Textur, Licht, Animation). */
 public enum CorePhase implements StringRepresentable {
     DORMANT("dormant"),
     FORMED("formed"),
@@ -20,18 +20,13 @@ public enum CorePhase implements StringRepresentable {
         this.name = name;
     }
 
-    /**
-     * Name der Phase im Blockzustand und in Speicherstaenden.
-     *
-     * @return der gespeicherte Name
-     */
     @Override
     public String getSerializedName() {
         return name;
     }
 
     /**
-     * Findet eine Phase ueber ihren gespeicherten Namen.
+     * Findet eine Phase über ihren gespeicherten Namen.
      *
      * @param name gespeicherter Name
      * @return die passende Phase oder {@link #DORMANT}, wenn der Name unbekannt ist

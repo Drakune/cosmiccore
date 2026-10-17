@@ -15,11 +15,6 @@ public record AwakeningPayload(BlockPos pos, int size) implements CustomPacketPa
             ByteBufCodecs.VAR_INT, AwakeningPayload::size,
             AwakeningPayload::new);
 
-    /**
-     * Liefert den Pakettyp, unter dem NeoForge dieses Paket kennt.
-     *
-     * @return der registrierte Typ des Erwachen-Pakets
-     */
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;

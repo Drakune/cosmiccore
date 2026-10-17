@@ -12,18 +12,18 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 public class ModBlockTagProvider extends BlockTagsProvider {
     /**
-     * Legt den Tag-Generator fuer die Bloecke an.
+     * Legt den Tag-Generator für die Blöcke an.
      *
      * @param output Ausgabeziel der Datengenerierung
      * @param lookup Registry-Zugriff (wird asynchron geliefert)
-     * @param files Pruefung vorhandener Dateien
+     * @param files Prüfung vorhandener Dateien
      */
     public ModBlockTagProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup, ExistingFileHelper files) {
         super(output, lookup, CosmicCore.MODID, files);
     }
 
     /**
-     * Alle Bloecke der Mod brauchen eine Spitzhacke ab Eisen.
+     * Alle Blöcke der Mod brauchen eine Spitzhacke ab Eisen.
      *
      * @param provider Registry-Zugriff
      */

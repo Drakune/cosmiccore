@@ -12,10 +12,10 @@ import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 /**
- * Overdrive als eine durchgehende Steigerung desselben Bildes (keine neuen Fremdkoerper pro Stufe):
- * Mit jeder Stufe wird die Korona um den Horizont dichter, ein sanfter Strahlenkranz waechst heraus und ab
+ * Overdrive als eine durchgehende Steigerung desselben Bildes (keine neuen Fremdkörper pro Stufe):
+ * Mit jeder Stufe wird die Korona um den Horizont dichter, ein sanfter Strahlenkranz wächst heraus und ab
  * Stufe 3 atmet eine Aura im Takt. Farbe und Scheibe (zweite Scheibe ab Stufe 1, Ringstruktur ab Stufe 2)
- * steuert der Kern-Renderer ueber die Palette.
+ * steuert der Kern-Renderer über die Palette.
  */
 public final class OverdriveFx {
     /** Nur statische Zeichenroutinen - keine Instanzen. */
@@ -26,14 +26,14 @@ public final class OverdriveFx {
      * atmende Aura. Alles ist zur Kamera ausgerichtet, damit es aus jeder Richtung gleich wirkt.
      *
      * @param pose Pose-Stapel mit Ursprung in der Kernmitte
-     * @param vc Puffer fuer additives Leuchten
+     * @param vc Puffer für additives Leuchten
      * @param od Overdrive-Stufe (0 = nichts zeichnen)
-     * @param rh Radius des Ereignishorizonts in Bloecken
+     * @param rh Radius des Ereignishorizonts in Blöcken
      * @param t Animationszeit in Ticks
      * @param energy Helligkeit 0..1
-     * @param camYaw Gierwinkel der Kamera in Bogenmass (zum Ausrichten)
-     * @param camPitch Neigung der Kamera in Bogenmass
-     * @param pal Farbpalette {heiss, warm, kuehl} als RGB 0..1
+     * @param camYaw Gierwinkel der Kamera in Bogenmaß (zum Ausrichten)
+     * @param camPitch Neigung der Kamera in Bogenmaß
+     * @param pal Farbpalette {heiß, warm, kühl} als RGB 0..1
      */
     public static void render(PoseStack pose, VertexConsumer vc, int od, float rh, float t, float energy,
                               float camYaw, float camPitch, float[][] pal) {
@@ -68,7 +68,7 @@ public final class OverdriveFx {
             int spikes = 8;
             for (int k = 0; k < spikes; k++) {
                 float ang = k * Mth.TWO_PI / spikes + t * 0.002F;
-                // kuerzer und schmaler, jede Spitze mit eigener Phase - nicht alle gleichzeitig lang
+                // kürzer und schmaler, jede Spitze mit eigener Phase - nicht alle gleichzeitig lang
                 float len = rh * (1.7F + 0.25F * od + 0.35F * Mth.sin(t * 0.04F + k * 1.7F));
                 float w = rh * 0.04F;
                 float ca = Mth.cos(ang), sa = Mth.sin(ang);

@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/** Resonanzspule und Fokuskristall: Strukturbloecke mit eigener Animation (siehe ResonatorRenderer). */
+/** Resonanzspule und Fokuskristall: Strukturblöcke mit eigener Animation (siehe ResonatorRenderer). */
 public class ResonatorBlock extends StructureBlock implements EntityBlock {
     /**
      * Erzeugt den Block (Resonanzspule oder Fokuskristall).
@@ -18,13 +18,6 @@ public class ResonatorBlock extends StructureBlock implements EntityBlock {
         super(props);
     }
 
-    /**
-     * Jeder Resonator bekommt einen Blockinhalt, der den animierten Emitter zeichnet.
-     *
-     * @param pos Position des Blocks
-     * @param state aktueller Blockzustand
-     * @return neuer {@link ResonatorBlockEntity}
-     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

@@ -9,7 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Traegt die Wirbel-Animation des Sternentrichters und laesst dauerhaft Teilchen aus dem All in ihn saugen. */
+/** Trägt die Wirbel-Animation des Sternentrichters und lässt dauerhaft Teilchen aus dem All in ihn saugen. */
 public class StarFunnelBlockEntity extends BlockEntity {
     /**
      * Legt den Blockinhalt des Sternentrichters an.
@@ -22,9 +22,9 @@ public class StarFunnelBlockEntity extends BlockEntity {
     }
 
     /**
-     * Dauerhafter Sog: Teilchen erscheinen hoch am Himmel in einer Spirale ueber dem Trichter und werden hineingezogen.
-     * PORTAL-Partikel wandern von (Position + Geschwindigkeit) zur Position - so landen sie genau im Trichter. Laeuft
-     * der Reaktor darunter, ist der Sog staerker. Nur auf dem Client und nur bei freier Sicht zum Himmel.
+     * Dauerhafter Sog: Teilchen erscheinen hoch am Himmel in einer Spirale über dem Trichter und werden hineingezogen.
+     * PORTAL-Partikel wandern von (Position + Geschwindigkeit) zur Position - so landen sie genau im Trichter. Läuft
+     * der Reaktor darunter, ist der Sog stärker. Nur auf dem Client und nur bei freier Sicht zum Himmel.
      *
      * @param level die Client-Welt
      * @param pos Position des Trichters

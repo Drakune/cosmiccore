@@ -2,6 +2,7 @@ package dr4kun3.cosmiccore.menu;
 
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
+import dr4kun3.cosmiccore.color.CoreColors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -18,12 +19,12 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * GUI des Controllers: Brennstoff- und Stabilisator-Slot (frei befuell- und entnehmbar) plus Spielerinventar.
- * Knoepfe laufen ueber den Vanilla-Mechanismus clickMenuButton - dafuer braucht es kein eigenes Netzwerkpaket.
+ * GUI des Controllers: Brennstoff- und Stabilisator-Slot (frei befüll- und entnehmbar) plus Spielerinventar.
+ * Knöpfe laufen über den Vanilla-Mechanismus clickMenuButton - dafür braucht es kein eigenes Netzwerkpaket.
  */
 public class ControllerMenu extends AbstractContainerMenu {
     // Knopf-IDs
-    /** Groessenwahl: 100 + Groesse (0..2) + 3 * Trichter + 6 * Laser (eigener Bereich, kollidiert nicht mit den anderen Knoepfen). */
+    /** Größenwahl: 100 + Größe (0..2) + 3 * Trichter + 6 * Laser (eigener Bereich, kollidiert nicht mit den anderen Knöpfen). */
     public static final int BTN_SIZE_FIRST = 100;
     public static final int BTN_SCALE_DOWN = 10;
     public static final int BTN_SCALE_UP = 11;
@@ -33,7 +34,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     public static final int BTN_OVERDRIVE_UP = 15;
     public static final int BTN_OVERDRIVE_DOWN = 16;
     public static final int BTN_ANTI_ASTEROID = 17;
-    /** Lager des Item-Ports oeffnen (beim Schliessen geht es zurueck zum Controller). */
+    /** Lager des Item-Ports öffnen (beim Schließen geht es zurück zum Controller). */
     public static final int BTN_STORAGE = 18;
 
     // Datenfelder
@@ -53,12 +54,12 @@ public class ControllerMenu extends AbstractContainerMenu {
     public static final int FUEL_X = 12, FUEL_Y = 25, STAB_X = 12, STAB_Y = 52;
     public static final int INV_X = 77, INV_Y = 186;
     /**
-     * Modul-Tab rechts am Fenster (klappt aus wie bei Mekanism): 2x2 Slots - Effizienz, Stabilitaet,
+     * Modul-Tab rechts am Fenster (klappt aus wie bei Mekanism): 2x2 Slots - Effizienz, Stabilität,
      * Anti-Asteroiden (Schalter darunter) und Farbe (Farbfeld darunter). Koordinaten relativ zum Fenster.
      */
     public static final int GUI_W = 316, TAB_TOP = 18, MOD_X = GUI_W + 9, MOD_Y = TAB_TOP + 22, MOD_STEP_X = 22, MOD_STEP_Y = 30;
 
-    /** Nur Client: ist der Modul-Tab ausgeklappt? (Der Server laesst die Slots immer zu.) */
+    /** Nur Client: ist der Modul-Tab ausgeklappt? (Der Server lässt die Slots immer zu.) */
     public boolean modulesOpen = true;
 
     private final BlockPos pos;
@@ -68,7 +69,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     private final ControllerBlockEntity be;
 
     /**
-     * Client: baut das Menue aus den Daten des Servers (Inventar und Werte werden gespiegelt).
+     * Client: baut das Menü aus den Daten des Servers (Inventar und Werte werden gespiegelt).
      *
      * @param id Fensternummer
      * @param playerInv Inventar des Spielers
@@ -80,7 +81,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Server: Menue auf dem echten Controller.
+     * Server: Menü auf dem echten Controller.
      *
      * @param id Fensternummer
      * @param playerInv Inventar des Spielers
@@ -98,7 +99,7 @@ public class ControllerMenu extends AbstractContainerMenu {
      * @param playerInv Inventar des Spielers
      * @param pos Position des Controllers
      * @param machine Inventar des Controllers (echt oder gespiegelt)
-     * @param data Werte fuer die Anzeige
+     * @param data Werte für die Anzeige
      * @param be der Controller (nur auf dem Server, sonst {@code null})
      */
     private ControllerMenu(int id, Inventory playerInv, BlockPos pos, IItemHandler machine, ContainerData data,
@@ -127,16 +128,16 @@ public class ControllerMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-    // ------------------------------------------------------------------ Datenzugriff fuer den Screen
+    // ------------------------------------------------------------------ Datenzugriff für den Screen
 
-    /** Anzahl der Maschinen-Slots im Menue (Brennstoff, Stabilisator, vier Module). */
+    /** Anzahl der Maschinen-Slots im Menü (Brennstoff, Stabilisator, vier Module). */
     public static final int MACHINE_SLOTS = 6;
 
     /**
-     * Menue-Slot zu einem Slot des Controller-Inventars.
+     * Menü-Slot zu einem Slot des Controller-Inventars.
      *
      * @param inventoryIndex Nummer im Controller-Inventar
-     * @return der Menue-Slot oder {@code null}, wenn er nicht im Menue liegt
+     * @return der Menü-Slot oder {@code null}, wenn er nicht im Menü liegt
      */
     @Nullable
     public Slot machineSlot(int inventoryIndex) {
@@ -144,11 +145,6 @@ public class ControllerMenu extends AbstractContainerMenu {
         return null;
     }
 
-    /**
-     * Position des Controllers.
-     *
-     * @return die Position
-     */
     public BlockPos getPos() {
         return pos;
     }
@@ -156,8 +152,8 @@ public class ControllerMenu extends AbstractContainerMenu {
     /**
      * Setzt einen 32-Bit-Wert aus zwei 16-Bit-Datenfeldern zusammen (Minecraft gleicht nur kurze Werte ab).
      *
-     * @param lo Index der unteren Haelfte
-     * @param hi Index der oberen Haelfte
+     * @param lo Index der unteren Hälfte
+     * @param hi Index der oberen Hälfte
      * @return der Wert
      */
     private int wide(int lo, int hi) {
@@ -165,7 +161,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Energie im Puffer (uebertragen in kRF).
+     * Energie im Puffer (übertragen in kRF).
      *
      * @return RF
      */
@@ -174,7 +170,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Kapazitaet des Puffers.
+     * Kapazität des Puffers.
      *
      * @return RF
      */
@@ -210,7 +206,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Instabilitaet des Kerns.
+     * Instabilität des Kerns.
      *
      * @return Prozent
      */
@@ -237,7 +233,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Hoechste Leistungsstufe der Baugroesse.
+     * Höchste Leistungsstufe der Baugröße.
      *
      * @return Stufe
      */
@@ -246,16 +242,16 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Gewaehlte Baugroesse.
+     * Gewählte Baugröße.
      *
-     * @return Kantenlaenge oder 0, solange keine gewaehlt ist
+     * @return Kantenlänge oder 0, solange keine gewählt ist
      */
     public int size() {
         return data.get(D_SIZE);
     }
 
     /**
-     * Ist die Baugroesse schon gewaehlt?
+     * Ist die Baugröße schon gewählt?
      *
      * @return {@code true} nach der Wahl
      */
@@ -264,7 +260,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Prueft ein Zustandsbit (laeuft, gebildet, Vorschau, Trichter, Laser ...).
+     * Prüft ein Zustandsbit (läuft, gebildet, Vorschau, Trichter, Laser ...).
      *
      * @param f das Bit ({@code F_*})
      * @return {@code true}, wenn gesetzt
@@ -301,7 +297,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Verbleibende Zeit des Kollaps-Countdowns (aeltere Anzeige).
+     * Verbleibende Zeit des Kollaps-Countdowns (ältere Anzeige).
      *
      * @return Sekunden
      */
@@ -328,7 +324,7 @@ public class ControllerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Hoechste dauerhaft freigeschaltete Leistungsstufe.
+     * Höchste dauerhaft freigeschaltete Leistungsstufe.
      *
      * @return Stufe (mindestens 1)
      */
@@ -341,10 +337,10 @@ public class ControllerMenu extends AbstractContainerMenu {
      *
      * @return der Farbsatz
      */
-    public dr4kun3.cosmiccore.color.CoreColors.Config colorConfig() {
-        int[] c = new int[dr4kun3.cosmiccore.color.CoreColors.CHANNELS];
+    public CoreColors.Config colorConfig() {
+        int[] c = new int[CoreColors.CHANNELS];
         for (int i = 0; i < c.length; i++) c[i] = data.get(D_COLOR_FIRST + i);
-        return new dr4kun3.cosmiccore.color.CoreColors.Config(data.get(D_COLOR_MASK), c);
+        return new CoreColors.Config(data.get(D_COLOR_MASK), c);
     }
 
     /**
@@ -358,24 +354,11 @@ public class ControllerMenu extends AbstractContainerMenu {
 
     // ------------------------------------------------------------------ Logik
 
-    /**
-     * Knopfdruck im Fenster: leitet an den Controller weiter (Start, Stufe, Overdrive, Bauen ...).
-     *
-     * @param player klickender Spieler
-     * @param id Nummer des Knopfs ({@code BTN_*})
-     * @return {@code true}, wenn verarbeitet
-     */
     @Override
     public boolean clickMenuButton(Player player, int id) {
         return be != null && be.handleButton(player, id);
     }
 
-    /**
-     * Offen bleibt das Menue, solange der Controller existiert und der Spieler nah genug ist.
-     *
-     * @param player der Spieler
-     * @return {@code true}, wenn weiter gueltig
-     */
     @Override
     public boolean stillValid(Player player) {
         return stillValid(access, player, ModBlocks.CONTROLLER.get());
@@ -417,7 +400,7 @@ public class ControllerMenu extends AbstractContainerMenu {
         return copy;
     }
 
-    /** Solange die Baugroesse nicht gewaehlt ist, zeigt der Screen nur die Auswahl - Slots sind dann aus. */
+    /** Solange die Baugröße nicht gewählt ist, zeigt der Screen nur die Auswahl - Slots sind dann aus. */
     /** Modul-Slot im Seiten-Tab: auf dem Client nur sichtbar und klickbar, solange der Tab ausgeklappt ist. */
     private final class ModuleSlot extends SlotItemHandler {
         /**
@@ -432,11 +415,6 @@ public class ControllerMenu extends AbstractContainerMenu {
             super(handler, index, x, y);
         }
 
-        /**
-         * Nur sichtbar, wenn die Baugroesse gewaehlt und der Modul-Tab offen ist.
-         *
-         * @return {@code true}, wenn aktiv
-         */
         @Override
         public boolean isActive() {
             return sizeChosen() && modulesOpen;
@@ -445,7 +423,7 @@ public class ControllerMenu extends AbstractContainerMenu {
 
     private final class MachineSlot extends SlotItemHandler {
         /**
-         * Slot fuer Brennstoff oder Stabilisator.
+         * Slot für Brennstoff oder Stabilisator.
          *
          * @param handler Inventar des Controllers
          * @param index Nummer im Inventar
@@ -456,11 +434,6 @@ public class ControllerMenu extends AbstractContainerMenu {
             super(handler, index, x, y);
         }
 
-        /**
-         * Erst nach der Wahl der Baugroesse sichtbar.
-         *
-         * @return {@code true}, wenn aktiv
-         */
         @Override
         public boolean isActive() {
             return sizeChosen();
@@ -480,11 +453,6 @@ public class ControllerMenu extends AbstractContainerMenu {
             super(container, index, x, y);
         }
 
-        /**
-         * Erst nach der Wahl der Baugroesse sichtbar (vorher zeigt das Fenster die Groessenwahl).
-         *
-         * @return {@code true}, wenn aktiv
-         */
         @Override
         public boolean isActive() {
             return sizeChosen();

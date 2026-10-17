@@ -8,18 +8,18 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Der Strahl des Void-Titanen: Seit er im Ultimate-Modus erwacht ist, faellt aus einem gleissenden Lichtpunkt hoch
+ * Der Strahl des Void-Titanen: Seit er im Ultimate-Modus erwacht ist, fällt aus einem gleißenden Lichtpunkt hoch
  * am Himmel ein Strahl senkrecht in den Sternentrichter - solange der Ultimate-Modus aktiv ist.
- * Alle Koordinaten relativ zur Kernmitte. Ferne Punkte werden maszstabsgetreu naeher an die Kamera gezeichnet
+ * Alle Koordinaten relativ zur Kernmitte. Ferne Punkte werden maszstabsgetreu näher an die Kamera gezeichnet
  * (wie eine Himmelskulisse), damit sie nicht hinter der Sichtweite abgeschnitten werden.
  */
 public final class TitanBeam {
     /** Nur statische Zeichenroutinen - keine Instanzen. */
     private TitanBeam() {}
 
-    /** Austrittspunkt des Strahls hoch ueber dem Reaktor (das Tor in das andere Universum). */
+    /** Austrittspunkt des Strahls hoch über dem Reaktor (das Tor in das andere Universum). */
     public static final Vector3f SKY_TOP = new Vector3f(0.0F, 420.0F, 0.0F);
-    /** Groesste Zeichendistanz fuer ferne Objekte. */
+    /** Größte Zeichendistanz für ferne Objekte. */
     public static final float SKY_DIST = 280.0F;
 
     private static final float[] VOID = {0.55F, 0.25F, 1.0F};
@@ -39,7 +39,7 @@ public final class TitanBeam {
     }
 
     /**
-     * Matrix, die alles um die Kamera skaliert - Winkelgroessen bleiben erhalten.
+     * Matrix, die alles um die Kamera skaliert - Winkelgrößen bleiben erhalten.
      *
      * @param m Ausgangsmatrix
      * @param cam Kameraposition
@@ -63,15 +63,15 @@ public final class TitanBeam {
     }
 
     /**
-     * Strahl von {@code from} nach {@code to}: heller Kern, Huelle und flackernde Lichtpulse.
+     * Strahl von {@code from} nach {@code to}: heller Kern, Hülle und flackernde Lichtpulse.
      *
      * @param m Matrix
-     * @param vc Puffer fuer additives Leuchten
+     * @param vc Puffer für additives Leuchten
      * @param from Start
      * @param to Ziel
      * @param t Animationszeit in Ticks
      * @param reach wie weit der Strahl schon ausgefahren ist (0..1)
-     * @param intensity Helligkeit (die Zwischensequenz laesst ihn beim Schuss aufgleissen)
+     * @param intensity Helligkeit (die Zwischensequenz lässt ihn beim Schuss aufgleißen)
      */
     public static void beam(Matrix4f m, VertexConsumer vc, Vector3f from, Vector3f to, float t, float reach, float intensity) {
         if (reach <= 0.0F || intensity <= 0.0F) return;
@@ -94,11 +94,11 @@ public final class TitanBeam {
     }
 
     /**
-     * Wo der Strahl in den Trichter muendet: leuchtender Wirbel aus Ringen.
+     * Wo der Strahl in den Trichter mündet: leuchtender Wirbel aus Ringen.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
      * @param vc Puffer
-     * @param mouthY Hoehe der Trichteroeffnung
+     * @param mouthY Höhe der Trichteröffnung
      * @param t Animationszeit
      * @param intensity Helligkeit
      */
@@ -113,7 +113,7 @@ public final class TitanBeam {
     }
 
     /**
-     * Das Tor am Himmel: ein gleissender Stern mit kreuzfoermigem Lichtschein.
+     * Das Tor am Himmel: ein gleißender Stern mit kreuzförmigem Lichtschein.
      *
      * @param m Matrix der Himmelskulisse
      * @param vc Puffer
