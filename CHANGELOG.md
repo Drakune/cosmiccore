@@ -30,6 +30,7 @@ Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 ### Behoben
 - Das Haltenetz um den Kern verdeckte das untere Ende des Sternentrichters. Oben im Netz ist jetzt eine Öffnung für
   den Trichter.
+- Von unten durch die Kammer gesehen verschwand der Sternentrichter hinter dem Kern. Er bleibt jetzt sichtbar.
 - Ab Minecraft 1.21.11 lagen die Strahlen vom Kern zu Controller und Ports vor den Bildschirmen statt dahinter.
 - Minecraft 26.x: Sockel unter Konsole und Ports sowie die eingesaugten Blöcke beim Bilden fehlten.
 
