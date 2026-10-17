@@ -1,11 +1,13 @@
 package dr4kun3.cosmiccore.item;
 
 import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 
 /**
  * Quasar-Overdrive-Partikel: nur craftbar (Overdrive-Partikel umgeben von vier Quasar-Essenzen). Vier davon schalten
@@ -21,12 +23,6 @@ public class QuasarOverdriveItem extends Item {
         super(props);
     }
 
-    /**
-     * Das Partikel schimmert immer.
-     *
-     * @param stack der Stapel
-     * @return immer {@code true}
-     */
     @Override
     public boolean isFoil(ItemStack stack) {
         return true;
@@ -42,8 +38,8 @@ public class QuasarOverdriveItem extends Item {
      * @param flag erweiterte Anzeige
      */
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, net.minecraft.world.item.component.TooltipDisplay display,
-                                java.util.function.Consumer<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, TooltipDisplay display,
+                                Consumer<Component> tooltip, TooltipFlag flag) {
         tooltip.accept(Component.translatable("tooltip.cosmiccore.quasar_overdrive.effect").withStyle(ChatFormatting.GOLD));
         tooltip.accept(Component.translatable("tooltip.cosmiccore.quasar_overdrive.limit").withStyle(ChatFormatting.GRAY));
     }

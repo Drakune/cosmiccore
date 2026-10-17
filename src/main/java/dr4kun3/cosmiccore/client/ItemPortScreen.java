@@ -8,15 +8,16 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.phys.Vec3;
 
 /** Beutelager des Item-Ports - gleicher Look wie die Steuerung des Controllers. */
 public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
     private static final int BORDER = 0xFF3A2468, FILL = 0xCC0E0820, ACCENT = 0xFF6A44B8, HEAD = 0xFFB8A8D8;
 
     /**
-     * Legt das Fenster des Item-Port-Lagers an (27 Plaetze und Spielerinventar).
+     * Legt das Fenster des Item-Port-Lagers an (27 Plätze und Spielerinventar).
      *
-     * @param menu das zugehoerige Menue
+     * @param menu das zugehörige Menü
      * @param inv Inventar des Spielers
      * @param title Fenstertitel
      */
@@ -28,13 +29,13 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
         inventoryLabelY = ItemPortMenu.INV_Y - 11;
     }
 
-    /** Vom Controller aus geoeffnet: Schliessen fuehrt zurueck zur Steuerung (solange man nah genug steht). */
+    /** Vom Controller aus geöffnet: Schließen führt zurück zur Steuerung (solange man nah genug steht). */
     @Override
     public void onClose() {
         if (menu.getReturnTo() != null && minecraft != null && minecraft.gameMode != null && minecraft.player != null
-                && minecraft.player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(menu.getReturnTo())) <= 64.0) {
+                && minecraft.player.distanceToSqr(Vec3.atCenterOf(menu.getReturnTo())) <= 64.0) {
             minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 0);
-            return; // der Server oeffnet die Steuerung, die dieses Menue ersetzt
+            return; // der Server öffnet die Steuerung, die dieses Menü ersetzt
         }
         super.onClose();
     }
@@ -54,10 +55,10 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
     }
 
     /**
-     * Hintergrund: Rahmen, kosmischer Grund, leuchtende Slot-Raender und Trennlinie zum Inventar.
+     * Hintergrund: Rahmen, kosmischer Grund, leuchtende Slot-Ränder und Trennlinie zum Inventar.
      *
      * @param g Grafik-Kontext
-     * @param partialTick Teil-Tick (fuer das Leuchten)
+     * @param partialTick Teil-Tick (für das Leuchten)
      * @param mouseX Mausposition x
      * @param mouseY Mausposition y
      */
@@ -88,7 +89,7 @@ public class ItemPortScreen extends AbstractContainerScreen<ItemPortMenu> {
     }
 
     /**
-     * Beschriftungen: Titel, belegte Plaetze (z. B. 12 / 27) und "Inventar".
+     * Beschriftungen: Titel, belegte Plätze (z. B. 12 / 27) und "Inventar".
      *
      * @param g Grafik-Kontext
      * @param mouseX Mausposition x

@@ -7,12 +7,13 @@ import static dr4kun3.cosmiccore.client.RenderUtil.lerp;
 import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import dr4kun3.cosmiccore.color.CoreColors;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Zuenden eines Kerns: Sterne stuerzen aus dem Himmel in einem leichten Wirbel in die Mitte des Reaktors und
+ * Zünden eines Kerns: Sterne stürzen aus dem Himmel in einem leichten Wirbel in die Mitte des Reaktors und
  * gehen dort in einem Lichtblitz auf. Ursprung ist die Kernmitte, Fortschritt ph 0..1.
  */
 public final class IgnitionFx {
@@ -21,9 +22,9 @@ public final class IgnitionFx {
 
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
-    /** Uebernimmt die Kanalfarbe "Partikel" des Farb-Moduls (sonst Gold, Cyan und Violett). */
+    /** Übernimmt die Kanalfarbe "Partikel" des Farb-Moduls (sonst Gold, Cyan und Violett). */
     private static void particleColors() {
-        int ch = dr4kun3.cosmiccore.color.CoreColors.PARTICLES;
+        int ch = CoreColors.PARTICLES;
         GOLD = ColorOverride.get(ch, GOLD_DEF);
         CYAN = ColorOverride.light(ch, CYAN_DEF, 0.45F);
         VIOLET = ColorOverride.dark(ch, VIOLET_DEF, 0.3F);
@@ -36,12 +37,12 @@ public final class IgnitionFx {
     private static float[] VIOLET = VIOLET_DEF;
 
     /**
-     * Zuendung: Sterne stuerzen in einem Wirbel vom Himmel in den Kern und verloeschen am Ende der Zuendphase.
+     * Zündung: Sterne stürzen in einem Wirbel vom Himmel in den Kern und verlöschen am Ende der Zündphase.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
-     * @param vc Puffer fuer additives Leuchten
-     * @param size Kantenlaenge der Struktur in Bloecken (groessere Reaktoren ziehen mehr Sterne an)
-     * @param ph Fortschritt der Zuendung 0..1 (negativ = keine Zuendung)
+     * @param vc Puffer für additives Leuchten
+     * @param size Kantenlänge der Struktur in Blöcken (größere Reaktoren ziehen mehr Sterne an)
+     * @param ph Fortschritt der Zündung 0..1 (negativ = keine Zündung)
      * @param energy Helligkeit 0..1
      */
     public static void render(Matrix4f m, VertexConsumer vc, int size, float ph, float energy) {
@@ -78,9 +79,9 @@ public final class IgnitionFx {
      * ohne Trichter auf die Deckenmitte) - leicht verdrillt, beschleunigend, mit Lichtschweif.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
-     * @param vc Puffer fuer additives Leuchten
-     * @param size Kantenlaenge der Struktur in Bloecken
-     * @param mouthY Hoehe des Ziels relativ zur Kernmitte
+     * @param vc Puffer für additives Leuchten
+     * @param size Kantenlänge der Struktur in Blöcken
+     * @param mouthY Höhe des Ziels relativ zur Kernmitte
      * @param t Animationszeit in Ticks
      * @param energy Helligkeit 0..1
      */
@@ -105,12 +106,12 @@ public final class IgnitionFx {
     }
 
     /**
-     * Fall von oben in den Trichter: Radius schrumpft auf die Oeffnung, leichte Drehung, beschleunigend.
+     * Fall von oben in den Trichter: Radius schrumpft auf die Öffnung, leichte Drehung, beschleunigend.
      *
-     * @param lon Startwinkel um die Hochachse (Bogenmass)
+     * @param lon Startwinkel um die Hochachse (Bogenmaß)
      * @param startR Startabstand von der Achse
-     * @param startH Starthoehe ueber dem Ziel
-     * @param mouthY Hoehe des Ziels
+     * @param startH Starthöhe über dem Ziel
+     * @param mouthY Höhe des Ziels
      * @param s Fortschritt 0..1
      * @return aktuelle Position
      */
@@ -122,10 +123,10 @@ public final class IgnitionFx {
     }
 
     /**
-     * Flugbahn der Zuendung: vom Himmel in einem Wirbel (Drehung um die Hochachse) beschleunigend in die Mitte.
+     * Flugbahn der Zündung: vom Himmel in einem Wirbel (Drehung um die Hochachse) beschleunigend in die Mitte.
      *
-     * @param lon Startwinkel um die Hochachse (Bogenmass)
-     * @param lat Hoehenwinkel (Bogenmass)
+     * @param lon Startwinkel um die Hochachse (Bogenmaß)
+     * @param lat Höhenwinkel (Bogenmaß)
      * @param r0 Startentfernung
      * @param s Fortschritt 0..1
      * @return aktuelle Position

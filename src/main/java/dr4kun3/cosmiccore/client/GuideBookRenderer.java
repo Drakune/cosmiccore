@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -21,8 +22,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Das Kosmische Handbuch als 3D-Buch: violetter Ledereinband mit Goldrahmen und Stern-Emblem, zwei Seitenbloecke,
- * Ruecken mit Goldbuenden. In der Hand klappt es auf, eine Seite blaettert sich regelmaessig um, ueber der
+ * Das Kosmische Handbuch als 3D-Buch: violetter Ledereinband mit Goldrahmen und Stern-Emblem, zwei Seitenblöcke,
+ * Rücken mit Goldbünden. In der Hand klappt es auf, eine Seite blättert sich regelmäßig um, über der
  * Doppelseite schwebt ein leuchtendes Sternsiegel. Im Inventar, am Boden und im Rahmen liegt es geschlossen,
  * das Emblem pulsiert. Textur: textures/item/cosmic_book.png (Atlas 128x64, siehe tools/generate_resources.py).
  */
@@ -33,20 +34,20 @@ public final class GuideBookRenderer {
 
     private static final ResourceLocation TEX = CosmicCore.id("textures/item/cosmic_book.png");
     private static final float TW = 128.0F, TH = 64.0F;
-    // Atlas-Bereiche (x, y, Breite, Hoehe) - wie BOOK_ATLAS im Generator
+    // Atlas-Bereiche (x, y, Breite, Höhe) - wie BOOK_ATLAS im Generator
     private static final int[] COVER = {0, 0, 30, 40}, PAGE = {30, 0, 30, 40}, FORE = {60, 0, 6, 40}, SPINE = {66, 0, 10, 40},
             INSIDE = {76, 0, 30, 40}, EDGE = {0, 40, 30, 6}, VIOLET = {30, 40, 4, 4}, GOLD_UV = {34, 40, 4, 4};
     private static final float[] GOLD = {1.0F, 0.78F, 0.35F}, VIOLET_GLOW = {0.7F, 0.45F, 1.0F}, CYAN = {0.45F, 0.9F, 1.0F};
 
-    /** Masse in Bloecken: Breite einer Haelfte, Hoehe, Deckel- und Seitenblockdicke. */
+    /** Masse in Blöcken: Breite einer Hälfte, Höhe, Deckel- und Seitenblockdicke. */
     private static final float W = 0.56F, H = 0.76F, C = 0.035F, P = 0.07F;
     private static final long OPEN_MS = 650;
 
-    /** Seit wann haelt der Spieler das Buch (je Hand); -1 = nicht in der Hand. */
+    /** Seit wann hält der Spieler das Buch (je Hand); -1 = nicht in der Hand. */
     private static final long[] heldSince = {-1, -1};
 
     /**
-     * Merkt sich je Hand, seit wann das Buch gehalten wird (fuer das Aufklappen beim In-die-Hand-Nehmen).
+     * Merkt sich je Hand, seit wann das Buch gehalten wird (für das Aufklappen beim In-die-Hand-Nehmen).
      *
      * @param event Ende eines Client-Ticks
      */
@@ -62,7 +63,7 @@ public final class GuideBookRenderer {
     }
 
     /**
-     * Wie weit das Buch in dieser Ansicht aufgeklappt ist: in der Hand oeffnet es sich, im Inventar bleibt es zu.
+     * Wie weit das Buch in dieser Ansicht aufgeklappt ist: in der Hand öffnet es sich, im Inventar bleibt es zu.
      *
      * @param ctx Anzeigeart (Hand, Inventar, Boden ...)
      * @return 0 (zu) bis 1 (offen)
@@ -75,7 +76,7 @@ public final class GuideBookRenderer {
         boolean left = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
         int hand = 0;
         if (player != null) {
-            boolean mainIsRight = player.getMainArm() == net.minecraft.world.entity.HumanoidArm.RIGHT;
+            boolean mainIsRight = player.getMainArm() == HumanoidArm.RIGHT;
             hand = (left == mainIsRight) ? InteractionHand.OFF_HAND.ordinal() : InteractionHand.MAIN_HAND.ordinal();
         }
         long since = heldSince[hand];
@@ -85,9 +86,9 @@ public final class GuideBookRenderer {
     }
 
     /**
-     * Zeichnet das 3D-Buch: zwei Haelften mit Deckel und Seitenblock, Buchruecken, ein regelmaessig umblaetterndes
+     * Zeichnet das 3D-Buch: zwei Hälften mit Deckel und Seitenblock, Buchrücken, ein regelmäßig umblätterndes
      * Blatt
-     * und ueber der aufgeschlagenen Doppelseite ein Sternsiegel mit Funken.
+     * und über der aufgeschlagenen Doppelseite ein Sternsiegel mit Funken.
      *
      * @param ctx Anzeigeart (bestimmt, wie weit das Buch offen ist)
      * @param pose Pose-Stapel in der Item-Mitte
@@ -98,21 +99,21 @@ public final class GuideBookRenderer {
      */
     public static void render(ItemDisplayContext ctx, PoseStack pose, MultiBufferSource buffers, int light, int overlay, float t) {
         float open = openness(ctx);
-        float ang = open * 78.0F; // Oeffnungswinkel je Haelfte
+        float ang = open * 78.0F; // Öffnungswinkel je Hälfte
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(TEX));
         pose.pushPose();
-        // Buch steht auf dem Ruecken-Gelenk (lokales Y = Hoehe), die Seiten zeigen zum Betrachter
+        // Buch steht auf dem Rücken-Gelenk (lokales Y = Höhe), die Seiten zeigen zum Betrachter
         pose.mulPose(Axis.YP.rotationDegrees(-90.0F));
         pose.translate(-0.12F * open, 0.0F, 0.0F);
-        // Ruecken
+        // Rücken
         box(vc, pose, -C, -H / 2, -(P + C), 0.0F, H / 2, P + C, light, overlay,
                 SPINE, VIOLET, VIOLET, VIOLET, GOLD_UV, GOLD_UV);
-        // vordere Haelfte (+Z) und hintere Haelfte (-Z), um das Gelenk geklappt
+        // vordere Hälfte (+Z) und hintere Hälfte (-Z), um das Gelenk geklappt
         half(vc, pose, -ang, 1, light, overlay);
         half(vc, pose, ang, -1, light, overlay);
-        // Blatt, das sich umblaettert (nur offen in der Hand)
+        // Blatt, das sich umblättert (nur offen in der Hand)
         if (open > 0.95F) {
-            float cycle = (t % 70.0F) / 14.0F; // 14 Ticks Blaettern, dann Pause
+            float cycle = (t % 70.0F) / 14.0F; // 14 Ticks Blättern, dann Pause
             if (cycle < 1.0F) {
                 float e = cycle * cycle * (3.0F - 2.0F * cycle);
                 float a = Mth.lerp(e, ang, -ang);
@@ -120,7 +121,7 @@ public final class GuideBookRenderer {
                 pose.pushPose();
                 pose.mulPose(Axis.YP.rotationDegrees(a));
                 pose.translate(0, 0, lift);
-                // Blatt leicht gewoelbt: zwei Segmente
+                // Blatt leicht gewölbt: zwei Segmente
                 sheet(vc, pose, light, overlay, e);
                 pose.popPose();
             }
@@ -147,7 +148,7 @@ public final class GuideBookRenderer {
             RenderUtil.glowSphere(glow, m, 0.03F + 0.01F * pulse, 6, 8, new float[]{1.0F, 0.95F, 0.8F}, a * 0.9F);
             pose.popPose();
         } else {
-            // Sternsiegel ueber der Doppelseite und aufsteigende Funken
+            // Sternsiegel über der Doppelseite und aufsteigende Funken
             float s = (open - 0.5F) * 2.0F;
             Matrix4f m = new Matrix4f(pose.last().pose()).translate(0.18F, 0.0F, 0.0F);
             Matrix4f ring = new Matrix4f(m).rotateZ(Mth.HALF_PI).rotateY(t * 0.03F);
@@ -168,12 +169,12 @@ public final class GuideBookRenderer {
     }
 
     /**
-     * Eine Buchhaelfte: Deckel aussen, Seitenblock innen, um das Gelenk gedreht.
+     * Eine Buchhälfte: Deckel außen, Seitenblock innen, um das Gelenk gedreht.
      *
      * @param vc Puffer
      * @param pose Pose-Stapel am Gelenk
-     * @param angle Oeffnungswinkel in Grad
-     * @param side +1 vordere, -1 hintere Haelfte
+     * @param angle Öffnungswinkel in Grad
+     * @param side +1 vordere, -1 hintere Hälfte
      * @param light Lichtwert
      * @param overlay Overlay-Wert
      */
@@ -195,20 +196,20 @@ public final class GuideBookRenderer {
     }
 
     /**
-     * Das umblaetternde Blatt, beidseitig mit Seitentextur und mittig etwas gewoelbt.
+     * Das umblätternde Blatt, beidseitig mit Seitentextur und mittig etwas gewölbt.
      *
      * @param vc Puffer
      * @param pose Pose-Stapel am Gelenk (bereits gedreht)
      * @param light Lichtwert
      * @param overlay Overlay-Wert
-     * @param e Fortschritt des Umblaetterns 0..1 (staerkste Woelbung in der Mitte)
+     * @param e Fortschritt des Umblätterns 0..1 (stärkste Wölbung in der Mitte)
      */
     private static void sheet(VertexConsumer vc, PoseStack pose, int light, int overlay, float e) {
         Matrix4f m = pose.last().pose();
         float bend = Mth.sin(e * Mth.PI) * 0.05F;
         float xm = W * 0.5F, x1 = W - 0.03F, y0 = -H / 2 + 0.03F, y1 = H / 2 - 0.03F;
         float u0 = PAGE[0] / TW, u1 = (PAGE[0] + PAGE[2]) / TW, uM = (u0 + u1) / 2, v0 = PAGE[1] / TH, v1 = (PAGE[1] + PAGE[3]) / TH;
-        // zwei Segmente: Gelenk -> Mitte (gewoelbt), Mitte -> Kante
+        // zwei Segmente: Gelenk -> Mitte (gewölbt), Mitte -> Kante
         quad(vc, m, 0, y0, 0, xm, y0, bend, xm, y1, bend, 0, y1, 0, u0, v1, uM, v0, 0, 0, 1, light, overlay);
         quad(vc, m, xm, y0, bend, x1, y0, 0, x1, y1, 0, xm, y1, bend, uM, v1, u1, v0, 0, 0, 1, light, overlay);
     }
@@ -221,9 +222,9 @@ public final class GuideBookRenderer {
      * @param x0 kleinste x
      * @param y0 kleinste y
      * @param z0 kleinste z
-     * @param x1 groesste x
-     * @param y1 groesste y
-     * @param z1 groesste z
+     * @param x1 größte x
+     * @param y1 größte y
+     * @param z1 größte z
      * @param light Lichtwert
      * @param overlay Overlay-Wert
      * @param west Atlas-Bereich der Seite -X (Gelenk)
@@ -247,7 +248,7 @@ public final class GuideBookRenderer {
     /**
      * Rechnet einen Atlas-Bereich in Texturkoordinaten um.
      *
-     * @param r Bereich {x, y, Breite, Hoehe} in Pixeln
+     * @param r Bereich {x, y, Breite, Höhe} in Pixeln
      * @return {u0, v0, u1, v1}
      */
     private static float[] uv(int[] r) {

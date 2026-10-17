@@ -6,16 +6,16 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Farbsatz des Kerns (Farb-Modul): acht Kanaele - je Effekt eine Farbe. Ein Kanal ist entweder "Standard" (die
+ * Farbsatz des Kerns (Farb-Modul): acht Kanäle - je Effekt eine Farbe. Ein Kanal ist entweder "Standard" (die
  * normale Farbwelt inkl. Overdrive-Farben) oder eine eigene Farbe. Farben werden als RGB555 (je 5 Bit) gespeichert;
- * so passt jeder Kanal in ein Menue-Datenfeld und der ganze Satz in einen kurzen, teilbaren Code ("CC-...").
+ * so passt jeder Kanal in ein Menü-Datenfeld und der ganze Satz in einen kurzen, teilbaren Code ("CC-...").
  */
 public final class CoreColors {
     public static final int CHANNELS = 8;
     public static final int DISK_INNER = 0, DISK_MID = 1, DISK_OUTER = 2, JETS = 3, SEAMS = 4, FIELD = 5, LASER = 6, PARTICLES = 7;
-    /** Sprachschluessel-Endungen: gui.cosmiccore.channel.<key>. */
+    /** Sprachschlüssel-Endungen: gui.cosmiccore.channel.<key>. */
     public static final String[] KEYS = {"disk_inner", "disk_mid", "disk_outer", "jets", "seams", "field", "laser", "particles"};
-    /** Standardfarben je Kanal (fuer Vorschau und als Startwert im Farbwaehler), RGB 0xRRGGBB. */
+    /** Standardfarben je Kanal (für Vorschau und als Startwert im Farbwähler), RGB 0xRRGGBB. */
     public static final int[] DEFAULT_RGB = {0xFFF2D9, 0xFF8C33, 0x9E47F2, 0x99CCFF, 0x9E66FF, 0x59BFFF, 0x66D9FF, 0xFF9933};
 
     /** mask: Bit i gesetzt = Kanal i hat eine eigene Farbe; colors: RGB555 je Kanal. */
@@ -47,11 +47,11 @@ public final class CoreColors {
         }
 
         /**
-         * Neuer Farbsatz mit einer geaenderten Kanalfarbe.
+         * Neuer Farbsatz mit einer geänderten Kanalfarbe.
          *
          * @param channel Nummer des Farbkanals
          * @param rgb24 neue Farbe als 0xRRGGBB
-         * @return der neue Farbsatz (dieser bleibt unveraendert)
+         * @return der neue Farbsatz (dieser bleibt unverändert)
          */
         public Config with(int channel, int rgb24) {
             int[] c = colors.clone();
@@ -69,22 +69,11 @@ public final class CoreColors {
             return new Config(mask & ~(1 << channel), colors);
         }
 
-        /**
-         * Gleich, wenn Maske und alle Farben uebereinstimmen.
-         *
-         * @param o Vergleichsobjekt
-         * @return {@code true} bei gleichem Farbsatz
-         */
         @Override
         public boolean equals(Object o) {
             return o instanceof Config c && c.mask == mask && Arrays.equals(c.colors, colors);
         }
 
-        /**
-         * Hashwert passend zu {@link #equals}.
-         *
-         * @return der Hashwert
-         */
         @Override
         public int hashCode() {
             return mask * 31 + Arrays.hashCode(colors);
@@ -95,7 +84,7 @@ public final class CoreColors {
 
     public record Preset(String key, Config config) {}
 
-    /** Vorgaben: Standard + sieben stimmige Farbwelten (alle acht Kanaele gesetzt). */
+    /** Vorgaben: Standard + sieben stimmige Farbwelten (alle acht Kanäle gesetzt). */
     public static final List<Preset> PRESETS = List.of(
             new Preset("standard", DEFAULT),
             preset("crimson", 0xFFE6D9, 0xFF4726, 0x990D33, 0xFF664D, 0xC72A3A, 0xFF5A40, 0xFF7A5C, 0xFF6040),
@@ -107,9 +96,9 @@ public final class CoreColors {
             preset("void", 0xD9B3FF, 0x7333CC, 0x260D59, 0x9966FF, 0x5A2AA0, 0x7A50E0, 0xA080FF, 0x8A60F0));
 
     /**
-     * Legt eine Vorgabe mit Farben fuer alle Kanaele an.
+     * Legt eine Vorgabe mit Farben für alle Kanäle an.
      *
-     * @param key Uebersetzungsschluessel des Namens
+     * @param key Übersetzungsschlüssel des Namens
      * @param rgb Farben je Kanal als 0xRRGGBB
      * @return die Vorgabe
      */
@@ -122,7 +111,7 @@ public final class CoreColors {
     // ------------------------------------------------------------------ Umrechnung
 
     /**
-     * Verdichtet eine Farbe auf 5 Bit je Kanal (fuer kurze Codes und kleine Pakete).
+     * Verdichtet eine Farbe auf 5 Bit je Kanal (für kurze Codes und kleine Pakete).
      *
      * @param rgb24 Farbe als 0xRRGGBB
      * @return 15-Bit-Farbe
@@ -168,7 +157,7 @@ public final class CoreColors {
     private static final String PREFIX = "CC-";
 
     /**
-     * Kodiert den Farbsatz als teilbaren Code: "CC-" + 24 Zeichen (Maske, 8 Farben, Pruefsumme).
+     * Kodiert den Farbsatz als teilbaren Code: "CC-" + 24 Zeichen (Maske, 8 Farben, Prüfsumme).
      *
      * @param c der Farbsatz
      * @return der Code
@@ -188,7 +177,7 @@ public final class CoreColors {
      * Liest einen Code (mit oder ohne "CC-").
      *
      * @param code der Code
-     * @return der Farbsatz oder leer, wenn Format oder Pruefsumme nicht stimmen
+     * @return der Farbsatz oder leer, wenn Format oder Prüfsumme nicht stimmen
      */
     public static Optional<Config> decode(String code) {
         if (code == null) return Optional.empty();
@@ -206,10 +195,10 @@ public final class CoreColors {
     }
 
     /**
-     * Einfache Pruefsumme ueber die ersten 17 Bytes eines Codes.
+     * Einfache Prüfsumme über die ersten 17 Bytes eines Codes.
      *
      * @param b die Bytes des Codes
-     * @return die Pruefsumme
+     * @return die Prüfsumme
      */
     private static byte checksum(byte[] b) {
         int sum = 0x5A;

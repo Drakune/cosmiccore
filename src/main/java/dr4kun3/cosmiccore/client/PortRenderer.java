@@ -4,24 +4,29 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.CosmicCore;
+import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.ModProperties;
-import dr4kun3.cosmiccore.block.ControllerBlock;
+import dr4kun3.cosmiccore.block.Terminal;
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
 import dr4kun3.cosmiccore.block.entity.PortBlockEntity;
-import net.minecraft.core.BlockPos;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
 import org.joml.Matrix4f;
 
 /**
@@ -42,51 +47,51 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     /**
      * Stecker-Modell je Port und Phase (wird in CosmicCoreClient als Zusatzmodell registriert).
      *
-     * @param energy {@code true} fuer den Energie-Port, sonst Item-Port
+     * @param energy {@code true} für den Energie-Port, sonst Item-Port
      * @param phase Reaktorphase
      * @return Kennung des Zusatzmodells
      */
-    public static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> plugModel(boolean energy, CorePhase phase) {
+    public static StandaloneModelKey<BlockStateModel> plugModel(boolean energy, CorePhase phase) {
         return key("block/" + (energy ? "energy_port" : "item_port") + "_plug_" + phase.getSerializedName());
     }
 
     /**
      * Seitenteil der Steuerkonsole je Port und Phase (Port neben dem Controller, siehe Terminal).
      *
-     * @param energy {@code true} fuer den Energie-Port, sonst Item-Port
+     * @param energy {@code true} für den Energie-Port, sonst Item-Port
      * @param phase Reaktorphase
      * @return Kennung des Zusatzmodells
      */
-    public static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> terminalModel(boolean energy, CorePhase phase) {
+    public static StandaloneModelKey<BlockStateModel> terminalModel(boolean energy, CorePhase phase) {
         return key("block/" + (energy ? "energy_port" : "item_port") + "_terminal_" + phase.getSerializedName());
     }
 
-    /** Schluessel je Modell nur einmal anlegen (Registrierung und Abruf brauchen dieselbe Instanz). */
-    private static final java.util.Map<String, net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel>> KEYS =
-            new java.util.concurrent.ConcurrentHashMap<>();
+    /** Schlüssel je Modell nur einmal anlegen (Registrierung und Abruf brauchen dieselbe Instanz). */
+    private static final Map<String, StandaloneModelKey<BlockStateModel>> KEYS =
+            new ConcurrentHashMap<>();
 
     /**
-     * Schluessel eines eigenstaendigen Modells, zwischengespeichert.
+     * Schlüssel eines eigenständigen Modells, zwischengespeichert.
      *
      * @param path Modellpfad im Mod-Namensraum
-     * @return der Schluessel
+     * @return der Schlüssel
      */
-    private static net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key(String path) {
-        return KEYS.computeIfAbsent(path, p -> new net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<>(() -> CosmicCore.id(p).toString()));
+    private static StandaloneModelKey<BlockStateModel> key(String path) {
+        return KEYS.computeIfAbsent(path, p -> new StandaloneModelKey<>(() -> CosmicCore.id(p).toString()));
     }
 
     /**
-     * Modell-ID zu einem Schluessel.
+     * Modell-ID zu einem Schlüssel.
      *
-     * @param key der Schluessel
+     * @param key der Schlüssel
      * @return die ID
      */
-    public static net.minecraft.resources.ResourceLocation modelId(net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<BlockStateModel> key) {
-        return net.minecraft.resources.ResourceLocation.parse(key.getName());
+    public static ResourceLocation modelId(StandaloneModelKey<BlockStateModel> key) {
+        return ResourceLocation.parse(key.getName());
     }
 
     /**
-     * Fortschritt des Materialisierens: folgt dem Kern des zugehoerigen Reaktors; ist der unbekannt, der eigene
+     * Fortschritt des Materialisierens: folgt dem Kern des zugehörigen Reaktors; ist der unbekannt, der eigene
      * Zeitpunkt des Formens.
      *
      * @param be der Port
@@ -95,7 +100,7 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
      * @return 0 (noch unsichtbar) bis 1 (ganz da)
      */
     private static float settle(PortBlockEntity be, Level level, float partialTick) {
-        // eigener Zeitpunkt (Zustandswechsel am Port) - faengt Pakete ab, die einen Tick versetzt ankommen
+        // eigener Zeitpunkt (Zustandswechsel am Port) - fängt Pakete ab, die einen Tick versetzt ankommen
         float own = 1.0F;
         if (be.clientAppear != Long.MIN_VALUE) {
             own = (level.getGameTime() - be.clientAppear + partialTick - SingularityCoreBlockEntity.FORM_TICKS)
@@ -112,7 +117,7 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
     }
 
     /**
-     * Zeichnet die Port-Station (Sockel, Bruecke zum Kern, Anzeige) bei gebildeter Struktur.
+     * Zeichnet die Port-Station (Sockel, Brücke zum Kern, Anzeige) bei gebildeter Struktur.
      *
      * @param be der Port
      * @param partialTick Teil-Tick
@@ -123,7 +128,7 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
      * @param cameraPos Position der Kamera
      */
     @Override
-    public void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
+    public void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         BlockState state = be.getBlockState();
@@ -135,7 +140,7 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
         if (st <= 0.0F) return;
 
         boolean energy = state.is(ModBlocks.ENERGY_PORT.get());
-        // Station: wie die Konsole waechst sie nach dem Formen federnd aus ihrem Sockel, Bildschirm nach aussen gewandt
+        // Station: wie die Konsole wächst sie nach dem Formen federnd aus ihrem Sockel, Bildschirm nach außen gewandt
         ControllerBlockEntity ctrl = null;
         SingularityCoreBlockEntity core = null;
         float yaw = 0.0F;
@@ -146,11 +151,11 @@ public class PortRenderer<T extends PortBlockEntity> implements BlockEntityRende
             BlockPos center = c.getSize().pattern().center(cpos, level.getBlockState(cpos).getValue(ControllerBlock.FACING));
             if (level.getBlockEntity(center) instanceof SingularityCoreBlockEntity sc) core = sc;
             BlockPos p = be.getBlockPos();
-            // gerade nach vorn: senkrecht zu der Seite, an der der Port sitzt (nicht schraeg zur Kernmitte)
+            // gerade nach vorn: senkrecht zu der Seite, an der der Port sitzt (nicht schräg zur Kernmitte)
             int ox = p.getX() - center.getX(), oz = p.getZ() - center.getZ();
             yaw = Math.abs(oz) >= Math.abs(ox) ? (oz >= 0 ? 0.0F : Mth.PI) : (ox > 0 ? Mth.HALF_PI : -Mth.HALF_PI);
-            // Port auf der Kante des Controllers: gehoert zur Steuerkonsole, die zeichnet der Kern
-            var right = dr4kun3.cosmiccore.block.Terminal.right(level.getBlockState(cpos).getValue(ControllerBlock.FACING));
+            // Port auf der Kante des Controllers: gehört zur Steuerkonsole, die zeichnet der Kern
+            var right = Terminal.right(level.getBlockState(cpos).getValue(ControllerBlock.FACING));
             int dx = p.getX() - cpos.getX(), dz = p.getZ() - cpos.getZ();
             // nur direkt neben dem Controller
             if (p.getY() == cpos.getY() && Math.abs(dx) + Math.abs(dz) == 1 && (right.getStepX() == 0 ? dx == 0 : dz == 0)) return;

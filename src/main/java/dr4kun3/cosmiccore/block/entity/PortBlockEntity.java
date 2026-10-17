@@ -1,21 +1,30 @@
 package dr4kun3.cosmiccore.block.entity;
 
+import dr4kun3.cosmiccore.block.CorePhase;
+import dr4kun3.cosmiccore.block.ModProperties;
+import dr4kun3.cosmiccore.data.NbtBridge;
 import java.util.Objects;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
-/** Gemeinsame Basis der Ports: kennt den Controller, zu dessen Struktur sie gehoeren. */
+/** Gemeinsame Basis der Ports: kennt den Controller, zu dessen Struktur sie gehören. */
 public abstract class PortBlockEntity extends BlockEntity {
     @Nullable
     private BlockPos controllerPos;
-    /** Nur Client: Zeitpunkt, an dem die Struktur als gebildet gesehen wurde (fuer die Einblend-Animation). */
+    /** Nur Client: Zeitpunkt, an dem die Struktur als gebildet gesehen wurde (für die Einblend-Animation). */
     public long clientAppear = Long.MIN_VALUE;
-    /** Nur Client: Seiten, an denen etwas angedockt ist (Bitmaske), und wann zuletzt geprueft. */
+    /** Nur Client: Seiten, an denen etwas angedockt ist (Bitmaske), und wann zuletzt geprüft. */
     public int clientConnMask;
     public long clientConnTick = Long.MIN_VALUE;
 
@@ -32,7 +41,7 @@ public abstract class PortBlockEntity extends BlockEntity {
     }
 
     /**
-     * Client: merkt sich den Wechsel ruhend -> gebildet fuer die Einblend-Animation (beim Laden einer fertigen Struktur
+     * Client: merkt sich den Wechsel ruhend -> gebildet für die Einblend-Animation (beim Laden einer fertigen Struktur
      * gibt es keinen Wechsel, dann ist die Station sofort da).
      *
      * @param state neuer Blockzustand
@@ -42,47 +51,42 @@ public abstract class PortBlockEntity extends BlockEntity {
     public void setBlockState(BlockState state) {
         BlockState old = getBlockState();
         super.setBlockState(state);
-        if (level == null || !level.isClientSide || !old.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)
-                || !state.hasProperty(dr4kun3.cosmiccore.block.ModProperties.PHASE)) {
+        if (level == null || !level.isClientSide || !old.hasProperty(ModProperties.PHASE)
+                || !state.hasProperty(ModProperties.PHASE)) {
             return;
         }
-        dr4kun3.cosmiccore.block.CorePhase before = old.getValue(dr4kun3.cosmiccore.block.ModProperties.PHASE);
-        dr4kun3.cosmiccore.block.CorePhase now = state.getValue(dr4kun3.cosmiccore.block.ModProperties.PHASE);
-        if (before == dr4kun3.cosmiccore.block.CorePhase.DORMANT && now != dr4kun3.cosmiccore.block.CorePhase.DORMANT) {
+        CorePhase before = old.getValue(ModProperties.PHASE);
+        CorePhase now = state.getValue(ModProperties.PHASE);
+        if (before == CorePhase.DORMANT && now != CorePhase.DORMANT) {
             clientAppear = level.getGameTime();
-        } else if (now == dr4kun3.cosmiccore.block.CorePhase.DORMANT) {
+        } else if (now == CorePhase.DORMANT) {
             clientAppear = Long.MIN_VALUE;
         }
     }
 
     /**
-     * Verbindet den Port mit einem Controller oder loest die Verbindung; der Client erfaehrt es sofort.
+     * Verbindet den Port mit einem Controller oder löst die Verbindung; der Client erfährt es sofort.
      *
-     * @param pos Position des Controllers oder {@code null} zum Loesen
+     * @param pos Position des Controllers oder {@code null} zum Lösen
      */
     public void link(@Nullable BlockPos pos) {
         if (!Objects.equals(controllerPos, pos)) {
             controllerPos = pos;
             setChanged();
-            // der Client braucht den Controller fuer das Timing der Einblend-Animation
+            // der Client braucht den Controller für das Timing der Einblend-Animation
             if (level != null && !level.isClientSide) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             }
         }
     }
 
-    /**
-     * Position des Controllers, zu dem der Port gehoert (auch auf dem Client bekannt).
-     *
-     * @return die Position oder {@code null}
-     */
     @Nullable
     public BlockPos getControllerPos() {
         return controllerPos;
     }
 
     /**
-     * Daten fuer den Client: nur die Position des Controllers.
+     * Daten für den Client: nur die Position des Controllers.
      *
      * @param registries Registry-Zugriff
      * @return die zu sendenden Daten
@@ -94,18 +98,13 @@ public abstract class PortBlockEntity extends BlockEntity {
         return tag;
     }
 
-    /**
-     * Paket, mit dem Aenderungen an den Client gehen.
-     *
-     * @return das Paket mit den Daten aus {@link #getUpdateTag}
-     */
     @Override
-    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
-        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     /**
-     * Oeffentlicher Zugriff auf den angeschlossenen Controller (nur bei gebildeter Struktur).
+     * Öffentlicher Zugriff auf den angeschlossenen Controller (nur bei gebildeter Struktur).
      *
      * @return der Controller oder {@code null}
      */
@@ -115,7 +114,7 @@ public abstract class PortBlockEntity extends BlockEntity {
     }
 
     /**
-     * Liefert den Controller nur, wenn die Struktur gerade vollstaendig gebildet und geladen ist.
+     * Liefert den Controller nur, wenn die Struktur gerade vollständig gebildet und geladen ist.
      *
      * @return der Controller oder {@code null}
      */
@@ -132,20 +131,20 @@ public abstract class PortBlockEntity extends BlockEntity {
      * @param tag Ziel der Daten
      */
     @Override
-    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput tag) {
+    protected void saveAdditional(ValueOutput tag) {
         super.saveAdditional(tag);
         if (controllerPos != null) tag.putLong("controller", controllerPos.asLong());
     }
 
     /**
-     * Laedt die Position des verbundenen Controllers.
+     * Lädt die Position des verbundenen Controllers.
      *
      * @param input gespeicherte Daten
      */
     @Override
-    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+    protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        CompoundTag tag = dr4kun3.cosmiccore.data.NbtBridge.read(input);
+        CompoundTag tag = NbtBridge.read(input);
         controllerPos = tag.contains("controller") ? BlockPos.of(tag.getLongOr("controller", 0L)) : null;
     }
 }

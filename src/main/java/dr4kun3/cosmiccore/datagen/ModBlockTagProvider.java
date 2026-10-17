@@ -21,7 +21,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
     }
 
     /**
-     * Alle Bloecke der Mod brauchen eine Spitzhacke ab Eisen.
+     * Alle Blöcke der Mod brauchen eine Spitzhacke ab Eisen.
      *
      * @param provider Registry-Zugriff
      */
