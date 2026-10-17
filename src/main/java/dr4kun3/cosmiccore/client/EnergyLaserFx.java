@@ -8,20 +8,21 @@ import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
+import dr4kun3.cosmiccore.color.CoreColors;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
- * Kosmos-Laser als Energiepartikel: Die vier Laser-Bloecke werden zu vier leuchtenden Partikeln, die um die
+ * Kosmos-Laser als Energiepartikel: Die vier Laser-Blöcke werden zu vier leuchtenden Partikeln, die um die
  * Position des Sternentrichters kreisen.
  * <ol>
  *   <li><b>Ruhe:</b> die Partikel ziehen mit Lichtschweifen auf einer geneigten Bahn ihre Kreise.</li>
  *   <li><b>Aufladen:</b> ein Asteroid wurde erfasst - die Partikel spiralen beschleunigend zu einem Brennpunkt,
- *       Blitze schlagen hinein, der Brennpunkt gluehte immer heller.</li>
- *   <li><b>Feuern:</b> ein gleissender Strahl mit Doppelhelix trifft den Asteroiden, am Einschlag blitzt es und
- *       Schockwellen laufen; die freigesetzte Energie stroemt als Lichtpunkte den Strahl entlang zurueck und
+ *       Blitze schlagen hinein, der Brennpunkt glühte immer heller.</li>
+ *   <li><b>Feuern:</b> ein gleißender Strahl mit Doppelhelix trifft den Asteroiden, am Einschlag blitzt es und
+ *       Schockwellen laufen; die freigesetzte Energie strömt als Lichtpunkte den Strahl entlang zurück und
  *       von dort hinab in den Reaktor.</li>
  * </ol>
  * Ursprung ist die Kernmitte.
@@ -30,7 +31,7 @@ public final class EnergyLaserFx {
     /** Nur statische Zeichenroutinen - keine Instanzen. */
     private EnergyLaserFx() {}
 
-    /** Hoehe der Bahnmitte ueber der Kernmitte (zusaetzlich zur halben Baugroesse) - passt zur Server-Logik. */
+    /** Höhe der Bahnmitte über der Kernmitte (zusätzlich zur halben Baugröße) - passt zur Server-Logik. */
     public static final float HEIGHT = 2.2F;
     private static final float ORBIT = 0.9F;
     private static final float[] BEAM_DEF = {0.4F, 0.85F, 1.0F};
@@ -41,27 +42,27 @@ public final class EnergyLaserFx {
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
     /**
-     * Zeichnet den Kosmos-Laser: vier kreisende Energiepartikel ueber der Decke, die sich beim Aufladen zum Brennpunkt
-     * ziehen, Blitze zwischen ihnen, den Traktorstrahl zum Asteroiden und nach dem Abschuss die Uebergabe der Beute.
+     * Zeichnet den Kosmos-Laser: vier kreisende Energiepartikel über der Decke, die sich beim Aufladen zum Brennpunkt
+     * ziehen, Blitze zwischen ihnen, den Traktorstrahl zum Asteroiden und nach dem Abschuss die Übergabe der Beute.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
-     * @param vc Puffer fuer additives Leuchten
-     * @param half halbe Kantenlaenge der Struktur (Hoehe der Decke)
+     * @param vc Puffer für additives Leuchten
+     * @param half halbe Kantenlänge der Struktur (Höhe der Decke)
      * @param t Animationszeit in Ticks
      * @param target Position des anvisierten Asteroiden relativ zur Kernmitte oder {@code null}
-     * @param targetSize Groesse des Asteroiden in Bloecken
+     * @param targetSize Größe des Asteroiden in Blöcken
      * @param charge Aufladung 0..1 (ab 0.95 feuert der Strahl)
      * @param harvest Fortschritt des Einfangens 0..1
      * @param energy Helligkeit 0..1
-     * @param deliver Phase der Uebergabe 0..1 oder negativ, wenn keine laeuft
-     * @param source Explosionspunkt der Uebergabe relativ zur Kernmitte (oder {@code null})
-     * @param mouthY Hoehe der Trichteroeffnung relativ zur Kernmitte
-     * @param burstSize Groesse des zerplatzten Asteroiden
+     * @param deliver Phase der Übergabe 0..1 oder negativ, wenn keine läuft
+     * @param source Explosionspunkt der Übergabe relativ zur Kernmitte (oder {@code null})
+     * @param mouthY Höhe der Trichteröffnung relativ zur Kernmitte
+     * @param burstSize Größe des zerplatzten Asteroiden
      */
     public static void render(Matrix4f m, VertexConsumer vc, int half, float t, Vec3 target, float targetSize, float charge,
                               float harvest, float energy, float deliver, Vec3 source, float mouthY, float burstSize) {
-        BEAM = ColorOverride.get(dr4kun3.cosmiccore.color.CoreColors.LASER, BEAM_DEF);
-        VIOLET = ColorOverride.dark(dr4kun3.cosmiccore.color.CoreColors.LASER, VIOLET_DEF, 0.35F);
+        BEAM = ColorOverride.get(CoreColors.LASER, BEAM_DEF);
+        VIOLET = ColorOverride.dark(CoreColors.LASER, VIOLET_DEF, 0.35F);
         float cy = half + HEIGHT;
         if (deliver >= 0.0F) delivery(m, vc, cy, mouthY, t, deliver, energy, source, burstSize);
         Vector3f center = new Vector3f(0, cy, 0);
@@ -70,7 +71,7 @@ public final class EnergyLaserFx {
         Vector3f dir = locked ? new Vector3f((float) target.x, (float) target.y - cy, (float) target.z).normalize() : new Vector3f(0, 1, 0);
         Vector3f focus = new Vector3f(dir).mul(0.35F * charge).add(center);
 
-        // Runen auf der Decke ueber den vier Laser-Bloecken
+        // Runen auf der Decke über den vier Laser-Blöcken
         for (int k = 0; k < 4; k++) {
             float ang = k * Mth.HALF_PI;
             Matrix4f rm = new Matrix4f(m).translate(Mth.cos(ang), half + 0.53F, Mth.sin(ang)).rotateY(t * 0.02F);
@@ -116,7 +117,7 @@ public final class EnergyLaserFx {
         if (fire <= 0.0F) return;
         Vector3f tp = new Vector3f((float) target.x, (float) target.y, (float) target.z);
         float tr = Math.max(0.4F, targetSize * 0.5F);
-        // Einschlagpunkt auf der Oberflaeche; der Strahl faehrt beim Zuenden zum Ziel aus
+        // Einschlagpunkt auf der Oberfläche; der Strahl fährt beim Zünden zum Ziel aus
         Vector3f hit = new Vector3f(dir).mul(-tr * 0.8F).add(tp);
         float ext = fire * fire * (3.0F - 2.0F * fire);
         Vector3f end = new Vector3f(focus).lerp(hit, ext);
@@ -125,7 +126,7 @@ public final class EnergyLaserFx {
         Vector3f w = new Vector3f(dir).cross(u).normalize();
         float len = new Vector3f(end).sub(focus).length();
 
-        // Strahl: gleissender Kern mit weich auslaufenden Huellen
+        // Strahl: gleißender Kern mit weich auslaufenden Hüllen
         float[] widths = {0.025F, 0.06F, 0.13F, 0.26F};
         float[][] cols = {WHITE, lerp(WHITE, BEAM, 0.4F), BEAM, VIOLET};
         float[] alphas = {1.0F, 0.6F, 0.26F, 0.09F};
@@ -162,7 +163,7 @@ public final class EnergyLaserFx {
             Vector3f out = new Vector3f(u).mul(hash(arcSeed * 11) * 0.35F).add(new Vector3f(w).mul(hash(arcSeed * 13) * 0.35F)).add(p);
             lightning(m, vc, new float[]{p.x, p.y, p.z}, new float[]{out.x, out.y, out.z}, arcSeed, 0.7F * energy);
         }
-        // Muendungsblitz am Brennpunkt
+        // Mündungsblitz am Brennpunkt
         Matrix4f fm = new Matrix4f(m).translate(focus.x, focus.y, focus.z);
         RenderUtil.glowSphere(vc, fm, 0.16F + 0.04F * flick, 8, 10, WHITE, 0.5F * energy);
         segment(vc, fm, 0, 0, 0, u.x * 0.45F, u.y * 0.45F, u.z * 0.45F, 0.012F, 1, 1, 1, 0.8F * energy, 0.0F);
@@ -171,7 +172,7 @@ public final class EnergyLaserFx {
         segment(vc, fm, 0, 0, 0, -w.x * 0.45F, -w.y * 0.45F, -w.z * 0.45F, 0.012F, 1, 1, 1, 0.8F * energy, 0.0F);
         if (ext < 0.99F) return;
 
-        // Einschlag: heisser Fleck, Funkenregen und eine dezente Schockwelle
+        // Einschlag: heißer Fleck, Funkenregen und eine dezente Schockwelle
         Matrix4f hm = new Matrix4f(m).translate(hit.x, hit.y, hit.z);
         RenderUtil.glowSphere(vc, hm, 0.12F + 0.05F * flick, 8, 10, WHITE, 0.7F * energy);
         RenderUtil.glowSphere(vc, hm, 0.3F + 0.25F * harvest, 8, 12, GOLD, (0.25F + 0.2F * harvest) * energy);
@@ -192,7 +193,7 @@ public final class EnergyLaserFx {
         Matrix4f sm = new Matrix4f(hm).rotateTowards(-dir.x, -dir.y, -dir.z, steep ? 1 : 0, steep ? 0 : 1, 0).rotateX(Mth.HALF_PI);
         flatCircle(vc, sm, tr * (0.3F + 0.9F * ph), 0.02F, 32, GOLD, energy * (1.0F - ph) * 0.6F);
 
-        // Energie stroemt aus dem Asteroiden den Strahl entlang zurueck ...
+        // Energie strömt aus dem Asteroiden den Strahl entlang zurück ...
         int motes = 7;
         for (int k = 0; k < motes; k++) {
             float s = Mth.frac(t * 0.03F + k / (float) motes); // 0 = Asteroid, 1 = Brennpunkt
@@ -212,18 +213,18 @@ public final class EnergyLaserFx {
     }
 
     /**
-     * Uebergabe nach einem Abschuss: Der Asteroid explodiert am Haltepunkt ueber dem Trichter (Blitz und Ringwelle),
-     * seine Bruchstuecke stieben auseinander und wandern in einer enger werdenden Spirale hinab in den Trichter.
+     * Übergabe nach einem Abschuss: Der Asteroid explodiert am Haltepunkt über dem Trichter (Blitz und Ringwelle),
+     * seine Bruchstücke stieben auseinander und wandern in einer enger werdenden Spirale hinab in den Trichter.
      *
      * @param m Matrix mit Ursprung in der Kernmitte
-     * @param vc Puffer fuer additives Leuchten
-     * @param cy Hoehe der Laserbahn
-     * @param mouthY Hoehe der Trichteroeffnung
+     * @param vc Puffer für additives Leuchten
+     * @param cy Höhe der Laserbahn
+     * @param mouthY Höhe der Trichteröffnung
      * @param t Animationszeit in Ticks
-     * @param ph Phase der Uebergabe 0..1 (Zeitplan aus SingularityCoreBlockEntity)
+     * @param ph Phase der Übergabe 0..1 (Zeitplan aus SingularityCoreBlockEntity)
      * @param energy Helligkeit 0..1
-     * @param source Explosionspunkt (oder {@code null} = ueber der Laserbahn)
-     * @param burstSize Groesse des zerplatzten Asteroiden
+     * @param source Explosionspunkt (oder {@code null} = über der Laserbahn)
+     * @param burstSize Größe des zerplatzten Asteroiden
      */
     private static void delivery(Matrix4f m, VertexConsumer vc, float cy, float mouthY, float t, float ph, float energy, Vec3 source,
                                  float burstSize) {
@@ -231,7 +232,7 @@ public final class EnergyLaserFx {
                 : new Vector3f(0, cy + 1.6F, 0);
         boolean funnel = src.y - mouthY > 10.0F; // am oberen Trichterrand explodiert
         Matrix4f sm = new Matrix4f(m).translate(src.x, src.y, src.z);
-        // Explosionsgroesse passend zum Brocken (der sehr grosse platzt gewaltig)
+        // Explosionsgröße passend zum Brocken (der sehr große platzt gewaltig)
         sm.scale((float) Math.pow(Math.max(1.0F, burstSize / 1.4F), 0.7) * (funnel ? 2.6F : 1.0F));
         Matrix4f mouth = new Matrix4f(m).translate(0, mouthY, 0);
         // Explosion am Haltepunkt
@@ -247,7 +248,7 @@ public final class EnergyLaserFx {
                 segment(vc, sm, d.x * 0.5F, d.y * 0.5F, d.z * 0.5F, d.x, d.y, d.z, 0.015F, WHITE[0], WHITE[1], WHITE[2], 0.0F, energy * fade);
             }
         }
-        // Bruchstuecke spiralen nach unten in die Trichteroeffnung
+        // Bruchstücke spiralen nach unten in die Trichteröffnung
         float collecting = 0.0F;
         for (int k = 0; k < SingularityCoreBlockEntity.FRAGMENTS; k++) {
             float f = (ph - SingularityCoreBlockEntity.fragmentDelay(k)) / SingularityCoreBlockEntity.FRAGMENT_TRAVEL;
@@ -270,13 +271,13 @@ public final class EnergyLaserFx {
                 shard(vc, m, p, size, t * 0.4F + k, c, energy);
                 collecting = Math.max(collecting, f);
             } else {
-                // eingesammelt: Lichtring in der Oeffnung
+                // eingesammelt: Lichtring in der Öffnung
                 float a = (f - 1.0F) / 0.3F;
                 flatCircle(vc, mouth, 0.12F + 0.45F * a, 0.02F, 32, c, energy * (1.0F - a));
                 collecting = 1.0F;
             }
         }
-        // die Oeffnung glueht, solange gesammelt wird
+        // die Öffnung glüht, solange gesammelt wird
         float sink = SingularityCoreBlockEntity.SINK_START;
         float gather = Mth.clamp((ph - 0.3F) / (sink - 0.3F), 0.0F, 1.0F);
         if (collecting > 0.0F && ph < sink) {
@@ -284,7 +285,7 @@ public final class EnergyLaserFx {
             RenderUtil.glowSphere(vc, mouth, 0.06F + 0.1F * gather, 6, 10, WHITE, 0.7F * energy);
         }
         if (ph < sink) return;
-        // gesammelte Energie faellt in den Kern
+        // gesammelte Energie fällt in den Kern
         float d = (ph - sink) / (1.0F - sink);
         float fall = d * d;
         float y = Mth.lerp(fall, mouthY, 0.0F);
@@ -304,18 +305,18 @@ public final class EnergyLaserFx {
     }
 
     /**
-     * Bahn eines Bruchstuecks: erst kurz auseinanderstieben, dann in einer enger werdenden Spirale hinab zur
-     * Trichteroeffnung - mit Sternentrichter entlang seiner Trompetenwand vom oberen Rand bis zum Hals.
+     * Bahn eines Bruchstücks: erst kurz auseinanderstieben, dann in einer enger werdenden Spirale hinab zur
+     * Trichteröffnung - mit Sternentrichter entlang seiner Trompetenwand vom oberen Rand bis zum Hals.
      *
-     * @param k Nummer des Bruchstuecks
+     * @param k Nummer des Bruchstücks
      * @param src Explosionspunkt
-     * @param mouthY Hoehe der Trichteroeffnung
+     * @param mouthY Höhe der Trichteröffnung
      * @param f Fortschritt 0..1
      * @param funnel {@code true}, wenn ein Sternentrichter steht
      * @return aktuelle Position
      */
     private static Vector3f spiralPos(int k, Vector3f src, float mouthY, float f, boolean funnel) {
-        float ang0 = k * 2.39996F; // goldener Winkel: gleichmaessig verteilt
+        float ang0 = k * 2.39996F; // goldener Winkel: gleichmäßig verteilt
         float spread = hash(k * 5) * 0.5F + 0.5F;
         if (funnel) {
             float topR = SingularityCoreBlockEntity.funnelRadius(src.y - mouthY) * (0.75F + 0.2F * spread);
@@ -354,8 +355,8 @@ public final class EnergyLaserFx {
      * @param vc Puffer
      * @param m Matrix
      * @param p Position
-     * @param s Groesse
-     * @param spin Drehwinkel (Bogenmass)
+     * @param s Größe
+     * @param spin Drehwinkel (Bogenmaß)
      * @param c Farbe RGB 0..1
      * @param a Deckkraft 0..1
      */
@@ -372,7 +373,7 @@ public final class EnergyLaserFx {
      * @param k Nummer des Partikels (0..3)
      * @param spin aktueller Drehwinkel der Bahn
      * @param radius Bahnradius
-     * @param cy Hoehe der Bahnmitte
+     * @param cy Höhe der Bahnmitte
      * @param t Animationszeit (leichtes Schweben)
      * @param focus Brennpunkt
      * @param charge Aufladung 0..1
@@ -395,7 +396,7 @@ public final class EnergyLaserFx {
      * @param vc Puffer
      * @param a Startpunkt {x, y, z}
      * @param b Endpunkt {x, y, z}
-     * @param seed Zufallswert fuer den Verlauf
+     * @param seed Zufallswert für den Verlauf
      * @param alpha Helligkeit 0..1
      */
     private static void lightning(Matrix4f m, VertexConsumer vc, float[] a, float[] b, int seed, float alpha) {
