@@ -281,8 +281,12 @@ public class SingularityCoreRenderer extends LegacyBlockEntityRenderer<Singulari
         ColorOverride.end();
     }
 
-    /** Radius der Öffnung oben im Tiefen-Abschluss, durch die der Sternentrichter sichtbar bleibt. */
-    private static final float FUNNEL_OPENING = 1.2F;
+    /**
+     * Öffnung oben im Tiefen-Abschluss, durch die der Sternentrichter sichtbar bleibt: alles oberhalb dieser Breite
+     * (etwa 54°, also die obersten gut 35° der Kugel). Sie wächst mit der Kammer, damit der Trichter auch schräg von
+     * unten durch die Kammer hindurch zu sehen ist.
+     */
+    private static final float FUNNEL_CAP = 0.95F;
 
     /**
      * Kugel nur aus nach innen gewandten Flächen (mit Culling sieht man von außen genau die Rückseite) - für den
@@ -300,7 +304,7 @@ public class SingularityCoreRenderer extends LegacyBlockEntityRenderer<Singulari
         final int lat = 16, lon = 24;
         for (int i = 0; i < lat; i++) {
             float p0 = (float) (Math.PI * i / lat - Math.PI / 2), p1 = (float) (Math.PI * (i + 1) / lat - Math.PI / 2);
-            if (funnel && p0 > 0 && r * Mth.cos(p0) < FUNNEL_OPENING) continue;
+            if (funnel && p0 >= FUNNEL_CAP) continue;
             for (int j = 0; j < lon; j++) {
                 float l0 = Mth.TWO_PI * j / lon, l1 = Mth.TWO_PI * (j + 1) / lon;
                 // Reihenfolge a, d, c, b = Vorderseite zeigt nach innen
