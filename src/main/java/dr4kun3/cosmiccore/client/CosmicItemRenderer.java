@@ -321,7 +321,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         flash *= 0.5F;
         pose.pushPose();
         pose.rotate(Axis.ZP.rotationDegrees(18.0F));
-        RenderUtil.solidSphere(buffers.getBuffer(RenderTypes.debugQuads()), pose.last().pose(), 0.1F, 8, 12, 0.82F, 0.92F, 1.0F);
+        RenderUtil.solidSphere(buffers.getBuffer(CosmicRenderTypes.solidColor()), pose.last().pose(), 0.1F, 8, 12, 0.82F, 0.92F, 1.0F);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f core = pose.last().pose();
         RenderUtil.glowSphere(glow, core, 0.13F, 8, 12, WHITE, 0.45F + 0.4F * flash);
@@ -442,7 +442,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         pose.pushPose();
         pose.rotate(Axis.XP.rotationDegrees(18.0F));
         pose.rotate(Axis.ZP.rotationDegrees(-10.0F));
-        RenderUtil.solidSphere(buffers.getBuffer(RenderTypes.debugQuads()), pose.last().pose(), 0.075F, 8, 12, 0.0F, 0.0F, 0.0F);
+        RenderUtil.solidSphere(buffers.getBuffer(CosmicRenderTypes.solidColor()), pose.last().pose(), 0.075F, 8, 12, 0.0F, 0.0F, 0.0F);
         VertexConsumer glow = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
         // Photonenring und Akkretionsscheibe: innen weissgluehend, aussen violett
@@ -484,7 +484,7 @@ public class CosmicItemRenderer implements SpecialModelRenderer<ItemStack> {
         pose.rotate(Axis.YP.rotationDegrees(t * 1.5F));
         Matrix4f m = pose.last().pose();
         // Platine (deckend): dunkle Platte mit hellerem Rand und Goldkontakten
-        VertexConsumer solid = buffers.getBuffer(RenderTypes.debugQuads());
+        VertexConsumer solid = buffers.getBuffer(CosmicRenderTypes.solidColor());
         box(solid, m, -0.3F, -0.03F, -0.3F, 0.3F, 0.03F, 0.3F, 0.12F, 0.09F, 0.2F);
         box(solid, m, -0.3F, 0.03F, -0.3F, 0.3F, 0.036F, -0.27F, 0.3F, 0.24F, 0.45F);
         box(solid, m, -0.3F, 0.03F, 0.27F, 0.3F, 0.036F, 0.3F, 0.3F, 0.24F, 0.45F);
