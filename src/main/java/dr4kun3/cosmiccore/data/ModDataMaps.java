@@ -21,7 +21,7 @@ public final class ModDataMaps {
     /**
      * Brennstoffwerte eines Items laut Data Map.
      *
-     * @param stack zu pruefender Stapel
+     * @param stack zu prüfender Stapel
      * @return Brenndauer, Leistung und Hitze oder {@code null}, wenn das Item kein Brennstoff ist
      */
     @Nullable
@@ -32,8 +32,8 @@ public final class ModDataMaps {
     /**
      * Stabilisatorwerte eines Items laut Data Map.
      *
-     * @param stack zu pruefender Stapel
-     * @return Kuehlwerte oder {@code null}, wenn das Item kein Stabilisator ist
+     * @param stack zu prüfender Stapel
+     * @return Kühlwerte oder {@code null}, wenn das Item kein Stabilisator ist
      */
     @Nullable
     public static CoreStabilizer stabilizer(ItemStack stack) {

@@ -6,7 +6,7 @@ plugins {
 }
 
 tasks.named('wrapper', Wrapper).configure {
-    // Define wrapper values here so as to not have to always do so when updating gradlew.properties.
+    // Define wrapper valüs here so as to not have to always do so when updating gradlew.properties.
     // Switching this to Wrapper.DistributionType.ALL will download the full gradle sources that comes with
     // documentation attached on cursor hover of gradle classes and methods. However, this comes with increased
     // file size for Gradle. If you do switch this to ALL, run the Gradle wrapper task twice afterwards.
@@ -49,7 +49,7 @@ neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
 
-    // Parchment-Namen gibt es nicht fuer jede Minecraft-Version
+    // Parchment-Namen gibt es nicht für jede Minecraft-Version
     if (project.parchment_mappings_version) {
         parchment {
             mappingsVersion = project.parchment_mappings_version
@@ -144,7 +144,7 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
-/** Gibt es fuer diese Minecraft-Version eine Version des optionalen Mods? */
+/** Gibt es für diese Minecraft-Version eine Version des optionalen Mods? */
 boolean hasCompat(String mod) {
     def v = project.findProperty(mod + '_version')
     return v != null && !v.toString().trim().isEmpty()
@@ -154,13 +154,13 @@ sourceSets.main.java {
     ['jei', 'emi', 'rei', 'geckolib'].each { mod ->
         if (!hasCompat(mod)) exclude "dr4kun3/cosmiccore/compat/${mod}/**"
     }
-    // Ab 26.3 laeuft die Datengenerierung ueber Registry-Bootstraps - die erzeugten Daten liegen fertig in src/generated
+    // Ab 26.3 läuft die Datengenerierung über Registry-Bootstraps - die erzeugten Daten liegen fertig in src/generated
     exclude 'dr4kun3/cosmiccore/datagen/**'
 }
 
 dependencies {
-    // Optionale Anbindungen: nur mitkompiliert, wenn es fuer diese Minecraft-Version eine passende Version gibt
-    // (leere Version in gradle.properties = Anbindung entfaellt, der Code in compat/<mod> wird dann nicht gebaut)
+    // Optionale Anbindungen: nur mitkompiliert, wenn es für diese Minecraft-Version eine passende Version gibt
+    // (leere Version in gradle.properties = Anbindung entfällt, der Code in compat/<mod> wird dann nicht gebaut)
     if (hasCompat('jei')) {
         compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
         compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -174,7 +174,7 @@ dependencies {
         compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}"
         compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge:${rei_version}"
     }
-    // GeckoLib (optional): animiertes Modell des Void-Titanen fuer die Erwachen-Cutscene
+    // GeckoLib (optional): animiertes Modell des Void-Titanen für die Erwachen-Cutscene
     if (hasCompat('geckolib')) {
         def gecko = project.findProperty('geckolib_modrinth')
                 ? "maven.modrinth:geckolib:${project.geckolib_modrinth}"

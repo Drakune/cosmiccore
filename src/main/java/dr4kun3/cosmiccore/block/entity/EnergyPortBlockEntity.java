@@ -1,8 +1,7 @@
 package dr4kun3.cosmiccore.block.entity;
 
-import dr4kun3.cosmiccore.transfer.*;
-
 import dr4kun3.cosmiccore.CoreConfig;
+import dr4kun3.cosmiccore.transfer.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -10,10 +9,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 public class EnergyPortBlockEntity extends PortBlockEntity {
-    /** Messfenster fuer den Durchfluss in Ticks (zugleich Abstand der Aktualisierungen an die Clients). */
+    /** Messfenster für den Durchfluss in Ticks (zugleich Abstand der Aktualisierungen an die Clients). */
     private static final int WINDOW = 10;
 
     private final EnergyStore energyView = new View();
@@ -22,7 +23,7 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
     private int windowTick;
     private int syncedFlow = -1;
     private long syncedStored = -1, syncedCapacity = -1;
-    /** Vom Server gemeldete Werte fuer die Anzeige (Client). */
+    /** Vom Server gemeldete Werte für die Anzeige (Client). */
     private int clientFlow;
     private long clientStored, clientCapacity;
 
@@ -36,17 +37,12 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
         super(ModBlockEntities.ENERGY_PORT.get(), pos, state);
     }
 
-    /**
-     * Energie-Schnittstelle fuer Kabel: gibt aus dem Puffer des Controllers ab, nimmt nichts an.
-     *
-     * @return die Sicht auf den Energiespeicher
-     */
     public EnergyStore getEnergyView() {
         return energyView;
     }
 
     /**
-     * Schiebt Energie aktiv in alle angrenzenden Energieempfaenger (Kabel, Maschinen, Akkus) - je Tick hoechstens die
+     * Schiebt Energie aktiv in alle angrenzenden Energieempfänger (Kabel, Maschinen, Akkus) - je Tick höchstens die
      * eingestellte Port-Rate.
      *
      * @param level Server-Welt
@@ -64,7 +60,7 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
                 if (handler == null) continue;
                 int offered = c.extractEnergy(rate, true);
                 int accepted;
-                try (var tx = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+                try (var tx = Transaction.openRoot()) {
                     accepted = handler.insert(offered, tx);
                     tx.commit();
                 }
@@ -78,8 +74,8 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
     }
 
     /**
-     * Schliesst ein Messfenster ab und meldet Durchfluss und Pufferstand an die Clients - nur bei sichtbarer
-     * Aenderung (Durchfluss anders oder Puffer um mehr als 0,1 % verschoben).
+     * Schließt ein Messfenster ab und meldet Durchfluss und Pufferstand an die Clients - nur bei sichtbarer
+     * Änderung (Durchfluss anders oder Puffer um mehr als 0,1 % verschoben).
      *
      * @param c der verbundene Controller oder {@code null}
      */
@@ -96,35 +92,20 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
     }
 
-    /**
-     * Client: abgegebene Leistung laut Server (Mittel ueber eine halbe Sekunde).
-     *
-     * @return RF pro Tick
-     */
     public int getClientFlow() {
         return clientFlow;
     }
 
-    /**
-     * Client: gespeicherte Energie des Reaktors laut Server.
-     *
-     * @return Energie in RF
-     */
     public long getClientStored() {
         return clientStored;
     }
 
-    /**
-     * Client: Kapazitaet des Puffers laut Server.
-     *
-     * @return Kapazitaet in RF
-     */
     public long getClientCapacity() {
         return clientCapacity;
     }
 
     /**
-     * Daten fuer den Client: Controller-Position, Durchfluss und Pufferstand.
+     * Daten für den Client: Controller-Position, Durchfluss und Pufferstand.
      *
      * @param registries Registry-Zugriff
      * @return die zu sendenden Daten
@@ -139,12 +120,12 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
     }
 
     /**
-     * Laedt die Controller-Position und auf dem Client die Anzeigewerte.
+     * Lädt die Controller-Position und auf dem Client die Anzeigewerte.
      *
      * @param input gespeicherte bzw. empfangene Daten
      */
     @Override
-    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+    protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         clientFlow = input.getIntOr("flow", clientFlow);
         clientStored = input.getLongOr("stored", clientStored);
@@ -153,24 +134,17 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
 
 
     private final class View implements EnergyStore {
-        /**
-         * Der Port nimmt keine Energie an.
-         *
-         * @param toReceive angebotene Menge
-         * @param simulate nur pruefen
-         * @return immer 0
-         */
         @Override
         public int receiveEnergy(int toReceive, boolean simulate) {
             return 0;
         }
 
         /**
-         * Entnimmt Energie aus dem Puffer des Controllers (hoechstens die Port-Rate).
+         * Entnimmt Energie aus dem Puffer des Controllers (höchstens die Port-Rate).
          *
-         * @param toExtract gewuenschte Menge in RF
-         * @param simulate nur pruefen, nichts veraendern
-         * @return tatsaechlich (oder moeglich) entnommene Menge
+         * @param toExtract gewünschte Menge in RF
+         * @param simulate nur prüfen, nichts verändern
+         * @return tatsächlich (oder möglich) entnommene Menge
          */
         @Override
         public int extractEnergy(int toExtract, boolean simulate) {
@@ -182,7 +156,7 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
         }
 
         /**
-         * Fuellstand des Controller-Puffers.
+         * Füllstand des Controller-Puffers.
          *
          * @return RF (auf int begrenzt)
          */
@@ -193,7 +167,7 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
         }
 
         /**
-         * Kapazitaet des Controller-Puffers.
+         * Kapazität des Controller-Puffers.
          *
          * @return RF (auf int begrenzt)
          */
@@ -203,21 +177,11 @@ public class EnergyPortBlockEntity extends PortBlockEntity {
             return c == null ? 0 : (int) Math.min(Integer.MAX_VALUE, c.getCapacity());
         }
 
-        /**
-         * Energie kann entnommen werden.
-         *
-         * @return immer {@code true}
-         */
         @Override
         public boolean canExtract() {
             return true;
         }
 
-        /**
-         * Energie kann nicht eingespeist werden.
-         *
-         * @return immer {@code false}
-         */
         @Override
         public boolean canReceive() {
             return false;

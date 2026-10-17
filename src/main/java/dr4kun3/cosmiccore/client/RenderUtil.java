@@ -6,7 +6,7 @@ import com.mojang.math.Axis;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
-/** Prozedurale Geometrie fuer die leuchtenden Effekte (gedacht fuer CosmicRenderTypes.glow()). */
+/** Prozedurale Geometrie für die leuchtenden Effekte (gedacht für CosmicRenderTypes.glow()). */
 public final class RenderUtil {
     /** Nur statische Zeichenroutinen - keine Instanzen. */
     private RenderUtil() {}
@@ -15,7 +15,7 @@ public final class RenderUtil {
      * Leuchtender Ring mit laufenden Lichtpunkten.
      *
      * @param pose Pose-Stapel (Ursprung = Ringmitte)
-     * @param vc Puffer fuer additives Licht
+     * @param vc Puffer für additives Licht
      * @param radius Radius
      * @param halfWidth halbe Bandbreite
      * @param spin Drehung in Grad
@@ -52,7 +52,7 @@ public final class RenderUtil {
      * Punkt auf einer geneigten Kreisbahn (wie eine Planetenbahn).
      *
      * @param radius Bahnradius
-     * @param angle Winkel auf der Bahn (Bogenmass)
+     * @param angle Winkel auf der Bahn (Bogenmaß)
      * @param inclDeg Bahnneigung in Grad
      * @param nodeDeg Drehung der Bahnebene um die Hochachse in Grad
      * @return {x, y, z}
@@ -68,13 +68,13 @@ public final class RenderUtil {
     }
 
     /**
-     * Kugel nur mit Positionen (fuer das End-Sternenfeld).
+     * Kugel nur mit Positionen (für das End-Sternenfeld).
      *
      * @param vc Puffer (End-Gateway)
      * @param m Matrix
      * @param r Radius
      * @param lat Anzahl Breitenringe
-     * @param lon Anzahl Laengensegmente
+     * @param lon Anzahl Längensegmente
      */
     public static void sphere(VertexConsumer vc, Matrix4f m, float r, int lat, int lon) {
         for (int i = 0; i < lat; i++) {
@@ -104,9 +104,9 @@ public final class RenderUtil {
      * @param m Matrix
      * @param r Radius
      * @param lat Anzahl Breitenringe
-     * @param lon Anzahl Laengensegmente
+     * @param lon Anzahl Längensegmente
      * @param red Rot 0..1
-     * @param green Gruen 0..1
+     * @param green Grün 0..1
      * @param blue Blau 0..1
      */
     public static void solidSphere(VertexConsumer vc, Matrix4f m, float r, int lat, int lon, float red, float green, float blue) {
@@ -123,17 +123,17 @@ public final class RenderUtil {
     }
 
     /**
-     * Ringsegment in der XY-Ebene; die Deckkraft verlaeuft von innen nach aussen.
+     * Ringsegment in der XY-Ebene; die Deckkraft verläuft von innen nach außen.
      *
      * @param vc Puffer
      * @param m Matrix
      * @param r0 Innenradius
-     * @param r1 Aussenradius
-     * @param ang0 Startwinkel (Bogenmass)
-     * @param ang1 Endwinkel (Bogenmass)
+     * @param r1 Außenradius
+     * @param ang0 Startwinkel (Bogenmaß)
+     * @param ang1 Endwinkel (Bogenmaß)
      * @param col Farbe RGB 0..1
      * @param aIn Deckkraft innen
-     * @param aOut Deckkraft aussen
+     * @param aOut Deckkraft außen
      */
     public static void annulusXY(VertexConsumer vc, Matrix4f m, float r0, float r1, float ang0, float ang1,
                                  float[] col, float aIn, float aOut) {
@@ -143,13 +143,13 @@ public final class RenderUtil {
     }
 
     /**
-     * Leuchtende Kugelhuelle.
+     * Leuchtende Kugelhülle.
      *
-     * @param vc Puffer fuer additives Licht
+     * @param vc Puffer für additives Licht
      * @param m Matrix
      * @param r Radius
      * @param lat Anzahl Breitenringe
-     * @param lon Anzahl Laengensegmente
+     * @param lon Anzahl Längensegmente
      * @param col Farbe RGB 0..1
      * @param alpha Helligkeit 0..1
      */
@@ -167,7 +167,7 @@ public final class RenderUtil {
     }
 
     /**
-     * Dreieck nur mit Positionen, beidseitig sichtbar (als entartetes Viereck) - fuer das Sternenfeld.
+     * Dreieck nur mit Positionen, beidseitig sichtbar (als entartetes Viereck) - für das Sternenfeld.
      *
      * @param vc Puffer
      * @param m Matrix
@@ -192,7 +192,7 @@ public final class RenderUtil {
      * @param vc Puffer (End-Gateway)
      * @param m Matrix
      * @param rx Radius in der Waagrechten
-     * @param ry halbe Hoehe
+     * @param ry halbe Höhe
      */
     public static void starOctahedron(VertexConsumer vc, Matrix4f m, float rx, float ry) {
         float[][] eq = {{rx, 0, 0}, {0, 0, rx}, {-rx, 0, 0}, {0, 0, -rx}};
@@ -209,7 +209,7 @@ public final class RenderUtil {
      * @param vc Puffer (End-Gateway)
      * @param m Matrix
      * @param r Radius
-     * @param halfH halbe Hoehe
+     * @param halfH halbe Höhe
      * @param seg Anzahl Segmente
      */
     public static void starCylinder(VertexConsumer vc, Matrix4f m, float r, float halfH, int seg) {
@@ -257,9 +257,9 @@ public final class RenderUtil {
      * @param vc Puffer (End-Gateway)
      * @param m Matrix
      * @param big Radius des Rings
-     * @param tube Radius der Roehre
+     * @param tube Radius der Röhre
      * @param segU Segmente entlang des Rings
-     * @param segV Segmente um die Roehre
+     * @param segV Segmente um die Röhre
      */
     public static void starTorus(VertexConsumer vc, Matrix4f m, float big, float tube, int segU, int segV) {
         for (int i = 0; i < segU; i++) {
@@ -275,9 +275,9 @@ public final class RenderUtil {
      * Punkt auf dem Torus.
      *
      * @param big Radius des Rings
-     * @param tube Radius der Roehre
+     * @param tube Radius der Röhre
      * @param u Winkel entlang des Rings
-     * @param v Winkel um die Roehre
+     * @param v Winkel um die Röhre
      * @return {x, y, z}
      */
     private static float[] torus(float big, float tube, float u, float v) {
@@ -296,7 +296,7 @@ public final class RenderUtil {
      * @param bx Ende x
      * @param by Ende y
      * @param bz Ende z
-     * @param w halbe Staerke
+     * @param w halbe Stärke
      */
     public static void starStrut(VertexConsumer vc, Matrix4f m, float ax, float ay, float az, float bx, float by, float bz, float w) {
         float dx = bx - ax, dy = by - ay, dz = bz - az;
@@ -326,17 +326,17 @@ public final class RenderUtil {
     }
 
     /**
-     * Trompetenfoermige senkrechte Rotationsflaeche mit Sternenfeld.
+     * Trompetenförmige senkrechte Rotationsfläche mit Sternenfeld.
      *
      * @param vc Puffer (End-Gateway)
      * @param m Matrix
-     * @param y0 untere Hoehe
-     * @param y1 obere Hoehe
+     * @param y0 untere Höhe
+     * @param y1 obere Höhe
      * @param r0 Radius unten
      * @param r1 Radius oben
-     * @param exp Kruemmung (1 = Kegel, groesser = Trompete)
+     * @param exp Krümmung (1 = Kegel, größer = Trompete)
      * @param seg Segmente rundherum
-     * @param steps Abschnitte in der Hoehe
+     * @param steps Abschnitte in der Höhe
      */
     public static void starTrumpet(VertexConsumer vc, Matrix4f m, float y0, float y1, float r0, float r1, float exp, int seg, int steps) {
         for (int i = 0; i < steps; i++) {
@@ -359,9 +359,9 @@ public final class RenderUtil {
      * @param x0 kleinste x
      * @param y0 kleinste y
      * @param z0 kleinste z
-     * @param x1 groesste x
-     * @param y1 groesste y
-     * @param z1 groesste z
+     * @param x1 größte x
+     * @param y1 größte y
+     * @param z1 größte z
      */
     public static void starBox(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, float x1, float y1, float z1) {
         float[] a = {x0, y0, z0}, b = {x1, y0, z0}, c = {x1, y0, z1}, d = {x0, y0, z1};
@@ -375,14 +375,14 @@ public final class RenderUtil {
     }
 
     /**
-     * Senkrechte Lichtroehre (runder Strahl), von allen Seiten gleich dick.
+     * Senkrechte Lichtröhre (runder Strahl), von allen Seiten gleich dick.
      *
-     * @param vc Puffer fuer additives Licht
+     * @param vc Puffer für additives Licht
      * @param m Matrix
      * @param x Achse x
-     * @param y0 untere Hoehe
+     * @param y0 untere Höhe
      * @param z Achse z
-     * @param y1 obere Hoehe
+     * @param y1 obere Höhe
      * @param r Radius
      * @param sides Anzahl Seiten
      * @param col Farbe RGB 0..1
@@ -443,8 +443,8 @@ public final class RenderUtil {
      * Punkt auf einer Kugel.
      *
      * @param r Radius
-     * @param phi Breite (Bogenmass)
-     * @param lam Laenge (Bogenmass)
+     * @param phi Breite (Bogenmaß)
+     * @param lam Länge (Bogenmaß)
      * @return {x, y, z}
      */
     private static float[] sph(float r, float phi, float lam) {
@@ -460,10 +460,10 @@ public final class RenderUtil {
      * @param tx Ziel x
      * @param ty Ziel y
      * @param tz Ziel z
-     * @param seed Zufallswert fuer den Verlauf
+     * @param seed Zufallswert für den Verlauf
      * @param col Farbe RGB 0..1
      * @param flicker Helligkeit 0..1
-     * @param wild staerker gezackt (bei Instabilitaet)
+     * @param wild stärker gezackt (bei Instabilität)
      */
     public static void arc(VertexConsumer vc, Matrix4f m, float tx, float ty, float tz, int seed,
                            float[] col, float flicker, boolean wild) {
@@ -487,7 +487,7 @@ public final class RenderUtil {
     }
 
     /**
-     * Duenner Strahl aus zwei gekreuzten Flaechen.
+     * Dünner Strahl aus zwei gekreuzten Flächen.
      *
      * @param vc Puffer
      * @param m Matrix
@@ -499,7 +499,7 @@ public final class RenderUtil {
      * @param bz Ende z
      * @param w halbe Breite
      * @param r Rot 0..1
-     * @param g Gruen 0..1
+     * @param g Grün 0..1
      * @param b Blau 0..1
      * @param a0 Deckkraft am Anfang
      * @param a1 Deckkraft am Ende
@@ -535,7 +535,7 @@ public final class RenderUtil {
     }
 
     /**
-     * Beidseitiges Viereck; die Deckkraft verlaeuft von der ersten Kante (Ecken 1 und 2) zur zweiten (Ecken 3 und 4).
+     * Beidseitiges Viereck; die Deckkraft verläuft von der ersten Kante (Ecken 1 und 2) zur zweiten (Ecken 3 und 4).
      *
      * @param vc Puffer
      * @param m Matrix
@@ -552,7 +552,7 @@ public final class RenderUtil {
      * @param y3 Ecke 4 y
      * @param z3 Ecke 4 z
      * @param r Rot 0..1
-     * @param g Gruen 0..1
+     * @param g Grün 0..1
      * @param b Blau 0..1
      * @param a0 Deckkraft an Ecken 1 und 2
      * @param a1 Deckkraft an Ecken 3 und 4
@@ -589,7 +589,7 @@ public final class RenderUtil {
      * @param y3 Ecke 4 y
      * @param z3 Ecke 4 z
      * @param r Rot 0..1
-     * @param g Gruen 0..1
+     * @param g Grün 0..1
      * @param b Blau 0..1
      * @param a Deckkraft 0..1
      */
@@ -601,16 +601,16 @@ public final class RenderUtil {
     }
 
     /**
-     * Einfarbiger Wuerfel um einen Mittelpunkt.
+     * Einfarbiger Würfel um einen Mittelpunkt.
      *
      * @param vc Puffer
      * @param m Matrix
      * @param cx Mitte x
      * @param cy Mitte y
      * @param cz Mitte z
-     * @param s halbe Kantenlaenge
+     * @param s halbe Kantenlänge
      * @param r Rot 0..1
-     * @param g Gruen 0..1
+     * @param g Grün 0..1
      * @param b Blau 0..1
      * @param a Deckkraft 0..1
      */
@@ -631,7 +631,7 @@ public final class RenderUtil {
      * @param vc Puffer
      * @param m Matrix
      * @param rx Radius in der Waagrechten
-     * @param ry halbe Hoehe
+     * @param ry halbe Höhe
      * @param w Kantenbreite
      * @param col Farbe RGB 0..1
      * @param a Helligkeit 0..1

@@ -1,9 +1,33 @@
 package dr4kun3.cosmiccore.client;
 
 import dr4kun3.cosmiccore.CosmicCore;
+import dr4kun3.cosmiccore.ModItems;
+import dr4kun3.cosmiccore.block.ModBlocks;
+import dr4kun3.cosmiccore.block.Terminal;
+import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
+import dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity;
+import dr4kun3.cosmiccore.menu.ControllerMenu;
+import dr4kun3.cosmiccore.multiblock.ReactorSize;
+import java.util.Arrays;
+import java.util.Set;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.screens.BackupConfirmScreen;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.util.Util;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.Marker;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -11,8 +35,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 
 /**
- * Nur fuer die Entwicklung (System-Property cosmiccore.cutsceneTest): spielt die Titan-Cutscene nach dem Betreten
- * der Welt automatisch ab, speichert Screenshots in festen Abstaenden und beendet danach das Spiel.
+ * Nur für die Entwicklung (System-Property cosmiccore.cutsceneTest): spielt die Titan-Cutscene nach dem Betreten
+ * der Welt automatisch ab, speichert Screenshots in festen Abständen und beendet danach das Spiel.
  * Im normalen Spiel ist diese Klasse inaktiv.
  */
 @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
@@ -24,17 +48,17 @@ public final class CutsceneTestHarness {
     private static int worldTicks;
     private static boolean started, finished;
     private static int lastShot = -1;
-    private static volatile net.minecraft.core.BlockPos testCore;
+    private static volatile BlockPos testCore;
 
-    private static net.minecraft.world.entity.Marker cam;
+    private static Marker cam;
     private static String guidePhase;
     private static long guideMs, guideLastShot;
     private static int guideShot;
-    private static net.minecraft.core.BlockPos consoleAt;
+    private static BlockPos consoleAt;
     private static final boolean GUIDE = System.getProperty("cosmiccore.guideTest") != null;
     private static final boolean BOOK = System.getProperty("cosmiccore.bookTest") != null;
     private static final boolean CONSOLE = System.getProperty("cosmiccore.consoleTest") != null;
-    /** Eigene Blickwinkel fuer den Konsolen-Test: "x,y,z,Richtung,Neigung;..." relativ zum Controller. */
+    /** Eigene Blickwinkel für den Konsolen-Test: "x,y,z,Richtung,Neigung;..." relativ zum Controller. */
     private static final int[][] VIEWS = parseViews(System.getProperty("cosmiccore.views", ""));
 
     /**
@@ -48,7 +72,7 @@ public final class CutsceneTestHarness {
         String[] parts = spec.split(";");
         int[][] out = new int[parts.length][];
         for (int i = 0; i < parts.length; i++) {
-            out[i] = java.util.Arrays.stream(parts[i].split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+            out[i] = Arrays.stream(parts[i].split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
         }
         return out;
     }
@@ -57,7 +81,7 @@ public final class CutsceneTestHarness {
     private CutsceneTestHarness() {}
 
     /**
-     * Buch-Test: Handbuch in der Hand (Aufklappen, Blaettern), von aussen und im Inventar - mit Screenshots.
+     * Buch-Test: Handbuch in der Hand (Aufklappen, Blättern), von außen und im Inventar - mit Screenshots.
      *
      * @param mc der Client
      */
@@ -72,7 +96,7 @@ public final class CutsceneTestHarness {
                 var sp = server.getPlayerList().getPlayers().get(0);
                 sp.getInventory().setSelectedSlot(0);
                 sp.getInventory().setItem(0, ItemStack.EMPTY);
-                sp.getInventory().setItem(1, new ItemStack(dr4kun3.cosmiccore.ModItems.GUIDE_BOOK.get()));
+                sp.getInventory().setItem(1, new ItemStack(ModItems.GUIDE_BOOK.get()));
                 sp.setXRot(10);
             });
         }
@@ -82,11 +106,11 @@ public final class CutsceneTestHarness {
         for (int k = 0; k < shots.length; k++) {
             if (t == shots[k]) Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", k), mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         }
-        if (t == 100) mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+        if (t == 100) mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
         if (t == 120) Screenshot.grab(mc.gameDirectory, "cutscene_b20.png", mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         if (t == 125) {
-            mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
-            mc.gui.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.gui.setScreen(new InventoryScreen(mc.player));
         }
         if (t == 140) Screenshot.grab(mc.gameDirectory, "cutscene_b21.png", mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
         if (t == 150) {
@@ -97,7 +121,7 @@ public final class CutsceneTestHarness {
 
     /**
      * Konsolen-Test: Kreativ-Bau (gebildet, mit Trichter am Item-Port), einzelne Ports, eine ruhende Konsole und das
-     * Menue - aus festen Blickwinkeln fotografiert.
+     * Menü - aus festen Blickwinkeln fotografiert.
      *
      * @param mc der Client
      */
@@ -105,54 +129,54 @@ public final class CutsceneTestHarness {
         var server = mc.getSingleplayerServer();
         if (server == null) return;
         if (consoleAt == null) consoleAt = mc.player.blockPosition().offset(0, 0, -18);
-        net.minecraft.core.BlockPos at = consoleAt;
-        net.minecraft.core.BlockPos manual = at.offset(-16, 0, 0);
+        BlockPos at = consoleAt;
+        BlockPos manual = at.offset(-16, 0, 0);
         // Kamera relativ zum Controller: x, y, z, Blickrichtung, Neigung
         int[][] views = VIEWS != null ? VIEWS : new int[][]{{1, 2, -7, 0, 14}, {0, 3, 4, 180, 30}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
         if (worldTicks == 20) {
             server.execute(() -> {
                 var level = server.getLevel(mc.player.level().dimension());
                 if (level == null) return;
-                dr4kun3.cosmiccore.block.entity.ControllerBlockEntity.debugSetup(level, at, dr4kun3.cosmiccore.multiblock.ReactorSize.bySize(
+                ControllerBlockEntity.debugSetup(level, at, ReactorSize.bySize(
                         Integer.getInteger("cosmiccore.size", 11)));
                 server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "time set 6000");
-                // einzelne Ports in der Mitte der gegenueberliegenden Bodenkante, ein Trichter dockt am Item-Port der Konsole an
-                net.minecraft.core.BlockPos south = at.south(10);
-                level.setBlock(south.west(), dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState(), 3);
-                level.setBlock(south.east(), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
-                level.setBlock(south.east().south(), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
-                // Konsole mit Abstand: Item-Port zwei Felder weiter (Luecke dazwischen ist Gehaeuse), Trichter oben drauf
-                // direkt daneben bleibt der Item-Port der Konsole; ein zweiter steht drei Felder weiter (eigenstaendig)
+                // einzelne Ports in der Mitte der gegenüberliegenden Bodenkante, ein Trichter dockt am Item-Port der Konsole an
+                BlockPos south = at.south(10);
+                level.setBlock(south.west(), ModBlocks.ENERGY_PORT.get().defaultBlockState(), 3);
+                level.setBlock(south.east(), ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
+                level.setBlock(south.east().south(), Blocks.CHEST.defaultBlockState(), 3);
+                // Konsole mit Abstand: Item-Port zwei Felder weiter (Lücke dazwischen ist Gehäuse), Trichter oben drauf
+                // direkt daneben bleibt der Item-Port der Konsole; ein zweiter steht drei Felder weiter (eigenständig)
                 if (Integer.getInteger("cosmiccore.size", 11) == 11) {
-                    level.setBlock(at.east(3), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
-                    level.setBlock(at.east(3).above(), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
+                    level.setBlock(at.east(3), ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
+                    level.setBlock(at.east(3).above(), Blocks.HOPPER.defaultBlockState(), 3);
                 }
                 // von Hand: erst der Controller, dann die Ports wie beim Platzieren durch einen Spieler
-                level.setBlock(manual, dr4kun3.cosmiccore.block.ModBlocks.CONTROLLER.get().defaultBlockState(), 3);
-                var right = manual.relative(dr4kun3.cosmiccore.block.Terminal.right(net.minecraft.core.Direction.NORTH));
-                var left = manual.relative(dr4kun3.cosmiccore.block.Terminal.left(net.minecraft.core.Direction.NORTH));
-                level.setBlock(right, net.minecraft.world.level.block.Block.updateFromNeighbourShapes(
-                        dr4kun3.cosmiccore.block.ModBlocks.ENERGY_PORT.get().defaultBlockState(), level, right), 3);
-                level.setBlock(left, net.minecraft.world.level.block.Block.updateFromNeighbourShapes(
-                        dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), level, left), 3);
-                level.setBlock(left.east(), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
+                level.setBlock(manual, ModBlocks.CONTROLLER.get().defaultBlockState(), 3);
+                var right = manual.relative(Terminal.right(Direction.NORTH));
+                var left = manual.relative(Terminal.left(Direction.NORTH));
+                level.setBlock(right, Block.updateFromNeighbourShapes(
+                        ModBlocks.ENERGY_PORT.get().defaultBlockState(), level, right), 3);
+                level.setBlock(left, Block.updateFromNeighbourShapes(
+                        ModBlocks.ITEM_PORT.get().defaultBlockState(), level, left), 3);
+                level.setBlock(left.east(), Blocks.HOPPER.defaultBlockState(), 3);
             });
         }
         if (worldTicks == 200) {
             server.execute(() -> {
                 var level = server.getLevel(mc.player.level().dimension());
-                for (var pos : new net.minecraft.core.BlockPos[]{at, at.west(), at.east(), at.east(2), manual, manual.west(), manual.east()}) {
+                for (var pos : new BlockPos[]{at, at.west(), at.east(), at.east(2), manual, manual.west(), manual.east()}) {
                     CosmicCore.LOGGER.info("[ConsoleTest] {} = {}", pos, level.getBlockState(pos));
                 }
-                if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) {
+                if (level.getBlockEntity(at) instanceof ControllerBlockEntity c) {
                     CosmicCore.LOGGER.info("[ConsoleTest] fuel={}s stab={}s energyPort={}", c.getFuelSeconds(), c.getStabSeconds(), c.hasEnergyPort());
                 }
                 // etwas Beute in die Lager, damit die Stationen ihr Raster zeigen
-                net.minecraft.world.item.Item[] loot = {net.minecraft.world.item.Items.DIAMOND, dr4kun3.cosmiccore.ModItems.STAR_DUST.get(),
-                        net.minecraft.world.item.Items.IRON_INGOT, net.minecraft.world.item.Items.GOLD_INGOT, net.minecraft.world.item.Items.EMERALD};
-                for (var pos : new net.minecraft.core.BlockPos[]{at.east(), at.south(10).east()}) {
-                    if (level.getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip) {
-                        for (int i = 0; i < 11; i++) ip.store(new net.minecraft.world.item.ItemStack(loot[i % loot.length], 1 + (i * 17) % 64));
+                Item[] loot = {Items.DIAMOND, ModItems.STAR_DUST.get(),
+                        Items.IRON_INGOT, Items.GOLD_INGOT, Items.EMERALD};
+                for (var pos : new BlockPos[]{at.east(), at.south(10).east()}) {
+                    if (level.getBlockEntity(pos) instanceof ItemPortBlockEntity ip) {
+                        for (int i = 0; i < 11; i++) ip.store(new ItemStack(loot[i % loot.length], 1 + (i * 17) % 64));
                     }
                 }
             });
@@ -161,7 +185,7 @@ public final class CutsceneTestHarness {
             int v = worldTicks == 15 ? 0 : (worldTicks - 300) / 40;
             if (v < views.length) {
                 int[] view = views[v];
-                if (cam == null) cam = net.minecraft.world.entity.EntityTypes.MARKER.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+                if (cam == null) cam = EntityTypes.MARKER.create(mc.level, EntitySpawnReason.LOAD);
                 double x = at.getX() + 0.5 + view[0], y = at.getY() + view[1] + 0.2, z = at.getZ() + 0.5 + view[2];
                 cam.setPos(x, y, z);
                 cam.xo = cam.xOld = x;
@@ -174,9 +198,9 @@ public final class CutsceneTestHarness {
                 mc.setCameraEntity(cam);
             } else {
                 int step = v - views.length;
-                // Lager-Knopf im Controller-Menue druecken bzw. das Lager schliessen (Rueckweg pruefen)
+                // Lager-Knopf im Controller-Menü drücken bzw. das Lager schließen (Rückweg prüfen)
                 if (step == 2 && mc.gui.screen() instanceof ControllerScreen cs && mc.gameMode != null) {
-                    mc.gameMode.handleInventoryButtonClick(cs.getMenu().containerId, dr4kun3.cosmiccore.menu.ControllerMenu.BTN_STORAGE);
+                    mc.gameMode.handleInventoryButtonClick(cs.getMenu().containerId, ControllerMenu.BTN_STORAGE);
                     return;
                 }
                 if (step == 3 && mc.gui.screen() instanceof ItemPortScreen ips) {
@@ -189,9 +213,9 @@ public final class CutsceneTestHarness {
                 server.execute(() -> {
                     var sp = server.getPlayerList().getPlayers().get(0);
                     var level = sp.level();
-                    sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, java.util.Set.of(), 0, 20, true);
+                    sp.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() - 2.5, Set.of(), 0, 20, true);
                     switch (step) {
-                        case 0, 1 -> { if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) sp.openMenu(c, at); }
+                        case 0, 1 -> { if (level.getBlockEntity(at) instanceof ControllerBlockEntity c) sp.openMenu(c, at); }
                         default -> {}
                     }
                 });
@@ -199,7 +223,7 @@ public final class CutsceneTestHarness {
         }
         if (worldTicks == 300 + 40 * (views.length + 1) + 10 && mc.gui.screen() instanceof ControllerScreen) {
             // zweites Bild: Modul-Tab ausgeklappt
-            ((dr4kun3.cosmiccore.menu.ControllerMenu) ((ControllerScreen) mc.gui.screen()).getMenu()).modulesOpen = true;
+            ((ControllerMenu) ((ControllerScreen) mc.gui.screen()).getMenu()).modulesOpen = true;
         }
         if (worldTicks >= 24 && worldTicks < 300 && worldTicks % 8 == 0) {
             setHudHidden(mc, true);
@@ -222,30 +246,24 @@ public final class CutsceneTestHarness {
         }
     }
 
-    /**
-     * Blendet die Spieleroberflaeche aus oder ein.
-     *
-     * @param mc der Client
-     * @param hidden {@code true}: ausblenden
-     */
     private static void setHudHidden(Minecraft mc, boolean hidden) {
         if (mc.gui.hud.isHidden() != hidden) mc.gui.hud.toggle();
     }
 
     /**
-     * Die Testwelt stammt aus einer aelteren Minecraft-Version. Neuere Versionen fragen beim Oeffnen nach einer
+     * Die Testwelt stammt aus einer älteren Minecraft-Version. Neuere Versionen fragen beim Öffnen nach einer
      * Sicherung
-     * ("Ich weiss, was ich tue") - im Test ohne Sicherung fortfahren, damit der Lauf nicht haengen bleibt.
+     * ("Ich weiß, was ich tue") - im Test ohne Sicherung fortfahren, damit der Lauf nicht hängen bleibt.
      *
      * @param mc der Client
      */
     private static void skipBackupWarning(Minecraft mc) {
-        // ab 26.1: nach dem Welt-Upgrade "Jetzt beitreten" bestaetigen
-        if (mc.gui.screen() instanceof net.minecraft.client.gui.screens.ConfirmScreen confirm
-                && confirm.getTitle().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
+        // ab 26.1: nach dem Welt-Upgrade "Jetzt beitreten" bestätigen
+        if (mc.gui.screen() instanceof ConfirmScreen confirm
+                && confirm.getTitle().getContents() instanceof TranslatableContents tc
                 && tc.getKey().equals("upgradeWorld.done")) {
             try {
-                var field = net.minecraft.client.gui.screens.ConfirmScreen.class.getDeclaredField("callback");
+                var field = ConfirmScreen.class.getDeclaredField("callback");
                 field.setAccessible(true);
                 ((it.unimi.dsi.fastutil.booleans.BooleanConsumer) field.get(confirm)).accept(true);
             } catch (ReflectiveOperationException e) {
@@ -253,18 +271,18 @@ public final class CutsceneTestHarness {
             }
             return;
         }
-        if (!(mc.gui.screen() instanceof net.minecraft.client.gui.screens.BackupConfirmScreen screen)) return;
+        if (!(mc.gui.screen() instanceof BackupConfirmScreen screen)) return;
         try {
-            var field = net.minecraft.client.gui.screens.BackupConfirmScreen.class.getDeclaredField("onProceed");
+            var field = BackupConfirmScreen.class.getDeclaredField("onProceed");
             field.setAccessible(true);
-            ((net.minecraft.client.gui.screens.BackupConfirmScreen.Listener) field.get(screen)).proceed(false, false);
+            ((BackupConfirmScreen.Listener) field.get(screen)).proceed(false, false);
         } catch (ReflectiveOperationException e) {
             CosmicCore.LOGGER.warn("[CutsceneTest] Sicherungsabfrage konnte nicht bestaetigt werden", e);
         }
     }
 
     /**
-     * Steuert den gewaehlten Test Tick fuer Tick (nur mit {@code -Dcosmiccore.cutsceneTest=true}).
+     * Steuert den gewählten Test Tick für Tick (nur mit {@code -Dcosmiccore.cutsceneTest=true}).
      *
      * @param event Ende eines Client-Ticks
      */
@@ -285,13 +303,13 @@ public final class CutsceneTestHarness {
             return;
         }
         if (GUIDE) {
-            // Handbuch: Aufklappen, einmal Umblaettern und Zuklappen als Bildfolge
+            // Handbuch: Aufklappen, einmal Umblättern und Zuklappen als Bildfolge
             if (worldTicks == 30) {
                 mc.options.guiScale().set(2);
                 mc.resizeGui();
                 mc.gui.setScreen(new GuideScreen());
                 guidePhase = "o";
-                guideMs = net.minecraft.util.Util.getMillis();
+                guideMs = Util.getMillis();
             }
             if (worldTicks == 60 && mc.gui.screen() instanceof GuideScreen gs0) {
                 gs0.turn(1); // zur Doppelseite vor den Multiblock-Seiten
@@ -300,14 +318,14 @@ public final class CutsceneTestHarness {
                 gs1.turn(1);
             }
             if (worldTicks == 80 && mc.gui.screen() instanceof GuideScreen gs) {
-                gs.turn(1); // umblaettern auf die Seiten mit 3D-Vorschau und Item-Symbolen
+                gs.turn(1); // umblättern auf die Seiten mit 3D-Vorschau und Item-Symbolen
                 guidePhase = "t";
-                guideMs = net.minecraft.util.Util.getMillis();
+                guideMs = Util.getMillis();
             }
             if (worldTicks == 110 && mc.gui.screen() instanceof GuideScreen gs) {
                 gs.onClose();
                 guidePhase = "c";
-                guideMs = net.minecraft.util.Util.getMillis();
+                guideMs = Util.getMillis();
             }
             if (worldTicks == 140) {
                 finished = true;
@@ -316,13 +334,13 @@ public final class CutsceneTestHarness {
             return;
         }
         if (worldTicks == 20 && mc.getSingleplayerServer() != null) {
-            // Buehne: ein fertiger ultimativer Kern 24 Bloecke vor dem Spieler (laeuft im Ultimate-Modus)
-            net.minecraft.core.BlockPos at = mc.player.blockPosition().offset(0, 0, -18);
+            // Bühne: ein fertiger ultimativer Kern 24 Blöcke vor dem Spieler (läuft im Ultimate-Modus)
+            BlockPos at = mc.player.blockPosition().offset(0, 0, -18);
             var server = mc.getSingleplayerServer();
             server.execute(() -> {
                 var level = server.getLevel(mc.player.level().dimension());
                 if (level != null) {
-                    testCore = dr4kun3.cosmiccore.block.entity.ControllerBlockEntity.debugSetupUltimate(level, at);
+                    testCore = ControllerBlockEntity.debugSetupUltimate(level, at);
                     server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), "time set 18000"); // Nacht - der Kosmos wirkt besser
                 }
             });
@@ -344,14 +362,14 @@ public final class CutsceneTestHarness {
     }
 
     /**
-     * Handbuch-Test: fotografiert Aufklappen, Blaettern und Zuklappen bildgenau in festen Abstaenden.
+     * Handbuch-Test: fotografiert Aufklappen, Blättern und Zuklappen bildgenau in festen Abständen.
      *
      * @param event Ende eines gezeichneten Bildes
      */
     @SubscribeEvent
     public static void onFrame(RenderFrameEvent.Post event) {
         if (GUIDE && guidePhase != null && !finished) {
-            long now = net.minecraft.util.Util.getMillis(), since = now - guideMs;
+            long now = Util.getMillis(), since = now - guideMs;
             long window = guidePhase.equals("o") ? 1300 : 700, step = guidePhase.equals("o") ? 110 : 70;
             if (since <= window && now - guideLastShot >= step) {
                 guideLastShot = now;

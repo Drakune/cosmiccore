@@ -1,6 +1,9 @@
 package dr4kun3.cosmiccore.transfer;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.TransferPreconditions;
@@ -10,32 +13,32 @@ import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * Stellt die Sichten des Reaktors (Energie und Items) ueber die Transfer-API ab Minecraft 1.21.9 bereit.
- * Innerhalb einer Transaktion wird nur vorgemerkt und mit Simulation geprueft; ausgefuehrt wird erst, wenn die
- * aeusserste Transaktion abgeschlossen wird. Bricht sie ab, bleibt alles unveraendert.
+ * Stellt die Sichten des Reaktors (Energie und Items) über die Transfer-API ab Minecraft 1.21.9 bereit.
+ * Innerhalb einer Transaktion wird nur vorgemerkt und mit Simulation geprüft; ausgeführt wird erst, wenn die
+ * äußerste Transaktion abgeschlossen wird. Bricht sie ab, bleibt alles unverändert.
  */
 public final class LegacyTransfer {
     /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private LegacyTransfer() {}
 
-    /** Eine Huelle je Sicht, damit alle Abfragen in einer Transaktion dieselben Vormerkungen sehen. */
-    private static final java.util.Map<Object, Object> CACHE = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    /** Eine Hülle je Sicht, damit alle Abfragen in einer Transaktion dieselben Vormerkungen sehen. */
+    private static final Map<Object, Object> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
 
     /**
-     * Energiespeicher als Transfer-Schnittstelle (eine Huelle je Speicher).
+     * Energiespeicher als Transfer-Schnittstelle (eine Hülle je Speicher).
      *
      * @param storage der Speicher
-     * @return die Huelle
+     * @return die Hülle
      */
     public static EnergyHandler energy(EnergyStore storage) {
         return (EnergyHandler) CACHE.computeIfAbsent(storage, s -> new Energy((EnergyStore) s));
     }
 
     /**
-     * Item-Schnittstelle als Transfer-Schnittstelle (eine Huelle je Schnittstelle).
+     * Item-Schnittstelle als Transfer-Schnittstelle (eine Hülle je Schnittstelle).
      *
      * @param handler die Schnittstelle
-     * @return die Huelle
+     * @return die Hülle
      */
     @SuppressWarnings("unchecked")
     public static ResourceHandler<ItemResource> items(ItemHandler handler) {
@@ -47,7 +50,7 @@ public final class LegacyTransfer {
         private int pendingIn, pendingOut;
 
         /**
-         * Huelle um einen alten Energiespeicher.
+         * Hülle um einen alten Energiespeicher.
          *
          * @param storage der Speicher
          */
@@ -55,28 +58,18 @@ public final class LegacyTransfer {
             this.storage = storage;
         }
 
-        /**
-         * Gespeicherte Energie einschliesslich der Vormerkungen.
-         *
-         * @return Energie in RF
-         */
         @Override
         public long getAmountAsLong() {
             return (long) storage.getEnergyStored() + pendingIn - pendingOut;
         }
 
-        /**
-         * Kapazitaet.
-         *
-         * @return Kapazitaet in RF
-         */
         @Override
         public long getCapacityAsLong() {
             return storage.getMaxEnergyStored();
         }
 
         /**
-         * Merkt eine Einspeisung vor (ausgefuehrt erst beim Abschluss der Transaktion).
+         * Merkt eine Einspeisung vor (ausgeführt erst beim Abschluss der Transaktion).
          *
          * @param amount Menge in RF
          * @param transaction laufende Transaktion
@@ -95,7 +88,7 @@ public final class LegacyTransfer {
         }
 
         /**
-         * Merkt eine Entnahme vor (ausgefuehrt erst beim Abschluss der Transaktion).
+         * Merkt eine Entnahme vor (ausgeführt erst beim Abschluss der Transaktion).
          *
          * @param amount Menge in RF
          * @param transaction laufende Transaktion
@@ -135,7 +128,7 @@ public final class LegacyTransfer {
         }
 
         /**
-         * Transaktion abgeschlossen: Vormerkungen wirklich ausfuehren.
+         * Transaktion abgeschlossen: Vormerkungen wirklich ausführen.
          *
          * @param originalState Zustand zu Beginn
          */
@@ -147,7 +140,7 @@ public final class LegacyTransfer {
         }
     }
 
-    /** Vorgemerkte Aenderungen je Slot: entweder ein Stapel zum Einfuegen oder eine Menge zum Entnehmen. */
+    /** Vorgemerkte Änderungen je Slot: entweder ein Stapel zum Einfügen oder eine Menge zum Entnehmen. */
     private record Pending(ItemStack[] insert, int[] extract) {
         /**
          * Tiefe Kopie der Vormerkungen.
@@ -166,7 +159,7 @@ public final class LegacyTransfer {
         private Pending pending = new Pending(new ItemStack[0], new int[0]);
 
         /**
-         * Huelle um eine alte Item-Schnittstelle.
+         * Hülle um eine alte Item-Schnittstelle.
          *
          * @param handler die Schnittstelle
          */
@@ -175,7 +168,7 @@ public final class LegacyTransfer {
         }
 
         /**
-         * Die Vormerkungen; die Anzahl der Slots kann sich aendern (Struktur zerfaellt) - sie wachsen mit.
+         * Die Vormerkungen; die Anzahl der Slots kann sich ändern (Struktur zerfällt) - sie wachsen mit.
          *
          * @return die Vormerkungen
          */
@@ -189,11 +182,6 @@ public final class LegacyTransfer {
             return pending;
         }
 
-        /**
-         * Anzahl Plaetze.
-         *
-         * @return Anzahl
-         */
         @Override
         public int size() {
             return handler.getSlots();
@@ -213,7 +201,7 @@ public final class LegacyTransfer {
         }
 
         /**
-         * Menge im Platz einschliesslich der Vormerkungen.
+         * Menge im Platz einschließlich der Vormerkungen.
          *
          * @param index Platz
          * @return Menge
@@ -224,32 +212,18 @@ public final class LegacyTransfer {
             return handler.getStackInSlot(index).getCount() + p.insert()[index].getCount() - p.extract()[index];
         }
 
-        /**
-         * Groesste Menge des Items im Platz.
-         *
-         * @param index Platz
-         * @param resource welches Item (leer = beliebig)
-         * @return Grenze
-         */
         @Override
         public long getCapacityAsLong(int index, ItemResource resource) {
             return resource.isEmpty() ? handler.getSlotLimit(index) : Math.min(handler.getSlotLimit(index), resource.getMaxStackSize());
         }
 
-        /**
-         * Darf das Item in diesen Platz?
-         *
-         * @param index Platz
-         * @param resource welches Item
-         * @return {@code true}, wenn erlaubt
-         */
         @Override
         public boolean isValid(int index, ItemResource resource) {
             return handler.isItemValid(index, resource.toStack());
         }
 
         /**
-         * Merkt ein Einfuegen vor.
+         * Merkt ein Einfügen vor.
          *
          * @param index Platz
          * @param resource welches Item
@@ -298,28 +272,18 @@ public final class LegacyTransfer {
             return n;
         }
 
-        /**
-         * Sichert die Vormerkungen.
-         *
-         * @return Kopie der Vormerkungen
-         */
         @Override
         protected Pending createSnapshot() {
             return pending().copy();
         }
 
-        /**
-         * Stellt die Vormerkungen wieder her (Transaktion abgebrochen).
-         *
-         * @param snapshot gesicherter Zustand
-         */
         @Override
         protected void revertToSnapshot(Pending snapshot) {
             pending = snapshot;
         }
 
         /**
-         * Transaktion abgeschlossen: Vormerkungen wirklich ausfuehren.
+         * Transaktion abgeschlossen: Vormerkungen wirklich ausführen.
          *
          * @param originalState Zustand zu Beginn
          */

@@ -4,22 +4,34 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.ModItems;
+import dr4kun3.cosmiccore.block.ConsoleSide;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.ModBlocks;
+import dr4kun3.cosmiccore.block.ModProperties;
+import dr4kun3.cosmiccore.block.Terminal;
+import dr4kun3.cosmiccore.client.render.BlockQuads;
+import dr4kun3.cosmiccore.client.render.DeferredBuffers;
+import dr4kun3.cosmiccore.client.render.MultiBufferSource;
 import dr4kun3.cosmiccore.multiblock.CorePattern;
 import dr4kun3.cosmiccore.multiblock.ReactorSize;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import dr4kun3.cosmiccore.client.render.MultiBufferSource;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Matrix3x2f;
 
-/** Drehende 3D-Vorschau einer Reaktorstruktur im GUI (Groessenwahl und Handbuch) und die Liste benoetigter Bloecke. */
+/** Drehende 3D-Vorschau einer Reaktorstruktur im GUI (Größenwahl und Handbuch) und die Liste benötigter Blöcke. */
 public final class StructurePreview {
     /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private StructurePreview() {}
@@ -29,13 +41,13 @@ public final class StructurePreview {
      * Ausschnitt des Fensters.
      *
      * @param g Grafik-Kontext des Fensters
-     * @param size Baugroesse
+     * @param size Baugröße
      * @param cx Bildschirm-x der Strukturmitte
      * @param cy Bildschirm-y der Strukturmitte
      * @param box Ausschnitt {x0, y0, x1, y1} in Bildschirmkoordinaten (Scissor)
-     * @param fit Kantenlaenge in Pixeln, in die die Struktur passen soll
+     * @param fit Kantenlänge in Pixeln, in die die Struktur passen soll
      * @param yaw Drehung um die Hochachse in Grad
-     * @param pitch zusaetzliche Neigung in Grad
+     * @param pitch zusätzliche Neigung in Grad
      * @param funnel Sternentrichter auf der Decke zeigen
      * @param lasers Kosmos-Laser auf der Decke zeigen
      */
@@ -43,20 +55,20 @@ public final class StructurePreview {
                               boolean funnel, boolean lasers) {
         g.submitPictureInPictureRenderState(new State(size, fit, yaw, pitch, funnel, lasers,
                 cx - (box[0] + box[2]) / 2.0F, cy - (box[1] + box[3]) / 2.0F,
-                new org.joml.Matrix3x2f(g.pose()), box[0], box[1], box[2], box[3], g.peekScissorStack()));
+                new Matrix3x2f(g.pose()), box[0], box[1], box[2], box[3], g.peekScissorStack()));
     }
 
-    /** Alles, was der Renderer fuer ein Bild braucht. */
+    /** Alles, was der Renderer für ein Bild braucht. */
     public record State(ReactorSize size, float fit, float yaw, float pitch, boolean funnel, boolean lasers, float offX, float offY,
-                        org.joml.Matrix3x2f pose, int x0, int y0, int x1, int y1,
-                        @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle scissorArea,
-                        @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle bounds)
-            implements net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState {
+                        Matrix3x2f pose, int x0, int y0, int x1, int y1,
+                        @Nullable ScreenRectangle scissorArea,
+                        @Nullable ScreenRectangle bounds)
+            implements PictureInPictureRenderState {
         /**
          * Legt den Zustand an und berechnet den sichtbaren Bereich aus Rechteck und Ausschnitt.
          *
-         * @param size Baugroesse
-         * @param fit Groesse im Fenster
+         * @param size Baugröße
+         * @param fit Größe im Fenster
          * @param yaw Drehung
          * @param pitch Neigung
          * @param funnel Trichter anzeigen
@@ -71,17 +83,12 @@ public final class StructurePreview {
          * @param scissor Ausschnitt oder {@code null}
          */
         State(ReactorSize size, float fit, float yaw, float pitch, boolean funnel, boolean lasers, float offX, float offY,
-              org.joml.Matrix3x2f pose, int x0, int y0, int x1, int y1,
-              @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle scissor) {
+              Matrix3x2f pose, int x0, int y0, int x1, int y1,
+              @Nullable ScreenRectangle scissor) {
             this(size, fit, yaw, pitch, funnel, lasers, offX, offY, pose, x0, y0, x1, y1, scissor,
-                    net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState.getBounds(x0, y0, x1, y1, scissor));
+                    PictureInPictureRenderState.getBounds(x0, y0, x1, y1, scissor));
         }
 
-        /**
-         * Keine zusaetzliche Skalierung.
-         *
-         * @return 1
-         */
         @Override
         public float scale() {
             return 1.0F;
@@ -89,38 +96,21 @@ public final class StructurePreview {
     }
 
     /** Rendert die Struktur in eine Textur (Bild im Bild). */
-    public static final class Renderer extends net.minecraft.client.gui.render.pip.PictureInPictureRenderer<State> {
+    public static final class Renderer extends PictureInPictureRenderer<State> {
         /** Legt den Bild-im-Bild-Renderer an. */
         public Renderer() {
         }
 
-        /**
-         * Klasse des Zustands, den dieser Renderer zeichnet.
-         *
-         * @return State.class
-         */
         @Override
         public Class<State> getRenderStateClass() {
             return State.class;
         }
 
-        /**
-         * Senkrechte Verschiebung: Struktur mittig im Bild.
-         *
-         * @param height Hoehe des Bildes
-         * @param guiScale GUI-Skalierung
-         * @return halbe Hoehe
-         */
         @Override
         protected float getTranslateY(int height, int guiScale) {
             return height / 2.0F;
         }
 
-        /**
-         * Name der Textur (fuer Debug-Werkzeuge).
-         *
-         * @return Bezeichnung
-         */
         @Override
         protected String getTextureLabel() {
             return "cosmiccore structure preview";
@@ -129,12 +119,12 @@ public final class StructurePreview {
         /**
          * Zeichnet die Struktur gedreht und skaliert in die Textur.
          *
-         * @param st Zustand (Groesse, Drehung, Ausschnitt)
+         * @param st Zustand (Größe, Drehung, Ausschnitt)
          * @param ps Pose-Stapel
-         * @param collector Sammler der Zeichenauftraege
+         * @param collector Sammler der Zeichenaufträge
          */
         @Override
-        protected void renderToTexture(State st, PoseStack ps, net.minecraft.client.renderer.SubmitNodeCollector collector) {
+        protected void renderToTexture(State st, PoseStack ps, SubmitNodeCollector collector) {
             Minecraft mc = Minecraft.getInstance();
             mc.gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_3D);
             CorePattern p = st.size().pattern();
@@ -145,21 +135,21 @@ public final class StructurePreview {
             ps.scale(scale, -scale, -scale); // der Bild-im-Bild-Renderer spiegelt Z bereits
             ps.rotate(Axis.XP.rotationDegrees(22.0F + st.pitch()));
             ps.rotate(Axis.YP.rotationDegrees(st.yaw()));
-            var buffers = new dr4kun3.cosmiccore.client.render.DeferredBuffers(collector);
+            var buffers = new DeferredBuffers(collector);
             p.forEach(BlockPos.ZERO, Direction.SOUTH, (pos, cell) -> {
-                if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei fuer Rohre
+                if (CorePattern.isDock(pos, controller, Direction.SOUTH)) return; // frei für Rohre
                 BlockState state = CorePattern.blockFor(cell);
                 if (state == null) return;
                 // Steuerkonsole: Item-Port links, Controller, Energie-Port rechts
                 if (pos.equals(controller)) {
                     state = ModBlocks.CONTROLLER.get().defaultBlockState().setValue(ControllerBlock.FACING, Direction.SOUTH)
-                            .setValue(dr4kun3.cosmiccore.block.ModProperties.TERMINAL, true);
-                } else if (pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.right(Direction.SOUTH)))) {
+                            .setValue(ModProperties.TERMINAL, true);
+                } else if (pos.equals(controller.relative(Terminal.right(Direction.SOUTH)))) {
                     state = ModBlocks.ENERGY_PORT.get().defaultBlockState()
-                            .setValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE, dr4kun3.cosmiccore.block.ConsoleSide.SOUTH);
-                } else if (pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.left(Direction.SOUTH)))) {
+                            .setValue(ModProperties.CONSOLE, ConsoleSide.SOUTH);
+                } else if (pos.equals(controller.relative(Terminal.left(Direction.SOUTH)))) {
                     state = ModBlocks.ITEM_PORT.get().defaultBlockState()
-                            .setValue(dr4kun3.cosmiccore.block.ModProperties.CONSOLE, dr4kun3.cosmiccore.block.ConsoleSide.SOUTH);
+                            .setValue(ModProperties.CONSOLE, ConsoleSide.SOUTH);
                 }
                 block(ps, buffers, state, pos.getX() - 0.5F, pos.getY() - 0.5F, pos.getZ() - 0.5F);
             });
@@ -189,17 +179,17 @@ public final class StructurePreview {
     private static void block(PoseStack ps, MultiBufferSource buffers, BlockState state, float x, float y, float z) {
         ps.pushPose();
         ps.translate(x, y, z);
-        dr4kun3.cosmiccore.client.render.BlockQuads.render(state, ps, buffers, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+        BlockQuads.render(state, ps, buffers, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
         ps.popPose();
     }
 
     /**
-     * Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen).
+     * Die für eine Baugröße benötigten Blöcke als Stapel (Anzahl = Stapelgröße, darf über 64 liegen).
      *
-     * @param size Baugroesse
-     * @param funnel Sternentrichter mitzaehlen
-     * @param lasers die vier Kosmos-Laser mitzaehlen
-     * @return Liste der Bloecke mit Anzahl
+     * @param size Baugröße
+     * @param funnel Sternentrichter mitzählen
+     * @param lasers die vier Kosmos-Laser mitzählen
+     * @return Liste der Blöcke mit Anzahl
      */
     public static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         CorePattern p = size.pattern();

@@ -2,10 +2,10 @@ package dr4kun3.cosmiccore.transfer;
 
 import net.minecraft.world.item.ItemStack;
 
-/** Inventar mit Slots (Ersatz fuer das ab 26.3 entfernte ItemHandler von NeoForge). */
+/** Inventar mit Slots (Ersatz für das ab 26.3 entfernte ItemHandler von NeoForge). */
 public interface ItemHandler {
     /**
-     * Anzahl Plaetze.
+     * Anzahl Plätze.
      *
      * @return Anzahl
      */
@@ -20,11 +20,11 @@ public interface ItemHandler {
     ItemStack getStackInSlot(int slot);
 
     /**
-     * Fuegt ein und liefert den Rest, der nicht gepasst hat.
+     * Fügt ein und liefert den Rest, der nicht gepasst hat.
      *
      * @param slot Slot-Nummer
-     * @param stack einzufuegender Stapel
-     * @param simulate nur pruefen
+     * @param stack einzufügender Stapel
+     * @param simulate nur prüfen
      * @return der Rest
      */
     ItemStack insertItem(int slot, ItemStack stack, boolean simulate);
@@ -33,14 +33,14 @@ public interface ItemHandler {
      * Entnimmt bis zu {@code amount} Items.
      *
      * @param slot Slot-Nummer
-     * @param amount gewuenschte Menge
-     * @param simulate nur pruefen
+     * @param amount gewünschte Menge
+     * @param simulate nur prüfen
      * @return entnommener Stapel
      */
     ItemStack extractItem(int slot, int amount, boolean simulate);
 
     /**
-     * Groesste Menge je Platz.
+     * Größte Menge je Platz.
      *
      * @param slot Slot-Nummer
      * @return Grenze
@@ -51,7 +51,7 @@ public interface ItemHandler {
      * Darf das Item in diesen Platz?
      *
      * @param slot Slot-Nummer
-     * @param stack zu pruefender Stapel
+     * @param stack zu prüfender Stapel
      * @return {@code true}, wenn erlaubt
      */
     boolean isItemValid(int slot, ItemStack stack);

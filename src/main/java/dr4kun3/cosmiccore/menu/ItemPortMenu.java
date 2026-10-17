@@ -1,9 +1,9 @@
 package dr4kun3.cosmiccore.menu;
 
-import dr4kun3.cosmiccore.transfer.*;
-
 import dr4kun3.cosmiccore.block.ModBlocks;
+import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
 import dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity;
+import dr4kun3.cosmiccore.transfer.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,20 +12,21 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
-/** Lager des Item-Ports: 27 Plaetze Asteroiden-Beute (nur entnehmen) plus Spielerinventar. */
+/** Lager des Item-Ports: 27 Plätze Asteroiden-Beute (nur entnehmen) plus Spielerinventar. */
 public class ItemPortMenu extends AbstractContainerMenu {
     public static final int W = 176, H = 174;
     public static final int STORE_X = 8, STORE_Y = 20, INV_X = 8, INV_Y = 92;
 
     private final ContainerLevelAccess access;
     private final BlockPos pos;
-    /** Controller, zu dem es beim Schliessen zurueckgeht (oder null bei Rechtsklick auf den Port). */
-    @org.jetbrains.annotations.Nullable
+    /** Controller, zu dem es beim Schließen zurückgeht (oder null bei Rechtsklick auf den Port). */
+    @Nullable
     private final BlockPos returnTo;
 
     /**
-     * Client: baut das Menue aus den Daten des Servers (Position, Lager wird gespiegelt, optional Rueckweg).
+     * Client: baut das Menü aus den Daten des Servers (Position, Lager wird gespiegelt, optional Rückweg).
      *
      * @param id Fensternummer
      * @param inv Inventar des Spielers
@@ -36,27 +37,27 @@ public class ItemPortMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Server: Menue auf dem echten Lager des Ports.
+     * Server: Menü auf dem echten Lager des Ports.
      *
      * @param id Fensternummer
      * @param inv Inventar des Spielers
      * @param be der Item-Port
-     * @param returnTo Controller, zu dem "Zurueck" fuehrt, oder {@code null}
+     * @param returnTo Controller, zu dem "Zurück" führt, oder {@code null}
      */
-    public ItemPortMenu(int id, Inventory inv, ItemPortBlockEntity be, @org.jetbrains.annotations.Nullable BlockPos returnTo) {
+    public ItemPortMenu(int id, Inventory inv, ItemPortBlockEntity be, @Nullable BlockPos returnTo) {
         this(id, inv, be.getBlockPos(), be.getStorage(), returnTo);
     }
 
     /**
-     * Legt die Slots an: 27 Lagerplaetze (nur entnehmen) und das Spielerinventar.
+     * Legt die Slots an: 27 Lagerplätze (nur entnehmen) und das Spielerinventar.
      *
      * @param id Fensternummer
      * @param inv Inventar des Spielers
      * @param pos Position des Ports
      * @param storage Lager (echt oder gespiegelt)
-     * @param returnTo Controller fuer den Rueckweg oder {@code null}
+     * @param returnTo Controller für den Rückweg oder {@code null}
      */
-    private ItemPortMenu(int id, Inventory inv, BlockPos pos, ItemHandler storage, @org.jetbrains.annotations.Nullable BlockPos returnTo) {
+    private ItemPortMenu(int id, Inventory inv, BlockPos pos, ItemHandler storage, @Nullable BlockPos returnTo) {
         super(ModMenus.ITEM_PORT.get(), id);
         this.pos = pos;
         this.returnTo = returnTo;
@@ -79,35 +80,25 @@ public class ItemPortMenu extends AbstractContainerMenu {
         for (int col = 0; col < 9; col++) addSlot(new Slot(inv, col, INV_X + col * 18, INV_Y + 58));
     }
 
-    /**
-     * Position des Ports.
-     *
-     * @return die Position
-     */
     public BlockPos getPos() {
         return pos;
     }
 
-    /**
-     * Controller, zu dem das Schliessen zurueckfuehrt.
-     *
-     * @return seine Position oder {@code null}, wenn der Port direkt geoeffnet wurde
-     */
-    @org.jetbrains.annotations.Nullable
+    @Nullable
     public BlockPos getReturnTo() {
         return returnTo;
     }
 
     /**
-     * Knopf 0: zurueck zur Steuerung des Controllers (ersetzt dieses Menue), sofern man nah genug steht.
+     * Knopf 0: zurück zur Steuerung des Controllers (ersetzt dieses Menü), sofern man nah genug steht.
      *
      * @param player klickender Spieler
      * @param id Nummer des Knopfs
-     * @return {@code true}, wenn das Controller-Menue geoeffnet wurde
+     * @return {@code true}, wenn das Controller-Menü geöffnet wurde
      */
     @Override
     public boolean clickMenuButton(Player player, int id) {
-        if (id != 0 || returnTo == null || !(player.level().getBlockEntity(returnTo) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c)) {
+        if (id != 0 || returnTo == null || !(player.level().getBlockEntity(returnTo) instanceof ControllerBlockEntity c)) {
             return false;
         }
         if (player.distanceToSqr(returnTo.getX() + 0.5, returnTo.getY() + 0.5, returnTo.getZ() + 0.5) > 64.0) return false;
@@ -116,12 +107,6 @@ public class ItemPortMenu extends AbstractContainerMenu {
         return true;
     }
 
-    /**
-     * Offen bleibt das Menue, solange der Port existiert und der Spieler nah genug ist.
-     *
-     * @param player der Spieler
-     * @return {@code true}, wenn das Menue weiter gueltig ist
-     */
     @Override
     public boolean stillValid(Player player) {
         return stillValid(access, player, ModBlocks.ITEM_PORT.get());

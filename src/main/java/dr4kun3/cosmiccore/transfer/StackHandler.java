@@ -7,7 +7,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 /**
- * Einfaches Slot-Inventar (Ersatz fuer das ab 26.3 entfernte StackHandler). Gespeichert wird im selben Format
+ * Einfaches Slot-Inventar (Ersatz für das ab 26.3 entfernte StackHandler). Gespeichert wird im selben Format
  * ("Items" mit Slot-Nummer, "Size"), damit bestehende Welten ihre Inhalte behalten.
  */
 public class StackHandler implements ModifiableItemHandler {
@@ -16,26 +16,16 @@ public class StackHandler implements ModifiableItemHandler {
     /**
      * Legt ein leeres Lager an.
      *
-     * @param size Anzahl Plaetze
+     * @param size Anzahl Plätze
      */
     public StackHandler(int size) {
         stacks = NonNullList.withSize(size, ItemStack.EMPTY);
     }
 
-    /**
-     * Leert das Lager und setzt die Anzahl der Plaetze.
-     *
-     * @param size Anzahl Plaetze
-     */
     public void setSize(int size) {
         stacks = NonNullList.withSize(size, ItemStack.EMPTY);
     }
 
-    /**
-     * Anzahl Plaetze.
-     *
-     * @return Anzahl
-     */
     @Override
     public int getSlots() {
         return stacks.size();
@@ -67,11 +57,11 @@ public class StackHandler implements ModifiableItemHandler {
     }
 
     /**
-     * Fuegt ein und liefert den Rest, der nicht gepasst hat.
+     * Fügt ein und liefert den Rest, der nicht gepasst hat.
      *
      * @param slot Slot-Nummer
-     * @param stack einzufuegender Stapel
-     * @param simulate nur pruefen
+     * @param stack einzufügender Stapel
+     * @param simulate nur prüfen
      * @return der Rest
      */
     @Override
@@ -99,8 +89,8 @@ public class StackHandler implements ModifiableItemHandler {
      * Entnimmt bis zu {@code amount} Items.
      *
      * @param slot Slot-Nummer
-     * @param amount gewuenschte Menge
-     * @param simulate nur pruefen
+     * @param amount gewünschte Menge
+     * @param simulate nur prüfen
      * @return entnommener Stapel
      */
     @Override
@@ -125,35 +115,15 @@ public class StackHandler implements ModifiableItemHandler {
         return existing.copyWithCount(toExtract);
     }
 
-    /**
-     * Groesste Menge je Platz.
-     *
-     * @param slot Slot-Nummer
-     * @return 99
-     */
     @Override
     public int getSlotLimit(int slot) {
         return 99;
     }
 
-    /**
-     * Groesste Menge dieses Items im Platz.
-     *
-     * @param slot Slot-Nummer
-     * @param stack das Item
-     * @return Grenze
-     */
     protected int getStackLimit(int slot, ItemStack stack) {
         return Math.min(getSlotLimit(slot), stack.getMaxStackSize());
     }
 
-    /**
-     * Jedes Item ist erlaubt (Unterklassen schraenken ein).
-     *
-     * @param slot Slot-Nummer
-     * @param stack zu pruefender Stapel
-     * @return immer {@code true}
-     */
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
         return true;
@@ -173,7 +143,7 @@ public class StackHandler implements ModifiableItemHandler {
     }
 
     /**
-     * Laedt das Lager (Format "Items"/"Size").
+     * Lädt das Lager (Format "Items"/"Size").
      *
      * @param input gespeicherte Daten
      */
@@ -186,20 +156,20 @@ public class StackHandler implements ModifiableItemHandler {
     }
 
     /**
-     * Prueft die Slot-Nummer.
+     * Prüft die Slot-Nummer.
      *
      * @param slot Slot-Nummer
-     * @throws RuntimeException ausserhalb des gueltigen Bereichs
+     * @throws RuntimeException außerhalb des gültigen Bereichs
      */
     protected void validateSlotIndex(int slot) {
         if (slot < 0 || slot >= stacks.size()) throw new RuntimeException("Slot " + slot + " not in valid range - [0," + stacks.size() + ")");
     }
 
-    /** Wird nach dem Laden aufgerufen (fuer Unterklassen). */
+    /** Wird nach dem Laden aufgerufen (für Unterklassen). */
     protected void onLoad() {}
 
     /**
-     * Wird nach jeder Aenderung aufgerufen (fuer Unterklassen).
+     * Wird nach jeder Änderung aufgerufen (für Unterklassen).
      *
      * @param slot Slot-Nummer
      */

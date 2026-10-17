@@ -1,12 +1,12 @@
 package dr4kun3.cosmiccore.transfer;
 
-/** Energiespeicher in RF (Ersatz fuer das ab 26.3 entfernte EnergyStore). */
+/** Energiespeicher in RF (Ersatz für das ab 26.3 entfernte EnergyStore). */
 public interface EnergyStore {
     /**
      * Speist Energie ein.
      *
      * @param amount angebotene Menge in RF
-     * @param simulate nur pruefen
+     * @param simulate nur prüfen
      * @return aufgenommene Menge
      */
     int receiveEnergy(int amount, boolean simulate);
@@ -14,8 +14,8 @@ public interface EnergyStore {
     /**
      * Entnimmt Energie.
      *
-     * @param amount gewuenschte Menge in RF
-     * @param simulate nur pruefen
+     * @param amount gewünschte Menge in RF
+     * @param simulate nur prüfen
      * @return entnommene Menge
      */
     int extractEnergy(int amount, boolean simulate);
@@ -28,9 +28,9 @@ public interface EnergyStore {
     int getEnergyStored();
 
     /**
-     * Kapazitaet.
+     * Kapazität.
      *
-     * @return Kapazitaet in RF
+     * @return Kapazität in RF
      */
     int getMaxEnergyStored();
 
