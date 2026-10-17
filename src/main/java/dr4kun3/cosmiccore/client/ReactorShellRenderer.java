@@ -43,6 +43,7 @@ import org.joml.Vector3f;
  * Ursprung ist die Kernmitte. Ports bleiben als echte Bloecke stehen, der Controller wird zur Steuerkonsole.
  */
 public final class ReactorShellRenderer {
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private ReactorShellRenderer() {}
 
     private static final float[] SEAM = {0.62F, 0.4F, 1.0F};
@@ -60,6 +61,13 @@ public final class ReactorShellRenderer {
 
     private static final Map<Integer, Lattice> LATTICE = new HashMap<>();
 
+    /**
+     * Punktgitter des Haltenetzes (Fibonacci-Kugel, Punktzahl nach Baugroesse und Grafikqualitaet),
+     * zwischengespeichert.
+     *
+     * @param size Kantenlaenge der Struktur
+     * @return das Gitter mit Punkten und Verbindungen
+     */
     private static Lattice lattice(int size) {
         int n0 = RenderQuality.scale(40 + size * 15, 40); // HOCH: 5x5x5: 115, 7x7x7: 145, 9x9x9: 175
         return LATTICE.computeIfAbsent(size * 1000 + n0, cacheKey -> {
@@ -100,6 +108,12 @@ public final class ReactorShellRenderer {
 
     private static final Map<Integer, List<ShellCell>> CACHE = new HashMap<>();
 
+    /**
+     * Alle Huellen- und Steckplatz-Zellen einer Baugroesse, zwischengespeichert.
+     *
+     * @param size Kantenlaenge der Struktur
+     * @return die Zellen (leer bei unbekannter Groesse)
+     */
     private static List<ShellCell> cells(int size) {
         return CACHE.computeIfAbsent(size, s -> {
             List<ShellCell> out = new ArrayList<>();
@@ -119,32 +133,63 @@ public final class ReactorShellRenderer {
     public record Params(Level level, BlockPos corePos, int size, float t, float form, float energy, float heat,
                          boolean active, boolean unstable, float growth, int overdrive, SingularityCoreBlockEntity core,
                          float settle) {
-        /** muss zu CorePattern.shellRadius() passen (Phantom-Bloecke). */
+        /**
+         * Radius der Kammer - muss zu CorePattern.shellRadius() passen (Phantom-Bloecke).
+         *
+         * @return Radius in Bloecken
+         */
         float radius() {
             return size / 2 + 0.2F;
         }
 
-        /** Entstehen der Kammer aus dem Kern (0..1), beginnt nach dem Einsaugen. */
+        /**
+         * Entstehen der Kammer aus dem Kern, beginnt nach dem Einsaugen.
+         *
+         * @return Fortschritt 0..1
+         */
         float emerge() {
             return Mth.clamp((form - 0.5F) / 0.5F, 0.0F, 1.0F);
         }
 
+        /**
+         * Ist die Kammer vollstaendig gebildet?
+         *
+         * @return {@code true} nach Ende der Bildungsanimation
+         */
         boolean done() {
             return form >= 1.0F;
         }
 
+        /**
+         * Drehgeschwindigkeit der Effekte: langsam im Leerlauf, schnell bei Instabilitaet, hoeher mit der
+         * Leistungsstufe.
+         *
+         * @return Faktor
+         */
         float spin() {
             return (unstable ? 2.2F : active ? 1.0F : 0.25F) * (1.0F + 0.6F * growth);
         }
     }
 
-    /** Lokales Koordinatensystem der Konsole: Ursprung im Controller, +Z zeigt vom Kern weg nach aussen. */
+    /**
+     * Lokales Koordinatensystem der Konsole: Ursprung im Controller, +Z zeigt vom Kern weg nach aussen.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param c Zelle des Controllers
+     * @return Matrix der Konsole
+     */
     private static Matrix4f consoleFrame(Matrix4f m, ShellCell c) {
         float yaw = (float) Math.atan2(c.dx(), c.dz());
         return new Matrix4f(m).translate(c.dx(), c.dy(), c.dz()).rotateY(yaw);
     }
 
-    /** Punkt auf der (nach hinten geneigten) Bildschirmflaeche: u in [-1, 1] quer, v in [0, 1] hoch. */
+    /**
+     * Punkt auf der (nach hinten geneigten) Bildschirmflaeche.
+     *
+     * @param u quer, -1..1
+     * @param v hoch, 0..1
+     * @return Punkt {x, y, z} im Konsolenraum
+     */
     private static float[] screen(float u, float v) {
         return new float[]{u * 0.46F, -0.02F + v * 0.56F, 0.07F - v * 0.22F};
     }
@@ -152,17 +197,36 @@ public final class ReactorShellRenderer {
     private static final float TEXT_SCALE = 0.0052F;
     private static final float PANEL_PX = 0.92F / TEXT_SCALE; // Breite in Textpixeln
 
-    /** Punkt auf der Bildschirmflaeche mit freier Breite (x in Bloecken), v in [0, 1] hoch. */
+    /**
+     * Punkt auf der Bildschirmflaeche mit freier Breite.
+     *
+     * @param x quer in Bloecken
+     * @param v hoch, 0..1
+     * @return Punkt {x, y, z} im Konsolenraum
+     */
     private static float[] screenAt(float x, float v) {
         return new float[]{x, -0.02F + v * 0.56F, 0.07F - v * 0.22F};
     }
 
-    /** Textraum des Bildschirms: Ursprung oben links, x nach rechts, y nach unten (in Schriftpixeln). */
+    /**
+     * Textraum des Bildschirms: Ursprung oben links, x nach rechts, y nach unten (in Schriftpixeln).
+     *
+     * @param cm Matrix der Konsole
+     * @param lift Abstand vor der Bildschirmflaeche
+     * @return Matrix des Textraums
+     */
     private static Matrix4f textFrame(Matrix4f cm, float lift) {
         return textFrame(cm, -0.46F, lift);
     }
 
-    /** Textraum ab der linken Kante left (bei der verbreiterten Konsole weiter links). */
+    /**
+     * Textraum ab einer frei waehlbaren linken Kante (bei der verbreiterten Konsole weiter links).
+     *
+     * @param cm Matrix der Konsole
+     * @param left linke Kante in Bloecken
+     * @param lift Abstand vor der Bildschirmflaeche
+     * @return Matrix des Textraums
+     */
     private static Matrix4f textFrame(Matrix4f cm, float left, float lift) {
         float tilt = (float) Math.atan2(0.22, 0.56);
         float[] tl = screenAt(left, 1);
@@ -173,8 +237,12 @@ public final class ReactorShellRenderer {
     private static final float SECTION_W = 1.0F;
 
     /**
-     * Ausdehnung des Bildschirms: links/rechts je ein Abschnitt pro direkt angrenzendem Port (waechst beim Ausfahren mit).
-     * Rueckgabe {links, rechts} in Bloecken (lokales X der Konsole).
+     * Ausdehnung des Bildschirms: links/rechts je ein Abschnitt pro direkt angrenzendem Port (waechst beim Ausfahren
+     * mit).
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle des Controllers
+     * @return {links, rechts} in Bloecken (lokales X der Konsole)
      */
     private static float[] screenLR(Params p, ShellCell c) {
         float out = wingOut(p), l = -0.46F, r = 0.46F;
@@ -188,7 +256,14 @@ public final class ReactorShellRenderer {
     private static final int ROW_TITLE = 3, ROW_STATUS = 14, ROW_OUT = 28, ROW_BUF = 39, BAR_BUF = 49, ROW_INST = 56,
             BAR_INST = 66, ROW_LEVEL = 73, ROW_OD = 84, ROW_FIELD = 95;
 
-    /** Live-Daten als Tabelle: Bezeichnung links, Wert mit Einheit rechtsbuendig. */
+    /**
+     * Live-Daten als Tabelle: Bezeichnung links, Wert mit Einheit rechtsbuendig; dazu die Abschnitte der Ports.
+     *
+     * @param cm Matrix der Konsole
+     * @param buffers Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param cell Zelle des Controllers
+     */
     private static void consoleText(Matrix4f cm, MultiBufferSource buffers, Params p, ShellCell cell) {
         Font font = Minecraft.getInstance().font;
         SingularityCoreBlockEntity core = p.core();
@@ -253,7 +328,15 @@ public final class ReactorShellRenderer {
 
     private static final float SECTION_PX = SECTION_W / TEXT_SCALE;
 
-    /** Abschnitt eines Ports auf dem breiten Bildschirm: Energie (Leistung, Puffer, Kapazitaet) bzw. Lager (Plaetze). */
+    /**
+     * Abschnitt eines Ports auf dem breiten Bildschirm: Energie (Leistung, Puffer, Kapazitaet) bzw. Lager (Plaetze).
+     *
+     * @param font Schrift
+     * @param tm Matrix des Textraums
+     * @param buffers Puffer
+     * @param ep der Port
+     * @param p Zustand des Reaktors fuer dieses Bild
+     */
     private static void sectionText(Font font, Matrix4f tm, MultiBufferSource buffers, EdgePort ep, Params p) {
         String title = "\u25C6 " + tr(ep.energy() ? "console.cosmiccore.wing_energy" : "console.cosmiccore.wing_items") + " \u25C6";
         font.drawInBatch(title, (SECTION_PX - font.width(title)) / 2.0F, ROW_TITLE, 0xFF000000 | (ep.energy() ? 0x7AE8FF : 0xFFC070), false, tm, buffers,
@@ -273,21 +356,60 @@ public final class ReactorShellRenderer {
         }
     }
 
+    /**
+     * Eine Zeile in einem Port-Abschnitt: Bezeichnung links, Wert rechtsbuendig.
+     *
+     * @param font Schrift
+     * @param tm Matrix des Textraums
+     * @param buffers Puffer
+     * @param label Bezeichnung
+     * @param value Wert
+     * @param y Zeilenhoehe in Schriftpixeln
+     * @param color Farbe des Werts 0xRRGGBB
+     */
     private static void secRow(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int color) {
         font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         font.drawInBatch(value, SECTION_PX - 6 - font.width(value), y, 0xFF000000 | color, false, tm, buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
+    /**
+     * Uebersetzt einen Schluessel.
+     *
+     * @param key Uebersetzungsschluessel
+     * @param args Platzhalterwerte
+     * @return der fertige Text
+     */
     private static String tr(String key, Object... args) {
         return net.minecraft.network.chat.Component.translatable(key, args).getString();
     }
 
+    /**
+     * Zentrierter Text auf dem Hauptbildschirm.
+     *
+     * @param font Schrift
+     * @param tm Matrix des Textraums
+     * @param buffers Puffer
+     * @param text Text
+     * @param y Zeilenhoehe in Schriftpixeln
+     * @param color Farbe 0xRRGGBB
+     */
     private static void center(Font font, Matrix4f tm, MultiBufferSource buffers, String text, int y, int color) {
         float x = (PANEL_PX - font.width(text)) / 2.0F;
         font.drawInBatch(text, x, y, 0xFF000000 | color, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
     }
 
+    /**
+     * Eine Tabellenzeile auf dem Hauptbildschirm: Bezeichnung links, Wert rechtsbuendig.
+     *
+     * @param font Schrift
+     * @param tm Matrix des Textraums
+     * @param buffers Puffer
+     * @param label Bezeichnung
+     * @param value Wert
+     * @param y Zeilenhoehe in Schriftpixeln
+     * @param valueColor Farbe des Werts 0xRRGGBB
+     */
     private static void row(Font font, Matrix4f tm, MultiBufferSource buffers, String label, String value, int y, int valueColor) {
         font.drawInBatch(label, 6, y, 0xFFA898C8, false, tm, buffers, Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
         font.drawInBatch(value, PANEL_PX - 6 - font.width(value), y, 0xFF000000 | valueColor, false, tm, buffers,
@@ -295,7 +417,12 @@ public final class ReactorShellRenderer {
     }
 
     /** Puffer-Kapazitaet je Baustufe (wie im Controller: ReactorSize.buffer()). */
-    /** Controller der Struktur (sitzt in einer SLOT-Zelle). */
+    /**
+     * Controller der Struktur (sitzt in einer SLOT-Zelle).
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @return der Controller oder {@code null}
+     */
     @org.jetbrains.annotations.Nullable
     private static dr4kun3.cosmiccore.block.entity.ControllerBlockEntity controllerOf(Params p) {
         for (ShellCell c : cells(p.size())) {
@@ -307,12 +434,23 @@ public final class ReactorShellRenderer {
         return null;
     }
 
-    /** Puffer-Kapazitaet je Baustufe (auch fuer die Port-Stationen). */
+    /**
+     * Puffer-Kapazitaet je Baustufe (auch fuer die Port-Stationen).
+     *
+     * @param structureSize Kantenlaenge der Struktur
+     * @return Kapazitaet in RF
+     */
     static long capacity(int structureSize) {
         return ReactorSizeCapacity.capacity(structureSize);
     }
 
     private static final class ReactorSizeCapacity {
+        /**
+         * Kapazitaet aus der Baugroesse, sonst der Wert je Stufe aus der Konfiguration.
+         *
+         * @param structureSize Kantenlaenge der Struktur
+         * @return Kapazitaet in RF
+         */
         static long capacity(int structureSize) {
             ReactorSize rs = ReactorSize.bySize(structureSize);
             return rs == null ? dr4kun3.cosmiccore.CoreConfig.BUFFER_PER_TIER.get() : rs.buffer();
@@ -324,7 +462,13 @@ public final class ReactorShellRenderer {
     /** Port auf der Kante des Controllers (gleiche Hoehe, seitlich entlang der Kante, beliebiger Abstand). */
     private record EdgePort(int k, dr4kun3.cosmiccore.block.entity.PortBlockEntity be, boolean energy) {}
 
-    /** Alle Ports auf der Controller-Kante - sie bilden zusammen mit dem Controller die Steuerkonsole. */
+    /**
+     * Alle Ports auf der Controller-Kante - sie bilden zusammen mit dem Controller die Steuerkonsole.
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle des Controllers
+     * @return die Ports mit Seite und Abstand
+     */
     private static List<EdgePort> edgePorts(Params p, ShellCell c) {
         List<EdgePort> out = new ArrayList<>();
         BlockPos cpos = p.corePos().offset(c.dx(), c.dy(), c.dz());
@@ -341,7 +485,12 @@ public final class ReactorShellRenderer {
         return out;
     }
 
-    /** Positionen der Konsolen-Ports (die zeichnen weder eigene Bruecke noch eigene Station). */
+    /**
+     * Positionen der Konsolen-Ports (die zeichnen weder eigene Bruecke noch eigene Station).
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @return die Positionen
+     */
     private static java.util.Set<BlockPos> edgePortPositions(Params p) {
         java.util.Set<BlockPos> set = new java.util.HashSet<>();
         for (ShellCell c : cells(p.size())) {
@@ -352,6 +501,13 @@ public final class ReactorShellRenderer {
         return set;
     }
 
+    /**
+     * Wird der Controller zur breiten Konsole, weil Ports direkt daneben sitzen?
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle des Controllers
+     * @return {@code true}, wenn mindestens ein Port angrenzt
+     */
     private static boolean isTerminal(Params p, ShellCell c) {
         return !edgePorts(p, c).isEmpty();
     }
@@ -360,6 +516,13 @@ public final class ReactorShellRenderer {
      * Y-Strahl der Steuerkonsole: ein Stamm vom Kern bis hinter die Konsole, dort gabelt er sich zum Controller und zu
      * den Ports direkt daneben. Gabelung und Aeste liegen hinter den Bildschirmen und werden von ihnen verdeckt.
      * Lichtkugeln fliegen den Stamm hinab und verteilen sich auf die Aeste.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle des Controllers
+     * @param top Startpunkt am Kern
+     * @param col Farbe RGB 0..1
      */
     private static void yBridge(Matrix4f m, VertexConsumer vc, Params p, ShellCell c, float[] top, float[] col) {
         float e = p.energy();
@@ -404,19 +567,38 @@ public final class ReactorShellRenderer {
         }
     }
 
-    /** Ausfahren der Fluegel: erst waechst die Konsole, dann gleiten die Ports seitlich an ihren Platz (0..1). */
+    /**
+     * Ausfahren der Fluegel: erst waechst die Konsole, dann gleiten die Ports seitlich an ihren Platz.
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @return Fortschritt 0..1
+     */
     private static float wingOut(Params p) {
         float k = Mth.clamp((p.settle() - 0.25F) / 0.75F, 0.0F, 1.0F);
         return 1.0F - (1.0F - k) * (1.0F - k) * (1.0F - k);
     }
 
+    /**
+     * Daten fuer die Port-Stationen der Konsole (Controller, Kern, Zeit, Helligkeit).
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle des Controllers
+     * @return die Daten
+     */
     private static PortStation.Data stationData(Params p, ShellCell c) {
         BlockPos cpos = p.corePos().offset(c.dx(), c.dy(), c.dz());
         return new PortStation.Data(p.level().getBlockEntity(cpos) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity ctrl
                 ? ctrl : null, p.core(), p.t(), Math.max(0.6F, p.energy()), 0);
     }
 
-    /** Ports der Steuerkonsole: dieselben Stationen wie einzelne Ports, an ihren Platz auf der Kante ausgefahren. */
+    /**
+     * Ports der Steuerkonsole: dieselben Stationen wie einzelne Ports, an ihren Platz auf der Kante ausgefahren.
+     *
+     * @param pose Pose-Stapel in der Kernmitte
+     * @param buffers Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle des Controllers
+     */
     private static void wingsSolid(PoseStack pose, MultiBufferSource buffers, Params p, ShellCell c) {
         float out = wingOut(p);
         if (out <= 0.01F) return;
@@ -433,6 +615,14 @@ public final class ReactorShellRenderer {
         }
     }
 
+    /**
+     * Leuchtender Teil der ausgefahrenen Port-Stationen.
+     *
+     * @param km Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param c Zelle des Controllers
+     * @param p Zustand des Reaktors fuer dieses Bild
+     */
     private static void wingsGlow(Matrix4f km, VertexConsumer vc, ShellCell c, Params p) {
         float out = wingOut(p);
         if (out <= 0.01F) return;
@@ -445,6 +635,12 @@ public final class ReactorShellRenderer {
         }
     }
 
+    /**
+     * Kurze Zahl mit Einheitenkuerzel (k, M, G).
+     *
+     * @param n Wert
+     * @return z. B. "12.5k" oder "1.20G"
+     */
     private static String compact(long n) {
         if (n >= 1_000_000_000L) return String.format("%.2fG", n / 1e9);
         if (n >= 1_000_000L) return String.format("%.1fM", n / 1e6);
@@ -452,7 +648,15 @@ public final class ReactorShellRenderer {
         return Long.toString(n);
     }
 
-    /** Leuchtender Teil der Konsole: Rahmen mit Eckakzenten, Trennlinien, Balken fuer Puffer und Instabilitaet. */
+    /**
+     * Leuchtender Teil der Konsole: Rahmen mit Eckakzenten, Trennlinien, Balken fuer Puffer und Instabilitaet.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param c Zelle des Controllers
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param col Farbe RGB 0..1
+     */
     private static void console(Matrix4f m, VertexConsumer vc, ShellCell c, Params p, float[] col) {
         Matrix4f cm = consoleFrame(m, c);
         float e = Math.max(0.6F, p.energy());
@@ -511,6 +715,16 @@ public final class ReactorShellRenderer {
         segment(vc, full, 2, sv, 0, totalPx - 2, sv, 0, 0.35F, 1.0F, 1.0F, 1.0F, e * 0.12F, e * 0.12F);
     }
 
+    /**
+     * Fortschrittsbalken: schwache Spur ueber die ganze Breite, darueber der gefuellte Teil.
+     *
+     * @param vc Puffer
+     * @param tm Matrix des Textraums
+     * @param y Hoehe in Schriftpixeln
+     * @param frac Fuellstand 0..1
+     * @param col Farbe RGB 0..1
+     * @param e Helligkeit 0..1
+     */
     private static void bar(VertexConsumer vc, Matrix4f tm, float y, float frac, float[] col, float e) {
         float x0 = 6, x1 = PANEL_PX - 6;
         segment(vc, tm, x0, y, 0, x1, y, 0, 1.4F, col[0], col[1], col[2], e * 0.15F, e * 0.15F);
@@ -518,6 +732,14 @@ public final class ReactorShellRenderer {
         if (fill > 0.0F) segment(vc, tm, x0, y, 0, x0 + (x1 - x0) * fill, y, 0, 1.4F, col[0], col[1], col[2], e, e);
     }
 
+    /**
+     * Punkt auf einer Kugel.
+     *
+     * @param r Radius
+     * @param lat Breite (Bogenmass)
+     * @param lon Laenge (Bogenmass)
+     * @return Punkt {x, y, z}
+     */
     private static float[] sph(float r, float lat, float lon) {
         float c = Mth.cos(lat);
         return new float[]{r * c * Mth.cos(lon), r * Mth.sin(lat), r * c * Mth.sin(lon)};
@@ -525,14 +747,26 @@ public final class ReactorShellRenderer {
 
     // ------------------------------------------------------------------ Einsaugen der Bloecke (nur Animation)
 
-    /** Einsaug-Fortschritt eines Blocks (0 = an seinem Platz, 1 = im Kern verschwunden). Aussen zuerst. */
+    /**
+     * Einsaug-Fortschritt eines Blocks (0 = an seinem Platz, 1 = im Kern verschwunden). Aussen zuerst.
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle der Struktur (Versatz zum Kern)
+     * @return Fortschritt 0..1
+     */
     private static float suck(Params p, ShellCell c) {
         float dist = Mth.sqrt(c.dx() * c.dx() + c.dy() * c.dy() + c.dz() * c.dz()) / (p.radius() * 1.8F);
         float delay = (1.0F - Mth.clamp(dist, 0.0F, 1.0F)) * 0.25F + 0.1F * (0.5F + 0.5F * hash(c.dx() * 73 + c.dy() * 19 + c.dz() * 7));
         return Mth.clamp((p.form() / 0.55F - delay) / 0.6F, 0.0F, 1.0F);
     }
 
-    /** Position auf der Spiralbahn in den Kern. */
+    /**
+     * Position auf der Spiralbahn in den Kern.
+     *
+     * @param c Zelle der Struktur (Versatz zum Kern)
+     * @param k Einsaug-Fortschritt 0..1
+     * @return Punkt {x, y, z} relativ zum Kern
+     */
     private static float[] suckPos(ShellCell c, float k) {
         float e = k * k;
         float shrink = (float) Math.pow(1.0F - e, 1.2);
@@ -541,6 +775,13 @@ public final class ReactorShellRenderer {
         return new float[]{x * Mth.cos(ang) - z * Mth.sin(ang), c.dy() * shrink, x * Mth.sin(ang) + z * Mth.cos(ang)};
     }
 
+    /**
+     * Wird dieser Block eingesaugt? Nur Bloecke der Struktur, keine fremden (z. B. Rohre an den Andockstellen).
+     *
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param c Zelle der Struktur (Versatz zum Kern)
+     * @return {@code true}, wenn er mitfliegt
+     */
     private static boolean flies(Params p, ShellCell c) {
         BlockState s = p.level().getBlockState(p.corePos().offset(c.dx(), c.dy(), c.dz()));
         // fremde Bloecke (z. B. Rohre an den Andockstellen der Konsole) gehoeren nicht zur Struktur
@@ -552,6 +793,14 @@ public final class ReactorShellRenderer {
 
     // ------------------------------------------------------------------ Pass 1: Konsole und eingesaugte Bloecke
 
+    /**
+     * Undurchsichtiger Teil der Kammer: Sockel und Bildschirm der Steuerkonsole, Port-Stationen und die
+     * eingesaugten Bloecke waehrend der Bildung.
+     *
+     * @param pose Pose-Stapel in der Kernmitte
+     * @param buffers Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     */
     public static void solid(PoseStack pose, MultiBufferSource buffers, Params p) {
         Matrix4f m = pose.last().pose();
 
@@ -621,7 +870,14 @@ public final class ReactorShellRenderer {
     private static final float[] PLATE = {0.05F, 0.03F, 0.09F};
     private static final float[] PANEL = {0.02F, 0.015F, 0.05F};
 
-    /** Flache, undurchsichtige Scheibe (debugQuads) in der XZ-Ebene. */
+    /**
+     * Flache, undurchsichtige Scheibe in der XZ-Ebene.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param r Radius
+     * @param col Farbe RGB 0..1
+     */
     private static void disc(VertexConsumer vc, Matrix4f m, float r, float[] col) {
         int seg = 32;
         for (int i = 0; i < seg; i++) {
@@ -631,6 +887,16 @@ public final class ReactorShellRenderer {
         }
     }
 
+    /**
+     * Viereck mit Sternenfeld-Shader (als zwei Dreiecke).
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param a erste Ecke
+     * @param b zweite Ecke
+     * @param c dritte Ecke
+     * @param d vierte Ecke
+     */
     private static void starQuad(VertexConsumer vc, Matrix4f m, float[] a, float[] b, float[] c, float[] d) {
         vc.addVertex(m, a[0], a[1], a[2]);
         vc.addVertex(m, b[0], b[1], b[2]);
@@ -644,6 +910,14 @@ public final class ReactorShellRenderer {
 
     // ------------------------------------------------------------------ Pass 2: Licht
 
+    /**
+     * Leuchtender Teil der Kammer: Haltenetz, Symbole, Konsole, Bruecken und die Bildungseffekte - in der Farbe
+     * der Naehte (heiss im Betrieb, Overdrive- bzw. eigene Kanalfarbe).
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     */
     public static void glow(Matrix4f m, VertexConsumer vc, Params p) {
         float r = p.radius();
         float[] seam = lerp(SEAM, SEAM_HOT, p.active() ? 0.45F : 0.0F);
@@ -662,7 +936,16 @@ public final class ReactorShellRenderer {
         }
     }
 
-    /** Das Partikel-Haltenetz, das das Feld um das Loch zusammenhaelt. */
+    /**
+     * Das Partikel-Haltenetz, das das Feld um das Loch zusammenhaelt.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param seam Farbe RGB 0..1
+     * @param base Grundhelligkeit
+     * @param pulse zusaetzliches Pulsieren
+     */
     private static void holdingNet(Matrix4f m, VertexConsumer vc, Params p, float[] seam, float base, float pulse) {
         float grow = p.done() ? 1.0F : Mth.clamp((p.emerge() - 0.05F) / 0.7F, 0.0F, 1.0F);
         if (grow <= 0.0F) return;
@@ -744,7 +1027,14 @@ public final class ReactorShellRenderer {
         }
     }
 
-    /** Symbole der Ports und ein Ring um den Controller - als Hologramm auf der Kugeloberflaeche. */
+    /**
+     * Symbole der Ports und ein Ring um den Controller - als Hologramm auf der Kugeloberflaeche.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param r Radius der Kugel
+     */
     private static void glyphs(Matrix4f m, VertexConsumer vc, Params p, float r) {
         java.util.Set<BlockPos> consolePorts = edgePortPositions(p);
         for (ShellCell c : cells(p.size())) {
@@ -815,12 +1105,39 @@ public final class ReactorShellRenderer {
         }
     }
 
+    /**
+     * Ein Strich eines Symbols in der Ebene, die u und v aufspannen.
+     *
+     * @param m Matrix
+     * @param vc Puffer
+     * @param c Mittelpunkt des Symbols
+     * @param u Achse quer
+     * @param v Achse hoch
+     * @param u0 Start quer
+     * @param v0 Start hoch
+     * @param u1 Ende quer
+     * @param v1 Ende hoch
+     * @param col Farbe RGB 0..1
+     * @param a Deckkraft
+     */
     private static void gl(Matrix4f m, VertexConsumer vc, float[] c, Vector3f u, Vector3f v, float u0, float v0, float u1, float v1,
                            float[] col, float a) {
         segment(vc, m, c[0] + u.x * u0 + v.x * v0, c[1] + u.y * u0 + v.y * v0, c[2] + u.z * u0 + v.z * v0,
                 c[0] + u.x * u1 + v.x * v1, c[1] + u.y * u1 + v.y * v1, c[2] + u.z * u1 + v.z * v1, 0.025F, col[0], col[1], col[2], a, a);
     }
 
+    /**
+     * Kreis eines Symbols in der Ebene, die u und v aufspannen.
+     *
+     * @param m Matrix
+     * @param vc Puffer
+     * @param c Mittelpunkt
+     * @param u Achse quer
+     * @param v Achse hoch
+     * @param rad Radius
+     * @param col Farbe RGB 0..1
+     * @param a Deckkraft
+     */
     private static void circle(Matrix4f m, VertexConsumer vc, float[] c, Vector3f u, Vector3f v, float rad, float[] col, float a) {
         int n = 20;
         for (int i = 0; i < n; i++) {
@@ -829,7 +1146,14 @@ public final class ReactorShellRenderer {
         }
     }
 
-    /** Lichtspuren der eingesaugten Bloecke und der Blitz, aus dem die Kammer entsteht. */
+    /**
+     * Lichtspuren der eingesaugten Bloecke und der Blitz, aus dem die Kammer entsteht.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param p Zustand des Reaktors fuer dieses Bild
+     * @param seam Farbe RGB 0..1
+     */
     private static void formationGlow(Matrix4f m, VertexConsumer vc, Params p, float[] seam) {
         for (ShellCell c : cells(p.size())) {
             float k = suck(p, c);

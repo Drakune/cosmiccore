@@ -25,11 +25,25 @@ public abstract class LegacyBlockEntityRenderer<T extends BlockEntity> implement
         public Vec3 cameraPos = Vec3.ZERO;
     }
 
+    /**
+     * Neuer Zeichenzustand, der auf den Blockinhalt verweist.
+     *
+     * @return der Zustand
+     */
     @Override
     public State<T> createRenderState() {
         return new State<>();
     }
 
+    /**
+     * Uebernimmt Blockinhalt, Teil-Tick und Kameraposition in den Zeichenzustand.
+     *
+     * @param be der Blockinhalt
+     * @param state Zeichenzustand
+     * @param partialTick Teil-Tick
+     * @param cameraPos Position der Kamera
+     * @param crumbling Abbau-Overlay oder {@code null}
+     */
     @Override
     public void extractRenderState(T be, State<T> state, float partialTick, Vec3 cameraPos, @Nullable ModelFeatureRenderer.CrumblingOverlay crumbling) {
         BlockEntityRenderer.super.extractRenderState(be, state, partialTick, cameraPos, crumbling);
@@ -38,6 +52,14 @@ public abstract class LegacyBlockEntityRenderer<T extends BlockEntity> implement
         state.cameraPos = cameraPos;
     }
 
+    /**
+     * Ruft die alte Zeichenroutine mit aufzeichnenden Puffern auf und reicht das Ergebnis ein.
+     *
+     * @param state Zeichenzustand
+     * @param pose Pose-Stapel
+     * @param collector Sammler der Zeichenauftraege
+     * @param camera Zustand der Kamera
+     */
     @Override
     public void submit(State<T> state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
         if (state.blockEntity == null) return;
@@ -47,6 +69,16 @@ public abstract class LegacyBlockEntityRenderer<T extends BlockEntity> implement
         state.blockEntity = null;
     }
 
-    /** Die bisherige Zeichenroutine (Vertices werden aufgezeichnet und gesammelt eingereicht). */
+    /**
+     * Zeichnet den Blockinhalt wie vor dem Submit-System.
+     *
+     * @param be der Blockinhalt
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel am Block
+     * @param buffers Puffer (zeichnen auf)
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param cameraPos Position der Kamera
+     */
     public abstract void render(T be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, Vec3 cameraPos);
 }

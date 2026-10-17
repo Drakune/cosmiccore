@@ -11,14 +11,25 @@ public final class NbtBridge {
     @SuppressWarnings("deprecation")
     private static final MapCodec<CompoundTag> AS_MAP = MapCodec.assumeMapUnsafe(CompoundTag.CODEC);
 
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private NbtBridge() {}
 
-    /** Liest alle Eintraege der Eingabe als CompoundTag. */
+    /**
+     * Liest alle Eintraege der Eingabe als CompoundTag.
+     *
+     * @param input gespeicherte Daten
+     * @return die Eintraege (leer, wenn keine)
+     */
     public static CompoundTag read(ValueInput input) {
         return input.read(AS_MAP).orElseGet(CompoundTag::new);
     }
 
-    /** Schreibt jeden Eintrag des Tags unter seinem Schluessel in die Ausgabe. */
+    /**
+     * Schreibt jeden Eintrag des Tags unter seinem Schluessel in die Ausgabe.
+     *
+     * @param output Ziel der Daten
+     * @param tag die Eintraege
+     */
     public static void write(ValueOutput output, CompoundTag tag) {
         for (String key : tag.keySet()) {
             output.store(key, ExtraCodecs.NBT, tag.get(key));

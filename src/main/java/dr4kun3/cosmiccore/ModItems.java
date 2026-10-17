@@ -12,7 +12,15 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(CosmicCore.MODID);
 
-    /** Ab 26.1 erwartet NeoForge die Eigenschaften als Lieferant. */
+    /**
+     * Registriert ein Item mit festen Eigenschaften.
+     *
+     * @param name Registry-Name
+     * @param factory erzeugt das Item aus den Eigenschaften
+     * @param properties Eigenschaften des Items
+     * @param <I> Item-Klasse
+     * @return das registrierte Item
+     */
     private static <I extends Item> DeferredItem<I> item(String name, java.util.function.Function<Item.Properties, I> factory, Item.Properties properties) {
         return ITEMS.registerItem(name, factory, () -> properties);
     }
@@ -60,5 +68,6 @@ public final class ModItems {
             "quasar_overdrive_particle", dr4kun3.cosmiccore.item.QuasarOverdriveItem::new,
             new Item.Properties().stacksTo(4).rarity(Rarity.EPIC));
 
+    /** Nur statische Registrierungen - keine Instanzen. */
     private ModItems() {}
 }

@@ -25,6 +25,11 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
     private final VoidTitanTail tailAnimatable = new VoidTitanTail();
     private final Map<VoidTitanEntity, VoidTitan> states = new WeakHashMap<>();
 
+    /**
+     * Legt den Renderer an: Oberkoerper (skaliert) und Schweifsegment als GeckoLib-Modelle, ohne Schatten.
+     *
+     * @param ctx Kontext der Entity-Renderer
+     */
     public VoidTitanRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
         body = new Body();
@@ -32,29 +37,63 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
         tail = new GeoObjectRenderer<>(new VoidTitanTail.Model());
     }
 
-    /** Der Titan ist riesig: weit ueber seine Hitbox hinaus sichtbar halten. */
+    /**
+     * Sichtbarkeitsbox weit ueber die Hitbox hinaus (Fluegel und Schweif).
+     *
+     * @param entity der Titan
+     * @return die Box
+     */
     @Override
     protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(VoidTitanEntity entity) {
         return entity.getBoundingBox().inflate(70.0);
     }
 
+    /**
+     * Neuer Zeichenzustand, der auf die Entity verweist.
+     *
+     * @return der Zustand
+     */
     @Override
     public dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> createRenderState() {
         return new dr4kun3.cosmiccore.client.EntityRefState<>();
     }
 
+    /**
+     * Uebernimmt die Entity in den Zeichenzustand.
+     *
+     * @param entity der Titan
+     * @param state Zeichenzustand
+     * @param partialTick Teil-Tick
+     */
     @Override
     public void extractRenderState(VoidTitanEntity entity, dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
         state.entity = entity;
     }
 
+    /**
+     * Zeichnet den Titanen ueber den Submit-Sammler.
+     *
+     * @param state Zeichenzustand
+     * @param pose Pose-Stapel
+     * @param collector Sammler der Zeichenauftraege
+     * @param camera Zustand der Kamera
+     */
     @Override
     public void submit(dr4kun3.cosmiccore.client.EntityRefState<VoidTitanEntity> state, PoseStack pose,
                        net.minecraft.client.renderer.SubmitNodeCollector collector, net.minecraft.client.renderer.state.level.CameraRenderState camera) {
         if (state.entity != null) render(state.entity, state.partialTick, pose, collector, camera);
     }
 
+    /**
+     * Reicht Oberkoerper und Schweifsegmente ein und merkt die Lage der Leuchtpunkte.
+     *
+     * @param entity der Titan
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel
+     * @param collector Sammler der Zeichenauftraege
+     * @param camera Zustand der Kamera
+     */
     private void render(VoidTitanEntity entity, float partialTick, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
                         net.minecraft.client.renderer.state.level.CameraRenderState camera) {
         int full = net.minecraft.util.LightCoordsUtil.FULL_BRIGHT;
@@ -107,16 +146,30 @@ public class VoidTitanRenderer extends EntityRenderer<VoidTitanEntity, dr4kun3.c
 
     /** Oberkoerper: die Animationszeit kommt von der Entity (Zwischensequenz), nicht aus der Spielzeit. */
     private static final class Body extends GeoObjectRenderer<VoidTitan, Void, com.geckolib.renderer.base.GeoRenderState> {
+        /** Legt den Renderer des Oberkoerpers an. */
         Body() {
             super(new VoidTitanModel());
         }
 
+        /**
+         * Gibt die Animationszeit an den Zeichenzustand weiter.
+         *
+         * @param animatable der Titan
+         * @param relatedObject ungenutzt
+         * @param renderState Zeichenzustand
+         * @param partialTick Teil-Tick
+         */
         @Override
         public void addRenderData(VoidTitan animatable, Void relatedObject, com.geckolib.renderer.base.GeoRenderState renderState, float partialTick) {
             renderState.addGeckolibData(com.geckolib.constant.DataTickets.TICK, animatable.ticks);
         }
     }
 
+    /**
+     * Standard-Overlay ohne Treffer-Faerbung.
+     *
+     * @return Overlay-Wert
+     */
     @SuppressWarnings("unused")
     private static int overlay() {
         return OverlayTexture.NO_OVERLAY;

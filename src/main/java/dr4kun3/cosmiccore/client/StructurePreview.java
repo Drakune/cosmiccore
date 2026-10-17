@@ -21,14 +21,23 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /** Drehende 3D-Vorschau einer Reaktorstruktur im GUI (Groessenwahl und Handbuch) und die Liste benoetigter Bloecke. */
 public final class StructurePreview {
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private StructurePreview() {}
 
     /**
-     * Zeichnet die Vorschau. Seit Minecraft 1.21.6 ist das GUI rein zweidimensional: die Struktur wird in eine eigene
-     * Textur gerendert ({@link Renderer}) und als Bild in das Fenster gesetzt.
+     * Zeichnet die Reaktorstruktur als drehendes 3D-Modell (mit Konsole, optional Trichter und Laser) in einen
+     * Ausschnitt des Fensters.
      *
-     * @param box     Ausschnitt {x0, y0, x1, y1} in Bildschirmkoordinaten (Scissor)
-     * @param fit     Kantenlaenge in Pixeln, in die die Struktur passen soll
+     * @param g Grafik-Kontext des Fensters
+     * @param size Baugroesse
+     * @param cx Bildschirm-x der Strukturmitte
+     * @param cy Bildschirm-y der Strukturmitte
+     * @param box Ausschnitt {x0, y0, x1, y1} in Bildschirmkoordinaten (Scissor)
+     * @param fit Kantenlaenge in Pixeln, in die die Struktur passen soll
+     * @param yaw Drehung um die Hochachse in Grad
+     * @param pitch zusaetzliche Neigung in Grad
+     * @param funnel Sternentrichter auf der Decke zeigen
+     * @param lasers Kosmos-Laser auf der Decke zeigen
      */
     public static void render(GuiGraphicsExtractor g, ReactorSize size, int cx, int cy, int[] box, float fit, float yaw, float pitch,
                               boolean funnel, boolean lasers) {
@@ -43,6 +52,24 @@ public final class StructurePreview {
                         @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle scissorArea,
                         @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle bounds)
             implements net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState {
+        /**
+         * Legt den Zustand an und berechnet den sichtbaren Bereich aus Rechteck und Ausschnitt.
+         *
+         * @param size Baugroesse
+         * @param fit Groesse im Fenster
+         * @param yaw Drehung
+         * @param pitch Neigung
+         * @param funnel Trichter anzeigen
+         * @param lasers Laser anzeigen
+         * @param offX Verschiebung x
+         * @param offY Verschiebung y
+         * @param pose GUI-Matrix
+         * @param x0 linke Kante
+         * @param y0 obere Kante
+         * @param x1 rechte Kante
+         * @param y1 untere Kante
+         * @param scissor Ausschnitt oder {@code null}
+         */
         State(ReactorSize size, float fit, float yaw, float pitch, boolean funnel, boolean lasers, float offX, float offY,
               org.joml.Matrix3x2f pose, int x0, int y0, int x1, int y1,
               @javax.annotation.Nullable net.minecraft.client.gui.navigation.ScreenRectangle scissor) {
@@ -50,6 +77,11 @@ public final class StructurePreview {
                     net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState.getBounds(x0, y0, x1, y1, scissor));
         }
 
+        /**
+         * Keine zusaetzliche Skalierung.
+         *
+         * @return 1
+         */
         @Override
         public float scale() {
             return 1.0F;
@@ -58,25 +90,53 @@ public final class StructurePreview {
 
     /** Rendert die Struktur in eine Textur (Bild im Bild). */
     public static final class Renderer extends net.minecraft.client.gui.render.pip.PictureInPictureRenderer<State> {
+        /**
+         * Legt den Bild-im-Bild-Renderer an.
+         *
+         * @param buffers Puffer fuer das Zeichnen in die Textur
+         */
         public Renderer(MultiBufferSource.BufferSource buffers) {
             super(buffers);
         }
 
+        /**
+         * Klasse des Zustands, den dieser Renderer zeichnet.
+         *
+         * @return State.class
+         */
         @Override
         public Class<State> getRenderStateClass() {
             return State.class;
         }
 
+        /**
+         * Senkrechte Verschiebung: Struktur mittig im Bild.
+         *
+         * @param height Hoehe des Bildes
+         * @param guiScale GUI-Skalierung
+         * @return halbe Hoehe
+         */
         @Override
         protected float getTranslateY(int height, int guiScale) {
             return height / 2.0F;
         }
 
+        /**
+         * Name der Textur (fuer Debug-Werkzeuge).
+         *
+         * @return Bezeichnung
+         */
         @Override
         protected String getTextureLabel() {
             return "cosmiccore structure preview";
         }
 
+        /**
+         * Zeichnet die Struktur gedreht und skaliert in die Textur.
+         *
+         * @param st Zustand (Groesse, Drehung, Ausschnitt)
+         * @param ps Pose-Stapel
+         */
         @Override
         protected void renderToTexture(State st, PoseStack ps) {
             Minecraft mc = Minecraft.getInstance();
@@ -119,6 +179,16 @@ public final class StructurePreview {
         }
     }
 
+    /**
+     * Zeichnet einen Block der Vorschau.
+     *
+     * @param ps Pose-Stapel
+     * @param buffers Puffer
+     * @param state Blockzustand
+     * @param x Versatz x
+     * @param y Versatz y
+     * @param z Versatz z
+     */
     private static void block(PoseStack ps, MultiBufferSource buffers, BlockState state, float x, float y, float z) {
         ps.pushPose();
         ps.translate(x, y, z);
@@ -126,7 +196,14 @@ public final class StructurePreview {
         ps.popPose();
     }
 
-    /** Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen). */
+    /**
+     * Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen).
+     *
+     * @param size Baugroesse
+     * @param funnel Sternentrichter mitzaehlen
+     * @param lasers die vier Kosmos-Laser mitzaehlen
+     * @return Liste der Bloecke mit Anzahl
+     */
     public static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         CorePattern p = size.pattern();
         List<ItemStack> out = new ArrayList<>();
