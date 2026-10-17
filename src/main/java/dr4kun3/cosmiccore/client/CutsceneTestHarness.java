@@ -34,6 +34,24 @@ public final class CutsceneTestHarness {
     private static final boolean GUIDE = System.getProperty("cosmiccore.guideTest") != null;
     private static final boolean BOOK = System.getProperty("cosmiccore.bookTest") != null;
     private static final boolean CONSOLE = System.getProperty("cosmiccore.consoleTest") != null;
+    /** Eigene Blickwinkel fuer den Konsolen-Test: "x,y,z,Richtung,Neigung;..." relativ zum Controller. */
+    private static final int[][] VIEWS = parseViews(System.getProperty("cosmiccore.views", ""));
+
+    /**
+     * Liest die Blickwinkel aus der Systemeigenschaft.
+     *
+     * @param spec "x,y,z,Richtung,Neigung" je Blickwinkel, durch Semikolon getrennt
+     * @return die Blickwinkel oder {@code null}, wenn keine angegeben sind
+     */
+    private static int[][] parseViews(String spec) {
+        if (spec.isBlank()) return null;
+        String[] parts = spec.split(";");
+        int[][] out = new int[parts.length][];
+        for (int i = 0; i < parts.length; i++) {
+            out[i] = java.util.Arrays.stream(parts[i].split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+        }
+        return out;
+    }
 
     /** Nur statische Testroutinen - keine Instanzen. */
     private CutsceneTestHarness() {}
@@ -90,12 +108,13 @@ public final class CutsceneTestHarness {
         net.minecraft.core.BlockPos at = consoleAt;
         net.minecraft.core.BlockPos manual = at.offset(-16, 0, 0);
         // Kamera relativ zum Controller: x, y, z, Blickrichtung, Neigung
-        int[][] views = {{1, 2, -7, 0, 14}, {0, 3, 4, 180, 30}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
+        int[][] views = VIEWS != null ? VIEWS : new int[][]{{1, 2, -7, 0, 14}, {0, 3, 4, 180, 30}, {5, 1, 15, 200, 14}, {-16, 1, -5, 0, 12}};
         if (worldTicks == 20) {
             server.execute(() -> {
                 var level = server.getLevel(mc.player.level().dimension());
                 if (level == null) return;
-                dr4kun3.cosmiccore.block.entity.ControllerBlockEntity.debugSetupUltimate(level, at);
+                dr4kun3.cosmiccore.block.entity.ControllerBlockEntity.debugSetup(level, at, dr4kun3.cosmiccore.multiblock.ReactorSize.bySize(
+                        Integer.getInteger("cosmiccore.size", 11)));
                 level.setDayTime(6000);
                 // einzelne Ports in der Mitte der gegenueberliegenden Bodenkante, ein Trichter dockt am Item-Port der Konsole an
                 net.minecraft.core.BlockPos south = at.south(10);
@@ -104,8 +123,10 @@ public final class CutsceneTestHarness {
                 level.setBlock(south.east().south(), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
                 // Konsole mit Abstand: Item-Port zwei Felder weiter (Luecke dazwischen ist Gehaeuse), Trichter oben drauf
                 // direkt daneben bleibt der Item-Port der Konsole; ein zweiter steht drei Felder weiter (eigenstaendig)
-                level.setBlock(at.east(3), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
-                level.setBlock(at.east(3).above(), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
+                if (Integer.getInteger("cosmiccore.size", 11) == 11) {
+                    level.setBlock(at.east(3), dr4kun3.cosmiccore.block.ModBlocks.ITEM_PORT.get().defaultBlockState(), 3);
+                    level.setBlock(at.east(3).above(), net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState(), 3);
+                }
                 // von Hand: erst der Controller, dann die Ports wie beim Platzieren durch einen Spieler
                 level.setBlock(manual, dr4kun3.cosmiccore.block.ModBlocks.CONTROLLER.get().defaultBlockState(), 3);
                 var right = manual.relative(dr4kun3.cosmiccore.block.Terminal.right(net.minecraft.core.Direction.NORTH));
@@ -125,6 +146,14 @@ public final class CutsceneTestHarness {
                 }
                 if (level.getBlockEntity(at) instanceof dr4kun3.cosmiccore.block.entity.ControllerBlockEntity c) {
                     CosmicCore.LOGGER.info("[ConsoleTest] fuel={}s stab={}s energyPort={}", c.getFuelSeconds(), c.getStabSeconds(), c.hasEnergyPort());
+                }
+                // etwas Beute in die Lager, damit die Stationen ihr Raster zeigen
+                net.minecraft.world.item.Item[] loot = {net.minecraft.world.item.Items.DIAMOND, dr4kun3.cosmiccore.ModItems.STAR_DUST.get(),
+                        net.minecraft.world.item.Items.IRON_INGOT, net.minecraft.world.item.Items.GOLD_INGOT, net.minecraft.world.item.Items.EMERALD};
+                for (var pos : new net.minecraft.core.BlockPos[]{at.east(), at.south(10).east()}) {
+                    if (level.getBlockEntity(pos) instanceof dr4kun3.cosmiccore.block.entity.ItemPortBlockEntity ip) {
+                        for (int i = 0; i < 11; i++) ip.store(new net.minecraft.world.item.ItemStack(loot[i % loot.length], 1 + (i * 17) % 64));
+                    }
                 }
             });
         }
@@ -175,6 +204,11 @@ public final class CutsceneTestHarness {
         if (worldTicks >= 24 && worldTicks < 300 && worldTicks % 8 == 0) {
             mc.options.hideGui = true;
             Screenshot.grab(mc.gameDirectory, String.format("cutscene_a%03d.png", worldTicks), mc.getMainRenderTarget(), msg -> {});
+        }
+        if (Boolean.getBoolean("cosmiccore.burst") && worldTicks >= 310 && worldTicks < 330) {
+            // Bildserie (ein Bild je Tick) aus dem ersten Blickwinkel - zeigt, wie schnell sich Effekte bewegen
+            mc.options.hideGui = true;
+            Screenshot.grab(mc.gameDirectory, String.format("cutscene_b%02d.png", worldTicks - 310), mc.getMainRenderTarget(), msg -> {});
         }
         if (worldTicks >= 330 && (worldTicks - 330) % 40 == 0) {
             int v = (worldTicks - 330) / 40;

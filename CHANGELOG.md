@@ -6,6 +6,30 @@ Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), die V
 [Semantic Versioning](https://semver.org/lang/de/): `MAJOR.MINOR.PATCH`. MINOR steht für neue Funktionen, PATCH für Fehlerbehebungen.
 Die Dateien heißen `cosmiccore-<Minecraft-Version>-<Mod-Version>.jar`.
 
+## [1.2.2] - 2026-10-18
+
+### Hinzugefügt
+- Item-Port: Die Station und der Abschnitt auf der Steuerkonsole zeigen das Lager als Raster mit den echten Items und
+  ihrer Anzahl.
+- Energie-Port: Die Anzeige zeigt live, wie viel Strom gerade durch den Port fließt („Abgabe“), dazu Puffer und
+  Kapazität in RF. Die Werte werden zweimal pro Sekunde aktualisiert.
+- Angeschlossene Kabel, Rohre und Kisten docken jetzt über einen flachen Stecker genau in der Mitte der Blockseite an.
+  Ein Flachbandkabel führt vom Sockel um den Bildschirm herum zum Stecker. Der Stecker hat eine eigene Textur.
+
+### Geändert
+- Die Resonanz baut sich viel langsamer auf: etwa 3 Minuten statt 30 Sekunden bis zur vollen Leistung.
+  Bestehende Konfigurationsdateien behalten ihren Wert; für die neue Dauer `rampUpTicks` in
+  `config/cosmiccore-common.toml` auf `3600` setzen.
+- Die Zeile „Eindämmungsfeld“ auf dem Bildschirm des Controllers entfällt.
+- Statt flackernder Portal-Partikel sinken jetzt ruhige Lichtpunkte in einer Spirale in die Singularität.
+- Lizenz: MIT.
+
+### Behoben
+- Das Haltenetz um den Kern verdeckte das untere Ende des Sternentrichters. Oben im Netz ist jetzt eine Öffnung für
+  den Trichter.
+- Ab Minecraft 1.21.11 lagen die Strahlen vom Kern zu Controller und Ports vor den Bildschirmen statt dahinter.
+- Minecraft 26.x: Sockel unter Konsole und Ports sowie die eingesaugten Blöcke beim Bilden fehlten.
+
 ## [1.2.1] - 2026-10-16
 
 ### Hinzugefügt

@@ -66,17 +66,17 @@ Every Minecraft version has its own file on the [Releases page](https://github.c
 
 | Minecraft | File | NeoForge (required) | Java | GeckoLib *(optional)* | Recipe viewer *(optional)* | Source |
 |---|---|---|---|---|---|---|
-| 1.21.1 | `cosmiccore-1.21.1-1.2.1.jar` | 21.1.259 or newer | 21 | 4.9.x | JEI, EMI, REI | `main` |
-| 1.21.2 | `cosmiccore-1.21.2-1.2.1.jar` | 21.2.1-beta or newer | 21 | – | REI 17.x | `mc/1.21.2` |
-| 1.21.3 | `cosmiccore-1.21.3-1.2.1.jar` | 21.3.100 or newer | 21 | 4.7.x | REI 17.x | `mc/1.21.3` |
-| 1.21.4 | `cosmiccore-1.21.4-1.2.1.jar` | 21.4.161 or newer | 21 | 4.8.x | JEI 20.x, REI 18.x | `mc/1.21.4` |
-| 1.21.5 | `cosmiccore-1.21.5-1.2.1.jar` | 21.5.101 or newer | 21 | 5.1.x | JEI 21.x, REI 19.x | `mc/1.21.5` |
-| 1.21.8 | `cosmiccore-1.21.8-1.2.1.jar` | 21.8.57 or newer | 21 | 5.2.x | JEI 24.x, REI 20.x | `mc/1.21.8` |
-| 1.21.10 | `cosmiccore-1.21.10-1.2.1.jar` | 21.10.64 or newer | 21 | 5.3.x | JEI 26.x, REI 21.9.x | `mc/1.21.10` |
-| 1.21.11 | `cosmiccore-1.21.11-1.2.1.jar` | 21.11.48 or newer | 21 | 5.4.x | JEI 27.x, REI 21.11.x | `mc/1.21.11` |
-| 26.1.2 | `cosmiccore-26.1.2-1.2.1.jar` | 26.1.2.122 or newer | 25 | 5.5.2+ | JEI 29.x, REI 26.1.x | `mc/26.1.2` |
-| 26.2 | `cosmiccore-26.2-1.2.1.jar` | 26.2.0.93 or newer | 25 | 5.5.6+ | JEI 30.x, REI 26.2.x | `mc/26.2` |
-| 26.3 | `cosmiccore-26.3-1.2.1.jar` | 26.3.0.85 or newer | 25 | 5.5.7+ | JEI 31.x, REI 26.3.x | `mc/26.3` |
+| 1.21.1 | `cosmiccore-1.21.1-1.2.2.jar` | 21.1.259 or newer | 21 | 4.9.x | JEI, EMI, REI | `main` |
+| 1.21.2 | `cosmiccore-1.21.2-1.2.2.jar` | 21.2.1-beta or newer | 21 | – | REI 17.x | `mc/1.21.2` |
+| 1.21.3 | `cosmiccore-1.21.3-1.2.2.jar` | 21.3.100 or newer | 21 | 4.7.x | REI 17.x | `mc/1.21.3` |
+| 1.21.4 | `cosmiccore-1.21.4-1.2.2.jar` | 21.4.161 or newer | 21 | 4.8.x | JEI 20.x, REI 18.x | `mc/1.21.4` |
+| 1.21.5 | `cosmiccore-1.21.5-1.2.2.jar` | 21.5.101 or newer | 21 | 5.1.x | JEI 21.x, REI 19.x | `mc/1.21.5` |
+| 1.21.8 | `cosmiccore-1.21.8-1.2.2.jar` | 21.8.57 or newer | 21 | 5.2.x | JEI 24.x, REI 20.x | `mc/1.21.8` |
+| 1.21.10 | `cosmiccore-1.21.10-1.2.2.jar` | 21.10.64 or newer | 21 | 5.3.x | JEI 26.x, REI 21.9.x | `mc/1.21.10` |
+| 1.21.11 | `cosmiccore-1.21.11-1.2.2.jar` | 21.11.48 or newer | 21 | 5.4.x | JEI 27.x, REI 21.11.x | `mc/1.21.11` |
+| 26.1.2 | `cosmiccore-26.1.2-1.2.2.jar` | 26.1.2.122 or newer | 25 | 5.5.2+ | JEI 29.x, REI 26.1.x | `mc/26.1.2` |
+| 26.2 | `cosmiccore-26.2-1.2.2.jar` | 26.2.0.93 or newer | 25 | 5.5.6+ | JEI 30.x, REI 26.2.x | `mc/26.2` |
+| 26.3 | `cosmiccore-26.3-1.2.2.jar` | 26.3.0.85 or newer | 25 | 5.5.7+ | JEI 31.x, REI 26.3.x | `mc/26.3` |
 
 - **NeoForge** is the only required dependency.
 - **GeckoLib** is only needed for the Void Titan cutscene. Without it the mod works the same, there is just no cutscene. There is no GeckoLib for 1.21.2, so that version has no cutscene.
@@ -142,10 +142,10 @@ The controller shows how long your fuel and stabilizers will last at your curren
 
 ### Ports, console and storage
 
-- **Energy Port:** pushes RF into any cable next to it.
-- **Item Port:** pipes and hoppers can feed fuel, stabilizers and modules through it. It also has its own **storage with 27 slots**, where all asteroid loot ends up. Right-click to open it, or pipe the loot out.
+- **Energy Port:** pushes RF into any cable next to it. Its screen shows live how much power flows through it, plus the buffer.
+- **Item Port:** pipes and hoppers can feed fuel, stabilizers and modules through it. It also has its own **storage with 27 slots**, where all asteroid loot ends up. Right-click to open it, or pipe the loot out. Its screen shows every slot with the actual item and its count.
 - Put the ports **right next to the controller** and the three of them merge into one console with a single wide hologram screen.
-- A connector only appears on a port when something is actually plugged into it, like a pipe, cable or chest from any mod.
+- A connector only appears on a port when something is actually plugged into it, like a pipe, cable or chest from any mod. A flat plug sits in the middle of that side, wired to the port with a ribbon cable.
 
 <a id="en-modules"></a>
 
@@ -275,17 +275,17 @@ Für jede Minecraft-Version gibt es eine eigene Datei auf der [Release-Seite](ht
 
 | Minecraft | Datei | NeoForge (Pflicht) | Java | GeckoLib *(optional)* | Rezeptanzeige *(optional)* | Quellcode |
 |---|---|---|---|---|---|---|
-| 1.21.1 | `cosmiccore-1.21.1-1.2.1.jar` | 21.1.259 oder neuer | 21 | 4.9.x | JEI, EMI, REI | `main` |
-| 1.21.2 | `cosmiccore-1.21.2-1.2.1.jar` | 21.2.1-beta oder neuer | 21 | – | REI 17.x | `mc/1.21.2` |
-| 1.21.3 | `cosmiccore-1.21.3-1.2.1.jar` | 21.3.100 oder neuer | 21 | 4.7.x | REI 17.x | `mc/1.21.3` |
-| 1.21.4 | `cosmiccore-1.21.4-1.2.1.jar` | 21.4.161 oder neuer | 21 | 4.8.x | JEI 20.x, REI 18.x | `mc/1.21.4` |
-| 1.21.5 | `cosmiccore-1.21.5-1.2.1.jar` | 21.5.101 oder neuer | 21 | 5.1.x | JEI 21.x, REI 19.x | `mc/1.21.5` |
-| 1.21.8 | `cosmiccore-1.21.8-1.2.1.jar` | 21.8.57 oder neuer | 21 | 5.2.x | JEI 24.x, REI 20.x | `mc/1.21.8` |
-| 1.21.10 | `cosmiccore-1.21.10-1.2.1.jar` | 21.10.64 oder neuer | 21 | 5.3.x | JEI 26.x, REI 21.9.x | `mc/1.21.10` |
-| 1.21.11 | `cosmiccore-1.21.11-1.2.1.jar` | 21.11.48 oder neuer | 21 | 5.4.x | JEI 27.x, REI 21.11.x | `mc/1.21.11` |
-| 26.1.2 | `cosmiccore-26.1.2-1.2.1.jar` | 26.1.2.122 oder neuer | 25 | 5.5.2+ | JEI 29.x, REI 26.1.x | `mc/26.1.2` |
-| 26.2 | `cosmiccore-26.2-1.2.1.jar` | 26.2.0.93 oder neuer | 25 | 5.5.6+ | JEI 30.x, REI 26.2.x | `mc/26.2` |
-| 26.3 | `cosmiccore-26.3-1.2.1.jar` | 26.3.0.85 oder neuer | 25 | 5.5.7+ | JEI 31.x, REI 26.3.x | `mc/26.3` |
+| 1.21.1 | `cosmiccore-1.21.1-1.2.2.jar` | 21.1.259 oder neuer | 21 | 4.9.x | JEI, EMI, REI | `main` |
+| 1.21.2 | `cosmiccore-1.21.2-1.2.2.jar` | 21.2.1-beta oder neuer | 21 | – | REI 17.x | `mc/1.21.2` |
+| 1.21.3 | `cosmiccore-1.21.3-1.2.2.jar` | 21.3.100 oder neuer | 21 | 4.7.x | REI 17.x | `mc/1.21.3` |
+| 1.21.4 | `cosmiccore-1.21.4-1.2.2.jar` | 21.4.161 oder neuer | 21 | 4.8.x | JEI 20.x, REI 18.x | `mc/1.21.4` |
+| 1.21.5 | `cosmiccore-1.21.5-1.2.2.jar` | 21.5.101 oder neuer | 21 | 5.1.x | JEI 21.x, REI 19.x | `mc/1.21.5` |
+| 1.21.8 | `cosmiccore-1.21.8-1.2.2.jar` | 21.8.57 oder neuer | 21 | 5.2.x | JEI 24.x, REI 20.x | `mc/1.21.8` |
+| 1.21.10 | `cosmiccore-1.21.10-1.2.2.jar` | 21.10.64 oder neuer | 21 | 5.3.x | JEI 26.x, REI 21.9.x | `mc/1.21.10` |
+| 1.21.11 | `cosmiccore-1.21.11-1.2.2.jar` | 21.11.48 oder neuer | 21 | 5.4.x | JEI 27.x, REI 21.11.x | `mc/1.21.11` |
+| 26.1.2 | `cosmiccore-26.1.2-1.2.2.jar` | 26.1.2.122 oder neuer | 25 | 5.5.2+ | JEI 29.x, REI 26.1.x | `mc/26.1.2` |
+| 26.2 | `cosmiccore-26.2-1.2.2.jar` | 26.2.0.93 oder neuer | 25 | 5.5.6+ | JEI 30.x, REI 26.2.x | `mc/26.2` |
+| 26.3 | `cosmiccore-26.3-1.2.2.jar` | 26.3.0.85 oder neuer | 25 | 5.5.7+ | JEI 31.x, REI 26.3.x | `mc/26.3` |
 
 - **NeoForge** ist die einzige Pflicht-Abhängigkeit.
 - **GeckoLib** braucht es nur für die Void-Titan-Zwischensequenz. Ohne funktioniert die Mod genauso, es gibt dann nur keine Zwischensequenz. Für 1.21.2 gibt es kein GeckoLib, dort fehlt die Zwischensequenz also.
@@ -351,10 +351,10 @@ Der Controller zeigt dir, wie lange Brennstoff und Stabilisatoren bei den aktuel
 
 ### Ports, Konsole und Lager
 
-- **Energie-Port:** gibt RF an jedes angrenzende Kabel ab.
-- **Item-Port:** Über ihn können Rohre und Trichter Brennstoff, Stabilisatoren und Module einfüllen. Außerdem hat er ein eigenes **Lager mit 27 Plätzen**, in dem die ganze Asteroiden-Beute landet. Öffnen per Rechtsklick, oder die Beute per Rohr abziehen.
+- **Energie-Port:** gibt RF an jedes angrenzende Kabel ab. Sein Bildschirm zeigt live, wie viel Strom gerade hindurchfließt, dazu den Puffer.
+- **Item-Port:** Über ihn können Rohre und Trichter Brennstoff, Stabilisatoren und Module einfüllen. Außerdem hat er ein eigenes **Lager mit 27 Plätzen**, in dem die ganze Asteroiden-Beute landet. Öffnen per Rechtsklick, oder die Beute per Rohr abziehen. Sein Bildschirm zeigt jeden Platz mit dem echten Item und seiner Anzahl.
 - Stehen die Ports **direkt neben dem Controller**, verschmelzen die drei zu einer Konsole mit einem gemeinsamen, breiten Hologramm-Bildschirm.
-- Ein Anschlussstück erscheint an einem Port erst, wenn wirklich etwas angeschlossen ist, etwa ein Rohr, Kabel oder eine Truhe aus einer beliebigen Mod.
+- Ein Anschlussstück erscheint an einem Port erst, wenn wirklich etwas angeschlossen ist, etwa ein Rohr, Kabel oder eine Truhe aus einer beliebigen Mod. Ein flacher Stecker sitzt dann mittig auf dieser Seite, verbunden über ein Flachbandkabel.
 
 <a id="de-modules"></a>
 
