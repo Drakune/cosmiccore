@@ -143,7 +143,7 @@ The controller shows how long your fuel and stabilizers will last at your curren
 ### Ports, console and storage
 
 - **Energy Port:** pushes RF into any cable next to it. Its screen shows live how much power flows through it, plus the buffer.
-- **Item Port:** pipes and hoppers can feed fuel, stabilizers and modules through it. It also has its own **storage with 27 slots**, where all asteroid loot ends up. Right-click to open it, or pipe the loot out. Its screen shows every slot with the actual item and its count.
+- **Item Port:** pipes and hoppers can feed fuel, stabilizers and modules through it. It also has its own **storage with 27 slots**, where all asteroid loot ends up. Right-click to open it, or pipe the loot out. Its screen shows every slot with the actual item and its count. All Item Ports of one reactor share the same storage.
 - Put the ports **right next to the controller** and the three of them merge into one console with a single wide hologram screen.
 - A connector only appears on a port when something is actually plugged into it, like a pipe, cable or chest from any mod. A flat plug sits in the middle of that side, wired to the port with a ribbon cable.
 
@@ -352,7 +352,7 @@ Der Controller zeigt dir, wie lange Brennstoff und Stabilisatoren bei den aktuel
 ### Ports, Konsole und Lager
 
 - **Energie-Port:** gibt RF an jedes angrenzende Kabel ab. Sein Bildschirm zeigt live, wie viel Strom gerade hindurchfließt, dazu den Puffer.
-- **Item-Port:** Über ihn können Rohre und Trichter Brennstoff, Stabilisatoren und Module einfüllen. Außerdem hat er ein eigenes **Lager mit 27 Plätzen**, in dem die ganze Asteroiden-Beute landet. Öffnen per Rechtsklick, oder die Beute per Rohr abziehen. Sein Bildschirm zeigt jeden Platz mit dem echten Item und seiner Anzahl.
+- **Item-Port:** Über ihn können Rohre und Trichter Brennstoff, Stabilisatoren und Module einfüllen. Außerdem hat er ein eigenes **Lager mit 27 Plätzen**, in dem die ganze Asteroiden-Beute landet. Öffnen per Rechtsklick, oder die Beute per Rohr abziehen. Sein Bildschirm zeigt jeden Platz mit dem echten Item und seiner Anzahl. Alle Item-Ports eines Reaktors teilen sich dasselbe Lager.
 - Stehen die Ports **direkt neben dem Controller**, verschmelzen die drei zu einer Konsole mit einem gemeinsamen, breiten Hologramm-Bildschirm.
 - Ein Anschlussstück erscheint an einem Port erst, wenn wirklich etwas angeschlossen ist, etwa ein Rohr, Kabel oder eine Truhe aus einer beliebigen Mod. Ein flacher Stecker sitzt dann mittig auf dieser Seite, verbunden über ein Flachbandkabel.
 
