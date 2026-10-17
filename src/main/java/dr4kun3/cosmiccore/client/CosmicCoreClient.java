@@ -22,6 +22,11 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 /** Wird nur auf dem Client geladen (dedizierte Server fassen diese Klasse nie an). */
 @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
 public final class CosmicCoreClient {
+    /**
+     * Meldet die Renderer an: Kern, Resonatoren, Controller, Ports, Trichter, Asteroiden und Void-Titan.
+     *
+     * @param event Ereignis zur Renderer-Registrierung
+     */
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntities.CORE.get(), SingularityCoreRenderer::new);
@@ -39,7 +44,11 @@ public final class CosmicCoreClient {
         }
     }
 
-    /** Plug-Modelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen. */
+    /**
+     * Stecker- und Konsolenmodelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen.
+     *
+     * @param event Ereignis zur Registrierung zusaetzlicher Modelle
+     */
     @SubscribeEvent
     public static void registerModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event) {
         for (dr4kun3.cosmiccore.block.CorePhase phase : dr4kun3.cosmiccore.block.CorePhase.values()) {
@@ -51,6 +60,12 @@ public final class CosmicCoreClient {
         }
     }
 
+    /**
+     * Registriert ein eigenstaendiges Blockmodell (fuer die Port-Sockel).
+     *
+     * @param event Registrierungs-Ereignis
+     * @param key Schluessel des Modells
+     */
     private static void registerBlockModel(net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event,
                                            net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<net.minecraft.client.renderer.block.model.BlockStateModel> key) {
         event.register(key, net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel.blockStateModel(PortRenderer.modelId(key)));
@@ -60,23 +75,42 @@ public final class CosmicCoreClient {
      * Animierte 3D-Items (Sternenstaub, Brennstoffe, Overdrive-Partikel, Module, Handbuch): ein Spezial-Renderer,
      * den die Item-Definitionen in assets/cosmiccore/items als Typ cosmiccore:cosmic_item anfordern.
      */
-    /** 3D-Vorschau der Reaktorstruktur im GUI (Bild im Bild, ab Minecraft 1.21.6). */
+    /**
+     * Registriert den Bild-im-Bild-Renderer der 3D-Strukturvorschau im Menue.
+     *
+     * @param event Registrierungs-Ereignis
+     */
     @SubscribeEvent
     public static void registerPipRenderers(net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent event) {
         event.register(StructurePreview.State.class, StructurePreview.Renderer::new);
     }
 
+    /**
+     * Registriert den Spezial-Renderer fuer die animierten 3D-Items.
+     *
+     * @param event Registrierungs-Ereignis
+     */
     @SubscribeEvent
     public static void registerSpecialRenderers(net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent event) {
         event.register(dr4kun3.cosmiccore.CosmicCore.id("cosmic_item"), CosmicItemRenderer.Unbaked.CODEC);
     }
 
+    /**
+     * Verbindet die Menues mit ihren Fenstern (Controller, Item-Port).
+     *
+     * @param event Ereignis zur Registrierung der Menue-Fenster
+     */
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.CONTROLLER.get(), ControllerScreen::new);
         event.register(ModMenus.ITEM_PORT.get(), ItemPortScreen::new);
     }
 
+    /**
+     * Zeigt an Brennstoffen Leistung, Brenndauer und Hitze, an Stabilisatoren den Kuehlwert.
+     *
+     * @param event Ereignis beim Erstellen eines Item-Tooltips
+     */
     @SubscribeEvent
     public static void onTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
@@ -106,5 +140,6 @@ public final class CosmicCoreClient {
         }
     }
 
+    /** Nur Ereignis-Abonnenten - keine Instanzen. */
     private CosmicCoreClient() {}
 }

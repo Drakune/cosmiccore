@@ -35,12 +35,21 @@ public class CosmicJeiPlugin implements IModPlugin {
         for (Kind k : Kind.values()) TYPES.put(k, RecipeType.create(CosmicCore.MODID, k.name().toLowerCase(), Entry.class));
     }
 
+    /**
+     * Kennung dieses JEI-Plugins.
+     *
+     * @return {@code cosmiccore:jei_plugin}
+     */
     @Override
     public Identifier getPluginUid() {
         return CosmicCore.id("jei_plugin");
     }
 
-    /** Der Modul-Tab ragt rechts aus dem Controller-Fenster - JEI soll ihn nicht verdecken. */
+    /**
+     * Der Modul- und Lager-Tab ragt rechts aus dem Controller-Fenster - JEI soll ihn nicht verdecken.
+     *
+     * @param registration Registrierung der Fenster-Helfer
+     */
     @Override
     public void registerGuiHandlers(mezz.jei.api.registration.IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(dr4kun3.cosmiccore.client.ControllerScreen.class,
@@ -52,18 +61,33 @@ public class CosmicJeiPlugin implements IModPlugin {
                 });
     }
 
+    /**
+     * Meldet die Kategorien Brennstoffe, Stabilisatoren und Asteroiden-Beute an.
+     *
+     * @param registration Registrierung der Kategorien
+     */
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
         for (Kind k : Kind.values()) registration.addRecipeCategories(new Category(k, gui));
     }
 
+    /**
+     * Meldet alle Eintraege der Kategorien und die Info-Seiten der wichtigsten Bloecke an.
+     *
+     * @param registration Registrierung der Rezepte
+     */
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         for (Kind k : Kind.values()) registration.addRecipes(TYPES.get(k), ViewerEntries.of(k));
         for (ViewerEntries.Info info : ViewerEntries.infos()) registration.addItemStackInfo(info.stack(), info.text());
     }
 
+    /**
+     * Ordnet jeder Kategorie ihre Werkbank-Bloecke zu.
+     *
+     * @param registration Registrierung der Werkbaenke
+     */
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         for (Kind k : Kind.values()) {
@@ -75,36 +99,74 @@ public class CosmicJeiPlugin implements IModPlugin {
         private final Kind kind;
         private final IDrawable icon;
 
+        /**
+         * Legt eine Kategorie mit ihrem Symbol an.
+         *
+         * @param kind Art der Kategorie
+         * @param gui Grafik-Helfer von JEI
+         */
         Category(Kind kind, IGuiHelper gui) {
             this.kind = kind;
             this.icon = gui.createDrawableItemStack(ViewerEntries.icon(kind));
         }
 
+        /**
+         * Rezepttyp dieser Kategorie.
+         *
+         * @return der Typ
+         */
         @Override
         public RecipeType<Entry> getRecipeType() {
             return TYPES.get(kind);
         }
 
+        /**
+         * Titel der Kategorie.
+         *
+         * @return uebersetzter Titel
+         */
         @Override
         public Component getTitle() {
             return ViewerEntries.title(kind);
         }
 
+        /**
+         * Symbol der Kategorie.
+         *
+         * @return das Symbol
+         */
         @Override
         public IDrawable getIcon() {
             return icon;
         }
 
+        /**
+         * Breite der Anzeige.
+         *
+         * @return Breite in Pixeln
+         */
         @Override
         public int getWidth() {
             return ViewerEntries.WIDTH;
         }
 
+        /**
+         * Hoehe der Anzeige (Beute braucht eine Zeile mehr).
+         *
+         * @return Hoehe in Pixeln
+         */
         @Override
         public int getHeight() {
             return kind == Kind.LOOT ? 44 : 30;
         }
 
+        /**
+         * Legt die Slots fest: Eingabe-Item bzw. bei Beute die Drops.
+         *
+         * @param builder Bauplan der Anzeige
+         * @param entry der Eintrag
+         * @param focuses aktuelle Suche (nicht verwendet)
+         */
         @Override
         public void setRecipe(IRecipeLayoutBuilder builder, Entry entry, IFocusGroup focuses) {
             if (entry.kind() == Kind.LOOT) {
@@ -118,6 +180,15 @@ public class CosmicJeiPlugin implements IModPlugin {
             }
         }
 
+        /**
+         * Zeichnet die Textzeilen bzw. bei Beute die Chancen unter den Drops.
+         *
+         * @param entry der Eintrag
+         * @param slots Ansicht der Slots
+         * @param g Grafik-Kontext
+         * @param mouseX Mausposition x
+         * @param mouseY Mausposition y
+         */
         @Override
         public void draw(Entry entry, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
             Font font = Minecraft.getInstance().font;

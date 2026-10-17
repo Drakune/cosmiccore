@@ -26,17 +26,32 @@ public final class ViewerEntries {
 
     /** Ein Ausgabe-Slot mit Wahrscheinlichkeit (1 = sicher) fuer die Beute-Anzeige. */
     public record Output(ItemStack stack, float chance) {
+        /**
+         * Wahrscheinlichkeit als Text.
+         *
+         * @return z. B. {@code 35%}
+         */
         public Component chanceText() {
             return Component.literal(chance >= 1.0F ? "100%" : Math.round(chance * 100) + "%");
         }
     }
 
     public record Entry(Kind kind, String id, ItemStack input, List<Output> outputs, List<Component> lines) {
+        /**
+         * Hoehe des Eintrags in der Anzeige.
+         *
+         * @return Hoehe in Pixeln
+         */
         public int height() {
             return kind == Kind.LOOT ? 44 : 30;
         }
     }
 
+    /**
+     * Alle Brennstoffe laut Data Map mit Leistung, Brenndauer und Hitze.
+     *
+     * @return Eintraege fuer die Brennstoff-Kategorie
+     */
     public static List<Entry> fuels() {
         List<Entry> list = new ArrayList<>();
         for (Item item : BuiltInRegistries.ITEM) {
@@ -55,6 +70,11 @@ public final class ViewerEntries {
         return list;
     }
 
+    /**
+     * Alle Stabilisatoren laut Data Map mit ihrem Kuehlwert.
+     *
+     * @return Eintraege fuer die Stabilisator-Kategorie
+     */
     public static List<Entry> stabilizers() {
         List<Entry> list = new ArrayList<>();
         for (Item item : BuiltInRegistries.ITEM) {
@@ -69,6 +89,11 @@ public final class ViewerEntries {
         return list;
     }
 
+    /**
+     * Beute je Asteroidengroesse mit Chancen.
+     *
+     * @return Eintraege fuer die Beute-Kategorie
+     */
     public static List<Entry> loot() {
         List<Entry> list = new ArrayList<>();
         for (AsteroidLoot.Table t : AsteroidLoot.TABLES) {
@@ -80,6 +105,12 @@ public final class ViewerEntries {
         return list;
     }
 
+    /**
+     * Eintraege einer Kategorie.
+     *
+     * @param kind die Kategorie
+     * @return ihre Eintraege
+     */
     public static List<Entry> of(Kind kind) {
         return switch (kind) {
             case FUEL -> fuels();
@@ -88,6 +119,12 @@ public final class ViewerEntries {
         };
     }
 
+    /**
+     * Symbol einer Kategorie.
+     *
+     * @param kind die Kategorie
+     * @return Item fuer das Symbol
+     */
     public static ItemStack icon(Kind kind) {
         return new ItemStack(switch (kind) {
             case FUEL -> ModItems.STAR_DUST.get();
@@ -96,18 +133,33 @@ public final class ViewerEntries {
         });
     }
 
+    /**
+     * Titel einer Kategorie.
+     *
+     * @param kind die Kategorie
+     * @return uebersetzter Titel
+     */
     public static Component title(Kind kind) {
         return Component.translatable("jei.cosmiccore.category." + kind.name().toLowerCase());
     }
 
-    /** Werkbank-Bloecke, die die Kategorie "benutzen". */
+    /**
+     * Werkbank-Bloecke, die die Kategorie "benutzen" (Controller und Kern bzw. Laser und Trichter).
+     *
+     * @param kind die Kategorie
+     * @return die Bloecke als Items
+     */
     public static List<ItemStack> catalysts(Kind kind) {
         return kind == Kind.LOOT
                 ? List.of(new ItemStack(ModItems.COSMIC_LASER.get()), new ItemStack(ModItems.STAR_FUNNEL.get()))
                 : List.of(new ItemStack(ModItems.CONTROLLER.get()), new ItemStack(ModItems.SINGULARITY_CORE.get()));
     }
 
-    /** Info-Seiten (Beschreibung) fuer die wichtigsten Bloecke und Items. */
+    /**
+     * Info-Seiten (Beschreibung) fuer die wichtigsten Bloecke und Items.
+     *
+     * @return Liste der Info-Seiten
+     */
     public static List<Info> infos() {
         return List.of(
                 new Info(new ItemStack(ModItems.CONTROLLER.get()), "controller"),
@@ -125,10 +177,16 @@ public final class ViewerEntries {
     }
 
     public record Info(ItemStack stack, String key) {
+        /**
+         * Beschreibungstext der Info-Seite.
+         *
+         * @return uebersetzter Text
+         */
         public Component text() {
             return Component.translatable("jei.cosmiccore.info." + key);
         }
     }
 
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private ViewerEntries() {}
 }

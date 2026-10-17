@@ -36,7 +36,11 @@ public class CosmicReiPlugin implements REIClientPlugin {
         for (Kind k : Kind.values()) IDS.put(k, CategoryIdentifier.of(CosmicCore.MODID, k.name().toLowerCase()));
     }
 
-    /** Modul-Tab rechts am Controller-Fenster freihalten. */
+    /**
+     * Haelt den Modul- und Lager-Tab rechts am Controller-Fenster frei (REI legt dort sonst seine Liste darueber).
+     *
+     * @param zones Registrierung der freizuhaltenden Bereiche
+     */
     @Override
     public void registerExclusionZones(me.shedaniel.rei.api.client.registry.screen.ExclusionZones zones) {
         zones.register(dr4kun3.cosmiccore.client.ControllerScreen.class, screen -> {
@@ -46,6 +50,11 @@ public class CosmicReiPlugin implements REIClientPlugin {
         });
     }
 
+    /**
+     * Meldet die Kategorien Brennstoffe, Stabilisatoren und Asteroiden-Beute samt ihrer Werkbank-Bloecke an.
+     *
+     * @param registry Registrierung der Kategorien
+     */
     @Override
     public void registerCategories(CategoryRegistry registry) {
         for (Kind k : Kind.values()) {
@@ -54,6 +63,11 @@ public class CosmicReiPlugin implements REIClientPlugin {
         }
     }
 
+    /**
+     * Meldet alle Eintraege der Kategorien und die Info-Seiten der wichtigsten Bloecke an.
+     *
+     * @param registry Registrierung der Anzeigen
+     */
     @Override
     public void registerDisplays(DisplayRegistry registry) {
         for (Kind k : Kind.values()) {
@@ -66,27 +80,51 @@ public class CosmicReiPlugin implements REIClientPlugin {
     }
 
     public record CosmicDisplay(Entry entry) implements Display {
+        /**
+         * Keine Rezept-ID - die Eintraege stammen nicht aus Rezepten.
+         *
+         * @return leer
+         */
         @Override
         public java.util.Optional<net.minecraft.resources.Identifier> getDisplayLocation() {
             return java.util.Optional.empty();
         }
 
-        /** Nur clientseitig registriert - muss nicht zwischen Server und Client uebertragen werden. */
+        /**
+         * Nur clientseitig registriert - muss nicht zwischen Server und Client uebertragen werden.
+         *
+         * @return {@code null}
+         */
         @Override
         public me.shedaniel.rei.api.common.display.DisplaySerializer<? extends Display> getSerializer() {
             return null;
         }
 
+        /**
+         * Eingabe: das Item (bei Asteroiden-Beute keine).
+         *
+         * @return Liste der Eingaben
+         */
         @Override
         public List<EntryIngredient> getInputEntries() {
             return entry.kind() == Kind.LOOT ? List.of() : List.of(EntryIngredients.of(entry.input()));
         }
 
+        /**
+         * Ausgaben dieses Eintrags.
+         *
+         * @return Liste der Ausgaben
+         */
         @Override
         public List<EntryIngredient> getOutputEntries() {
             return entry.outputs().stream().map(o -> EntryIngredients.of(o.stack())).toList();
         }
 
+        /**
+         * Kategorie, zu der der Eintrag gehoert.
+         *
+         * @return Kennung der Kategorie
+         */
         @Override
         public CategoryIdentifier<?> getCategoryIdentifier() {
             return IDS.get(entry.kind());
@@ -94,31 +132,64 @@ public class CosmicReiPlugin implements REIClientPlugin {
     }
 
     private record Category(Kind kind) implements DisplayCategory<CosmicDisplay> {
+        /**
+         * Kennung dieser Kategorie.
+         *
+         * @return die Kennung
+         */
         @Override
         public CategoryIdentifier<? extends CosmicDisplay> getCategoryIdentifier() {
             return IDS.get(kind);
         }
 
+        /**
+         * Titel der Kategorie.
+         *
+         * @return uebersetzter Titel
+         */
         @Override
         public Component getTitle() {
             return ViewerEntries.title(kind);
         }
 
+        /**
+         * Symbol der Kategorie.
+         *
+         * @return Item-Symbol
+         */
         @Override
         public Renderer getIcon() {
             return EntryStacks.of(ViewerEntries.icon(kind));
         }
 
+        /**
+         * Hoehe einer Anzeige (Beute braucht eine Zeile mehr).
+         *
+         * @return Hoehe in Pixeln
+         */
         @Override
         public int getDisplayHeight() {
             return (kind == Kind.LOOT ? 44 : 30) + 10;
         }
 
+        /**
+         * Breite einer Anzeige.
+         *
+         * @param display die Anzeige
+         * @return Breite in Pixeln
+         */
         @Override
         public int getDisplayWidth(CosmicDisplay display) {
             return ViewerEntries.WIDTH + 10;
         }
 
+        /**
+         * Baut die Anzeige: Item-Slot und Textzeilen bzw. bei Beute die moeglichen Drops mit Chance.
+         *
+         * @param display die Anzeige
+         * @param bounds verfuegbarer Bereich
+         * @return die Anzeigeelemente
+         */
         @Override
         public List<Widget> setupDisplay(CosmicDisplay display, Rectangle bounds) {
             Entry entry = display.entry();

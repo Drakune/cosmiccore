@@ -13,10 +13,22 @@ import net.neoforged.neoforge.common.data.DataMapProvider;
 
 /** Standard-Balance fuer Brennstoffe und Stabilisatoren (per Datapack ueberschreibbar). */
 public class ModDataMapProvider extends DataMapProvider {
+    /**
+     * Legt den Generator fuer die Data Maps an.
+     *
+     * @param output Ausgabeziel der Datengenerierung
+     * @param lookup Registry-Zugriff (wird asynchron geliefert)
+     */
     public ModDataMapProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
         super(output, lookup);
     }
 
+    /**
+     * Traegt alle Brennstoffe (Brenndauer, Leistung, Hitze) und Stabilisatoren (Kuehlwert) ein - eigene Items und
+     * ausgewaehlte Vanilla-Items.
+     *
+     * @param provider Registry-Zugriff
+     */
     @Override
     protected void gather(HolderLookup.Provider provider) {
         var fuel = builder(ModDataMaps.CORE_FUEL);
@@ -36,6 +48,12 @@ public class ModDataMapProvider extends DataMapProvider {
         stab.add(vanilla(Items.NETHERITE_SCRAP), new CoreStabilizer(3600, 0.06F), false);
     }
 
+    /**
+     * Registry-Halter eines Vanilla-Items (fuer Data-Map-Eintraege).
+     *
+     * @param item das Item
+     * @return sein eingebauter Registry-Halter
+     */
     @SuppressWarnings("deprecation")
     private static net.minecraft.core.Holder<Item> vanilla(Item item) {
         return item.builtInRegistryHolder();

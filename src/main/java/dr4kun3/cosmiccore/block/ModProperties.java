@@ -21,5 +21,6 @@ public final class ModProperties {
     /** Port der Steuerkonsole: an seiner Aussenseite ist etwas angedockt (Rohr, Kabel ...) - erst dann zeigt er die Buchse. */
     public static final BooleanProperty DOCKED = BooleanProperty.create("docked");
 
+    /** Nur statische Blockzustands-Eigenschaften - keine Instanzen. */
     private ModProperties() {}
 }
