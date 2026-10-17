@@ -23,7 +23,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 /** Wird nur auf dem Client geladen (dedizierte Server fassen diese Klasse nie an). */
-@EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class CosmicCoreClient {
     /**
      * Meldet die Renderer an: Kern, Resonatoren, Controller, Ports, Trichter, Asteroiden und Void-Titan.
@@ -95,37 +95,44 @@ public final class CosmicCoreClient {
         event.register(ModMenus.ITEM_PORT.get(), ItemPortScreen::new);
     }
 
-    /**
-     * Zeigt an Brennstoffen Leistung, Brenndauer und Hitze, an Stabilisatoren den Kuehlwert.
-     *
-     * @param event Ereignis beim Erstellen eines Item-Tooltips
-     */
-    @SubscribeEvent
-    public static void onTooltip(ItemTooltipEvent event) {
-        ItemStack stack = event.getItemStack();
-        CoreFuel fuel = ModDataMaps.fuel(stack);
-        if (fuel != null) {
-            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.fuel", fuel.power(), fuel.burnTime() / 20)
-                    .withStyle(ChatFormatting.DARK_PURPLE));
-            if (fuel.heat() != 1.0F) {
-                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.fuel_heat", String.format("%.1f", fuel.heat()))
-                        .withStyle(fuel.heat() > 1.0F ? ChatFormatting.RED : ChatFormatting.AQUA));
+    /** Ereignisse des Spiel-Busses (NeoForge 21.2 trennt Mod- und Spiel-Bus noch nicht automatisch). */
+    @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
+    public static final class GameEvents {
+        /** Nur statische Ereignis-Methoden - keine Instanzen. */
+        private GameEvents() {}
+
+        /**
+         * Zeigt an Brennstoffen Leistung, Brenndauer und Hitze, an Stabilisatoren den Kuehlwert.
+         *
+         * @param event Ereignis beim Erstellen eines Item-Tooltips
+         */
+        @SubscribeEvent
+        public static void onTooltip(ItemTooltipEvent event) {
+            ItemStack stack = event.getItemStack();
+            CoreFuel fuel = ModDataMaps.fuel(stack);
+            if (fuel != null) {
+                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.fuel", fuel.power(), fuel.burnTime() / 20)
+                        .withStyle(ChatFormatting.DARK_PURPLE));
+                if (fuel.heat() != 1.0F) {
+                    event.getToolTip().add(Component.translatable("tooltip.cosmiccore.fuel_heat", String.format("%.1f", fuel.heat()))
+                            .withStyle(fuel.heat() > 1.0F ? ChatFormatting.RED : ChatFormatting.AQUA));
+                }
             }
-        }
-        if (stack.is(ModItems.EFFICIENCY_MODULE.get())) {
-            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.efficiency_module").withStyle(ChatFormatting.GOLD));
-        } else if (stack.is(ModItems.STABILITY_MODULE.get())) {
-            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.AQUA));
-        } else if (stack.is(ModItems.COLOR_MODULE.get())) {
-            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.color_module").withStyle(ChatFormatting.LIGHT_PURPLE));
-        } else if (stack.is(ModItems.ANTI_ASTEROID_MODULE.get())) {
-            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module",
-                    dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get()).withStyle(ChatFormatting.LIGHT_PURPLE));
-        }
-                CoreStabilizer stab = ModDataMaps.stabilizer(stack);
-        if (stab != null) {
-            event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stabilizer",
-                    String.format("%.0f", ControllerBlockEntity.stabilizerPoints(stab))).withStyle(ChatFormatting.DARK_AQUA));
+            if (stack.is(ModItems.EFFICIENCY_MODULE.get())) {
+                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.efficiency_module").withStyle(ChatFormatting.GOLD));
+            } else if (stack.is(ModItems.STABILITY_MODULE.get())) {
+                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.AQUA));
+            } else if (stack.is(ModItems.COLOR_MODULE.get())) {
+                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.color_module").withStyle(ChatFormatting.LIGHT_PURPLE));
+            } else if (stack.is(ModItems.ANTI_ASTEROID_MODULE.get())) {
+                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module",
+                        dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get()).withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+                    CoreStabilizer stab = ModDataMaps.stabilizer(stack);
+            if (stab != null) {
+                event.getToolTip().add(Component.translatable("tooltip.cosmiccore.stabilizer",
+                        String.format("%.0f", ControllerBlockEntity.stabilizerPoints(stab))).withStyle(ChatFormatting.DARK_AQUA));
+            }
         }
     }
 
