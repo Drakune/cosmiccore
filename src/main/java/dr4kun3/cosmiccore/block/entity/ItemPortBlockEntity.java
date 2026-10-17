@@ -29,11 +29,14 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            // die Station zeigt jeden Platz mit Item und Anzahl - bei jeder sichtbaren Aenderung neu senden
-            int signature = contentSignature();
-            if (signature != syncedSignature && level != null && !level.isClientSide) {
-                syncedSignature = signature;
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+            // die Stationen zeigen jeden Platz mit Item und Anzahl - bei jeder sichtbaren Aenderung neu senden,
+            // beim gemeinsamen Lager an allen Item-Ports der Struktur
+            if (level == null || level.isClientSide) return;
+            ControllerBlockEntity c = controller();
+            if (c == null) {
+                refreshClients();
+            } else {
+                for (ItemPortBlockEntity ip : c.itemPorts()) ip.refreshClients();
             }
         }
     };
@@ -65,12 +68,54 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     }
 
     /**
-     * Das Beutelager (27 Plaetze).
+     * Das Beutelager (27 Plaetze) - in einer gebildeten Struktur das gemeinsame Lager aller Item-Ports.
      *
      * @return das Lager
      */
     public ItemStackHandler getStorage() {
+        return active();
+    }
+
+    /**
+     * Das Lager, auf das dieser Port gerade zugreift: in einer gebildeten Struktur das gemeinsame Lager aller
+     * Item-Ports (es liegt im ersten Port der Struktur), sonst das eigene.
+     *
+     * @return das Lager
+     */
+    private ItemStackHandler active() {
+        if (level != null && !level.isClientSide) {
+            ControllerBlockEntity c = controller();
+            ItemPortBlockEntity shared = c == null ? null : c.sharedItemPort();
+            if (shared != null && shared != this) return shared.storage;
+        }
         return storage;
+    }
+
+    /**
+     * Gibt den eigenen Lagerinhalt an das gemeinsame Lager ab; was dort keinen Platz hat, faellt am Port heraus.
+     *
+     * @param shared der Port mit dem gemeinsamen Lager
+     */
+    void moveInto(ItemPortBlockEntity shared) {
+        if (shared == this || level == null) return;
+        for (int i = 0; i < STORAGE_SLOTS; i++) {
+            ItemStack st = storage.getStackInSlot(i);
+            if (st.isEmpty()) continue;
+            storage.setStackInSlot(i, ItemStack.EMPTY);
+            ItemStack rest = shared.store(st.copy());
+            if (!rest.isEmpty()) Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ() + 0.5, rest);
+        }
+    }
+
+    /**
+     * Schickt den Lagerinhalt an die Clients, wenn er sich seit dem letzten Senden sichtbar geaendert hat.
+     */
+    void refreshClients() {
+        if (level == null || level.isClientSide) return;
+        int signature = contentSignature();
+        if (signature == syncedSignature) return;
+        syncedSignature = signature;
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
     }
 
     /**
@@ -81,7 +126,8 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
      */
     public ItemStack store(ItemStack stack) {
         ItemStack rest = stack;
-        for (int i = 0; i < STORAGE_SLOTS && !rest.isEmpty(); i++) rest = storage.insertItem(i, rest, false);
+        ItemStackHandler target = active();
+        for (int i = 0; i < STORAGE_SLOTS && !rest.isEmpty(); i++) rest = target.insertItem(i, rest, false);
         return rest;
     }
 
@@ -92,7 +138,8 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
      */
     public int usedSlots() {
         int n = 0;
-        for (int i = 0; i < STORAGE_SLOTS; i++) if (!storage.getStackInSlot(i).isEmpty()) n++;
+        ItemStackHandler source = active();
+        for (int i = 0; i < STORAGE_SLOTS; i++) if (!source.getStackInSlot(i).isEmpty()) n++;
         return n;
     }
 
@@ -122,8 +169,9 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
      */
     private int contentSignature() {
         int h = 1;
+        ItemStackHandler source = active();
         for (int i = 0; i < STORAGE_SLOTS; i++) {
-            ItemStack st = storage.getStackInSlot(i);
+            ItemStack st = source.getStackInSlot(i);
             h = h * 31 + (st.isEmpty() ? 0 : st.getItem().hashCode() * 101 + st.getCount());
         }
         return h;
@@ -179,7 +227,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putInt("used", usedSlots());
-        tag.put("view", storage.serializeNBT(registries));
+        tag.put("view", active().serializeNBT(registries));
         return tag;
     }
 
@@ -246,7 +294,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
          */
         @Override
         public ItemStack getStackInSlot(int slot) {
-            if (slot >= INPUTS) return storage.getStackInSlot(slot - INPUTS);
+            if (slot >= INPUTS) return active().getStackInSlot(slot - INPUTS);
             IItemHandler t = target();
             return t == null ? ItemStack.EMPTY : t.getStackInSlot(slot);
         }
@@ -276,7 +324,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
          */
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot >= INPUTS ? storage.extractItem(slot - INPUTS, amount, simulate) : ItemStack.EMPTY;
+            return slot >= INPUTS ? active().extractItem(slot - INPUTS, amount, simulate) : ItemStack.EMPTY;
         }
 
         /**
@@ -287,7 +335,7 @@ public class ItemPortBlockEntity extends PortBlockEntity implements MenuProvider
          */
         @Override
         public int getSlotLimit(int slot) {
-            if (slot >= INPUTS) return storage.getSlotLimit(slot - INPUTS);
+            if (slot >= INPUTS) return active().getSlotLimit(slot - INPUTS);
             IItemHandler t = target();
             return t == null ? 64 : t.getSlotLimit(slot);
         }
