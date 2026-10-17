@@ -58,23 +58,57 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
     private static float[] pHot = HOT, pWarm = WARM, pCool = COOL, pJet = JET;
     private static final float[] CRITICAL = {1.0F, 0.1F, 0.1F};
 
+    /**
+     * Legt den Renderer des Singularitaetskerns an.
+     *
+     * @param context Kontext der Blockinhalt-Renderer
+     */
     public SingularityCoreRenderer(BlockEntityRendererProvider.Context context) {}
 
+    /**
+     * Unbegrenzte Sichtbarkeitsbox (der Jet reicht bis in den Himmel).
+     *
+     * @param be der Kern
+     * @return unendliche Box
+     */
     @Override
     public AABB getRenderBoundingBox(SingularityCoreBlockEntity be) {
         return AABB.INFINITE; // Jet in den Himmel
     }
 
+    /**
+     * Auch zeichnen, wenn der Kernblock selbst nicht im Bild ist.
+     *
+     * @param be der Kern
+     * @return immer {@code true}
+     */
     @Override
     public boolean shouldRenderOffScreen(SingularityCoreBlockEntity be) {
         return true;
     }
 
+    /**
+     * Sichtweite des Kerns in Bloecken.
+     *
+     * @return 256
+     */
     @Override
     public int getViewDistance() {
         return 256;
     }
 
+    /**
+     * Zeichnet den ganzen Reaktor: Kammer und Konsole, schwarzes Loch mit Akkretionsscheibe, Photonenring und Linse,
+     * Jets, Eindaemmungsfeld, Laser, Overdrive- und Ultimate-Effekte sowie Zuendung und Materialisieren.
+     *
+     * @param be der (primaere) Kern
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel am Block
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param cameraPos Position der Kamera
+     */
     @Override
     public void render(SingularityCoreBlockEntity be, float partialTick, PoseStack pose,
                        MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
@@ -255,7 +289,14 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         ColorOverride.end();
     }
 
-    /** Kugel nur aus nach innen gewandten Flaechen (mit Culling sieht man von aussen genau die Rueckseite). */
+    /**
+     * Kugel nur aus nach innen gewandten Flaechen (mit Culling sieht man von aussen genau die Rueckseite) - fuer den
+     * unsichtbaren Tiefen-Abschluss der Kammer.
+     *
+     * @param vc Puffer (Tiefen-Abschluss)
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param r Radius
+     */
     private static void depthBackSphere(VertexConsumer vc, Matrix4f m, float r) {
         final int lat = 16, lon = 24;
         for (int i = 0; i < lat; i++) {
@@ -271,17 +312,47 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
     }
 
+    /**
+     * Ein Punkt auf der Kugel.
+     *
+     * @param vc Puffer
+     * @param m Matrix
+     * @param r Radius
+     * @param phi Breite (Bogenmass)
+     * @param lam Laenge (Bogenmass)
+     */
     private static void sphereVertex(VertexConsumer vc, Matrix4f m, float r, float phi, float lam) {
         float c = Mth.cos(phi);
         vc.addVertex(m, r * c * Mth.cos(lam), r * Mth.sin(phi), r * c * Mth.sin(lam));
     }
 
+    /**
+     * Farbe der Scheibe: innen heiss, aussen kuehl, mit der Instabilitaet nach Rot verschoben.
+     *
+     * @param f Position von innen (0) nach aussen (1)
+     * @param heat Instabilitaet 0..1
+     * @return Farbe RGB 0..1
+     */
     private static float[] diskColor(float f, float heat) {
         float[] c = f < 0.3F ? lerp(pHot, pWarm, f / 0.3F) : lerp(pWarm, pCool, (f - 0.3F) / 0.7F);
         return lerp(c, CRITICAL, heat * heat * 0.8F);
     }
 
-    /** Flache Scheibe in der XZ-Ebene aus Ringbaendern; innen schneller (differentielle Rotation). */
+    /**
+     * Flache Akkretionsscheibe in der XZ-Ebene aus Ringbaendern; innen schneller (differentielle Rotation).
+     *
+     * @param m Matrix der Scheibenebene
+     * @param vc Puffer fuer additives Leuchten
+     * @param inner Innenradius
+     * @param outer Aussenradius
+     * @param t Animationszeit
+     * @param spin Drehgeschwindigkeit
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     * @param camYaw Gierwinkel der Kamera (Doppler-Aufhellung der zukommenden Seite)
+     * @param layer 0 = Hauptscheibe, 1 = zweite Scheibe ab Overdrive 1
+     * @param od Overdrive-Stufe (Ringstruktur ab Stufe 2)
+     */
     private static void accretionDisk(Matrix4f m, VertexConsumer vc, float inner, float outer, float t, float spin,
                                       float energy, float heat, float camYaw, int layer, int od) {
         final int bands = RenderQuality.scale(20, 8), seg = RenderQuality.scale(80, 32);
@@ -312,7 +383,15 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
     }
 
-    /** Leuchtende Dunsthuelle am Rand der Scheibe. */
+    /**
+     * Leuchtende Dunsthuelle am Rand der Scheibe.
+     *
+     * @param m Matrix der Scheibenebene
+     * @param vc Puffer
+     * @param outer Aussenradius der Scheibe
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     */
     private static void haze(Matrix4f m, VertexConsumer vc, float outer, float energy, float heat) {
         float[] col = lerp(pCool, CRITICAL, heat * heat * 0.6F);
         int seg = 48;
@@ -324,7 +403,17 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
     }
 
-    /** Hotspots: gleissende Materieklumpen, die am Innenrand umlaufen. */
+    /**
+     * Hotspots: gleissende Materieklumpen, die am Innenrand umlaufen.
+     *
+     * @param m Matrix der Scheibenebene
+     * @param vc Puffer
+     * @param inner Innenradius der Scheibe
+     * @param t Animationszeit
+     * @param spin Drehgeschwindigkeit
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     */
     private static void hotspots(Matrix4f m, VertexConsumer vc, float inner, float t, float spin, float energy, float heat) {
         float[] c = diskColor(0.02F, heat);
         for (int k = 0; k < 3; k++) {
@@ -338,7 +427,18 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
     }
 
-    /** Materiefaeden werden von aussen durch das Schild gerissen und spiralen in die Scheibe. */
+    /**
+     * Materiefaeden werden von aussen durch das Feld gerissen und spiralen in die Scheibe (mehr bei Instabilitaet).
+     *
+     * @param m Matrix der Scheibenebene
+     * @param vc Puffer
+     * @param reach Radius der Kammer
+     * @param inner Innenradius der Scheibe
+     * @param t Animationszeit
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     * @param active nur bei laufendem Reaktor
+     */
     private static void tendrils(Matrix4f m, VertexConsumer vc, float reach, float inner, float t, float energy,
                                  float heat, boolean active) {
         if (!active) return;
@@ -364,7 +464,20 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
     }
 
-    /** Photonenring, Gravitationslinse, Halo und Lichtstrahlen - immer zum Betrachter gedreht. */
+    /**
+     * Photonenring, Gravitationslinse, Halo und Lichtstrahlen - immer zum Betrachter gedreht.
+     *
+     * @param pose Pose-Stapel in der Kernmitte
+     * @param vc Puffer
+     * @param rh Radius des Ereignishorizonts
+     * @param inner Innenradius der Scheibe
+     * @param t Animationszeit
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     * @param camYaw Gierwinkel der Kamera
+     * @param camPitch Neigung der Kamera
+     * @param beat Herzschlag 0..1 (pulsierendes Aufleuchten)
+     */
     private static void lensing(PoseStack pose, VertexConsumer vc, float rh, float inner, float t, float energy, float heat,
                                 float camYaw, float camPitch, float beat) {
         pose.pushPose();
@@ -399,7 +512,18 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         pose.popPose();
     }
 
-    /** Leitung vom Sternentrichter (ueber der Decke) zum oberen Fokuskristall: Pulse stroemen hinab, eine Helix windet sich. */
+    /**
+     * Leitung vom Sternentrichter (ueber der Decke) zum oberen Fokuskristall: Pulse stroemen hinab, eine Helix
+     * windet sich.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param focus Abstand Kern -> Kristall
+     * @param half halbe Kantenlaenge der Struktur
+     * @param t Animationszeit
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     */
     private static void funnelLink(Matrix4f m, VertexConsumer vc, float focus, int half, float t, float energy, float heat) {
         float[] col = lerp(lerp(pJet, pCool, 0.4F), CRITICAL, heat * heat * 0.6F);
         float yTop = half + 0.75F, yBottom = focus + 0.3F;
@@ -425,7 +549,18 @@ public class SingularityCoreRenderer implements BlockEntityRenderer<SingularityC
         }
     }
 
-    /** Relativistische Jets entlang der Pole. */
+    /**
+     * Relativistische Jets entlang der Pole mit wandernden Knoten.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param rh Radius des Ereignishorizonts
+     * @param reach Laenge bis zur Kammerwand
+     * @param t Animationszeit
+     * @param energy Helligkeit 0..1
+     * @param heat Instabilitaet 0..1
+     * @param growth Leistungsstufe 0..1 (breitere Jets)
+     */
     private static void jets(Matrix4f m, VertexConsumer vc, float rh, float reach, float t, float energy, float heat, float growth) {
         float[] col = lerp(pJet, CRITICAL, heat * heat * 0.7F);
         float w = 0.035F + 0.03F * growth;

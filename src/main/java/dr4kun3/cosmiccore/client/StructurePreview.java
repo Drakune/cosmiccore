@@ -23,11 +23,23 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /** Drehende 3D-Vorschau einer Reaktorstruktur im GUI (Groessenwahl und Handbuch) und die Liste benoetigter Bloecke. */
 public final class StructurePreview {
+    /** Nur statische Hilfsfunktionen - keine Instanzen. */
     private StructurePreview() {}
 
     /**
-     * @param box     Ausschnitt {x0, y0, x1, y1} in Bildschirmkoordinaten (Scissor)
-     * @param fit     Kantenlaenge in Pixeln, in die die Struktur passen soll
+     * Zeichnet die Reaktorstruktur als drehendes 3D-Modell (mit Konsole, optional Trichter und Laser) in einen
+     * Ausschnitt des Fensters.
+     *
+     * @param g Grafik-Kontext des Fensters
+     * @param size Baugroesse
+     * @param cx Bildschirm-x der Strukturmitte
+     * @param cy Bildschirm-y der Strukturmitte
+     * @param box Ausschnitt {x0, y0, x1, y1} in Bildschirmkoordinaten (Scissor)
+     * @param fit Kantenlaenge in Pixeln, in die die Struktur passen soll
+     * @param yaw Drehung um die Hochachse in Grad
+     * @param pitch zusaetzliche Neigung in Grad
+     * @param funnel Sternentrichter auf der Decke zeigen
+     * @param lasers Kosmos-Laser auf der Decke zeigen
      */
     public static void render(GuiGraphics g, ReactorSize size, int cx, int cy, int[] box, float fit, float yaw, float pitch,
                               boolean funnel, boolean lasers) {
@@ -78,6 +90,17 @@ public final class StructurePreview {
         g.disableScissor();
     }
 
+    /**
+     * Zeichnet einen einzelnen Block an einer Stelle der Vorschau.
+     *
+     * @param d Block-Renderer
+     * @param ps Pose-Stapel der Vorschau
+     * @param buffers Puffer
+     * @param state zu zeichnender Blockzustand
+     * @param x Position x (Bloecke, relativ zur Mitte)
+     * @param y Position y
+     * @param z Position z
+     */
     private static void block(BlockRenderDispatcher d, PoseStack ps, MultiBufferSource buffers, BlockState state, float x, float y, float z) {
         ps.pushPose();
         ps.translate(x, y, z);
@@ -85,7 +108,14 @@ public final class StructurePreview {
         ps.popPose();
     }
 
-    /** Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen). */
+    /**
+     * Die fuer eine Baugroesse benoetigten Bloecke als Stapel (Anzahl = Stapelgroesse, darf ueber 64 liegen).
+     *
+     * @param size Baugroesse
+     * @param funnel Sternentrichter mitzaehlen
+     * @param lasers die vier Kosmos-Laser mitzaehlen
+     * @return Liste der Bloecke mit Anzahl
+     */
     public static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
         CorePattern p = size.pattern();
         List<ItemStack> out = new ArrayList<>();

@@ -11,22 +11,50 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class FocusGlassBlock extends TransparentBlock {
+    /**
+     * Erzeugt das Fokusglas (ruhend, sichtbar).
+     *
+     * @param props Blockeigenschaften aus der Registrierung
+     */
     public FocusGlassBlock(Properties props) {
         super(props);
         registerDefaultState(stateDefinition.any().setValue(ModProperties.PHASE, CorePhase.DORMANT)
                 .setValue(ModProperties.PHANTOM, false));
     }
 
+    /**
+     * Zustaende: Reaktorphase und "Phantom" (in der Kammer aufgegangen).
+     *
+     * @param builder Bauplan der Zustaende
+     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ModProperties.PHASE, ModProperties.PHANTOM);
     }
 
+    /**
+     * Als Phantom ohne Umriss, sonst wie normales Glas.
+     *
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position
+     * @param ctx Kontext der Abfrage
+     * @return der Umriss
+     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.PHANTOM) ? Shapes.empty() : super.getShape(state, level, pos, ctx);
     }
 
+    /**
+     * Als Phantom ohne Kollision, sonst wie normales Glas.
+     *
+     * @param state Blockzustand
+     * @param level Welt
+     * @param pos Position
+     * @param ctx Kontext der Abfrage
+     * @return die Kollisionsform
+     */
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(ModProperties.PHANTOM) ? Shapes.empty() : super.getCollisionShape(state, level, pos, ctx);

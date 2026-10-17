@@ -14,6 +14,7 @@ import org.joml.Vector3f;
  * (wie eine Himmelskulisse), damit sie nicht hinter der Sichtweite abgeschnitten werden.
  */
 public final class TitanBeam {
+    /** Nur statische Zeichenroutinen - keine Instanzen. */
     private TitanBeam() {}
 
     /** Austrittspunkt des Strahls hoch ueber dem Reaktor (das Tor in das andere Universum). */
@@ -25,25 +26,52 @@ public final class TitanBeam {
     private static final float[] CYAN = {0.45F, 0.95F, 1.0F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
 
-    /** Faktor, um den ein Punkt zur Kamera hin gezogen wird (1 = in Sichtweite). */
+    /**
+     * Faktor, um den ein ferner Punkt zur Kamera hin gezogen wird, damit er innerhalb der Zeichendistanz liegt.
+     *
+     * @param point Punkt in der Welt
+     * @param cam Kameraposition
+     * @return 1 in Sichtweite, sonst kleiner
+     */
     public static float skyScale(Vector3f point, Vector3f cam) {
         float d = new Vector3f(point).sub(cam).length();
         return d > SKY_DIST ? SKY_DIST / d : 1.0F;
     }
 
-    /** Matrix, die alles um die Kamera skaliert - Winkelgroessen bleiben erhalten. */
+    /**
+     * Matrix, die alles um die Kamera skaliert - Winkelgroessen bleiben erhalten.
+     *
+     * @param m Ausgangsmatrix
+     * @param cam Kameraposition
+     * @param scale Skalierung (siehe {@link #skyScale})
+     * @return neue Matrix
+     */
     public static Matrix4f skyFrame(Matrix4f m, Vector3f cam, float scale) {
         return new Matrix4f(m).translate(cam.x, cam.y, cam.z).scale(scale).translate(-cam.x, -cam.y, -cam.z);
     }
 
-    /** Punkt, wie er in der Himmelskulisse erscheint. */
+    /**
+     * Punkt, wie er in der Himmelskulisse erscheint.
+     *
+     * @param point Punkt in der Welt
+     * @param cam Kameraposition
+     * @param scale Skalierung
+     * @return verschobener Punkt
+     */
     public static Vector3f skyPoint(Vector3f point, Vector3f cam, float scale) {
         return new Vector3f(point).sub(cam).mul(scale).add(cam);
     }
 
     /**
-     * Strahl von from nach to. reach 0..1 = wie weit er schon ausgefahren ist; intensity skaliert die Helligkeit
-     * (die Cutscene laesst ihn beim Schuss aufgleissen).
+     * Strahl von {@code from} nach {@code to}: heller Kern, Huelle und flackernde Lichtpulse.
+     *
+     * @param m Matrix
+     * @param vc Puffer fuer additives Leuchten
+     * @param from Start
+     * @param to Ziel
+     * @param t Animationszeit in Ticks
+     * @param reach wie weit der Strahl schon ausgefahren ist (0..1)
+     * @param intensity Helligkeit (die Zwischensequenz laesst ihn beim Schuss aufgleissen)
      */
     public static void beam(Matrix4f m, VertexConsumer vc, Vector3f from, Vector3f to, float t, float reach, float intensity) {
         if (reach <= 0.0F || intensity <= 0.0F) return;
@@ -65,7 +93,15 @@ public final class TitanBeam {
         }
     }
 
-    /** Wo der Strahl in den Trichter muendet: leuchtender Wirbel. */
+    /**
+     * Wo der Strahl in den Trichter muendet: leuchtender Wirbel aus Ringen.
+     *
+     * @param m Matrix mit Ursprung in der Kernmitte
+     * @param vc Puffer
+     * @param mouthY Hoehe der Trichteroeffnung
+     * @param t Animationszeit
+     * @param intensity Helligkeit
+     */
     public static void inlet(Matrix4f m, VertexConsumer vc, float mouthY, float t, float intensity) {
         Matrix4f im = new Matrix4f(m).translate(0, mouthY, 0);
         RenderUtil.glowSphere(vc, im, 0.35F + 0.05F * Mth.sin(t * 0.3F), 8, 12, WHITE, 0.6F * intensity);
@@ -76,7 +112,15 @@ public final class TitanBeam {
         }
     }
 
-    /** Das Tor am Himmel: ein gleissender Stern mit kreuzfoermigem Lichtschein (m = Himmelskulissen-Rahmen). */
+    /**
+     * Das Tor am Himmel: ein gleissender Stern mit kreuzfoermigem Lichtschein.
+     *
+     * @param m Matrix der Himmelskulisse
+     * @param vc Puffer
+     * @param t Animationszeit
+     * @param alpha Deckkraft 0..1
+     * @param camRel Kameraposition relativ zur Kernmitte (Ausrichtung des Lichtkreuzes)
+     */
     public static void skyGate(Matrix4f m, VertexConsumer vc, float t, float alpha, Vector3f camRel) {
         Matrix4f gm = new Matrix4f(m).translate(SKY_TOP.x, SKY_TOP.y, SKY_TOP.z);
         float pulse = 0.85F + 0.15F * Mth.sin(t * 0.08F);

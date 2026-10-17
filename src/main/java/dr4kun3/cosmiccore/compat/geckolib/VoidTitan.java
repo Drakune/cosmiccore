@@ -16,16 +16,32 @@ public class VoidTitan implements GeoAnimatable {
     double ticks;
     boolean cinematic;
 
+    /**
+     * Ein Animations-Controller: im Film die Choreografie (einmal, dann halten), sonst die Ruhe-Animation in Schleife.
+     *
+     * @param controllers Sammelstelle der Controller
+     */
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<VoidTitan>("main", 0, state -> state.setAndContinue(cinematic ? CINEMATIC : IDLE)));
     }
 
+    /**
+     * Zwischenspeicher der Animationszustaende dieser Instanz.
+     *
+     * @return der Zwischenspeicher
+     */
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
     }
 
+    /**
+     * Animationszeit: kommt von der Entity, damit Film und Bewegung genau zusammenpassen.
+     *
+     * @param object das gerade gezeichnete Objekt (nicht verwendet)
+     * @return Zeit in Ticks einschliesslich Teil-Tick
+     */
     @Override
     public double getTick(Object object) {
         return ticks;

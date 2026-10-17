@@ -34,18 +34,40 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
     private static final float[] CRITICAL = {1.0F, 0.2F, 0.2F};
     // (Trichter-Koerper: siehe body())
 
+    /**
+     * Legt den Renderer des Sternentrichters an.
+     *
+     * @param context Kontext der Blockinhalt-Renderer
+     */
     public StarFunnelRenderer(BlockEntityRendererProvider.Context context) {}
 
+    /**
+     * Sichtbarkeitsbox: der ganze Kelch ueber dem Block.
+     *
+     * @param be der Trichter
+     * @return die Box
+     */
     @Override
     public AABB getRenderBoundingBox(StarFunnelBlockEntity be) {
         return new AABB(be.getBlockPos()).inflate(TOP_RADIUS + 1, 0, TOP_RADIUS + 1).expandTowards(0, HEIGHT + 1, 0);
     }
 
+    /**
+     * Auch zeichnen, wenn der Block selbst ausserhalb des Bildes liegt (der Kelch ragt weit hinaus).
+     *
+     * @param be der Trichter
+     * @return immer {@code true}
+     */
     @Override
     public boolean shouldRenderOffScreen(StarFunnelBlockEntity be) {
         return true;
     }
 
+    /**
+     * Sichtweite in Bloecken.
+     *
+     * @return 160
+     */
     @Override
     public int getViewDistance() {
         return 160;
@@ -54,6 +76,12 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
     /**
      * Animierter Trichter-Koerper (wie Kern, Emitter und Kristall): Kelch aus Sternenfeld, darauf gegenlaeufig
      * drehende Lichtringe und Spiralbahnen, ein gleissender Rand und Licht, das nach unten in den Hals stroemt.
+     *
+     * @param pose Pose-Stapel an der Blockposition
+     * @param buffers Puffer
+     * @param t Animationszeit in Ticks
+     * @param energy Helligkeit 0..1
+     * @param unstable {@code true} faerbt alles rot (Kern instabil)
      */
     private static void body(PoseStack pose, MultiBufferSource buffers, float t, float energy, boolean unstable) {
         float[] a = unstable ? CRITICAL : SKY, b = unstable ? CRITICAL : VIOLET;
@@ -97,11 +125,28 @@ public class StarFunnelRenderer implements BlockEntityRenderer<StarFunnelBlockEn
         pose.popPose();
     }
 
+    /**
+     * Radius der Trompetenform in einer Hoehe (unten eng, oben weit).
+     *
+     * @param h Hoehe ueber dem Hals in Bloecken
+     * @return Radius in Bloecken
+     */
     private static float radiusAt(float h) {
         // Trompetenform: unten eng, oben weit
         return dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.funnelRadius(h);
     }
 
+    /**
+     * Zeichnet den animierten Sternentrichter ueber der Decke.
+     *
+     * @param be der Trichter
+     * @param partialTick Teil-Tick
+     * @param pose Pose-Stapel am Block
+     * @param buffers Puffer
+     * @param light Lichtwert
+     * @param overlay Overlay-Wert
+     * @param cameraPos Position der Kamera
+     */
     @Override
     public void render(StarFunnelBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
         Level level = be.getLevel();

@@ -21,6 +21,13 @@ public class CosmicCore {
     public static final String MODID = "cosmiccore";
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    /**
+     * Einstieg der Mod: registriert Bloecke, Items, Blockinhalte, Menues, Entities, Netzwerk, Faehigkeiten, Data Maps
+     * und die Einstellungen.
+     *
+     * @param modEventBus Ereignisbus der Mod
+     * @param modContainer Container der Mod (fuer die Einstellungen)
+     */
     public CosmicCore(IEventBus modEventBus, ModContainer modContainer) {
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
@@ -37,10 +44,21 @@ public class CosmicCore {
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
     }
 
+    /**
+     * Kennung im Namensraum der Mod.
+     *
+     * @param path Pfad, z. B. {@code textures/item/star_dust.png}
+     * @return {@code cosmiccore:<path>}
+     */
     public static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(MODID, path);
     }
 
+    /**
+     * Stellt Energie (Energie-Port, Controller) und Items (Item-Port, Controller) fuer Kabel und Rohre bereit.
+     *
+     * @param event Ereignis zur Registrierung der Faehigkeiten
+     */
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModBlockEntities.ENERGY_PORT.get(), (be, side) -> be.getEnergyView());
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> be.getEnergyView());
@@ -48,6 +66,11 @@ public class CosmicCore {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.CONTROLLER.get(), (be, side) -> be.getItemView());
     }
 
+    /**
+     * Meldet die Data Maps fuer Brennstoffe und Stabilisatoren an.
+     *
+     * @param event Ereignis zur Registrierung der Data-Map-Typen
+     */
     private static void registerDataMaps(RegisterDataMapTypesEvent event) {
         event.register(ModDataMaps.CORE_FUEL);
         event.register(ModDataMaps.CORE_STABILIZER);
