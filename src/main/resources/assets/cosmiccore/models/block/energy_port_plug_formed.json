@@ -1,232 +1,75 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "cosmiccore:block/energy_port_formed",
-    "core": "cosmiccore:block/energy_port_formed",
-    "socket": "cosmiccore:block/port_socket"
+    "particle": "cosmiccore:block/energy_port_plug_formed",
+    "plug": "cosmiccore:block/energy_port_plug_formed"
   },
   "elements": [
     {
       "from": [
-        2,
-        2,
-        2
+        1,
+        1,
+        6
       ],
       "to": [
-        14,
-        14,
-        14
+        15,
+        15,
+        10
       ],
       "faces": {
-        "down": {
-          "texture": "#core"
-        },
-        "up": {
-          "texture": "#core"
-        },
         "north": {
-          "texture": "#core"
+          "texture": "#plug",
+          "uv": [
+            1,
+            1,
+            15,
+            15
+          ]
         },
         "south": {
-          "texture": "#core"
-        },
-        "west": {
-          "texture": "#core"
-        },
-        "east": {
-          "texture": "#core"
-        }
-      }
-    },
-    {
-      "from": [
-        0,
-        4,
-        4
-      ],
-      "to": [
-        2,
-        12,
-        12
-      ],
-      "faces": {
-        "down": {
-          "texture": "#socket"
+          "texture": "#plug",
+          "uv": [
+            1,
+            1,
+            15,
+            15
+          ]
         },
         "up": {
-          "texture": "#socket"
+          "texture": "#plug",
+          "uv": [
+            1,
+            0,
+            15,
+            4
+          ]
         },
-        "north": {
-          "texture": "#socket"
-        },
-        "south": {
-          "texture": "#socket"
-        },
-        "west": {
-          "texture": "#socket"
-        },
-        "east": {
-          "texture": "#socket"
-        }
-      }
-    },
-    {
-      "from": [
-        14,
-        4,
-        4
-      ],
-      "to": [
-        16,
-        12,
-        12
-      ],
-      "faces": {
         "down": {
-          "texture": "#socket"
-        },
-        "up": {
-          "texture": "#socket"
-        },
-        "north": {
-          "texture": "#socket"
-        },
-        "south": {
-          "texture": "#socket"
+          "texture": "#plug",
+          "uv": [
+            1,
+            12,
+            15,
+            16
+          ]
         },
         "west": {
-          "texture": "#socket"
+          "texture": "#plug",
+          "uv": [
+            0,
+            1,
+            4,
+            15
+          ]
         },
         "east": {
-          "texture": "#socket"
-        }
-      }
-    },
-    {
-      "from": [
-        4,
-        0,
-        4
-      ],
-      "to": [
-        12,
-        2,
-        12
-      ],
-      "faces": {
-        "down": {
-          "texture": "#socket"
-        },
-        "up": {
-          "texture": "#socket"
-        },
-        "north": {
-          "texture": "#socket"
-        },
-        "south": {
-          "texture": "#socket"
-        },
-        "west": {
-          "texture": "#socket"
-        },
-        "east": {
-          "texture": "#socket"
-        }
-      }
-    },
-    {
-      "from": [
-        4,
-        14,
-        4
-      ],
-      "to": [
-        12,
-        16,
-        12
-      ],
-      "faces": {
-        "down": {
-          "texture": "#socket"
-        },
-        "up": {
-          "texture": "#socket"
-        },
-        "north": {
-          "texture": "#socket"
-        },
-        "south": {
-          "texture": "#socket"
-        },
-        "west": {
-          "texture": "#socket"
-        },
-        "east": {
-          "texture": "#socket"
-        }
-      }
-    },
-    {
-      "from": [
-        4,
-        4,
-        0
-      ],
-      "to": [
-        12,
-        12,
-        2
-      ],
-      "faces": {
-        "down": {
-          "texture": "#socket"
-        },
-        "up": {
-          "texture": "#socket"
-        },
-        "north": {
-          "texture": "#socket"
-        },
-        "south": {
-          "texture": "#socket"
-        },
-        "west": {
-          "texture": "#socket"
-        },
-        "east": {
-          "texture": "#socket"
-        }
-      }
-    },
-    {
-      "from": [
-        4,
-        4,
-        14
-      ],
-      "to": [
-        12,
-        12,
-        16
-      ],
-      "faces": {
-        "down": {
-          "texture": "#socket"
-        },
-        "up": {
-          "texture": "#socket"
-        },
-        "north": {
-          "texture": "#socket"
-        },
-        "south": {
-          "texture": "#socket"
-        },
-        "west": {
-          "texture": "#socket"
-        },
-        "east": {
-          "texture": "#socket"
+          "texture": "#plug",
+          "uv": [
+            12,
+            1,
+            16,
+            15
+          ]
         }
       }
     }

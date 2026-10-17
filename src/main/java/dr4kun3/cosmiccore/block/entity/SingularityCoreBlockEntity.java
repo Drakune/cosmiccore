@@ -552,19 +552,6 @@ public class SingularityCoreBlockEntity extends BlockEntity {
         float reach = be.getReach();
         boolean running = phase == CorePhase.ACTIVE || phase == CorePhase.UNSTABLE;
 
-        // Partikel die in die Singularitaet gesogen werden (PORTAL startet bei pos+vel und endet bei pos)
-        int pulls = switch (phase) {
-            case FORMED -> r.nextInt(4) == 0 ? 1 : 0;
-            case ACTIVE -> 2 + Math.round(growth * 3);
-            default -> 4 + Math.round(growth * 3);
-        };
-        for (int i = 0; i < pulls; i++) {
-            double dx = r.nextGaussian(), dy = r.nextGaussian(), dz = r.nextGaussian();
-            double len = Math.max(0.001, Math.sqrt(dx * dx + dy * dy + dz * dz));
-            double rad = reach + 0.1 + r.nextDouble() * 0.6;
-            level.addParticle(ParticleTypes.PORTAL, cx, cy, cz, dx / len * rad, dy / len * rad, dz / len * rad);
-        }
-
         if (phase == CorePhase.UNSTABLE && r.nextInt(2) == 0) {
             double s = reach * 1.6;
             level.addParticle(ParticleTypes.ELECTRIC_SPARK, cx + (r.nextDouble() - 0.5) * s, cy + (r.nextDouble() - 0.5) * s,
