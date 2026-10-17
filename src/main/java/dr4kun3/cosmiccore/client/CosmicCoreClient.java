@@ -1,7 +1,9 @@
 package dr4kun3.cosmiccore.client;
 
+import dr4kun3.cosmiccore.CoreConfig;
 import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.ModItems;
+import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
 import dr4kun3.cosmiccore.block.entity.ModBlockEntities;
 import dr4kun3.cosmiccore.data.CoreFuel;
@@ -10,13 +12,18 @@ import dr4kun3.cosmiccore.data.ModDataMaps;
 import dr4kun3.cosmiccore.entity.ModEntities;
 import dr4kun3.cosmiccore.menu.ModMenus;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelBaker;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 /** Wird nur auf dem Client geladen (dedizierte Server fassen diese Klasse nie an). */
@@ -37,23 +44,23 @@ public final class CosmicCoreClient {
         event.registerBlockEntityRenderer(ModBlockEntities.ITEM_PORT.get(), PortRenderer::new);
         for (var type : ModEntities.ASTEROIDS.values()) event.registerEntityRenderer(type.get(), CosmicAsteroidRenderer::new);
         // Void-Titan: mit GeckoLib gezeichnet; ohne GeckoLib unsichtbar (er erscheint dann ohnehin nie)
-        if (net.neoforged.fml.ModList.get().isLoaded("geckolib")) {
+        if (ModList.get().isLoaded("geckolib")) {
             event.registerEntityRenderer(ModEntities.VOID_TITAN.get(), TitanRenderers::create);
         } else {
-            event.registerEntityRenderer(ModEntities.VOID_TITAN.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+            event.registerEntityRenderer(ModEntities.VOID_TITAN.get(), NoopRenderer::new);
         }
     }
 
     /**
      * Stecker- und Konsolenmodelle der Ports werden vom PortRenderer gezeichnet und deshalb als Zusatzmodelle geladen.
      *
-     * @param event Ereignis zur Registrierung zusaetzlicher Modelle
+     * @param event Ereignis zur Registrierung zusätzlicher Modelle
      */
     @SubscribeEvent
-    public static void registerModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event) {
-        var baker = net.neoforged.neoforge.client.model.standalone.StandaloneModelBaker.blockStateModel();
-        for (dr4kun3.cosmiccore.block.CorePhase phase : dr4kun3.cosmiccore.block.CorePhase.values()) {
-            if (phase == dr4kun3.cosmiccore.block.CorePhase.DORMANT) continue;
+    public static void registerModels(ModelEvent.RegisterStandalone event) {
+        var baker = StandaloneModelBaker.blockStateModel();
+        for (CorePhase phase : CorePhase.values()) {
+            if (phase == CorePhase.DORMANT) continue;
             event.register(PortRenderer.plugModel(true, phase), baker);
             event.register(PortRenderer.plugModel(false, phase), baker);
             event.register(PortRenderer.terminalModel(true, phase), baker);
@@ -62,19 +69,19 @@ public final class CosmicCoreClient {
     }
 
     /**
-     * Registriert den Spezial-Renderer fuer die animierten 3D-Items.
+     * Registriert den Spezial-Renderer für die animierten 3D-Items.
      *
      * @param event Registrierungs-Ereignis
      */
     @SubscribeEvent
-    public static void registerSpecialRenderers(net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent event) {
-        event.register(dr4kun3.cosmiccore.CosmicCore.id("cosmic_item"), CosmicItemRenderer.Unbaked.CODEC);
+    public static void registerSpecialRenderers(RegisterSpecialModelRendererEvent event) {
+        event.register(CosmicCore.id("cosmic_item"), CosmicItemRenderer.Unbaked.CODEC);
     }
 
     /**
-     * Verbindet die Menues mit ihren Fenstern (Controller, Item-Port).
+     * Verbindet die Menüs mit ihren Fenstern (Controller, Item-Port).
      *
-     * @param event Ereignis zur Registrierung der Menue-Fenster
+     * @param event Ereignis zur Registrierung der Menü-Fenster
      */
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
@@ -83,7 +90,7 @@ public final class CosmicCoreClient {
     }
 
     /**
-     * Zeigt an Brennstoffen Leistung, Brenndauer und Hitze, an Stabilisatoren den Kuehlwert.
+     * Zeigt an Brennstoffen Leistung, Brenndauer und Hitze, an Stabilisatoren den Kühlwert.
      *
      * @param event Ereignis beim Erstellen eines Item-Tooltips
      */
@@ -107,7 +114,7 @@ public final class CosmicCoreClient {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.color_module").withStyle(ChatFormatting.LIGHT_PURPLE));
         } else if (stack.is(ModItems.ANTI_ASTEROID_MODULE.get())) {
             event.getToolTip().add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module",
-                    dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get()).withStyle(ChatFormatting.LIGHT_PURPLE));
+                    CoreConfig.ANTI_ASTEROID_RADIUS.get()).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
                 CoreStabilizer stab = ModDataMaps.stabilizer(stack);
         if (stab != null) {

@@ -1,6 +1,7 @@
 package dr4kun3.cosmiccore;
 
 import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
+import dr4kun3.cosmiccore.multiblock.ReactorRegistry;
 import dr4kun3.cosmiccore.network.AwakeningPayload;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -11,11 +12,11 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-/** /cosmiccore cutscene - spielt die Void-Titan-Cutscene des naechsten erwachten ultimativen Kerns erneut ab. */
+/** /cosmiccore cutscene - spielt die Void-Titan-Cutscene des nächsten erwachten ultimativen Kerns erneut ab. */
 @EventBusSubscriber(modid = CosmicCore.MODID)
 public final class ModCommands {
     /**
-     * Registriert {@code /cosmiccore cutscene}: spielt die Zwischensequenz am naechsten Reaktor (bis 64 Bloecke) ab.
+     * Registriert {@code /cosmiccore cutscene}: spielt die Zwischensequenz am nächsten Reaktor (bis 64 Blöcke) ab.
      *
      * @param event Ereignis zur Befehlsregistrierung
      */
@@ -26,7 +27,7 @@ public final class ModCommands {
                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                     BlockPos best = null;
                     double bestDist = 64.0 * 64.0;
-                    for (BlockPos pos : dr4kun3.cosmiccore.multiblock.ReactorRegistry.controllers(player.level())) {
+                    for (BlockPos pos : ReactorRegistry.controllers(player.level())) {
                         if (player.level().getBlockEntity(pos) instanceof ControllerBlockEntity c && c.isAwakened()) {
                             double d = pos.distSqr(player.blockPosition());
                             if (d < bestDist) {

@@ -1,32 +1,37 @@
 package dr4kun3.cosmiccore.compat.jei;
 
 import dr4kun3.cosmiccore.CosmicCore;
-import dr4kun3.cosmiccore.compat.ViewerEntries;
+import dr4kun3.cosmiccore.client.ControllerScreen;
 import dr4kun3.cosmiccore.compat.ViewerEntries.Entry;
 import dr4kun3.cosmiccore.compat.ViewerEntries.Kind;
+import dr4kun3.cosmiccore.compat.ViewerEntries;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-/** JEI: Kategorien fuer Brennstoffe, Stabilisatoren und Asteroiden-Beute plus Info-Seiten. */
+/** JEI: Kategorien für Brennstoffe, Stabilisatoren und Asteroiden-Beute plus Info-Seiten. */
 @JeiPlugin
 public class CosmicJeiPlugin implements IModPlugin {
     private static final Map<Kind, RecipeType<Entry>> TYPES = new EnumMap<>(Kind.class);
@@ -35,11 +40,6 @@ public class CosmicJeiPlugin implements IModPlugin {
         for (Kind k : Kind.values()) TYPES.put(k, RecipeType.create(CosmicCore.MODID, k.name().toLowerCase(), Entry.class));
     }
 
-    /**
-     * Kennung dieses JEI-Plugins.
-     *
-     * @return {@code cosmiccore:jei_plugin}
-     */
     @Override
     public ResourceLocation getPluginUid() {
         return CosmicCore.id("jei_plugin");
@@ -51,11 +51,11 @@ public class CosmicJeiPlugin implements IModPlugin {
      * @param registration Registrierung der Fenster-Helfer
      */
     @Override
-    public void registerGuiHandlers(mezz.jei.api.registration.IGuiHandlerRegistration registration) {
-        registration.addGuiContainerHandler(dr4kun3.cosmiccore.client.ControllerScreen.class,
-                new mezz.jei.api.gui.handlers.IGuiContainerHandler<>() {
+    public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(ControllerScreen.class,
+                new IGuiContainerHandler<>() {
                     @Override
-                    public java.util.List<net.minecraft.client.renderer.Rect2i> getGuiExtraAreas(dr4kun3.cosmiccore.client.ControllerScreen screen) {
+                    public List<Rect2i> getGuiExtraAreas(ControllerScreen screen) {
                         return screen.extraAreas();
                     }
                 });
@@ -73,7 +73,7 @@ public class CosmicJeiPlugin implements IModPlugin {
     }
 
     /**
-     * Meldet alle Eintraege der Kategorien und die Info-Seiten der wichtigsten Bloecke an.
+     * Meldet alle Einträge der Kategorien und die Info-Seiten der wichtigsten Blöcke an.
      *
      * @param registration Registrierung der Rezepte
      */
@@ -84,9 +84,9 @@ public class CosmicJeiPlugin implements IModPlugin {
     }
 
     /**
-     * Ordnet jeder Kategorie ihre Werkbank-Bloecke zu.
+     * Ordnet jeder Kategorie ihre Werkbank-Blöcke zu.
      *
-     * @param registration Registrierung der Werkbaenke
+     * @param registration Registrierung der Werkbänke
      */
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
@@ -110,51 +110,26 @@ public class CosmicJeiPlugin implements IModPlugin {
             this.icon = gui.createDrawableItemStack(ViewerEntries.icon(kind));
         }
 
-        /**
-         * Rezepttyp dieser Kategorie.
-         *
-         * @return der Typ
-         */
         @Override
         public RecipeType<Entry> getRecipeType() {
             return TYPES.get(kind);
         }
 
-        /**
-         * Titel der Kategorie.
-         *
-         * @return uebersetzter Titel
-         */
         @Override
         public Component getTitle() {
             return ViewerEntries.title(kind);
         }
 
-        /**
-         * Symbol der Kategorie.
-         *
-         * @return das Symbol
-         */
         @Override
         public IDrawable getIcon() {
             return icon;
         }
 
-        /**
-         * Breite der Anzeige.
-         *
-         * @return Breite in Pixeln
-         */
         @Override
         public int getWidth() {
             return ViewerEntries.WIDTH;
         }
 
-        /**
-         * Hoehe der Anzeige (Beute braucht eine Zeile mehr).
-         *
-         * @return Hoehe in Pixeln
-         */
         @Override
         public int getHeight() {
             return kind == Kind.LOOT ? 44 : 30;

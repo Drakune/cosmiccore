@@ -4,24 +4,25 @@ import dr4kun3.cosmiccore.CosmicCore;
 import dr4kun3.cosmiccore.ModItems;
 import java.util.List;
 import java.util.function.Supplier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
 /**
  * Standard-Beute der Asteroiden. Daraus erzeugt die Datengenerierung die Loot-Tables
- * (data/cosmiccore/loot_table/asteroid/&lt;groesse&gt;.json, per Datapack ueberschreibbar); die Rezept-Viewer zeigen sie an.
+ * (data/cosmiccore/loot_table/asteroid/&lt;größe&gt;.json, per Datapack überschreibbar); die Rezept-Viewer zeigen sie an.
  */
 public final class AsteroidLoot {
-    /** Ein Pool: genau ein Eintrag mit zufaelliger Menge min-max, der mit chance (0-1) gewuerfelt wird. */
+    /** Ein Pool: genau ein Eintrag mit zufälliger Menge min-max, der mit chance (0-1) gewürfelt wird. */
     public record Drop(Supplier<? extends Item> item, int min, int max, float chance) {}
 
     public record Table(String name, List<Drop> drops) {
         /**
-         * Name der Loot-Table dieser Asteroidengroesse.
+         * Name der Loot-Table dieser Asteroidengröße.
          *
-         * @return Kennung {@code cosmiccore:asteroid/<groesse>}
+         * @return Kennung {@code cosmiccore:asteroid/<größe>}
          */
-        public net.minecraft.resources.ResourceLocation id() {
+        public ResourceLocation id() {
             return CosmicCore.id("asteroid/" + name);
         }
     }

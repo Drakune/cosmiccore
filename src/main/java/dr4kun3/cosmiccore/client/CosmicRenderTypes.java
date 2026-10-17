@@ -9,6 +9,7 @@ import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.TheEndPortalRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -18,8 +19,8 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
  * Eigene RenderTypes des Mods.
  * <p>
  * {@link #glow()} ist wie Minecrafts "lightning" (additives Leuchten), schreibt aber NICHT in den Tiefenpuffer und
- * wird nicht sortiert. Beim Vanilla-Typ verdecken sich ueberlappende Leuchteffekte je nach Blickwinkel gegenseitig -
- * das fuehrte zu Flackern. Additives Licht ist reihenfolgeunabhaengig, daher ist kein Sortieren noetig.
+ * wird nicht sortiert. Beim Vanilla-Typ verdecken sich überlappende Leuchteffekte je nach Blickwinkel gegenseitig -
+ * das führte zu Flackern. Additives Licht ist reihenfolgeunabhängig, daher ist kein Sortieren nötig.
  */
 @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
 public final class CosmicRenderTypes {
@@ -35,7 +36,7 @@ public final class CosmicRenderTypes {
             .withBlend(BlendFunction.LIGHTNING).withDepthWrite(false).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
-    /** Schreibt nur Tiefe, nur Rueckseiten. */
+    /** Schreibt nur Tiefe, nur Rückseiten. */
     private static final RenderPipeline DEPTH_BACK_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/depth_back"))
             .withVertexShader("core/position").withFragmentShader("core/position")
@@ -89,7 +90,7 @@ public final class CosmicRenderTypes {
             RenderType.CompositeState.builder().setOutputState(RenderStateShard.WEATHER_TARGET).createCompositeState(false));
 
     /**
-     * Additives Leuchten wie bei Blitzen, ohne Tiefe zu schreiben und ohne Culling - fuer fast alle Effekte.
+     * Additives Leuchten wie bei Blitzen, ohne Tiefe zu schreiben und ohne Culling - für fast alle Effekte.
      *
      * @return der Render-Typ
      */
@@ -98,14 +99,14 @@ public final class CosmicRenderTypes {
     }
 
     /**
-     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten (Culling). Die leuchtenden Effekte schreiben
-     * keine Tiefe - ohne diesen Abschluss wuerden spaeter gezeichnete Wolken/Regen hinter der Kammer davor erscheinen.
+     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rückseiten (Culling). Die leuchtenden Effekte schreiben
+     * keine Tiefe - ohne diesen Abschluss würden später gezeichnete Wolken/Regen hinter der Kammer davor erscheinen.
      */
     private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", 1536, DEPTH_BACK_PIPELINE,
             RenderType.CompositeState.builder().createCompositeState(false));
 
     /**
-     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten. Ohne ihn wuerden spaeter gezeichnete
+     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rückseiten. Ohne ihn würden später gezeichnete
      * Wolken oder Regen hinter der Kammer davor erscheinen.
      *
      * @return der Render-Typ
@@ -118,8 +119,8 @@ public final class CosmicRenderTypes {
     private static final RenderType SPACE_DOME = RenderType.create("cosmiccore_space_dome", 1536, SPACE_DOME_PIPELINE,
             RenderType.CompositeState.builder()
                     .setTextureState(RenderStateShard.MultiTextureStateShard.builder()
-                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_SKY_LOCATION, false, false)
-                            .add(net.minecraft.client.renderer.blockentity.TheEndPortalRenderer.END_PORTAL_LOCATION, false, false)
+                            .add(TheEndPortalRenderer.END_SKY_LOCATION, false, false)
+                            .add(TheEndPortalRenderer.END_PORTAL_LOCATION, false, false)
                             .build())
                     .createCompositeState(false));
 
@@ -132,12 +133,12 @@ public final class CosmicRenderTypes {
         return SPACE_DOME;
     }
 
-    /** Deckende Farbkuppel ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel). */
+    /** Deckende Farbkuppel ohne Tiefentest (schwarzes All für den Warp-Flug, verdeckt Welt und Himmel). */
     private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", 1536, SPACE_SOLID_PIPELINE,
             RenderType.CompositeState.builder().createCompositeState(false));
 
     /**
-     * Deckende Farbflaechen ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel).
+     * Deckende Farbflächen ohne Tiefentest (schwarzes All für den Warp-Flug, verdeckt Welt und Himmel).
      *
      * @return der Render-Typ
      */
@@ -145,12 +146,12 @@ public final class CosmicRenderTypes {
         return SPACE_SOLID;
     }
 
-    /** Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */
+    /** Halbtransparente Farbflächen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */
     private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", 1536, SPACE_TINT_PIPELINE,
             RenderType.CompositeState.builder().createCompositeState(false));
 
     /**
-     * Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All).
+     * Halbtransparente Farbflächen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All).
      *
      * @return der Render-Typ
      */

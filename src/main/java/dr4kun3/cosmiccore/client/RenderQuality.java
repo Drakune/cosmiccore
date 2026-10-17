@@ -7,7 +7,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Detailgrad der Effekte (0..1) aus der Client-Config und der Entfernung zur Kamera. Jeder Renderer setzt ihn zu
- * Beginn per {@link #begin(BlockPos)}; die Effekt-Klassen lesen ihn ueber {@link #detail()} (alles im Render-Thread).
+ * Beginn per {@link #begin(BlockPos)}; die Effekt-Klassen lesen ihn über {@link #detail()} (alles im Render-Thread).
  */
 public final class RenderQuality {
     /** Nur statischer Zustand - keine Instanzen. */
@@ -16,7 +16,7 @@ public final class RenderQuality {
     private static float detail = 1.0F;
 
     /**
-     * Legt den Detailgrad fuer den naechsten Reaktor fest: Grundwert aus der Client-Einstellung, mit der Entfernung
+     * Legt den Detailgrad für den nächsten Reaktor fest: Grundwert aus der Client-Einstellung, mit der Entfernung
      * zur Kamera abnehmend.
      *
      * @param pos Position des gezeichneten Reaktors
@@ -45,7 +45,7 @@ public final class RenderQuality {
     /**
      * Skaliert eine Anzahl (Linien, Partikel, Segmente) mit dem Detailgrad.
      *
-     * @param full Anzahl bei voller Qualitaet
+     * @param full Anzahl bei voller Qualität
      * @param min Untergrenze
      * @return die angepasste Anzahl, mindestens {@code min}
      */
