@@ -6,12 +6,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/** Traegt nur die Animation von Spule und Kristall; der Zustand steckt in der PHASE des Blockstates. */
+/** Trägt nur die Animation von Spule und Kristall; der Zustand steckt in der PHASE des Blockstates. */
 public class ResonatorBlockEntity extends BlockEntity {
     private static final int[][] DIRS = {{1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}, {1, 0, 1}, {-1, 0, 1}, {1, 0, -1}, {-1, 0, -1},
             {0, 1, 0}, {0, -1, 0}};
 
-    // nur clientseitig: Richtung zum Kern (fuer die Ausrichtung der Animation)
+    // nur clientseitig: Richtung zum Kern (für die Ausrichtung der Animation)
     @Nullable
     private int[] coreOffset;
     private long lastLookup = Long.MIN_VALUE;
@@ -27,10 +27,10 @@ public class ResonatorBlockEntity extends BlockEntity {
     }
 
     /**
-     * Sucht den naechsten Singularitaetskern entlang der Achsen und Diagonalen (bis 4 Bloecke). Das Ergebnis wird
+     * Sucht den nächsten Singularitätskern entlang der Achsen und Diagonalen (bis 4 Blöcke). Das Ergebnis wird
      * zwei Sekunden zwischengespeichert, damit nicht jedes Bild neu gesucht wird.
      *
-     * @param gameTime aktuelle Spielzeit in Ticks (fuer den Zwischenspeicher)
+     * @param gameTime aktuelle Spielzeit in Ticks (für den Zwischenspeicher)
      * @return Versatz {x, y, z} zum Kern oder {@code null}, wenn keiner in Reichweite ist
      */
     @Nullable

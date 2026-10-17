@@ -7,6 +7,9 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.blockentity.AbstractEndPortalRenderer;
+import net.minecraft.client.renderer.rendertype.OutputTarget;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.neoforged.api.distmarker.Dist;
@@ -18,8 +21,8 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
  * Eigene RenderTypes des Mods.
  * <p>
  * {@link #glow()} ist wie Minecrafts "lightning" (additives Leuchten), schreibt aber NICHT in den Tiefenpuffer und
- * wird nicht sortiert. Beim Vanilla-Typ verdecken sich ueberlappende Leuchteffekte je nach Blickwinkel gegenseitig -
- * das fuehrte zu Flackern. Additives Licht ist reihenfolgeunabhaengig, daher ist kein Sortieren noetig.
+ * wird nicht sortiert. Beim Vanilla-Typ verdecken sich überlappende Leuchteffekte je nach Blickwinkel gegenseitig -
+ * das führte zu Flackern. Additives Licht ist reihenfolgeunabhängig, daher ist kein Sortieren nötig.
  */
 @EventBusSubscriber(modid = CosmicCore.MODID, value = Dist.CLIENT)
 public final class CosmicRenderTypes {
@@ -35,7 +38,7 @@ public final class CosmicRenderTypes {
             .withBlend(BlendFunction.LIGHTNING).withDepthWrite(false).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
-    /** Schreibt nur Tiefe, nur Rueckseiten. */
+    /** Schreibt nur Tiefe, nur Rückseiten. */
     private static final RenderPipeline DEPTH_BACK_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/depth_back"))
             .withVertexShader("core/position").withFragmentShader("core/position")
@@ -54,7 +57,7 @@ public final class CosmicRenderTypes {
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST).withDepthWrite(false).withCull(false)
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS).build();
 
-    /** Deckende Farbe mit Tiefentest, die Tiefe schreibt (wie frueher debugQuads, das seit 1.21.11 keine Tiefe mehr schreibt). */
+    /** Deckende Farbe mit Tiefentest, die Tiefe schreibt (wie früher debugQuads, das seit 1.21.11 keine Tiefe mehr schreibt). */
     private static final RenderPipeline SOLID_COLOR_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
             .withLocation(CosmicCore.id("pipeline/solid_color"))
             .withVertexShader("core/position_color").withFragmentShader("core/position_color")
@@ -93,10 +96,10 @@ public final class CosmicRenderTypes {
     // ------------------------------------------------------------------ Render-Typen
 
     private static final RenderType GLOW = RenderType.create("cosmiccore_glow",
-            net.minecraft.client.renderer.rendertype.RenderSetup.builder(GLOW_PIPELINE).setOutputTarget(net.minecraft.client.renderer.rendertype.OutputTarget.WEATHER_TARGET).bufferSize(1536).createRenderSetup());
+            RenderSetup.builder(GLOW_PIPELINE).setOutputTarget(OutputTarget.WEATHER_TARGET).bufferSize(1536).createRenderSetup());
 
     /**
-     * Additives Leuchten wie bei Blitzen, ohne Tiefe zu schreiben und ohne Culling - fuer fast alle Effekte.
+     * Additives Leuchten wie bei Blitzen, ohne Tiefe zu schreiben und ohne Culling - für fast alle Effekte.
      *
      * @return der Render-Typ
      */
@@ -105,13 +108,13 @@ public final class CosmicRenderTypes {
     }
 
     /**
-     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten (Culling). Die leuchtenden Effekte schreiben
-     * keine Tiefe - ohne diesen Abschluss wuerden spaeter gezeichnete Wolken/Regen hinter der Kammer davor erscheinen.
+     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rückseiten (Culling). Die leuchtenden Effekte schreiben
+     * keine Tiefe - ohne diesen Abschluss würden später gezeichnete Wolken/Regen hinter der Kammer davor erscheinen.
      */
-    private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", net.minecraft.client.renderer.rendertype.RenderSetup.builder(DEPTH_BACK_PIPELINE).bufferSize(1536).createRenderSetup());
+    private static final RenderType DEPTH_BACK = RenderType.create("cosmiccore_depth_back", RenderSetup.builder(DEPTH_BACK_PIPELINE).bufferSize(1536).createRenderSetup());
 
     /**
-     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rueckseiten. Ohne ihn wuerden spaeter gezeichnete
+     * Unsichtbarer Tiefen-Abschluss: schreibt nur Tiefe, nur Rückseiten. Ohne ihn würden später gezeichnete
      * Wolken oder Regen hinter der Kammer davor erscheinen.
      *
      * @return der Render-Typ
@@ -122,9 +125,9 @@ public final class CosmicRenderTypes {
 
     /** Sternenfeld-Kuppel eines fremden Universums: End-Sternenfeld ohne Tiefentest (liegt hinter allem, Himmels-Phase). */
     private static final RenderType SPACE_DOME = RenderType.create("cosmiccore_space_dome",
-            net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_DOME_PIPELINE)
-                    .withTexture("Sampler0", net.minecraft.client.renderer.blockentity.AbstractEndPortalRenderer.END_SKY_LOCATION)
-                    .withTexture("Sampler1", net.minecraft.client.renderer.blockentity.AbstractEndPortalRenderer.END_PORTAL_LOCATION)
+            RenderSetup.builder(SPACE_DOME_PIPELINE)
+                    .withTexture("Sampler0", AbstractEndPortalRenderer.END_SKY_LOCATION)
+                    .withTexture("Sampler1", AbstractEndPortalRenderer.END_PORTAL_LOCATION)
                     .bufferSize(1536).createRenderSetup());
 
     /**
@@ -136,11 +139,11 @@ public final class CosmicRenderTypes {
         return SPACE_DOME;
     }
 
-    /** Deckende Farbkuppel ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel). */
-    private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_SOLID_PIPELINE).bufferSize(1536).createRenderSetup());
+    /** Deckende Farbkuppel ohne Tiefentest (schwarzes All für den Warp-Flug, verdeckt Welt und Himmel). */
+    private static final RenderType SPACE_SOLID = RenderType.create("cosmiccore_space_solid", RenderSetup.builder(SPACE_SOLID_PIPELINE).bufferSize(1536).createRenderSetup());
 
     /**
-     * Deckende Farbflaechen ohne Tiefentest (schwarzes All fuer den Warp-Flug, verdeckt Welt und Himmel).
+     * Deckende Farbflächen ohne Tiefentest (schwarzes All für den Warp-Flug, verdeckt Welt und Himmel).
      *
      * @return der Render-Typ
      */
@@ -148,11 +151,11 @@ public final class CosmicRenderTypes {
         return SPACE_SOLID;
     }
 
-    /** Deckende Farbflaechen mit Tiefe (Bildschirme, Asteroidenfels, Kerne der Items). */
-    private static final RenderType SOLID_COLOR = RenderType.create("cosmiccore_solid_color", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SOLID_COLOR_PIPELINE).bufferSize(1536).createRenderSetup());
+    /** Deckende Farbflächen mit Tiefe (Bildschirme, Asteroidenfels, Kerne der Items). */
+    private static final RenderType SOLID_COLOR = RenderType.create("cosmiccore_solid_color", RenderSetup.builder(SOLID_COLOR_PIPELINE).bufferSize(1536).createRenderSetup());
 
     /**
-     * Deckende Farbflaechen, die Tiefe schreiben: Bildschirme verdecken so die Leuchtstrahlen dahinter. Ersetzt
+     * Deckende Farbflächen, die Tiefe schreiben: Bildschirme verdecken so die Leuchtstrahlen dahinter. Ersetzt
      * debugQuads, das seit Minecraft 1.21.11 keine Tiefe mehr schreibt.
      *
      * @return der Render-Typ
@@ -161,11 +164,11 @@ public final class CosmicRenderTypes {
         return SOLID_COLOR;
     }
 
-    /** Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */
-    private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_TINT_PIPELINE).bufferSize(1536).createRenderSetup());
+    /** Halbtransparente Farbflächen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All). */
+    private static final RenderType SPACE_TINT = RenderType.create("cosmiccore_space_tint", RenderSetup.builder(SPACE_TINT_PIPELINE).bufferSize(1536).createRenderSetup());
 
     /**
-     * Halbtransparente Farbflaechen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All).
+     * Halbtransparente Farbflächen ohne Tiefentest (Planetenringe, Wolkendecken, Abblenden im All).
      *
      * @return der Render-Typ
      */
@@ -174,7 +177,7 @@ public final class CosmicRenderTypes {
     }
 
     /** Additives Licht ohne Tiefentest (Sterne, Nebel und Lichtreflexe der Kulissen - liegen immer vorn). */
-    private static final RenderType SPACE_GLOW = RenderType.create("cosmiccore_space_glow", net.minecraft.client.renderer.rendertype.RenderSetup.builder(SPACE_GLOW_PIPELINE).bufferSize(1536).createRenderSetup());
+    private static final RenderType SPACE_GLOW = RenderType.create("cosmiccore_space_glow", RenderSetup.builder(SPACE_GLOW_PIPELINE).bufferSize(1536).createRenderSetup());
 
     /**
      * Additives Licht ohne Tiefentest (Sterne, Nebel und Lichtreflexe der Kulissen - liegen immer vorn).

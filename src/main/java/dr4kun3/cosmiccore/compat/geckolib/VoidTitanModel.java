@@ -3,55 +3,38 @@ package dr4kun3.cosmiccore.compat.geckolib;
 import dr4kun3.cosmiccore.CosmicCore;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.renderer.base.BoneSnapshots;
 import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.renderer.base.BoneSnapshots;
+import software.bernie.geckolib.renderer.base.GeoRenderState;
 
 /**
- * Oberkoerper des Void-Titanen: eine bemalte Textur, normal schattiert. Zur Keyframe-Animation kommt prozedurale
- * Sekundaerbewegung: die Fluegelspeichen fachern leicht, Finger kruemmen sich beim Aufladen, die Kugel pulsiert.
+ * Oberkörper des Void-Titanen: eine bemalte Textur, normal schattiert. Zur Keyframe-Animation kommt prozedurale
+ * Sekundärbewegung: die Flügelspeichen fachern leicht, Finger krümmen sich beim Aufladen, die Kugel pulsiert.
  */
 public class VoidTitanModel extends GeoModel<VoidTitan> {
     private static final int FINGERS = 4, FINGER_SEGS = 2;
-    /** Markierungs-Knochen, deren Lage die Cutscene fuer Leuchteffekte braucht. */
+    /** Markierungs-Knochen, deren Lage die Cutscene für Leuchteffekte braucht. */
     public static final String[] TRACKED = {"eye_l", "eye_r", "core", "orb", "hand_l", "hand_r", "head"}; // muss zu tools/generate_titan.py passen
 
-    /**
-     * Geometrie des Titanen.
-     *
-     * @param state Zeichenzustand
-     * @return ID der Geometrie
-     */
     @Override
-    public Identifier getModelResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+    public Identifier getModelResource(GeoRenderState state) {
         return CosmicCore.id("void_titan");
     }
 
-    /**
-     * Textur des Titanen.
-     *
-     * @param state Zeichenzustand
-     * @return Pfad der Textur
-     */
     @Override
-    public Identifier getTextureResource(software.bernie.geckolib.renderer.base.GeoRenderState state) {
+    public Identifier getTextureResource(GeoRenderState state) {
         return CosmicCore.id("textures/entity/void_titan.png");
     }
 
-    /**
-     * Animationen (Ruhe und Film).
-     *
-     * @param animatable Animationszustand (nicht verwendet)
-     * @return Pfad der Animationsdatei
-     */
     @Override
     public Identifier getAnimationResource(VoidTitan animatable) {
         return CosmicCore.id("void_titan");
     }
 
     /**
-     * Eigene Bewegung der Knochen: Fluegelschlag, Atmen, Kopf und Arme (im Film ruhiger).
+     * Eigene Bewegung der Knochen: Flügelschlag, Atmen, Kopf und Arme (im Film ruhiger).
      *
-     * @param snapshots Knochenzustaende dieses Bildes
+     * @param snapshots Knochenzustände dieses Bildes
      * @param ticks Animationszeit in Ticks
      * @param cinematic {@code true} im Film
      */
@@ -75,7 +58,7 @@ public class VoidTitanModel extends GeoModel<VoidTitan> {
     }
 
     /**
-     * Weicher Bogen zwischen zwei Zeitpunkten (0 ausserhalb, 1 in der Mitte).
+     * Weicher Bogen zwischen zwei Zeitpunkten (0 außerhalb, 1 in der Mitte).
      *
      * @param t aktuelle Zeit in Sekunden
      * @param a Beginn

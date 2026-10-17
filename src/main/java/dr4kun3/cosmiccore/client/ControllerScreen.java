@@ -1,26 +1,19 @@
 package dr4kun3.cosmiccore.client;
 
-import dr4kun3.cosmiccore.CoreConfig;
-import dr4kun3.cosmiccore.ModItems;
-import dr4kun3.cosmiccore.data.CoreFuel;
-import dr4kun3.cosmiccore.data.ModDataMaps;
-import net.minecraft.world.item.ItemStack;
-import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
-import dr4kun3.cosmiccore.menu.ControllerMenu;
-import dr4kun3.cosmiccore.multiblock.ReactorSize;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import dr4kun3.cosmiccore.CoreConfig;
+import dr4kun3.cosmiccore.ModItems;
 import dr4kun3.cosmiccore.block.ControllerBlock;
 import dr4kun3.cosmiccore.block.ModBlocks;
+import dr4kun3.cosmiccore.block.entity.ControllerBlockEntity;
+import dr4kun3.cosmiccore.color.CoreColors;
+import dr4kun3.cosmiccore.data.CoreFuel;
+import dr4kun3.cosmiccore.data.ModDataMaps;
+import dr4kun3.cosmiccore.menu.ControllerMenu;
 import dr4kun3.cosmiccore.multiblock.CorePattern;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.state.BlockState;
+import dr4kun3.cosmiccore.multiblock.ReactorSize;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,18 +23,30 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * GUI des Kerngenerators. Alles wird prozedural gezeichnet (keine Texturdatei).
- * Zwei Modi: Groessenwahl (einmalig nach dem Platzieren) und Betrieb.
+ * Zwei Modi: Größenwahl (einmalig nach dem Platzieren) und Betrieb.
  */
 public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
-    // Einheitliches Raster: 5 px Aussenabstand (Rand und zwischen Karten), 5 px Innenabstand in jeder Karte
-    /** H = Hoehe der Groessenwahl; H_MAIN = Hoehe der Steuerung (ohne Beute-Reihe, Module im Seiten-Tab). */
+    // Einheitliches Raster: 5 px Außenabstand (Rand und zwischen Karten), 5 px Innenabstand in jeder Karte
+    /** H = Höhe der Größenwahl; H_MAIN = Höhe der Steuerung (ohne Beute-Reihe, Module im Seiten-Tab). */
     /** Modul-Tab ausgeklappt? Standard eingeklappt - spart Platz. */
     private static boolean tabOpen;
     private static final int W = 316, H = 325, H_MAIN = ControllerMenu.INV_Y + 76 + 6;
@@ -68,9 +73,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int SCALE_MINUS_X = COL_A, SCALE_PLUS_X = 85;
     private static final int SLOTS_Y = CTRL_Y + CTRL_H + M, SLOTS_H = 52;
 
-    // Groessenwahl: Reiter links, darunter Info-Karte, 3D-Vorschau rechts, Optionen, Blockliste, Bestaetigung
-    // linke Spalte: Karten "Groesse" (Reiter), "Kennwerte", "Optionen"; rechte Spalte: 3D-Vorschau und Blockliste
-    private static final int LEFT_W = 96, HEAD_H = 8 + 4; // Ueberschrift + Abstand darunter
+    // Größenwahl: Reiter links, darunter Info-Karte, 3D-Vorschau rechts, Optionen, Blockliste, Bestätigung
+    // linke Spalte: Karten "Größe" (Reiter), "Kennwerte", "Optionen"; rechte Spalte: 3D-Vorschau und Blockliste
+    private static final int LEFT_W = 96, HEAD_H = 8 + 4; // Überschrift + Abstand darunter
     private static final int SIZE_CARD_Y = M, TAB_X = M + 1 + PAD, TAB_W = LEFT_W - 2 - 2 * PAD;
     private static final int TAB_Y = SIZE_CARD_Y + 1 + PAD + HEAD_H, TAB_H = 20, TAB_STEP = TAB_H + M;
     private static final int SIZE_CARD_H = TAB_Y + 3 * TAB_STEP + TAB_H + PAD + 1 - SIZE_CARD_Y;
@@ -84,7 +89,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     private final List<Button> sizeButtons = new ArrayList<>();
     private Button scaleDown, scaleUp, toggle, preview, build, confirm;
-    private int selected = 0; // kleinster Kern (5x5x5) vorausgewaehlt
+    private int selected = 0; // kleinster Kern (5x5x5) vorausgewählt
     private boolean withFunnel = true;
     private boolean withLasers = true;
     private Checkbox funnelBox, laserBox;
@@ -92,9 +97,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private float dragYaw, dragPitch;
 
     /**
-     * Legt das Controller-Fenster an: vor der Groessenwahl gross (Auswahl), danach kompakt (Steuerung).
+     * Legt das Controller-Fenster an: vor der Größenwahl groß (Auswahl), danach kompakt (Steuerung).
      *
-     * @param menu das Menue
+     * @param menu das Menü
      * @param inv Inventar des Spielers
      * @param title Fenstertitel
      */
@@ -102,7 +107,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         super(menu, inv, title);
         imageWidth = W;
         imageHeight = menu.sizeChosen() ? H_MAIN : H;
-        menu.modulesOpen = tabOpen; // Tab-Zustand bleibt fuer die Sitzung erhalten (wie bei Mekanism)
+        menu.modulesOpen = tabOpen; // Tab-Zustand bleibt für die Sitzung erhalten (wie bei Mekanism)
         inventoryLabelX = ControllerMenu.INV_X;
         inventoryLabelY = ControllerMenu.INV_Y - 11;
         titleLabelX = 8;
@@ -110,8 +115,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Baut die Knoepfe auf: Groessen-Reiter, Trichter/Laser-Haken, Bestaetigen, Start/Stopp, Stufe, Overdrive,
-     * Vorschau, Bauen, Entfernen und Farbmenue.
+     * Baut die Knöpfe auf: Größen-Reiter, Trichter/Laser-Haken, Bestätigen, Start/Stopp, Stufe, Overdrive,
+     * Vorschau, Bauen, Entfernen und Farbmenü.
      */
     @Override
     protected void init() {
@@ -159,7 +164,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     /**
      * Warnung vor dem Aktivieren bzw. Entfernen einer Overdrive-Stufe (beim Ultimate-Schritt mit eigenem Text).
      *
-     * @param up {@code true}: Stufe erhoehen, sonst senken
+     * @param up {@code true}: Stufe erhöhen, sonst senken
      */
     private void confirmOverdrive(boolean up) {
         if (minecraft == null) return;
@@ -178,22 +183,22 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int ANTI_SW_X = ControllerMenu.MOD_X, ANTI_SW_Y = ControllerMenu.MOD_Y + ControllerMenu.MOD_STEP_Y + 19,
             ANTI_SW_W = 16, ANTI_SW_H = 7;
 
-    // Farbfeld unter dem Farb-Modul-Slot: zeigt den Farbsatz als Streifen, Klick oeffnet das Farbmenue
+    // Farbfeld unter dem Farb-Modul-Slot: zeigt den Farbsatz als Streifen, Klick öffnet das Farbmenü
     private static final int COLOR_SW_X = ControllerMenu.MOD_X + ControllerMenu.MOD_STEP_X;
 
     /**
      * Lasche bzw. ausgeklappter Modul-Tab.
      *
-     * @return {x, y, Breite, Hoehe} relativ zum Fenster
+     * @return {x, y, Breite, Höhe} relativ zum Fenster
      */
     private int[] tabRect() {
         return menu.modulesOpen ? new int[]{MTAB_X, TAB_Y0, TAB_OPEN_W, TAB_OPEN_H} : new int[]{MTAB_X, TAB_Y0, TAB_CLOSED, TAB_CLOSED};
     }
 
     /**
-     * Lager-Tab direkt unter dem Modul-Tab: oeffnet das Lager des Item-Ports.
+     * Lager-Tab direkt unter dem Modul-Tab: öffnet das Lager des Item-Ports.
      *
-     * @return {x, y, Breite, Hoehe} relativ zum Fenster
+     * @return {x, y, Breite, Höhe} relativ zum Fenster
      */
     private int[] storageTabRect() {
         int[] r = tabRect();
@@ -212,7 +217,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Zeichnet den Modul-Tab: zu als Lasche mit Symbol, offen mit den Modulplaetzen, Anti-Asteroiden-Schalter und
+     * Zeichnet den Modul-Tab: zu als Lasche mit Symbol, offen mit den Modulplätzen, Anti-Asteroiden-Schalter und
      * Farbfeld.
      *
      * @param g Grafik-Kontext
@@ -224,7 +229,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         if (!menu.sizeChosen()) return;
         int[] r = tabRect();
         int tx = x + r[0], ty = y + r[1];
-        // Lasche haengt am Fensterrand: links offen, damit sie wie angesetzt wirkt
+        // Lasche hängt am Fensterrand: links offen, damit sie wie angesetzt wirkt
         g.fill(tx, ty, tx + r[2], ty + r[3], PANEL_BORDER);
         g.fill(tx, ty + 1, tx + r[2] - 1, ty + r[3] - 1, 0xFF120A24);
         g.fill(tx, ty + 1, tx + 1, ty + r[3] - 1, 0xFF1A0F33);
@@ -236,9 +241,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fill(sx, sy + 1, sx + sr[2] - 1, sy + sr[3] - 1, 0xFF120A24);
         g.fill(sx, sy + 1, sx + 1, sy + sr[3] - 1, 0xFF1A0F33);
         g.fill(sx + 3, sy + 1, sx + sr[2] - 3, sy + 2, 0xFFB06A20);
-        g.renderItem(new ItemStack(dr4kun3.cosmiccore.ModItems.ITEM_PORT.get()), sx + 4, sy + 4);
+        g.renderItem(new ItemStack(ModItems.ITEM_PORT.get()), sx + 4, sy + 4);
         // Symbol: Effizienz-Modul, darunter ggf. Anzahl installierter Module
-        g.renderItem(new ItemStack(dr4kun3.cosmiccore.ModItems.EFFICIENCY_MODULE.get()), tx + 4, ty + 4);
+        g.renderItem(new ItemStack(ModItems.EFFICIENCY_MODULE.get()), tx + 4, ty + 4);
         int installed = 0;
         for (int i = 2; i < ControllerMenu.MACHINE_SLOTS; i++) if (menu.slots.get(i).hasItem()) installed++;
         if (menu.modulesOpen) {
@@ -249,7 +254,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Farbfeld zum Oeffnen des Farbmenues (grau ohne Farb-Modul, sonst die Kanalfarben im Wechsel).
+     * Farbfeld zum Öffnen des Farbmenüs (grau ohne Farb-Modul, sonst die Kanalfarben im Wechsel).
      *
      * @param g Grafik-Kontext
      * @param sx linke Kante
@@ -263,17 +268,17 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             g.fill(sx, sy, sx + ANTI_SW_W, sy + ANTI_SW_H, 0xFF3A3448);
             return;
         }
-        dr4kun3.cosmiccore.color.CoreColors.Config cfg = menu.colorConfig();
-        for (int i = 0; i < dr4kun3.cosmiccore.color.CoreColors.CHANNELS; i++) {
+        CoreColors.Config cfg = menu.colorConfig();
+        for (int i = 0; i < CoreColors.CHANNELS; i++) {
             g.fill(sx + i * 2, sy, sx + i * 2 + 2, sy + ANTI_SW_H, 0xFF000000 | cfg.rgb(i));
         }
-        // feiner Glanz, der ueber das Feld wandert
+        // feiner Glanz, der über das Feld wandert
         int gx = sx + Math.floorMod((int) (t * 0.5F), ANTI_SW_W + 6) - 3;
         if (gx >= sx && gx < sx + ANTI_SW_W) g.fill(gx, sy, Math.min(gx + 2, sx + ANTI_SW_W), sy + ANTI_SW_H, 0x60FFFFFF);
     }
 
     /**
-     * Schalter der Asteroidenabwehr (grau ohne Modul, gruen an, rot aus).
+     * Schalter der Asteroidenabwehr (grau ohne Modul, grün an, rot aus).
      *
      * @param g Grafik-Kontext
      * @param sx linke Kante
@@ -289,13 +294,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Klicks auf die Reiter neben dem Fenster gelten nicht als ausserhalb (sonst wuerden Items fallen gelassen).
+     * Klicks auf die Reiter neben dem Fenster gelten nicht als außerhalb (sonst würden Items fallen gelassen).
      *
      * @param mouseX Mausposition x
      * @param mouseY Mausposition y
      * @param left linke Kante des Fensters
      * @param top obere Kante des Fensters
-     * @return {@code true}, wenn wirklich ausserhalb
+     * @return {@code true}, wenn wirklich außerhalb
      */
     @Override
     protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top) {
@@ -306,50 +311,50 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Bereiche ausserhalb des Fensters (fuer JEI/EMI/REI, damit die Item-Liste die Tabs nicht verdeckt).
+     * Bereiche außerhalb des Fensters (für JEI/EMI/REI, damit die Item-Liste die Tabs nicht verdeckt).
      *
      * @return die Bereiche in Bildschirmkoordinaten
      */
-    public List<net.minecraft.client.renderer.Rect2i> extraAreas() {
+    public List<Rect2i> extraAreas() {
         if (!menu.sizeChosen()) return List.of();
         int[] r = tabRect(), sr = storageTabRect();
-        return List.of(new net.minecraft.client.renderer.Rect2i(leftPos + r[0], topPos + r[1], r[2], r[3]),
-                new net.minecraft.client.renderer.Rect2i(leftPos + sr[0], topPos + sr[1], sr[2], sr[3]));
+        return List.of(new Rect2i(leftPos + r[0], topPos + r[1], r[2], r[3]),
+                new Rect2i(leftPos + sr[0], topPos + sr[1], sr[2], sr[3]));
     }
 
     /**
-     * Klick auf Reiter, Groessenkarten, Schalter oder Bildlaufleiste.
+     * Klick auf Reiter, Größenkarten, Schalter oder Bildlaufleiste.
      *
      * @param event Mausereignis (Position und Taste)
      * @param doubleClick Doppelklick
      * @return {@code true}, wenn verarbeitet
      */
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         int[] sr = storageTabRect();
         if (menu.sizeChosen() && button == 0 && in((int) mouseX - leftPos, (int) mouseY - topPos, sr[0], sr[1], sr[2], sr[3])) {
             press(ControllerMenu.BTN_STORAGE);
             if (minecraft != null) {
-                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                        SoundEvents.UI_BUTTON_CLICK, 1.0F));
             }
             return true;
         }
         if (menu.sizeChosen() && button == 0 && inTabHeader((int) mouseX - leftPos, (int) mouseY - topPos)) {
             menu.modulesOpen = tabOpen = !menu.modulesOpen;
             if (minecraft != null) {
-                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                        SoundEvents.UI_BUTTON_CLICK, 1.0F));
             }
             return true;
         }
         if (menu.sizeChosen() && menu.modulesOpen && button == 0 && menu.flag(ControllerMenu.F_COLOR_INSTALLED)
                 && in((int) mouseX - leftPos, (int) mouseY - topPos, COLOR_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             if (minecraft != null) {
-                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                        SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 minecraft.setScreen(new ColorScreen(this, menu.getPos(), menu.colorConfig()));
             }
             return true;
@@ -364,8 +369,8 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
                 && in((int) mouseX - leftPos, (int) mouseY - topPos, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             press(ControllerMenu.BTN_ANTI_ASTEROID);
             if (minecraft != null) {
-                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                        SoundEvents.UI_BUTTON_CLICK, 1.0F));
             }
             return true;
         }
@@ -383,12 +388,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         }
     }
 
-    /** Jeden Tick: Knoepfe anpassen und nach der Groessenwahl auf das kompakte Fenster wechseln. */
+    /** Jeden Tick: Knöpfe anpassen und nach der Größenwahl auf das kompakte Fenster wechseln. */
     @Override
     protected void containerTick() {
         super.containerTick();
         int wanted = menu.sizeChosen() ? H_MAIN : H;
-        if (imageHeight != wanted && minecraft != null) { // nach der Groessenwahl wird das Fenster kompakter
+        if (imageHeight != wanted && minecraft != null) { // nach der Größenwahl wird das Fenster kompakter
             imageHeight = wanted;
             init(width, height);
             return;
@@ -397,7 +402,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Sichtbarkeit und Freigabe der Knoepfe nach Zustand (Groessenwahl, laeuft, freigeschaltet, Overdrive moeglich).
+     * Sichtbarkeit und Freigabe der Knöpfe nach Zustand (Größenwahl, läuft, freigeschaltet, Overdrive möglich).
      */
     private void updateWidgets() {
         boolean chosen = menu.sizeChosen();
@@ -434,7 +439,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
 
     /**
      * Hintergrund: Rahmen, Sternenhimmel, Karten (Brennstoff/Stabilisator, Balken, Status), Slots und Tabs - bzw.
-     * vor der Groessenwahl die Auswahl mit 3D-Vorschau.
+     * vor der Größenwahl die Auswahl mit 3D-Vorschau.
      *
      * @param g Grafik-Kontext
      * @param partialTick Teil-Tick
@@ -493,7 +498,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawCenteredString(font, "I", x + BAR_INST_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFFFF9AA8);
         g.drawCenteredString(font, "R", x + BAR_RES_X + BAR_W / 2, y + BAR_Y + BAR_H + 4, 0xFFE0A8FF);
 
-        // Overdrive-Stufen als Kaestchen
+        // Overdrive-Stufen als Kästchen
         ReactorSize current = ReactorSize.bySize(menu.size());
         int maxOd = current == null ? 0 : current.maxOverdrive();
         for (int i = 0; i < maxOd; i++) {
@@ -503,7 +508,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             g.fill(bx + 1, by + 1, bx + 7, by + 7, on ? (((int) (t / 3) + i) % 2 == 0 ? 0xFFFFE080 : 0xFFFF8020) : 0xFF0E0820);
         }
         if (current != null && current.maxOverdriveTotal() > maxOd) {
-            // Ultimate-Feld: golden umrandet, aktiv in schimmernden Regenbogen-Goldtoenen
+            // Ultimate-Feld: golden umrandet, aktiv in schimmernden Regenbogen-Goldtönen
             int bx = x + COL_A + 54 + maxOd * 10, by = y + OD_Y + 4;
             boolean on = menu.overdrive() > maxOd;
             int pulse = (int) (150 + 100 * Mth.sin(t * 0.2F));
@@ -518,7 +523,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fill(x + sx0 + 1, y + ROW_Y + 1, x + sx1 - 1, y + ROW_Y + 15, 0xFF0C0818);
         float growth = menu.maxScale() <= 1 ? 0 : (menu.scale() - 1) / (float) (menu.maxScale() - 1);
         int fillW = Math.round(sw * growth);
-        // freigeschalteter Bereich (gedimmt), darueber die aktuelle Stufe
+        // freigeschalteter Bereich (gedimmt), darüber die aktuelle Stufe
         float unl = menu.maxScale() <= 1 ? 0 : (Math.min(menu.unlocked(), menu.maxScale()) - 1) / (float) (menu.maxScale() - 1);
         int unlW = Math.round(sw * unl);
         if (unlW > 0) g.fill(x + sx0 + 1, y + ROW_Y + 12, x + sx0 + 1 + unlW, y + ROW_Y + 15, 0xFF4A2A70);
@@ -547,13 +552,13 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Einheitliche Karte: dunkle Flaeche, violetter Rahmen, feine Akzentlinie oben.
+     * Einheitliche Karte: dunkle Fläche, violetter Rahmen, feine Akzentlinie oben.
      *
      * @param g Grafik-Kontext
      * @param px linke Kante
      * @param py obere Kante
      * @param pw Breite
-     * @param ph Hoehe
+     * @param ph Höhe
      */
     private static void drawPanel(GuiGraphics g, int px, int py, int pw, int ph) {
         g.fill(px, py, px + pw, py + ph, PANEL_BORDER);
@@ -575,12 +580,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Senkrechter Fuellbalken mit Farbverlauf.
+     * Senkrechter Füllbalken mit Farbverlauf.
      *
      * @param g Grafik-Kontext
      * @param bx linke Kante
      * @param by obere Kante
-     * @param frac Fuellung 0..1
+     * @param frac Füllung 0..1
      * @param top Farbe oben
      * @param bottom Farbe unten
      */
@@ -598,7 +603,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      * @param bx linke Kante
      * @param by obere Kante
      * @param w Breite
-     * @param frac Fuellung 0..1
+     * @param frac Füllung 0..1
      * @param left Farbe links
      * @param right Farbe rechts
      */
@@ -609,7 +614,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Beschriftungen: Titel, Werte der Karten, Status - bzw. in der Groessenwahl die Kennwerte der gewaehlten Groesse.
+     * Beschriftungen: Titel, Werte der Karten, Status - bzw. in der Größenwahl die Kennwerte der gewählten Größe.
      *
      * @param g Grafik-Kontext
      * @param mouseX Mausposition x
@@ -617,24 +622,24 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      */
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        // in der Groessenwahl tragen die Karten eigene Ueberschriften - kein Fenstertitel
+        // in der Größenwahl tragen die Karten eigene Überschriften - kein Fenstertitel
         if (menu.sizeChosen()) g.drawString(font, title, titleLabelX, titleLabelY, 0xFFE0B0FF, false);
         if (!menu.sizeChosen()) {
             ReactorSize sel = ReactorSize.values()[selected];
-            // Info-Karte unter den Reitern: verlaessliche Kennwerte der Baugroesse
+            // Info-Karte unter den Reitern: verlässliche Kennwerte der Baugröße
             g.drawString(font, Component.translatable("gui.cosmiccore.size_head"), TAB_X, SIZE_CARD_Y + 1 + PAD, HEAD, false);
             g.drawString(font, Component.translatable("gui.cosmiccore.options_head"), TAB_X, OPT_Y + 1 + PAD, HEAD, false);
             int ix = TAB_X, iy = SIZE_INFO_Y + 1 + PAD;
             g.drawString(font, Component.translatable("gui.cosmiccore.info_head"), ix, iy, HEAD, false);
             g.fill(ix, iy + 11, TAB_X + TAB_W, iy + 12, 0x663A2468);
-            // je Kennwert eine eigene Zeile mit Luft dazwischen: Bezeichnung links, Wert rechtsbuendig
+            // je Kennwert eine eigene Zeile mit Luft dazwischen: Bezeichnung links, Wert rechtsbündig
             spec(g, ix, iy + 17, "gui.cosmiccore.info_levels", String.valueOf(sel.maxScale()), 0xFFE0A8FF);
             g.drawString(font, Component.translatable("gui.cosmiccore.info_unlock"), ix, SIZE_INFO_Y + SPEC_KEY_Y, 0xFF908AA8, false);
             spec(g, ix, iy + 53, "gui.cosmiccore.info_buffer", bufferText(sel.buffer()), 0xFF9AE8FF);
             spec(g, ix, iy + 69, "gui.cosmiccore.info_overdrive",
                     sel.maxOverdrive() + (sel.maxOverdriveTotal() > sel.maxOverdrive() ? " + \u2605" : ""), 0xFFFFB040);
             if (sel.isUltimate()) {
-                // goldener, sanft pulsierender Schriftzug mittig ueber der Struktur
+                // goldener, sanft pulsierender Schriftzug mittig über der Struktur
                 float tt = (System.currentTimeMillis() % 100000L) / 50.0F;
                 float glowA = 0.75F + 0.25F * Mth.sin(tt * 0.15F);
                 Component head = Component.translatable("gui.cosmiccore.ultimate_title").withStyle(ChatFormatting.BOLD);
@@ -695,10 +700,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.drawString(font, Component.translatable("gui.cosmiccore.overdrive"), COL_A, OD_Y + 4, menu.overdrive() > 0 ? 0xFFFFB040 : HEAD, false);
     }
 
-    // ------------------------------------------------------------------ Groessenwahl
+    // ------------------------------------------------------------------ Größenwahl
 
     /**
-     * Groessenwahl: Reiter je Baugroesse, Kennwerte, 3D-Vorschau und die Liste benoetigter Bloecke.
+     * Größenwahl: Reiter je Baugröße, Kennwerte, 3D-Vorschau und die Liste benötigter Blöcke.
      *
      * @param g Grafik-Kontext
      * @param x linke Kante des Fensters
@@ -706,7 +711,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      * @param t Animationszeit
      */
     private void renderSizeSelection(GuiGraphics g, int x, int y, float t) {
-        // Markierung des gewaehlten Reiters
+        // Markierung des gewählten Reiters
         int ty = y + TAB_Y + selected * TAB_STEP;
         int glowCol = 0xFF000000 | (0xA060FF);
         g.fill(x + TAB_X - 2, ty - 2, x + TAB_X + TAB_W + 2, ty + TAB_H + 2, glowCol);
@@ -722,12 +727,12 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             g.fill(x + TAB_X + TAB_W, uy, x + TAB_X + TAB_W + 1, uy + TAB_H, gold);
         }
 
-        // Karten: Info unter den Reitern, Optionen, benoetigte Bloecke
+        // Karten: Info unter den Reitern, Optionen, benötigte Blöcke
         drawPanel(g, x + M, y + SIZE_CARD_Y, LEFT_W, SIZE_CARD_H);
         drawPanel(g, x + M, y + SIZE_INFO_Y, LEFT_W, SIZE_INFO_H);
         drawPanel(g, x + M, y + OPT_Y, LEFT_W, OPT_H);
         drawPanel(g, x + VIEW_X, y + BLOCKS_Y, VIEW_W, BLOCKS_H);
-        // Freischalt-Item der gewaehlten Groesse in der Info-Karte
+        // Freischalt-Item der gewählten Größe in der Info-Karte
         ItemStack key = new ItemStack(ReactorSize.values()[selected].unlockItem());
         g.renderItem(key, x + TAB_X + specTab(), y + SIZE_INFO_Y + SPEC_KEY_Y - 4);
         // Vorschaufenster
@@ -735,11 +740,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         g.fillGradient(x + VIEW_X, y + VIEW_Y, x + VIEW_X + VIEW_W, y + VIEW_Y + VIEW_H, 0xFF120A26, 0xFF05030C);
         renderStructure(g, ReactorSize.values()[selected], x + VIEW_X + VIEW_W / 2, y + VIEW_Y + VIEW_H / 2 + 8, t);
 
-        // benoetigte Bloecke
+        // benötigte Blöcke
         List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers);
         int maxScroll = blocksMaxScroll(icons.size());
         blocksScroll = Mth.clamp(blocksScroll, 0, maxScroll);
-        // Icons innerhalb der Karte beschneiden; laengere Listen lassen sich horizontal scrollen
+        // Icons innerhalb der Karte beschneiden; längere Listen lassen sich horizontal scrollen
         g.enableScissor(x + BLOCKS_IN_X0, y + ICON_Y - 1, x + BLOCKS_IN_X1, y + ICON_Y + 17);
         for (int i = 0; i < icons.size(); i++) {
             int ix = x + iconX(i, icons.size()) - blocksScroll, iy = y + ICON_Y;
@@ -765,9 +770,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private boolean draggingScroll;
 
     /**
-     * Breite der Liste benoetigter Bloecke.
+     * Breite der Liste benötigter Blöcke.
      *
-     * @param count Anzahl Eintraege
+     * @param count Anzahl Einträge
      * @return Breite in Pixeln
      */
     private static int blocksContentW(int count) {
@@ -775,9 +780,9 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Wie weit sich die Liste verschieben laesst.
+     * Wie weit sich die Liste verschieben lässt.
      *
-     * @param count Anzahl Eintraege
+     * @param count Anzahl Einträge
      * @return Pixel
      */
     private static int blocksMaxScroll(int count) {
@@ -797,7 +802,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Mausrad ueber der Blockliste verschiebt sie.
+     * Mausrad über der Blockliste verschiebt sie.
      *
      * @param mouseX Mausposition x
      * @param mouseY Mausposition y
@@ -821,7 +826,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      * @return {@code true}, wenn verarbeitet
      */
     @Override
-    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+    public boolean mouseReleased(MouseButtonEvent event) {
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         draggingScroll = false;
@@ -829,10 +834,10 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Position eines Block-Symbols, buendig unter der Ueberschrift "Benoetigte Bloecke".
+     * Position eines Block-Symbols, bündig unter der Überschrift "Benötigte Blöcke".
      *
      * @param i Nummer des Eintrags
-     * @param count Anzahl Eintraege
+     * @param count Anzahl Einträge
      * @return x relativ zum Fenster
      */
     private static int iconX(int i, int count) {
@@ -842,11 +847,11 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     private static final int ICON_LEFT = VIEW_X + 1 + PAD + 1;
 
     /**
-     * Benoetigte Bloecke einer Baugroesse.
+     * Benötigte Blöcke einer Baugröße.
      *
-     * @param size Baugroesse
-     * @param funnel Trichter mitzaehlen
-     * @param lasers Laser mitzaehlen
+     * @param size Baugröße
+     * @param funnel Trichter mitzählen
+     * @param lasers Laser mitzählen
      * @return Stapel mit Anzahl
      */
     private static List<ItemStack> requiredBlocks(ReactorSize size, boolean funnel, boolean lasers) {
@@ -857,7 +862,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      * Dreht die echte Struktur als 3D-Modell im Vorschaufenster (mit der Maus ziehbar).
      *
      * @param g Grafik-Kontext
-     * @param size Baugroesse
+     * @param size Baugröße
      * @param cx Mitte x
      * @param cy Mitte y
      * @param t Animationszeit
@@ -877,7 +882,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      * @return {@code true}, wenn verarbeitet
      */
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         if (draggingScroll) {
@@ -910,7 +915,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             "gui.cosmiccore.info_overdrive", "gui.cosmiccore.info_unlock"};
 
     /**
-     * Tabulatorkante der Kennwerte: hinter der laengsten Bezeichnung, damit alle Werte genau untereinander stehen.
+     * Tabulatorkante der Kennwerte: hinter der längsten Bezeichnung, damit alle Werte genau untereinander stehen.
      *
      * @return Abstand in Pixeln
      */
@@ -926,7 +931,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      * @param g Grafik-Kontext
      * @param ix linke Kante
      * @param iy obere Kante
-     * @param key Uebersetzungsschluessel der Bezeichnung
+     * @param key Übersetzungsschlüssel der Bezeichnung
      * @param value Wert
      * @param color Farbe des Werts
      */
@@ -936,7 +941,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Statuszeile: fehlender Pflicht-Port, Baufehler, Countdown, laeuft, kein Brennstoff ...
+     * Statuszeile: fehlender Pflicht-Port, Baufehler, Countdown, läuft, kein Brennstoff ...
      *
      * @return farbiger Text
      */
@@ -959,7 +964,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             return Component.translatable("gui.cosmiccore.status.off").withStyle(ChatFormatting.GRAY);
         }
         if (menu.flag(ControllerMenu.F_FULL)) {
-            // Puffer voll: der Reaktor pausiert, bis Energie abfliesst - Brennstoff bleibt erhalten
+            // Puffer voll: der Reaktor pausiert, bis Energie abfließt - Brennstoff bleibt erhalten
             return Component.translatable("gui.cosmiccore.status.full").withStyle(ChatFormatting.GOLD);
         }
         if (!menu.flag(ControllerMenu.F_BURNING)) {
@@ -984,7 +989,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Farbe der Instabilitaet (gruen, gelb, rot).
+     * Farbe der Instabilität (grün, gelb, rot).
      *
      * @return Farbe 0xAARRGGBB
      */
@@ -996,7 +1001,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     // ------------------------------------------------------------------ Tooltips
 
     /**
-     * Zeichnet das Fenster samt Tooltips (Balken, Module, Schalter, benoetigte Bloecke).
+     * Zeichnet das Fenster samt Tooltips (Balken, Module, Schalter, benötigte Blöcke).
      *
      * @param g Grafik-Kontext
      * @param mouseX Mausposition x
@@ -1011,7 +1016,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             List<ItemStack> icons = requiredBlocks(ReactorSize.values()[selected], withFunnel, withLasers);
             for (int i = 0; i < icons.size(); i++) {
                 int ix = leftPos + iconX(i, icons.size()) - blocksScroll, iy = topPos + ICON_Y;
-                if (mouseX < leftPos + BLOCKS_IN_X0 || mouseX >= leftPos + BLOCKS_IN_X1) break; // ausserhalb des sichtbaren Bereichs
+                if (mouseX < leftPos + BLOCKS_IN_X0 || mouseX >= leftPos + BLOCKS_IN_X1) break; // außerhalb des sichtbaren Bereichs
                 if (mouseX >= ix && mouseX < ix + 16 && mouseY >= iy && mouseY < iy + 16) {
                     g.setTooltipForNextFrame(font, icons.get(i).getHoverName(), mouseX, mouseY);
                 }
@@ -1044,7 +1049,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
             tip.add(Component.translatable("tooltip.cosmiccore.stability_module").withStyle(ChatFormatting.GRAY));
         } else if (open && in(mx, my, mx0, my1, 16, 16) && !hasModule(ControllerBlockEntity.SLOT_ANTI)) {
             tip.add(Component.translatable("item.cosmiccore.anti_asteroid_module"));
-            tip.add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module", dr4kun3.cosmiccore.CoreConfig.ANTI_ASTEROID_RADIUS.get())
+            tip.add(Component.translatable("tooltip.cosmiccore.anti_asteroid_module", CoreConfig.ANTI_ASTEROID_RADIUS.get())
                     .withStyle(ChatFormatting.GRAY));
         } else if (open && in(mx, my, mx1, my1, 16, 16) && !hasModule(ControllerBlockEntity.SLOT_COLOR)) {
             tip.add(Component.translatable("item.cosmiccore.color_module"));
@@ -1052,7 +1057,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
         } else if (open && in(mx, my, COLOR_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             boolean installed = menu.flag(ControllerMenu.F_COLOR_INSTALLED);
             tip.add(Component.translatable("gui.cosmiccore.color.title"));
-            if (installed) tip.add(Component.literal(dr4kun3.cosmiccore.color.CoreColors.encode(menu.colorConfig())).withStyle(ChatFormatting.DARK_GRAY));
+            if (installed) tip.add(Component.literal(CoreColors.encode(menu.colorConfig())).withStyle(ChatFormatting.DARK_GRAY));
             tip.add(Component.translatable(installed ? "gui.cosmiccore.color.hint" : "gui.cosmiccore.color.missing").withStyle(ChatFormatting.GRAY));
         } else if (open && in(mx, my, ANTI_SW_X - 1, ANTI_SW_Y - 1, ANTI_SW_W + 2, ANTI_SW_H + 2)) {
             boolean installed = menu.flag(ControllerMenu.F_ANTI_INSTALLED), on = menu.flag(ControllerMenu.F_ANTI_ON);
@@ -1092,7 +1097,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
      * @param x linke Kante
      * @param y obere Kante
      * @param w Breite
-     * @param h Hoehe
+     * @param h Höhe
      * @return {@code true}, wenn ja
      */
     private static boolean in(int mx, int my, int x, int y, int w, int h) {
@@ -1110,7 +1115,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     }
 
     /**
-     * Grosse Zahl kurz: 1.25G, 3.4M, 12.5k.
+     * Große Zahl kurz: 1.25G, 3.4M, 12.5k.
      *
      * @param n die Zahl
      * @return der Text

@@ -7,33 +7,37 @@ import static dr4kun3.cosmiccore.client.RenderUtil.segment;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModProperties;
+import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
 import dr4kun3.cosmiccore.block.entity.StarFunnelBlockEntity;
+import dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * Der Sternentrichter saugt kosmische Energie aus dem All: Ueber dem Block oeffnet sich ein hoher, schlanker Wirbeltrichter,
+ * Der Sternentrichter saugt kosmische Energie aus dem All: Über dem Block öffnet sich ein hoher, schlanker Wirbeltrichter,
  * der weit in den Himmel reicht. Spiralarme aus Sternenlicht drehen sich nach unten zum Trichter, Ringe kreisen in mehreren
- * Hoehen. Nur sichtbar, wenn der Reaktor darunter laeuft und der Himmel frei ist.
+ * Höhen. Nur sichtbar, wenn der Reaktor darunter läuft und der Himmel frei ist.
  */
-public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<StarFunnelBlockEntity> {
-    private static final float HEIGHT = dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.FUNNEL_HEIGHT;
-    private static final float TOP_RADIUS = dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.FUNNEL_TOP_RADIUS;
+public class StarFunnelRenderer extends LegacyBlockEntityRenderer<StarFunnelBlockEntity> {
+    private static final float HEIGHT = SingularityCoreBlockEntity.FUNNEL_HEIGHT;
+    private static final float TOP_RADIUS = SingularityCoreBlockEntity.FUNNEL_TOP_RADIUS;
     private static final float[] SKY = {0.55F, 0.75F, 1.0F};
     private static final float[] VIOLET = {0.65F, 0.35F, 1.0F};
     private static final float[] WHITE = {1.0F, 1.0F, 1.0F};
     private static final float[] CRITICAL = {1.0F, 0.2F, 0.2F};
-    // (Trichter-Koerper: siehe body())
+    // (Trichter-Körper: siehe body())
 
     /**
      * Legt den Renderer des Sternentrichters an.
@@ -42,46 +46,30 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
      */
     public StarFunnelRenderer(BlockEntityRendererProvider.Context context) {}
 
-    /**
-     * Sichtbarkeitsbox: der ganze Kelch ueber dem Block.
-     *
-     * @param be der Trichter
-     * @return die Box
-     */
     @Override
     public AABB getRenderBoundingBox(StarFunnelBlockEntity be) {
         return new AABB(be.getBlockPos()).inflate(TOP_RADIUS + 1, 0, TOP_RADIUS + 1).expandTowards(0, HEIGHT + 1, 0);
     }
 
-    /**
-     * Auch zeichnen, wenn der Block selbst nicht im Bild ist.
-     *
-     * @return immer {@code true}
-     */
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
     }
 
-    /**
-     * Sichtweite in Bloecken.
-     *
-     * @return 160
-     */
     @Override
     public int getViewDistance() {
         return 160;
     }
 
     /**
-     * Animierter Trichter-Koerper (wie Kern, Emitter und Kristall): Kelch aus Sternenfeld, darauf gegenlaeufig
-     * drehende Lichtringe und Spiralbahnen, ein gleissender Rand und Licht, das nach unten in den Hals stroemt.
+     * Animierter Trichter-Körper (wie Kern, Emitter und Kristall): Kelch aus Sternenfeld, darauf gegenläufig
+     * drehende Lichtringe und Spiralbahnen, ein gleißender Rand und Licht, das nach unten in den Hals strömt.
      *
      * @param pose Pose-Stapel an der Blockposition
      * @param buffers Puffer
      * @param t Animationszeit in Ticks
      * @param energy Helligkeit 0..1
-     * @param unstable {@code true} faerbt alles rot (Kern instabil)
+     * @param unstable {@code true} färbt alles rot (Kern instabil)
      */
     private static void body(PoseStack pose, MultiBufferSource buffers, float t, float energy, boolean unstable) {
         float[] a = unstable ? CRITICAL : SKY, b = unstable ? CRITICAL : VIOLET;
@@ -89,7 +77,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         pose.pushPose();
         pose.translate(0.5, 0.0, 0.5);
         pose.pushPose();
-        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(t * 0.6F));
+        pose.mulPose(Axis.YP.rotationDegrees(t * 0.6F));
         RenderUtil.starTrumpet(buffers.getBuffer(RenderTypes.endPortal()), pose.last().pose(), y0, y1, r0, r1, exp, 24, 6);
         pose.popPose();
         VertexConsumer vc = buffers.getBuffer(CosmicRenderTypes.glow());
@@ -98,7 +86,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         for (int k = 0; k <= rings; k++) {
             float f = k / (float) rings;
             float y = Mth.lerp(f, y0, y1), r = r0 + (r1 - r0) * (float) Math.pow(f, exp) + 0.01F;
-            float pulse = 0.5F + 0.5F * Mth.sin(t * 0.18F + f * 6.0F); // Licht laeuft von oben nach unten
+            float pulse = 0.5F + 0.5F * Mth.sin(t * 0.18F + f * 6.0F); // Licht läuft von oben nach unten
             Matrix4f rm = new Matrix4f(m).translate(0, y, 0).rotateY(t * 0.03F * (k % 2 == 0 ? 1 : -1));
             flatCircle(vc, rm, r, k == rings ? 0.02F : 0.007F, 40, lerp(b, a, f), energy * (k == rings ? 1.0F : 0.3F + 0.5F * pulse));
         }
@@ -116,7 +104,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
             }
         }
         for (int k = 0; k < 6; k++) {
-            float f = 1.0F - Mth.frac(t * 0.025F + k / 6.0F); // faellt nach unten in den Hals
+            float f = 1.0F - Mth.frac(t * 0.025F + k / 6.0F); // fällt nach unten in den Hals
             float ang = k * 1.7F + f * 3.0F;
             float r = (r0 + (r1 - r0) * (float) Math.pow(f, exp)) * 0.85F;
             cube(vc, m, Mth.cos(ang) * r, Mth.lerp(f, y0, y1), Mth.sin(ang) * r, 0.02F, WHITE[0], WHITE[1], WHITE[2], energy * Mth.sin(f * Mth.PI));
@@ -126,18 +114,18 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
     }
 
     /**
-     * Radius der Trompetenform in einer Hoehe (unten eng, oben weit).
+     * Radius der Trompetenform in einer Höhe (unten eng, oben weit).
      *
-     * @param h Hoehe ueber dem Hals in Bloecken
-     * @return Radius in Bloecken
+     * @param h Höhe über dem Hals in Blöcken
+     * @return Radius in Blöcken
      */
     private static float radiusAt(float h) {
         // Trompetenform: unten eng, oben weit
-        return dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity.funnelRadius(h);
+        return SingularityCoreBlockEntity.funnelRadius(h);
     }
 
     /**
-     * Zeichnet den animierten Sternentrichter ueber der Decke.
+     * Zeichnet den animierten Sternentrichter über der Decke.
      *
      * @param be der Trichter
      * @param partialTick Teil-Tick
@@ -148,7 +136,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
      * @param cameraPos Position der Kamera
      */
     @Override
-    public void render(StarFunnelBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
+    public void render(StarFunnelBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         BlockState below = level.getBlockState(be.getBlockPos().below());
@@ -173,7 +161,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
         VertexConsumer vc = buffers.getBuffer(CosmicRenderTypes.glow());
         Matrix4f m = pose.last().pose();
 
-        // Spiralarme: Sternenlicht stroemt von oben nach unten in den Trichter
+        // Spiralarme: Sternenlicht strömt von oben nach unten in den Trichter
         int arms = 5, steps = RenderQuality.scale(48, 16);
         for (int k = 0; k < arms; k++) {
             float lx = 0, ly = 0, lz = 0;
@@ -185,7 +173,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
                 float ang = k * Mth.TWO_PI / arms + f * 7.0F + t * 0.03F * speed;
                 float x = Mth.cos(ang) * r, z = Mth.sin(ang) * r;
                 if (!first) {
-                    // Helligkeit wandert nach unten (Energie fliesst zum Reaktor)
+                    // Helligkeit wandert nach unten (Energie fließt zum Reaktor)
                     float flow = 0.5F + 0.5F * Mth.sin(f * 14.0F + t * 0.15F * speed + k);
                     float a = energy * (1.0F - f * 0.75F) * (0.3F + 0.7F * flow);
                     float[] col = lerp(c1, c2, f);
@@ -198,7 +186,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
             }
         }
 
-        // kreisende Ringe in mehreren Hoehen (Trichterwand)
+        // kreisende Ringe in mehreren Höhen (Trichterwand)
         for (int i = 1; i <= 7; i++) {
             float h = HEIGHT * i / 8.0F;
             float r = radiusAt(h);
@@ -219,7 +207,7 @@ public class StarFunnelRenderer extends dr4kun3.cosmiccore.client.render.LegacyB
             cube(vc, m, Mth.cos(ang) * r, h, Mth.sin(ang) * r, 0.02F + 0.04F * f, WHITE[0], WHITE[1], WHITE[2], energy * (1.0F - f * 0.5F));
         }
 
-        // gleissender Hals des Trichters
+        // gleißender Hals des Trichters
         flatCircle(vc, m, 0.3F, 0.04F, 32, WHITE, energy);
         pose.popPose();
     }

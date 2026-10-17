@@ -4,8 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 /**
- * Brennstoff fuer den Kern: burnTime in Ticks, power in RF/t (bei voller Resonanz, vor Boni) und ein optionaler
- * Hitzefaktor (heat, Standard 1.0) - heissere Brennstoffe treiben die Instabilitaet staerker.
+ * Brennstoff für den Kern: burnTime in Ticks, power in RF/t (bei voller Resonanz, vor Boni) und ein optionaler
+ * Hitzefaktor (heat, Standard 1.0) - heißere Brennstoffe treiben die Instabilität stärker.
  */
 public record CoreFuel(int burnTime, int power, float heat) {
     public static final Codec<CoreFuel> CODEC = RecordCodecBuilder.create(i -> i.group(

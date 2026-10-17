@@ -5,16 +5,17 @@ import dr4kun3.cosmiccore.data.CoreFuel;
 import dr4kun3.cosmiccore.data.CoreStabilizer;
 import dr4kun3.cosmiccore.data.ModDataMaps;
 import java.util.concurrent.CompletableFuture;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.data.DataMapProvider;
 
-/** Standard-Balance fuer Brennstoffe und Stabilisatoren (per Datapack ueberschreibbar). */
+/** Standard-Balance für Brennstoffe und Stabilisatoren (per Datapack überschreibbar). */
 public class ModDataMapProvider extends DataMapProvider {
     /**
-     * Legt den Generator fuer die Data Maps an.
+     * Legt den Generator für die Data Maps an.
      *
      * @param output Ausgabeziel der Datengenerierung
      * @param lookup Registry-Zugriff (wird asynchron geliefert)
@@ -24,8 +25,8 @@ public class ModDataMapProvider extends DataMapProvider {
     }
 
     /**
-     * Traegt alle Brennstoffe (Brenndauer, Leistung, Hitze) und Stabilisatoren (Kuehlwert) ein - eigene Items und
-     * ausgewaehlte Vanilla-Items.
+     * Trägt alle Brennstoffe (Brenndauer, Leistung, Hitze) und Stabilisatoren (Kühlwert) ein - eigene Items und
+     * ausgewählte Vanilla-Items.
      *
      * @param provider Registry-Zugriff
      */
@@ -49,13 +50,13 @@ public class ModDataMapProvider extends DataMapProvider {
     }
 
     /**
-     * Registry-Halter eines Vanilla-Items (fuer Data-Map-Eintraege).
+     * Registry-Halter eines Vanilla-Items (für Data-Map-Einträge).
      *
      * @param item das Item
      * @return sein eingebauter Registry-Halter
      */
     @SuppressWarnings("deprecation")
-    private static net.minecraft.core.Holder<Item> vanilla(Item item) {
+    private static Holder<Item> vanilla(Item item) {
         return item.builtInRegistryHolder();
     }
 }

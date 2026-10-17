@@ -15,7 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Gemeinsame Daten fuer JEI, EMI und REI: Brennstoffe und Stabilisatoren (aus den Data Maps), Asteroiden-Beute
+ * Gemeinsame Daten für JEI, EMI und REI: Brennstoffe und Stabilisatoren (aus den Data Maps), Asteroiden-Beute
  * und Info-Seiten. Jeder Viewer zeichnet daraus nur noch Slots und Textzeilen.
  */
 public final class ViewerEntries {
@@ -24,7 +24,7 @@ public final class ViewerEntries {
 
     public enum Kind { FUEL, STABILIZER, LOOT }
 
-    /** Ein Ausgabe-Slot mit Wahrscheinlichkeit (1 = sicher) fuer die Beute-Anzeige. */
+    /** Ein Ausgabe-Slot mit Wahrscheinlichkeit (1 = sicher) für die Beute-Anzeige. */
     public record Output(ItemStack stack, float chance) {
         /**
          * Wahrscheinlichkeit als Text.
@@ -38,9 +38,9 @@ public final class ViewerEntries {
 
     public record Entry(Kind kind, String id, ItemStack input, List<Output> outputs, List<Component> lines) {
         /**
-         * Hoehe des Eintrags in der Anzeige.
+         * Höhe des Eintrags in der Anzeige.
          *
-         * @return Hoehe in Pixeln
+         * @return Höhe in Pixeln
          */
         public int height() {
             return kind == Kind.LOOT ? 44 : 30;
@@ -50,7 +50,7 @@ public final class ViewerEntries {
     /**
      * Alle Brennstoffe laut Data Map mit Leistung, Brenndauer und Hitze.
      *
-     * @return Eintraege fuer die Brennstoff-Kategorie
+     * @return Einträge für die Brennstoff-Kategorie
      */
     public static List<Entry> fuels() {
         List<Entry> list = new ArrayList<>();
@@ -71,9 +71,9 @@ public final class ViewerEntries {
     }
 
     /**
-     * Alle Stabilisatoren laut Data Map mit ihrem Kuehlwert.
+     * Alle Stabilisatoren laut Data Map mit ihrem Kühlwert.
      *
-     * @return Eintraege fuer die Stabilisator-Kategorie
+     * @return Einträge für die Stabilisator-Kategorie
      */
     public static List<Entry> stabilizers() {
         List<Entry> list = new ArrayList<>();
@@ -90,9 +90,9 @@ public final class ViewerEntries {
     }
 
     /**
-     * Beute je Asteroidengroesse mit Chancen.
+     * Beute je Asteroidengröße mit Chancen.
      *
-     * @return Eintraege fuer die Beute-Kategorie
+     * @return Einträge für die Beute-Kategorie
      */
     public static List<Entry> loot() {
         List<Entry> list = new ArrayList<>();
@@ -106,10 +106,10 @@ public final class ViewerEntries {
     }
 
     /**
-     * Eintraege einer Kategorie.
+     * Einträge einer Kategorie.
      *
      * @param kind die Kategorie
-     * @return ihre Eintraege
+     * @return ihre Einträge
      */
     public static List<Entry> of(Kind kind) {
         return switch (kind) {
@@ -123,7 +123,7 @@ public final class ViewerEntries {
      * Symbol einer Kategorie.
      *
      * @param kind die Kategorie
-     * @return Item fuer das Symbol
+     * @return Item für das Symbol
      */
     public static ItemStack icon(Kind kind) {
         return new ItemStack(switch (kind) {
@@ -137,17 +137,17 @@ public final class ViewerEntries {
      * Titel einer Kategorie.
      *
      * @param kind die Kategorie
-     * @return uebersetzter Titel
+     * @return übersetzter Titel
      */
     public static Component title(Kind kind) {
         return Component.translatable("jei.cosmiccore.category." + kind.name().toLowerCase());
     }
 
     /**
-     * Werkbank-Bloecke, die die Kategorie "benutzen" (Controller und Kern bzw. Laser und Trichter).
+     * Werkbank-Blöcke, die die Kategorie "benutzen" (Controller und Kern bzw. Laser und Trichter).
      *
      * @param kind die Kategorie
-     * @return die Bloecke als Items
+     * @return die Blöcke als Items
      */
     public static List<ItemStack> catalysts(Kind kind) {
         return kind == Kind.LOOT
@@ -156,7 +156,7 @@ public final class ViewerEntries {
     }
 
     /**
-     * Info-Seiten (Beschreibung) fuer die wichtigsten Bloecke und Items.
+     * Info-Seiten (Beschreibung) für die wichtigsten Blöcke und Items.
      *
      * @return Liste der Info-Seiten
      */
@@ -180,7 +180,7 @@ public final class ViewerEntries {
         /**
          * Beschreibungstext der Info-Seite.
          *
-         * @return uebersetzter Text
+         * @return übersetzter Text
          */
         public Component text() {
             return Component.translatable("jei.cosmiccore.info." + key);

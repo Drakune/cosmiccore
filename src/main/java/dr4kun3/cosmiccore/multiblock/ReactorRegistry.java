@@ -13,7 +13,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 /**
- * Server-seitige Liste der geladenen Reaktor-Controller je Dimension - damit der Asteroiden-Spawner schnell weiss,
+ * Server-seitige Liste der geladenen Reaktor-Controller je Dimension - damit der Asteroiden-Spawner schnell weiß,
  * wo Reaktoren stehen und wo ein Anti-Asteroiden-Modul aktiv ist.
  */
 @EventBusSubscriber(modid = CosmicCore.MODID)
@@ -21,7 +21,7 @@ public final class ReactorRegistry {
     private static final Map<ResourceKey<Level>, Set<BlockPos>> CONTROLLERS = new ConcurrentHashMap<>();
 
     /**
-     * Merkt sich einen Controller (fuer Asteroiden und den Zwischensequenz-Befehl).
+     * Merkt sich einen Controller (für Asteroiden und den Zwischensequenz-Befehl).
      *
      * @param level Welt des Controllers
      * @param pos Position des Controllers
@@ -45,7 +45,7 @@ public final class ReactorRegistry {
      * Alle bekannten Controller einer Dimension.
      *
      * @param level die Welt
-     * @return Kopie der Positionen (darf veraendert werden)
+     * @return Kopie der Positionen (darf verändert werden)
      */
     public static List<BlockPos> controllers(Level level) {
         Set<BlockPos> set = CONTROLLERS.get(level.dimension());
@@ -53,7 +53,7 @@ public final class ReactorRegistry {
     }
 
     /**
-     * Beim Beenden des Servers alles vergessen (die naechste Welt beginnt leer).
+     * Beim Beenden des Servers alles vergessen (die nächste Welt beginnt leer).
      *
      * @param event Server wurde beendet
      */

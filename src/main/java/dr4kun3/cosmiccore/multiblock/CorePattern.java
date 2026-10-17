@@ -1,6 +1,9 @@
 package dr4kun3.cosmiccore.multiblock;
 
 import dr4kun3.cosmiccore.block.ModBlocks;
+import dr4kun3.cosmiccore.block.Terminal;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -9,9 +12,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Das Muster des Kerngenerators fuer eine Kantenlaenge (5, 7 oder 9). Beispiel 7x7x7, y=0 ist der Boden:
+ * Das Muster des Kerngenerators für eine Kantenlänge (5, 7 oder 9). Beispiel 7x7x7, y=0 ist der Boden:
  * <pre>
- * y=0 Boden   y=1 / y=5   y=2 / y=4   y=3 Aequator   y=6 Decke
+ * y=0 Boden   y=1 / y=5   y=2 / y=4   y=3 Äquator   y=6 Decke
  * HHHCHHH     F.....F     F.....F     F.....F        HHHHHHH
  * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGGGGGH
  * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGHHHGH
@@ -19,15 +22,15 @@ import org.jetbrains.annotations.Nullable;
  * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGHHHGH
  * HHHHHHH     .aaaaa.     .aaaaa.     .aaaaa.        HGGGGGH
  * HHHCHHH     F.....F     F.....F     F.....F        HHHHHHH
- * (y=1: R statt X = Resonanzschild-Emitter unter dem Kern; y=5: X = Fokuskristall ueber dem Kern)
+ * (y=1: R statt X = Resonanzschild-Emitter unter dem Kern; y=5: X = Fokuskristall über dem Kern)
  *
- *  H = Huelle (Leerengehaeuse, Energie-Port oder Item-Port)
+ *  H = Hülle (Leerengehäuse, Energie-Port oder Item-Port)
  *  C = wie H, aber hier darf (genau) der Controller sitzen - Mitte jeder Bodenkante
  *  F = Runenrahmen (Eckpfeiler)     G = Fokusglas (Deckenring)
  *  R = Resonanzschild-Emitter (unterer Pol)     X = Fokuskristall (oberer Pol)
- *  K = Singularitaetskern (Mitte)   a = Luft (Kammer muss frei sein)   . = egal (offene Seiten)
+ *  K = Singularitätskern (Mitte)   a = Luft (Kammer muss frei sein)   . = egal (offene Seiten)
  * </pre>
- * 11x11x11 (ultimativ): statt K vier Satellitenkerne S auf Kernhoehe, je 2 Bloecke von der Mitte in alle vier
+ * 11x11x11 (ultimativ): statt K vier Satellitenkerne S auf Kernhöhe, je 2 Blöcke von der Mitte in alle vier
  * Richtungen; die Mitte selbst bleibt frei (FUSED_CORE). Beim Formen verschmelzen die vier zum Kern in der Mitte,
  * den der Controller dort setzt und beim Zerfall wieder entfernt.
  * 5x5x5: die Kammer ist zu eng, Emitter und Kristall sitzen deshalb in der Mitte von Boden bzw. Decke.
@@ -37,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
 public final class CorePattern {
     public enum Cell { ANY, AIR, HULL, SLOT, FRAME, GLASS, COIL, CRYSTAL, CORE, SATELLITE, FUSED_CORE }
 
-    /** Abstand der vier Satellitenkerne des ultimativen Kerns von der Mitte (auf Kernhoehe, in alle vier Richtungen). */
+    /** Abstand der vier Satellitenkerne des ultimativen Kerns von der Mitte (auf Kernhöhe, in alle vier Richtungen). */
     public static final int SATELLITE_DISTANCE = 2;
 
     private final int size;
@@ -48,9 +51,9 @@ public final class CorePattern {
     private final int blockCount;
 
     /**
-     * Berechnet den Bauplan fuer eine Kantenlaenge (Huelle, Rahmen, Glas, Spulen, Kristalle, Kern, Luft).
+     * Berechnet den Bauplan für eine Kantenlänge (Hülle, Rahmen, Glas, Spulen, Kristalle, Kern, Luft).
      *
-     * @param size Kantenlaenge in Bloecken
+     * @param size Kantenlänge in Blöcken
      */
     CorePattern(int size) {
         this.size = size;
@@ -94,7 +97,7 @@ public final class CorePattern {
             if (ax == half && az == half) return Cell.FRAME;
             return Cell.ANY;
         }
-        // Kammer: Kern in der Mitte, Fokuskristall darueber, Resonanzschild-Emitter darunter
+        // Kammer: Kern in der Mitte, Fokuskristall darüber, Resonanzschild-Emitter darunter
         if (dx == 0 && dy == 0 && dz == 0) return size >= 11 ? Cell.FUSED_CORE : Cell.CORE;
         if (size >= 11 && dy == 0 && ((ax == SATELLITE_DISTANCE && dz == 0) || (az == SATELLITE_DISTANCE && dx == 0))) {
             return Cell.SATELLITE;
@@ -104,27 +107,27 @@ public final class CorePattern {
     }
 
     /**
-     * Kantenlaenge.
+     * Kantenlänge.
      *
-     * @return Bloecke
+     * @return Blöcke
      */
     public int size() {
         return size;
     }
 
     /**
-     * Halbe Kantenlaenge.
+     * Halbe Kantenlänge.
      *
-     * @return Bloecke
+     * @return Blöcke
      */
     public int half() {
         return half;
     }
 
     /**
-     * Radius der animierten Kammer (gebildete Struktur); Bloecke ausserhalb werden zu Phantomen.
+     * Radius der animierten Kammer (gebildete Struktur); Blöcke außerhalb werden zu Phantomen.
      *
-     * @return Radius in Bloecken
+     * @return Radius in Blöcken
      */
     public float shellRadius() {
         return half + 0.2F;
@@ -133,14 +136,14 @@ public final class CorePattern {
     /**
      * Abstand vom Kern zu den Achsen-Spulen und Kristallen.
      *
-     * @return Bloecke
+     * @return Blöcke
      */
     public int focus() {
         return focus;
     }
 
     /**
-     * Anzahl der Strukturbloecke (ohne Luft und "egal").
+     * Anzahl der Strukturblöcke (ohne Luft und "egal").
      *
      * @return Anzahl
      */
@@ -149,7 +152,7 @@ public final class CorePattern {
     }
 
     /**
-     * Zaehlt die Zellen einer Art.
+     * Zählt die Zellen einer Art.
      *
      * @param cell die Art
      * @return Anzahl
@@ -163,7 +166,7 @@ public final class CorePattern {
     @FunctionalInterface
     public interface Visitor {
         /**
-         * Wird fuer jede Zelle des Musters aufgerufen.
+         * Wird für jede Zelle des Musters aufgerufen.
          *
          * @param pos Weltposition der Zelle
          * @param cell was dort stehen muss
@@ -172,7 +175,7 @@ public final class CorePattern {
     }
 
     /**
-     * Mittelpunkt (Position des Kerns). Der Controller sitzt mittig an der Bodenkante und schaut nach aussen.
+     * Mittelpunkt (Position des Kerns). Der Controller sitzt mittig an der Bodenkante und schaut nach außen.
      *
      * @param controller Position des Controllers
      * @param facing Blickrichtung des Controllers
@@ -191,11 +194,6 @@ public final class CorePattern {
         return count(Cell.SATELLITE);
     }
 
-    /**
-     * Hat dieses Muster einen verschmolzenen Mittelkern (ultimativ: die Mitte bleibt beim Bauen frei)?
-     *
-     * @return {@code true} beim ultimativen Kern
-     */
     public boolean hasFusedCore() {
         return cells[half][half][half] == Cell.FUSED_CORE;
     }
@@ -206,8 +204,8 @@ public final class CorePattern {
      * @param center Position der Mitte
      * @return die Positionen
      */
-    public java.util.List<BlockPos> satellites(BlockPos center) {
-        java.util.List<BlockPos> out = new java.util.ArrayList<>();
+    public List<BlockPos> satellites(BlockPos center) {
+        List<BlockPos> out = new ArrayList<>();
         forEach(center, (pos, cell) -> {
             if (cell == Cell.SATELLITE) out.add(pos.immutable());
         });
@@ -215,7 +213,7 @@ public final class CorePattern {
     }
 
     /**
-     * Besucht jede Zelle; die Ausrichtung spielt keine Rolle (das Muster ist symmetrisch, bleibt fuer bestehende
+     * Besucht jede Zelle; die Ausrichtung spielt keine Rolle (das Muster ist symmetrisch, bleibt für bestehende
      * Aufrufer erhalten).
      *
      * @param center Position der Mitte
@@ -242,27 +240,11 @@ public final class CorePattern {
         }
     }
 
-    /**
-     * Andockstellen der Steuerkonsole: die Plaetze direkt aussen neben den beiden Ports. Sie gehoeren nicht zur
-     * Struktur
-     * und bleiben frei fuer Rohre und Kabel.
-     *
-     * @param pos zu pruefende Position
-     * @param controller Position des Controllers
-     * @param facing Blickrichtung des Controllers
-     * @return {@code true}, wenn es eine Andockstelle ist
-     */
     public static boolean isDock(BlockPos pos, BlockPos controller, Direction facing) {
-        return pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.right(facing), 2))
-                || pos.equals(controller.relative(dr4kun3.cosmiccore.block.Terminal.left(facing), 2));
+        return pos.equals(controller.relative(Terminal.right(facing), 2))
+                || pos.equals(controller.relative(Terminal.left(facing), 2));
     }
 
-    /**
-     * Ist die Zelle ein echter Strukturblock (also weder "egal" noch Luft)?
-     *
-     * @param cell die Zelle
-     * @return {@code true} fuer Strukturbloecke
-     */
     public static boolean isBlockCell(Cell cell) {
         return cell != Cell.ANY && cell != Cell.AIR;
     }
@@ -270,12 +252,12 @@ public final class CorePattern {
     public record Report(boolean valid, boolean unloaded, int mismatches, @Nullable BlockPos firstError, @Nullable Component expected) {}
 
     /**
-     * Prueft die gebaute Struktur gegen das Muster.
+     * Prüft die gebaute Struktur gegen das Muster.
      *
      * @param level Welt
      * @param controllerPos Position des Controllers
      * @param facing Blickrichtung des Controllers
-     * @return Bericht: gueltig, nicht geladen, Anzahl Fehler, erster Fehler und was dort erwartet wird
+     * @return Bericht: gültig, nicht geladen, Anzahl Fehler, erster Fehler und was dort erwartet wird
      */
     public Report validate(Level level, BlockPos controllerPos, Direction facing) {
         final int[] mismatches = {0};
@@ -300,7 +282,7 @@ public final class CorePattern {
 
         if (unloaded[0]) return new Report(false, true, 0, null, null);
         if (mismatches[0] == 0) {
-            // Pflicht: mindestens ein Energie-Port und ein Item-Port in der Huelle
+            // Pflicht: mindestens ein Energie-Port und ein Item-Port in der Hülle
             boolean[] ports = {false, false};
             forEach(center(controllerPos, facing), (pos, cell) -> {
                 if (cell != Cell.HULL && cell != Cell.SLOT) return;
@@ -314,12 +296,6 @@ public final class CorePattern {
         return new Report(mismatches[0] == 0, false, mismatches[0], first[0], expected[0]);
     }
 
-    /**
-     * Zaehlt als Huelle: Leerengehaeuse oder ein Port.
-     *
-     * @param s Blockzustand
-     * @return {@code true}, wenn passend
-     */
     private static boolean isHull(BlockState s) {
         return s.is(ModBlocks.VOID_CASING.get()) || s.is(ModBlocks.ENERGY_PORT.get()) || s.is(ModBlocks.ITEM_PORT.get());
     }
@@ -327,7 +303,7 @@ public final class CorePattern {
     /**
      * Passt ein Block an eine Stelle des Musters?
      *
-     * @param cell gewuenschte Zellenart
+     * @param cell gewünschte Zellenart
      * @param s vorhandener Blockzustand
      * @param isControllerPos {@code true} an der Position des Controllers (dort ist er erlaubt)
      * @return {@code true}, wenn der Block passt
@@ -348,10 +324,10 @@ public final class CorePattern {
     }
 
     /**
-     * Block, der fuer die Vorschau bzw. den Kreativ-Aufbau an diese Stelle gehoert.
+     * Block, der für die Vorschau bzw. den Kreativ-Aufbau an diese Stelle gehört.
      *
      * @param cell die Zellenart
-     * @return der Blockzustand oder {@code null} fuer Luft und "egal"
+     * @return der Blockzustand oder {@code null} für Luft und "egal"
      */
     @Nullable
     public static BlockState blockFor(Cell cell) {
@@ -367,10 +343,10 @@ public final class CorePattern {
     }
 
     /**
-     * Beschreibung fuer Fehlermeldungen ("erwartet: Runenrahmen").
+     * Beschreibung für Fehlermeldungen ("erwartet: Runenrahmen").
      *
      * @param cell die Zellenart
-     * @return uebersetzter Text
+     * @return übersetzter Text
      */
     public static Component describe(Cell cell) {
         return switch (cell) {

@@ -14,23 +14,24 @@ import dr4kun3.cosmiccore.block.CorePhase;
 import dr4kun3.cosmiccore.block.ModBlocks;
 import dr4kun3.cosmiccore.block.ModProperties;
 import dr4kun3.cosmiccore.block.entity.ResonatorBlockEntity;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.util.Mth;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
 import dr4kun3.cosmiccore.block.entity.SingularityCoreBlockEntity;
+import dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
@@ -38,11 +39,11 @@ import org.joml.Matrix4f;
  * Struktur ausgeblendet):
  * <ul>
  *   <li>Resonanzschild-Emitter: schwebendes Enderauge mit Fokusring zum Kern.</li>
- *   <li>Kristall: schwebender Sternenfeld-Oktaeder mit leuchtenden Kanten - er buendelt die Jets.</li>
+ *   <li>Kristall: schwebender Sternenfeld-Oktaeder mit leuchtenden Kanten - er bündelt die Jets.</li>
  * </ul>
- * Erst Sternenfeld, dann Glow: ein getBuffer() mit anderem RenderType schliesst den vorherigen Puffer ab.
+ * Erst Sternenfeld, dann Glow: ein getBuffer() mit anderem RenderType schließt den vorherigen Puffer ab.
  */
-public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBlockEntityRenderer<ResonatorBlockEntity> {
+public class ResonatorRenderer extends LegacyBlockEntityRenderer<ResonatorBlockEntity> {
     private static final float[] HOT = {1.0F, 0.8F, 0.55F};
     private static final float[] COOL = {0.62F, 0.28F, 0.95F};
     private static final float[] JET = {0.6F, 0.78F, 1.0F};
@@ -57,18 +58,12 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
     private static final float[] SHINE = {0.95F, 1.0F, 0.97F};
 
     /**
-     * Legt den Renderer fuer Schild-Emitter und Fokuskristall an.
+     * Legt den Renderer für Schild-Emitter und Fokuskristall an.
      *
      * @param context Kontext der Blockinhalt-Renderer
      */
     public ResonatorRenderer(BlockEntityRendererProvider.Context context) {}
 
-    /**
-     * Sichtbarkeitsbox: der Block mit etwas Rand (die Effekte ragen leicht hinaus).
-     *
-     * @param be der Resonator
-     * @return die Box
-     */
     @Override
     public AABB getRenderBoundingBox(ResonatorBlockEntity be) {
         return new AABB(be.getBlockPos()).inflate(0.5);
@@ -86,7 +81,7 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
      * @param cameraPos Position der Kamera
      */
     @Override
-    public void render(ResonatorBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, net.minecraft.world.phys.Vec3 cameraPos) {
+    public void render(ResonatorBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay, Vec3 cameraPos) {
         Level level = be.getLevel();
         if (level == null) return;
         CorePhase phase = be.getBlockState().getValue(ModProperties.PHASE);
@@ -101,7 +96,7 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
                 * (unstable ? 0.7F + 0.3F * (0.5F + 0.5F * hash((int) (t * 1.1F) + (int) offset)) : 1.0F);
         final float[] rim = unstable ? CRITICAL : active ? HOT : COOL;
 
-        // waehrend der Aufbau-Animation wird der Block gerade in den Kern gesaugt - erst danach erscheint er wieder
+        // während der Aufbau-Animation wird der Block gerade in den Kern gesaugt - erst danach erscheint er wieder
         int[] core = be.findCoreOffset(level.getGameTime());
         if (core != null && level.getBlockEntity(be.getBlockPos().offset(core[0], core[1], core[2])) instanceof SingularityCoreBlockEntity c
                 && c.getFormProgress(partialTick) < 0.7F) {
@@ -119,9 +114,9 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
     }
 
     /**
-     * Schild-Emitter als runder Trichter aus purer Energie: Lichtringe formen einen Kelch, der sich zum Kern oeffnet,
-     * Spiralbahnen drehen sich darin, Lichtpunkte steigen auf und im Hals glueht die Quelle. Aus seiner Oeffnung steigt
-     * das Eindaemmungsfeld (FieldFx).
+     * Schild-Emitter als runder Trichter aus purer Energie: Lichtringe formen einen Kelch, der sich zum Kern öffnet,
+     * Spiralbahnen drehen sich darin, Lichtpunkte steigen auf und im Hals glüht die Quelle. Aus seiner Öffnung steigt
+     * das Eindämmungsfeld (FieldFx).
      *
      * @param pose Pose-Stapel in der Blockmitte
      * @param buffers Puffer
@@ -129,10 +124,10 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
      * @param pos Position des Emitters
      * @param core Versatz zum Kern {x, y, z} oder {@code null}
      * @param t Animationszeit in Ticks
-     * @param speed Drehgeschwindigkeit (hoeher im Overdrive)
+     * @param speed Drehgeschwindigkeit (höher im Overdrive)
      * @param energy Helligkeit 0..1
      * @param rim Farbe des Randes RGB 0..1
-     * @param heat Instabilitaet 0..1
+     * @param heat Instabilität 0..1
      */
     private static void renderCoil(PoseStack pose, MultiBufferSource buffers, Level level, BlockPos pos, int[] core, float t,
                                    float speed, float energy, float[] rim, float heat) {
@@ -177,24 +172,24 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
             float r = funnelRadius(f) * 0.9F;
             cube(glow, m, Mth.cos(ang) * r, f * height, Mth.sin(ang) * r, 0.025F, 1.0F, 1.0F, 1.0F, energy * Mth.sin(f * Mth.PI));
         }
-        // gluehender Hals
+        // glühender Hals
         RenderUtil.glowSphere(glow, m, 0.1F + 0.02F * Mth.sin(t * 0.3F), 8, 12, b, 0.5F * energy);
         cube(glow, m, 0, 0, 0, 0.045F, 1.0F, 1.0F, 1.0F, energy);
         pose.popPose();
     }
 
     /**
-     * Radius des Kelchs: schmaler Hals, weit geoeffneter Rand.
+     * Radius des Kelchs: schmaler Hals, weit geöffneter Rand.
      *
-     * @param f Hoehe im Kelch (0 unten, 1 oben)
-     * @return Radius in Bloecken
+     * @param f Höhe im Kelch (0 unten, 1 oben)
+     * @return Radius in Blöcken
      */
     private static float funnelRadius(float f) {
         return 0.07F + 0.43F * f * f;
     }
 
     /**
-     * Zeichnet eine Ellipse als gewoelbte Kappe auf einer Kugel (z. B. die Iris des Enderauges), Blickrichtung +Z.
+     * Zeichnet eine Ellipse als gewölbte Kappe auf einer Kugel (z. B. die Iris des Enderauges), Blickrichtung +Z.
      *
      * @param vc Puffer
      * @param m Matrix
@@ -225,7 +220,7 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
     }
 
     /**
-     * Punkt auf der Kugeloberflaeche ueber (x, y).
+     * Punkt auf der Kugeloberfläche über (x, y).
      *
      * @param r Kugelradius
      * @param x Position x
@@ -244,7 +239,7 @@ public class ResonatorRenderer extends dr4kun3.cosmiccore.client.render.LegacyBl
      * @param t Animationszeit
      * @param speed Drehgeschwindigkeit
      * @param energy Helligkeit 0..1
-     * @param unstable {@code true} faerbt den Kristall rot
+     * @param unstable {@code true} färbt den Kristall rot
      */
     private static void renderCrystal(PoseStack pose, MultiBufferSource buffers, float t, float speed, float energy,
                                       boolean unstable) {
